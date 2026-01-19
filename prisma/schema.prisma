@@ -1,0 +1,129 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  password      String?
+  emailVerified DateTime?
+  accounts      Account[]
+  sessions      Session[]
+  classes       Class[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("users")
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+
+
+model Class {
+  id String @id @default(uuid())
+  name String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  students Student[]
+}
+
+model Student {
+  id String @id @default(uuid())
+  name String
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  classId String
+  assessments Assessment[]
+}
+
+model Assessment {
+  id String @id @default(uuid())
+  studentId String
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  type AssessmentType
+  dateTaken DateTime @default(now())
+  oralReading OralReading?
+  comprehension ComprehensionTest?
+}
+
+model OralReading {
+  id String @id @default(uuid())
+  assessmentId String @unique
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  audioUrl String
+  transcript String
+  readingTime Int
+  wcpm Int
+  accuracy Float
+  classification String
+  miscues Json
+}
+
+model ComprehensionTest {
+  id String @id @default(uuid())
+  assessmentId String @unique
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  score Int
+  totalItems Int
+  level String
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+enum AssessmentType {
+  ORAL_READING
+  COMPREHENSION
+  ORAL_READING_TEST
+}
+
+
+
+
+
