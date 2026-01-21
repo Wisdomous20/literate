@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
-import React from "react";
+import { Providers } from "@/components/providers/Providers";
 import "./globals.css";
-import { SessionProvider } from "next-auth/react";
-
-
 
 export const metadata: Metadata = {
   title: "Literate",
@@ -14,9 +11,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <SessionProvider>
-          {children}
-        </SessionProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
