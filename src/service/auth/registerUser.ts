@@ -1,25 +1,51 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
+import { RegisterUserInput, RegisterErrorCode } from "@/types/auth";
 
-interface RegisterUserInput {
-  name: string;
-  email: string;
-  password: string;
-}
 
 interface RegisterUserResult {
   success: boolean;
   user?: {
     id: string;
     name: string | null;
-    email: string;
+    email: string | null;
     createdAt: Date;
   };
   error?: string;
+  code?: RegisterErrorCode;
 }
+
 
 export async function registerUser(input: RegisterUserInput): Promise<RegisterUserResult> {
   const { name, email, password } = input;
+
+  // Validate required fields
+  if (!name || !email || !password) {
+    return {
+      success: false,
+      error: "Name, email, and password are required",
+      code: "VALIDATION_ERROR",
+    };
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return {
+      success: false,
+      error: "Invalid email format",
+      code: "VALIDATION_ERROR",
+    };
+  }
+
+  // Validate password strength
+  if (password.length < 8) {
+    return {
+      success: false,
+      error: "Password must be at least 8 characters long",
+      code: "VALIDATION_ERROR",
+    };
+  }
 
   // Check if user already exists
   const existingUser = await prisma.user.findUnique({
@@ -27,7 +53,11 @@ export async function registerUser(input: RegisterUserInput): Promise<RegisterUs
   });
 
   if (existingUser) {
-    return { success: false, error: "User with this email already exists" };
+    return {
+      success: false,
+      error: "User with this email already exists",
+      code: "USER_EXISTS",
+    };
   }
 
   // Hash password
@@ -50,14 +80,4 @@ export async function registerUser(input: RegisterUserInput): Promise<RegisterUs
   });
 
   return { success: true, user };
-}
-
-export async function getUserByEmail(email: string) {
-  return prisma.user.findUnique({
-    where: { email },
-  });
-}
-
-export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-  return bcrypt.compare(password, hashedPassword);
 }
