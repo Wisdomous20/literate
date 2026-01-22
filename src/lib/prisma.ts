@@ -8,9 +8,19 @@ if (process.env.NODE_ENV !== "production") {
   neonConfig.webSocketConstructor = ws;
 }
 
-const connectionString = process.env.DATABASE_URL;
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
 
-// Pass connection string directly to PrismaNeon
-const adapter = new PrismaNeon({connectionString});
+function getPrismaClient() {
+  if (globalForPrisma.prisma) {
+    return globalForPrisma.prisma;
+  }
 
-export const prisma = new PrismaClient({ adapter });
+  const connectionString = process.env.DATABASE_URL;
+  const adapter = new PrismaNeon({ connectionString });
+  const client = new PrismaClient({ adapter });
+
+  globalForPrisma.prisma = client;
+  return client;
+}
+
+export const prisma = getPrismaClient();
