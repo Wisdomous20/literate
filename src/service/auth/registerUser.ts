@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
 import { RegisterUserInput, RegisterErrorCode } from "@/types/auth";
 
-
 interface RegisterUserResult {
   success: boolean;
   user?: {
@@ -14,7 +13,6 @@ interface RegisterUserResult {
   error?: string;
   code?: RegisterErrorCode;
 }
-
 
 export async function registerUser(input: RegisterUserInput): Promise<RegisterUserResult> {
   const { name, email, password } = input;
@@ -61,7 +59,7 @@ export async function registerUser(input: RegisterUserInput): Promise<RegisterUs
   }
 
   // Hash password
-  const hashedPassword = await bcrypt.hash(password, 12);
+  const hashedPassword = await bcrypt.hash(password,10)
 
   // Create user
   const user = await prisma.user.create({
