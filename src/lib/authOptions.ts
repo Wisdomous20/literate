@@ -1,8 +1,8 @@
 import { NextAuthOptions, User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { prisma } from "./prisma";
-import bcrypt from "bcrypt";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import { prisma } from "./prisma";
+import { loginUser } from "@/service/auth/login";
 
 export const authOptions: NextAuthOptions = {
   debug: true,
@@ -26,32 +26,23 @@ export const authOptions: NextAuthOptions = {
         },
       },
       async authorize(credentials): Promise<User | null> {
-        if (!credentials) return null;
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+        const result = await loginUser({
+          email: credentials.email,
+          password: credentials.password,
         });
 
-        if (!user) {
-          throw new Error("Email not found");
+        if (!result.success || !result.user) {
+          throw new Error(result.error || "Invalid credentials");
         }
-
-        const isValid = user.password
-          ? await bcrypt.compare(credentials.password, user.password)
-          : false;
-        if (!isValid) {
-          throw new Error("Invalid email or password");
-        }
-
-        if (user)
-          if (!user.isVerified) {
-            throw new Error("Please verify your email before logging in.");
-          }
 
         return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
+          id: result.user.id,
+          name: result.user.name,
+          email: result.user.email,
         } as User;
       },
     }),
