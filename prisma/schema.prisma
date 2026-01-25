@@ -62,6 +62,7 @@ model Class {
 model Student {
   id String @id @default(uuid())
   name String
+  level Int
   class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
   classId String
   assessments Assessment[]
