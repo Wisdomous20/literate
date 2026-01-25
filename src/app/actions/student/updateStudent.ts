@@ -1,26 +1,31 @@
-"use server";
+"user server";
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-import { createStudentService } from "@/service/students/createStudentService"; 
+import { updateStudentService } from "@/service/students/updateStudentService";
 import { revalidatePath } from "next/cache";
 
-export async function createStudent(name: string, level: number) {
+export async function updateStudent(
+  studentId: string,
+  name?: string,
+  level?: number
+) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
     return { success: false, error: "Unauthorized" };
   }
 
-  const result = await createStudentService({
+  const result = await updateStudentService({
+    userId: session.user.id,
+    studentId,
     name,
     level,
-    userId: session.user.id,
   });
 
-  if (result.success) {
+    if (result.success) {
     revalidatePath("/students");
   }
 
-  return result;
-}
+    return result;
+}  

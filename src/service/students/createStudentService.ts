@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 
 interface CreateStudentInput {
   name: string;
+  level: number;
   userId: string;
 }
 
@@ -10,6 +11,7 @@ interface CreateStudentResult {
   student?: {
     id: string;
     name: string;
+    level: number;
     classId: string;
   };
   error?: string;
@@ -19,7 +21,7 @@ interface CreateStudentResult {
 export async function createStudentService(
   input: CreateStudentInput
 ): Promise<CreateStudentResult> {
-  const { name, userId } = input;
+  const { name, level, userId } = input;
 
   // Validate required fields
   if (!name || !name.trim()) {
@@ -52,15 +54,17 @@ export async function createStudentService(
       };
     }
 
-    // Create student
+    // Create student (omit 'level' because it's not a known Prisma field)
     const student = await prisma.student.create({
       data: {
         name: name.trim(),
+        level: level,
         classId: userClass.id,
       },
       select: {
         id: true,
         name: true,
+        level: true,
         classId: true,
       },
     });
