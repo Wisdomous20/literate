@@ -7,6 +7,8 @@ interface GetStudentResult {
     name: string;
     classId: string;
     level?: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    assessments?: any[];
   };
   error?: string;
   code?: "STUDENT_NOT_FOUND" | "INTERNAL_ERROR";
@@ -17,7 +19,6 @@ export async function getStudentServiceById(
   studentId: string
 ): Promise<GetStudentResult> {
   try {
-    // Find the student by id and ensure it belongs to a class owned by the user (single query)
     const student = await prisma.student.findFirst({
       where: {
         id: studentId,
@@ -27,6 +28,8 @@ export async function getStudentServiceById(
         id: true,
         name: true,
         classId: true,
+        assessments: true,
+        level: true,
       },
     });
 
