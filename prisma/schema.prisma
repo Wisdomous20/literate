@@ -66,6 +66,7 @@ model Student {
   class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
   classId String
   assessments Assessment[]
+  deletedAt DateTime?
 }
 
 model Assessment {
