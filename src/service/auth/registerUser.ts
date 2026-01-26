@@ -68,6 +68,9 @@ export async function registerUser(input: RegisterUserInput): Promise<RegisterUs
       email,
       password: hashedPassword,
       isVerified: false,
+      class: {
+        create: {},
+      }
     },
     select: {
       id: true,
