@@ -14,6 +14,7 @@ interface RegisterUserResult {
   code?: RegisterErrorCode;
 }
 
+
 export async function registerUser(input: RegisterUserInput): Promise<RegisterUserResult> {
   const { name, email, password } = input;
 
@@ -68,9 +69,6 @@ export async function registerUser(input: RegisterUserInput): Promise<RegisterUs
       email,
       password: hashedPassword,
       isVerified: false,
-      class: {
-        create: {},
-      }
     },
     select: {
       id: true,
