@@ -15,7 +15,8 @@ datasource db {
 
 model User {
   id                String              @id @default(cuid())
-  name              String?
+  firstName         String?
+  lastName          String?
   email             String?             @unique
   password          String?
   emailVerified     DateTime?
@@ -63,8 +64,7 @@ model Class {
 
 model Student {
   id          String       @id @default(uuid())
-  firstName   String
-  lastName    String
+  name   String
   level       Int
   class       Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
   classId     String

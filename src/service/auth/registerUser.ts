@@ -6,7 +6,8 @@ interface RegisterUserResult {
   success: boolean;
   user?: {
     id: string;
-    name: string | null;
+    firstName: string | null;
+    lastName: string | null;
     email: string | null;
     createdAt: Date;
   };
@@ -16,10 +17,10 @@ interface RegisterUserResult {
 
 
 export async function registerUser(input: RegisterUserInput): Promise<RegisterUserResult> {
-  const { name, email, password } = input;
+  const { firstName, lastName, email, password } = input;
 
   // Validate required fields
-  if (!name || !email || !password) {
+  if ( !firstName || !lastName || !email || !password) {
     return {
       success: false,
       error: "Name, email, and password are required",
@@ -65,14 +66,16 @@ export async function registerUser(input: RegisterUserInput): Promise<RegisterUs
   // Create user
   const user = await prisma.user.create({
     data: {
-      name,
+      firstName,
+      lastName,
       email,
       password: hashedPassword,
       isVerified: false,
     },
     select: {
       id: true,
-      name: true,
+      firstName: true,
+      lastName: true,
       email: true,
       createdAt: true,
     },
