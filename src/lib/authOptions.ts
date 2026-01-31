@@ -50,7 +50,9 @@ export const authOptions: NextAuthOptions = {
 
         return {
           id: user.id,
-          name: user.name,
+          name: user.firstName + " " + user.lastName,
+          firstName: user.firstName,
+          lastName: user.lastName,
           email: user.email,
         } as User;
       },
