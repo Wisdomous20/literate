@@ -1,5 +1,6 @@
 export interface RegisterUserInput {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
 }
@@ -15,4 +16,7 @@ export interface RegisterUserResponse {
   error?: string;
 }
 
-export type RegisterErrorCode = "VALIDATION_ERROR" | "USER_EXISTS" | "INTERNAL_ERROR";
+export type RegisterErrorCode =
+  | "VALIDATION_ERROR"
+  | "USER_EXISTS"
+  | "INTERNAL_ERROR";

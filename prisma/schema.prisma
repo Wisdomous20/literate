@@ -14,35 +14,36 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  password      String?
-  emailVerified DateTime?
-  isVerified    Boolean   @default(false)
-  accounts      Account[]
-  sessions      Session[]
-  class         Class?    // Changed from classes Class[] to one-to-one
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                String              @id @default(cuid())
+  firstName         String?
+  lastName          String?
+  email             String?             @unique
+  password          String?
+  emailVerified     DateTime?
+  isVerified        Boolean             @default(false)
+  accounts          Account[]
+  sessions          Session[]
+  class             Class[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
   verificationToken VerificationToken[]
 
   @@map("users")
 }
 
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?
-  access_token       String?
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?
-  session_state      String?
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -50,55 +51,57 @@ model Account {
   @@map("accounts")
 }
 
-
-
 model Class {
-  id       String    @id @default(uuid())
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId   String    @unique  // Added @unique to make it one-to-one
-  students Student[]
+  id         String    @id @default(uuid())
+  name       String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  createdAt  DateTime  @default(now())
+  schoolYear String
+  archived   Boolean   @default(false)
+  students   Student[]
 }
 
 model Student {
-  id String @id @default(uuid())
-  name String
-  level Int
-  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
-  classId String
+  id          String       @id @default(uuid())
+  name   String
+  level       Int
+  class       Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
+  classId     String
   assessments Assessment[]
-  deletedAt DateTime?
+  deletedAt   DateTime?
 }
 
 model Assessment {
-  id String @id @default(uuid())
-  studentId String
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  type AssessmentType
-  dateTaken DateTime @default(now())
-  oralReading OralReading?
+  id            String             @id @default(uuid())
+  studentId     String
+  student       Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  type          AssessmentType
+  dateTaken     DateTime           @default(now())
+  oralReading   OralReading?
   comprehension ComprehensionTest?
 }
 
 model OralReading {
-  id String @id @default(uuid())
-  assessmentId String @unique
-  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
-  audioUrl String
-  transcript String
-  readingTime Int
-  wcpm Int
-  accuracy Float
+  id             String     @id @default(uuid())
+  assessmentId   String     @unique
+  assessment     Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  audioUrl       String
+  transcript     String
+  readingTime    Int
+  wcpm           Int
+  accuracy       Float
   classification String
-  miscues Json
+  miscues        Json
 }
 
 model ComprehensionTest {
-  id String @id @default(uuid())
-  assessmentId String @unique
-  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
-  score Int
-  totalItems Int
-  level String
+  id           String     @id @default(uuid())
+  assessmentId String     @unique
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  score        Int
+  totalItems   Int
+  level        String
 }
 
 model Session {
@@ -128,8 +131,3 @@ enum AssessmentType {
   COMPREHENSION
   ORAL_READING_TEST
 }
-
-
-
-
-
