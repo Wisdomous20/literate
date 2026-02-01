@@ -2,7 +2,7 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-import { getClassListService } from "@/service/class/getClassListService";
+import { getClassListService } from "@/service/class/getAllClassServiceBySchoolYear";
 
 export async function getClassList() {
   const session = await getServerSession(authOptions);

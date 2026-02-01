@@ -2,28 +2,28 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-import { createStudentService } from "@/service/students/createStudentService"; 
+import { updateClassService } from "@/service/class/updateClassService";
 import { revalidatePath } from "next/cache";
-import { getSchoolYear } from "@/utils/getSchoolYear";
 
-export async function createStudent(name: string, level: number, className: string) {
+export async function updateClass(
+  classId: string,
+  name?: string,
+  archived?: boolean
+) {
   const session = await getServerSession(authOptions);
-
   if (!session?.user?.id) {
     return { success: false, error: "Unauthorized" };
   }
 
-
-  const result = await createStudentService({
-    name,
-    level,
+  const result = await updateClassService({
     userId: session.user.id,
-    className,
-    schoolYear: getSchoolYear(),
+    classId,
+    name,
+    archived,
   });
 
   if (result.success) {
-    revalidatePath("/students");
+    revalidatePath("/classes");
   }
 
   return result;
