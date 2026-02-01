@@ -1,6 +1,6 @@
 "use client"
 
-import { FileText, BookOpen, ClipboardList } from "lucide-react"
+import { FileText } from "lucide-react"
 import Link from "next/link"
 
 const actions = [
@@ -8,47 +8,53 @@ const actions = [
     title: "Oral Reading Test",
     description: "Assess your students overall reading level",
     href: "/dashboard/oral-reading",
-    icon: FileText,
   },
   {
     title: "Reading Fluency Test",
     description: "Assess your students reading fluency level",
     href: "/dashboard/reading-fluency",
-    icon: BookOpen,
   },
   {
     title: "Reading Comprehension Test",
     description: "Assess your students reading comprehension level",
     href: "/dashboard/reading-comprehension",
-    icon: ClipboardList,
   },
 ]
 
 export function QuickActions() {
   return (
-    <div className="rounded-2xl bg-card p-6 shadow-lg">
+    <div 
+      className="flex h-full flex-col rounded-[20px] bg-white p-6"
+      style={{
+        boxShadow: "0px 0px 20px 1px rgba(84, 164, 255, 0.35)"
+      }}
+    >
       <div className="mb-4">
-        <h3 className="text-lg font-semibold text-foreground">Quick Actions</h3>
-        <p className="text-sm text-muted-foreground">Start Assessment Now!</p>
+        <h3 className="text-[18px] font-semibold text-[#00306E]">Quick Actions</h3>
+        <p className="text-sm text-[#00306E]/70">Start Assessment Now!</p>
       </div>
-      <div className="space-y-3">
+      <div className="flex flex-1 flex-col justify-between gap-3">
         {actions.map((action) => (
           <div
             key={action.title}
-            className="flex items-center justify-between rounded-xl border border-border/30 bg-muted/30 p-4"
+            className="flex flex-1 items-center justify-between rounded-[15px] px-5 py-4"
+            style={{
+              border: "1px solid rgba(0, 48, 110, 0.21)",
+              background: "rgba(228, 244, 255, 0.3)"
+            }}
           >
-            <div className="flex items-start gap-3">
-              <action.icon className="mt-0.5 h-5 w-5 text-primary" />
+            <div className="flex items-start gap-4">
+              <FileText className="mt-1 h-6 w-6 text-[#6666FF]" />
               <div>
-                <h4 className="font-semibold text-primary">{action.title}</h4>
-                <p className="text-xs text-muted-foreground">
+                <h4 className="text-base font-semibold text-[#6666FF]">{action.title}</h4>
+                <p className="text-sm text-[#00306E]/60">
                   {action.description}
                 </p>
               </div>
             </div>
             <Link
               href={action.href}
-              className="rounded-lg border border-border/50 bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+              className="rounded-lg border border-[#00306E]/20 bg-white px-5 py-2.5 text-sm font-medium text-[#00306E] transition-colors hover:bg-[#E4F4FF]"
             >
               Start Now
             </Link>

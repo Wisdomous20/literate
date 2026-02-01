@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronDown, Plus } from "lucide-react"
+import { ChevronDown } from "lucide-react"
 import { ClassCard } from "./class-card"
 
 type ClassCardVariant = "blue" | "yellow" | "cyan"
@@ -30,22 +30,22 @@ export function ClassInventory() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-xl font-semibold text-foreground">Class Inventory</h2>
+        <h2 className="text-[20px] font-semibold leading-[30px] text-[#00306E]">Class Inventory</h2>
         <div className="flex gap-3">
           {/* School Year Dropdown */}
           <div className="relative">
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-2 rounded-lg border border-border/50 bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+              className="flex items-center gap-2 rounded-lg border border-[#5D5DFB]/30 bg-white px-4 py-2 text-sm font-medium text-[#00306E] transition-colors hover:bg-[#E4F4FF]"
             >
               School Year
               <ChevronDown className="h-4 w-4" />
             </button>
             {isDropdownOpen && (
-              <div className="absolute right-0 top-full z-10 mt-1 w-40 rounded-lg border border-border/50 bg-card py-1 shadow-lg">
+              <div className="absolute right-0 top-full z-10 mt-1 w-40 rounded-lg border border-[#5D5DFB]/30 bg-white py-1 shadow-lg">
                 {schoolYears.map((year) => (
                   <button
                     key={year}
@@ -53,10 +53,10 @@ export function ClassInventory() {
                       setSelectedYear(year)
                       setIsDropdownOpen(false)
                     }}
-                    className={`w-full px-4 py-2 text-left text-sm transition-colors hover:bg-muted ${
+                    className={`w-full px-4 py-2 text-left text-sm transition-colors hover:bg-[#E4F4FF] ${
                       selectedYear === year
-                        ? "font-semibold text-primary"
-                        : "text-foreground"
+                        ? "font-semibold text-[#6666FF]"
+                        : "text-[#00306E]"
                     }`}
                   >
                     {year}
@@ -67,15 +67,24 @@ export function ClassInventory() {
           </div>
 
           {/* Create Class Button */}
-          <button className="flex items-center gap-2 rounded-lg bg-[#2E2E68] px-4 py-2 text-sm font-medium text-white shadow-lg transition-colors hover:bg-[#3E3E78]">
-            <Plus className="h-4 w-4" />
+          <button 
+            className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:opacity-90"
+            style={{
+              width: "150px",
+              height: "40px",
+              background: "#2E2E68",
+              border: "1px solid #7A7AFB",
+              boxShadow: "0px 1px 20px rgba(65, 155, 180, 0.47)",
+              borderRadius: "8px"
+            }}
+          >
             Create Class
           </button>
         </div>
       </div>
 
-      {/* Class Grid */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {/* Class Grid - 5 columns on large screens, 4 on medium, 3 on small */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
         {mockClasses.map((classItem) => (
           <ClassCard
             key={classItem.id}

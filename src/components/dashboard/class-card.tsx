@@ -14,28 +14,25 @@ interface ClassCardProps {
 
 const variantStyles: Record<
   ClassCardVariant,
-  { bg: string; iconBg: string; iconColor: string; badgeBg: string; badgeText: string }
+  { iconBg: string; iconColor: string; badgeBg: string; badgeText: string }
 > = {
   blue: {
-    bg: "bg-blue-100/30",
-    iconBg: "bg-blue-100",
-    iconColor: "text-blue-600",
-    badgeBg: "bg-blue-100",
-    badgeText: "text-blue-800",
+    iconBg: "rgba(0, 109, 252, 0.22)",
+    iconColor: "#0066EC",
+    badgeBg: "rgba(0, 109, 252, 0.22)",
+    badgeText: "#00306E",
   },
   yellow: {
-    bg: "bg-yellow-100/30",
-    iconBg: "bg-yellow-100",
-    iconColor: "text-yellow-600",
-    badgeBg: "bg-yellow-100",
-    badgeText: "text-yellow-800",
+    iconBg: "#F1F0BE",
+    iconColor: "#E6CD0C",
+    badgeBg: "#F1F0BE",
+    badgeText: "#867705",
   },
   cyan: {
-    bg: "bg-cyan-100/30",
-    iconBg: "bg-cyan-100",
-    iconColor: "text-cyan-600",
-    badgeBg: "bg-cyan-100",
-    badgeText: "text-cyan-800",
+    iconBg: "#91E2F2",
+    iconColor: "#47B6CA",
+    badgeBg: "#91E2F2",
+    badgeText: "#0D4F5D",
   },
 }
 
@@ -51,33 +48,36 @@ export function ClassCard({
     <button
       onClick={onClick}
       className={cn(
-        "group relative flex w-full flex-col justify-between rounded-2xl border border-primary/30 p-4 text-left shadow-lg shadow-accent/20 transition-all hover:shadow-xl",
-        styles.bg
+        "group relative flex w-full flex-col justify-between p-4 text-left transition-all hover:scale-[1.02]"
       )}
-      style={{ minHeight: "120px" }}
+      style={{ 
+        minHeight: "127px",
+        background: "rgba(255, 254, 254, 0.09)",
+        border: "1px solid #5D5DFB",
+        boxShadow: "0px 0px 20px 1px rgba(84, 164, 255, 0.65)",
+        borderRadius: "15px"
+      }}
     >
       <div className="flex items-start justify-between">
         <div
-          className={cn(
-            "flex h-7 w-7 items-center justify-center rounded",
-            styles.iconBg
-          )}
+          className="flex h-[25px] w-[27px] items-center justify-center rounded-[3px]"
+          style={{ background: styles.iconBg }}
         >
-          <Folder className={cn("h-4 w-4", styles.iconColor)} />
+          <Folder className="h-3.5 w-3.5" style={{ color: styles.iconColor }} fill={styles.iconColor} />
         </div>
         <span
-          className={cn(
-            "rounded px-2 py-0.5 text-xs font-semibold",
-            styles.badgeBg,
-            styles.badgeText
-          )}
+          className="rounded-[3px] px-2 py-0.5 text-[8px] font-semibold leading-[12px]"
+          style={{ 
+            background: styles.badgeBg,
+            color: styles.badgeText
+          }}
         >
           {studentCount} students
         </span>
       </div>
-      <div className="flex items-center justify-between">
-        <span className="font-semibold text-foreground">{name}</span>
-        <ChevronRight className="h-5 w-5 text-foreground transition-transform group-hover:translate-x-1" />
+      <div className="flex items-center justify-between pt-6">
+        <span className="text-[15px] font-semibold leading-[22px] text-[#00306E]">{name}</span>
+        <ChevronRight className="h-5 w-5 text-[#00306E] transition-transform group-hover:translate-x-1" />
       </div>
     </button>
   )
