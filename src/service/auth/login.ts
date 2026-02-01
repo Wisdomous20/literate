@@ -9,9 +9,12 @@ export interface LoginUserInput {
 export interface LoginResult {
   success: boolean;
   user?: {
-    id: string;
+     id: string;
+    firstName: string | null; 
+    lastName:  string | null;
     name: string | null;
     email: string | null;
+
   };
   error?: string;
   code?: "INVALID_CREDENTIALS" | "EMAIL_NOT_VERIFIED" | "USER_NOT_FOUND" | "INTERNAL_ERROR";
@@ -35,7 +38,8 @@ export async function loginUser(input: LoginUserInput): Promise<LoginResult> {
       where: { email },
       select: {
         id: true,
-        name: true,
+        firstName: true,
+        lastName: true,
         email: true,
         password: true,
         isVerified: true,
@@ -81,7 +85,9 @@ export async function loginUser(input: LoginUserInput): Promise<LoginResult> {
       success: true,
       user: {
         id: user.id,
-        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        name: user.firstName + " " + user.lastName,
         email: user.email,
       },
     };
