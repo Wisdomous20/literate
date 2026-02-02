@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { ChevronDown } from "lucide-react"
 import { ClassCard } from "./class-card"
+import { CreateClassModal } from "./create-class-modal"
 
 type ClassCardVariant = "blue" | "yellow" | "cyan"
 
@@ -28,6 +29,12 @@ const schoolYears = ["2026-2027", "2025-2026", "2024-2025"]
 export function ClassInventory() {
   const [selectedYear, setSelectedYear] = useState(schoolYears[0])
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const handleCreateClass = (data: { className: string; schoolYear: string }) => {
+    console.log("Creating class:", data)
+    // Here you would typically make an API call to create the class
+  }
 
   return (
     <div className="space-y-6">
@@ -68,7 +75,8 @@ export function ClassInventory() {
 
           {/* Create Class Button */}
           <button 
-            className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:opacity-90"
+            onClick={() => setIsModalOpen(true)}
+            className="flex justify-center items-center gap-2 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:opacity-90"
             style={{
               width: "150px",
               height: "40px",
@@ -94,6 +102,13 @@ export function ClassInventory() {
           />
         ))}
       </div>
+
+      {/* Create Class Modal */}
+      <CreateClassModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCreateClass={handleCreateClass}
+      />
     </div>
   )
 }
