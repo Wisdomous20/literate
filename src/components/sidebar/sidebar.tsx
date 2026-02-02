@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useSession, signOut } from "next-auth/react"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
@@ -45,6 +46,14 @@ const generalItems = [
 
 export function Sidebar() {
   const pathname = usePathname()
+  const { data: session } = useSession()
+  
+  // Get user's first name from session
+  const firstName = session?.user?.name?.split(" ")[0] || "User"
+
+  const handleLogout = async () => {
+    await signOut({ redirect: true, callbackUrl: "/auth/login" })
+  }
 
   return (
     <aside 
@@ -86,7 +95,7 @@ export function Sidebar() {
 
       {/* User Greeting */}
       <div className="px-8 pt-4 pb-4">
-        <h2 className="text-lg font-semibold text-white">Hi, Teacher A!</h2>
+        <h2 className="text-lg font-semibold text-white">Hi, Teacher {firstName}!</h2>
         <p className="text-sm text-white/70">S.Y 2026-2027</p>
       </div>
 
@@ -185,6 +194,7 @@ export function Sidebar() {
       {/* Logout */}
       <div className="p-6">
         <button 
+          onClick={handleLogout}
           className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-sm font-medium text-white/90 transition-all duration-200 hover:text-white"
         >
           <div 

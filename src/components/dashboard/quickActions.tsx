@@ -7,17 +7,17 @@ const actions = [
   {
     title: "Oral Reading Test",
     description: "Assess your students overall reading level",
-    href: "/dashboard/oral-reading",
+    href: "/oral-reading-test",
   },
   {
     title: "Reading Fluency Test",
     description: "Assess your students reading fluency level",
-    href: "/dashboard/reading-fluency",
+    href: "/reading-fluency-test",
   },
   {
     title: "Reading Comprehension Test",
     description: "Assess your students reading comprehension level",
-    href: "/dashboard/reading-comprehension",
+    href: "/reading-comprehension-test",
   },
 ]
 

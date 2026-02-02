@@ -2,12 +2,12 @@
 
 import { useState, useRef, useCallback, useEffect } from "react"
 import { createPortal } from "react-dom"
-import { X } from "lucide-react"
+import { X, Loader2 } from "lucide-react"
 
 interface CreateClassModalProps {
   isOpen: boolean
   onClose: () => void
-  onCreateClass: (data: { className: string; schoolYear: string }) => void
+  onCreateClass: (data: { className: string; schoolYear: string }) => Promise<{ success: boolean; error?: string }>
 }
 
 // Helper to get current school year (e.g., "2026-2027")
@@ -27,6 +27,8 @@ function getCurrentSchoolYear(): string {
 
 export function CreateClassModal({ isOpen, onClose, onCreateClass }: CreateClassModalProps) {
   const [className, setClassName] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const schoolYear = getCurrentSchoolYear() // Auto-filled and read-only
   const backdropRef = useRef<HTMLDivElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
@@ -43,14 +45,37 @@ export function CreateClassModal({ isOpen, onClose, onCreateClass }: CreateClass
     }
   }, [isOpen])
 
-  const handleSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault()
-    if (className.trim()) {
-      onCreateClass({ className, schoolYear })
+  // Reset state when modal opens/closes
+  useEffect(() => {
+    if (!isOpen) {
       setClassName("")
-      onClose()
+      setError(null)
+      setIsLoading(false)
     }
-  }, [className, schoolYear, onCreateClass, onClose])
+  }, [isOpen])
+
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!className.trim() || isLoading) return
+    
+    setIsLoading(true)
+    setError(null)
+    
+    try {
+      const result = await onCreateClass({ className, schoolYear })
+      
+      if (result.success) {
+        setClassName("")
+        onClose()
+      } else {
+        setError(result.error || "Failed to create class")
+      }
+    } catch {
+      setError("An unexpected error occurred")
+    } finally {
+      setIsLoading(false)
+    }
+  }, [className, schoolYear, onCreateClass, onClose, isLoading])
 
   // Don't render on server or when closed
   if (typeof window === "undefined" || !isOpen) return null
@@ -87,7 +112,8 @@ export function CreateClassModal({ isOpen, onClose, onCreateClass }: CreateClass
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute right-6 top-6 text-[#00306E]/50 transition-colors hover:text-[#00306E]"
+            disabled={isLoading}
+            className="absolute right-6 top-6 text-[#00306E]/50 transition-colors hover:text-[#00306E] disabled:opacity-50"
           >
             <X className="h-5 w-5" />
           </button>
@@ -107,6 +133,13 @@ export function CreateClassModal({ isOpen, onClose, onCreateClass }: CreateClass
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Error Message */}
+            {error && (
+              <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
+                {error}
+              </div>
+            )}
+
             {/* Class Name Field */}
             <div className="flex items-center gap-6">
               <label 
@@ -120,7 +153,8 @@ export function CreateClassModal({ isOpen, onClose, onCreateClass }: CreateClass
                 type="text"
                 value={className}
                 onChange={(e) => setClassName(e.target.value)}
-                className="flex-1 rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none transition-colors focus:border-[#6666FF]"
+                disabled={isLoading}
+                className="flex-1 rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none transition-colors focus:border-[#6666FF] disabled:opacity-50"
                 style={{
                   boxShadow: "inset 0px 2px 4px rgba(0, 48, 110, 0.08)"
                 }}
@@ -152,13 +186,15 @@ export function CreateClassModal({ isOpen, onClose, onCreateClass }: CreateClass
             <div className="flex justify-center pt-4">
               <button
                 type="submit"
-                className="rounded-lg px-10 py-3 text-base font-semibold text-white transition-all hover:opacity-90"
+                disabled={isLoading || !className.trim()}
+                className="rounded-lg px-10 py-3 text-base font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 style={{
                   background: "#2E2E68",
                   boxShadow: "0px 4px 15px rgba(46, 46, 104, 0.4)"
                 }}
               >
-                Create Class
+                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isLoading ? "Creating..." : "Create Class"}
               </button>
             </div>
           </form>
