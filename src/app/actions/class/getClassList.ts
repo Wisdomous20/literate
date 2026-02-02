@@ -1,14 +1,14 @@
-"user server";
+"use server";
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-import { getClassListService } from "@/service/class/getAllClassServiceBySchoolYear";
+import { getAllClassServiceBySchoolYear } from "@/service/class/getAllClassServiceBySchoolYear";
 
-export async function getClassList() {
+export async function getClassListBySchoolYear(schoolYear: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return { success: false, error: "Unauthorized" };
   }
 
-  return await getClassListService(session.user.id);
+  return await getAllClassServiceBySchoolYear(session.user.id, schoolYear);
 }

@@ -3,6 +3,8 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "./prisma";
 import { loginUser } from "@/service/auth/login";
+import { userType } from "@/generated/prisma/enums";
+
 
 export const authOptions: NextAuthOptions = {
   debug: true,
@@ -39,12 +41,26 @@ export const authOptions: NextAuthOptions = {
           throw new Error(result.error || "Invalid credentials");
         }
 
+        // Fetch the user's role from the database
+        const user = await prisma.user.findUnique({
+          where: { id: result.user.id },
+          select: { role: true },
+        });
+
+        if (!user) {
+          throw new Error("User not found");
+        }
+
+        const role = user.role as userType;
+
+
         return {
-          id: user.id,
-          name: user.firstName + " " + user.lastName,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
+          id: result.user.id,
+          name: result.user.firstName + " " + result.user.lastName,
+          firstName: result.user.firstName,
+          lastName: result.user.lastName,
+          email: result.user.email,
+          role,
         } as User;
       },
     }),
@@ -56,12 +72,14 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.role = user.role;
       }
       return token;
     },
     async session({ session, token }) {
       session.accessToken = token.accessToken as string;
       session.user.id = token.id as string;
+      session.user.role = token.role as userType;
       return session;
     },
   },
