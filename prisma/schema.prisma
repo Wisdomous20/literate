@@ -65,7 +65,7 @@ model Class {
 
 model Student {
   id          String       @id @default(uuid())
-  name   String
+  name        String
   level       Int
   class       Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
   classId     String
@@ -115,6 +115,43 @@ model Session {
   @@map("sessions")
 }
 
+model Passage {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  language  String
+  level     Int
+  tags      Tags
+  testType  testType
+  quiz      Quiz?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Quiz {
+  id          String     @id @default(uuid())
+  passageId   String     @unique // Add @unique for one-to-one
+  passage     Passage    @relation(fields: [passageId], references: [id], onDelete: Cascade)
+  questions   Question[]
+  totalScore  Int
+  totalNumner Int
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Question {
+  id            String       @id @default(uuid())
+  quizId        String
+  quiz          Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  questionText  String
+  tags          Tags
+  type          QuestionType
+  options       Json?        // Only for MULTIPLE_CHOICE (null for essay)
+  correctAnswer String?      // Only for MULTIPLE_CHOICE (null for essay)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
 model VerificationToken {
   id        String   @id @default(cuid())
   userId    String
@@ -136,4 +173,20 @@ enum AssessmentType {
 enum userType {
   USER
   ADMIN
+}
+
+enum testType {
+  PRE_TEST
+  POST_TEST
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  ESSAY
+}
+
+enum Tags {
+  Literal
+  Inferential
+  Critical
 }
