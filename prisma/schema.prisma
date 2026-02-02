@@ -134,7 +134,7 @@ model Quiz {
   passage     Passage    @relation(fields: [passageId], references: [id], onDelete: Cascade)
   questions   Question[]
   totalScore  Int
-  totalNumner Int
+  totalNumber Int
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 }
