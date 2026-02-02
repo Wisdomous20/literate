@@ -1,23 +1,29 @@
 "use client"
 
 import React from "react"
-
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
+import { useAuth } from "@/context/AuthContext"
 
 export function LoginForm() {
+  const router = useRouter()
+  const { login, isLoading, error, clearError } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [rememberMe, setRememberMe] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: Implement login logic with Supabase/Prisma
-    console.log({ email, password, rememberMe })
+    clearError()
+    
+    const success = await login(email, password)
+    if (success) {
+      router.push("/dashboard")
+    }
   }
 
   return (
@@ -26,6 +32,12 @@ export function LoginForm() {
         <h1 className="text-2xl font-bold text-[#040029]">Login to your account</h1>
         <p className="text-[#040029]/70">Get access to your LiteRate account now!</p>
       </div>
+
+      {error && (
+        <div className="p-3 rounded-lg bg-red-50 border border-red-200">
+          <p className="text-sm text-red-600">{error}</p>
+        </div>
+      )}
 
       <div className="space-y-4">
         <div className="space-y-2">
@@ -38,6 +50,7 @@ export function LoginForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="h-12 rounded-xl border-[#54a4ff] focus-visible:border-[#54a4ff] focus-visible:ring-[#54a4ff]/30"
+            disabled={isLoading}
             required
           />
         </div>
@@ -52,13 +65,20 @@ export function LoginForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="h-12 rounded-xl border-[#54a4ff] focus-visible:border-[#54a4ff] focus-visible:ring-[#54a4ff]/30"
+            disabled={isLoading}
             required
           />
         </div>
 
         <div className="flex items-center justify-between">
           <label className="flex items-center gap-2">
-            <input type="checkbox" className="rounded" />
+            <input 
+              type="checkbox" 
+              className="rounded" 
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              disabled={isLoading}
+            />
             <span className="text-sm text-[#040029]">Remember me</span>
           </label>
           <Link href="/forgot-password" className="text-sm text-[#162db0] hover:underline font-medium">
@@ -70,8 +90,9 @@ export function LoginForm() {
       <Button
         type="submit"
         className="w-full h-12 rounded-full bg-[#2e2e68] hover:bg-[#2e2e68]/90 text-white font-medium"
+        disabled={isLoading}
       >
-        Login
+        {isLoading ? "Logging in..." : "Login"}
       </Button>
 
       <div className="relative">
@@ -131,3 +152,4 @@ export function LoginForm() {
     </form>
   )
 }
+

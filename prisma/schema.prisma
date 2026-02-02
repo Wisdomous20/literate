@@ -15,6 +15,7 @@ datasource db {
 
 model User {
   id                String              @id @default(cuid())
+  role              userType            @default(USER)
   firstName         String?
   lastName          String?
   email             String?             @unique
@@ -130,4 +131,9 @@ enum AssessmentType {
   ORAL_READING
   COMPREHENSION
   ORAL_READING_TEST
+}
+
+enum userType {
+  USER
+  ADMIN
 }

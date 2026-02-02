@@ -9,8 +9,9 @@ export interface LoginUserInput {
 export interface LoginResult {
   success: boolean;
   user?: {
-    id: string;
-    name: string | null;
+     id: string;
+    firstName: string | null; 
+    lastName: string | null;
     email: string | null;
   };
   error?: string;
@@ -20,7 +21,6 @@ export interface LoginResult {
 export async function loginUser(input: LoginUserInput): Promise<LoginResult> {
   const { email, password } = input;
 
-  // Validate required fields
   if (!email || !password) {
     return {
       success: false,
@@ -30,15 +30,13 @@ export async function loginUser(input: LoginUserInput): Promise<LoginResult> {
   }
 
   try {
-    // Find user
     const user = await prisma.user.findUnique({
       where: { email },
       select: {
         id: true,
-        name: true,
         email: true,
         password: true,
-        isVerified: true,
+        emailVerified: true,
       },
     });
 
@@ -50,7 +48,6 @@ export async function loginUser(input: LoginUserInput): Promise<LoginResult> {
       };
     }
 
-    // Check password
     if (!user.password) {
       return {
         success: false,
@@ -68,8 +65,7 @@ export async function loginUser(input: LoginUserInput): Promise<LoginResult> {
       };
     }
 
-    // Check if email is verified
-    if (!user.isVerified) {
+    if (!user.emailVerified) {
       return {
         success: false,
         error: "Please verify your email before logging in",
@@ -81,7 +77,8 @@ export async function loginUser(input: LoginUserInput): Promise<LoginResult> {
       success: true,
       user: {
         id: user.id,
-        name: user.name,
+        firstName: null,
+        lastName: null,
         email: user.email,
       },
     };

@@ -16,7 +16,7 @@ interface GetClassListResult {
   code?: "VALIDATION_ERROR" | "INTERNAL_ERROR";
 }
 
-export async function getClassListService(
+export async function getAllClassServiceBySchoolYear(
   userId: string,
   schoolYear: string
 ): Promise<GetClassListResult> {
