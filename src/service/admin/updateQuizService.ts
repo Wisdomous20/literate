@@ -25,7 +25,7 @@ interface EditQuizResult {
   code?: "NOT_FOUND" | "VALIDATION_ERROR" | "INTERNAL_ERROR";
 }
 
-export async function editQuizService(
+export async function updateQuizService(
   input: EditQuizInput
 ): Promise<EditQuizResult> {
   const { id, totalScore, totalNumber, questions } = input;
