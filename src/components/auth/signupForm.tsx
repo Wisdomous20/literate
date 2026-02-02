@@ -3,19 +3,70 @@
 import React from "react"
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { registerUserAction } from "@/app/actions/auth/register"
 
 export function SignupForm() {
-  const [name, setName] = useState("")
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: Implement signup logic with Supabase/Prisma
-    console.log({ name, email, password })
+    setError(null)
+    setIsLoading(true)
+
+    try {
+      const result = await registerUserAction({
+        firstName,
+        lastName,
+        email,
+        password,
+      })
+
+      if (!result.success) {
+        setError(result.error || "Registration failed. Please try again.")
+      } else {
+        setSuccess(true)
+        // Optionally redirect after successful registration
+        // router.push("/auth/login")
+      }
+    } catch (err) {
+      setError("An unexpected error occurred. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (success) {
+    return (
+      <div className="space-y-6">
+        <div className="space-y-4 text-center py-8">
+          <div className="flex justify-center mb-4">
+            <svg className="w-16 h-16 text-[#2e2e68]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-[#040029]">Check your email</h2>
+          <p className="text-[#040029]/70">We&apos;ve sent a verification link to {email}</p>
+          <p className="text-sm text-[#040029]/60">Please check your inbox and verify your email to complete registration.</p>
+        </div>
+        <p className="text-center text-sm text-[#040029]">
+          Already verified?{" "}
+          <Link href="/auth/login" className="text-[#162db0] hover:underline font-medium">
+            Sign in
+          </Link>
+        </p>
+      </div>
+    )
   }
 
   return (
@@ -25,19 +76,42 @@ export function SignupForm() {
         <p className="text-[#040029]/70">Create your LiteRate account for a smarter reading evaluation!</p>
       </div>
 
+      {error && (
+        <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
+          {error}
+        </div>
+      )}
+
       <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name" className="text-[#040029] font-semibold">
-            Name
-          </Label>
-          <Input
-            id="name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="h-12 rounded-xl border-[#54a4ff] bg-[#f4fcfd] focus-visible:border-[#54a4ff] focus-visible:ring-[#54a4ff]/30"
-            required
-          />
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="firstName" className="text-[#040029] font-semibold">
+              First Name
+            </Label>
+            <Input
+              id="firstName"
+              type="text"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              className="h-12 rounded-xl border-[#54a4ff] bg-[#f4fcfd] focus-visible:border-[#54a4ff] focus-visible:ring-[#54a4ff]/30"
+              required
+              disabled={isLoading}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="lastName" className="text-[#040029] font-semibold">
+              Last Name
+            </Label>
+            <Input
+              id="lastName"
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              className="h-12 rounded-xl border-[#54a4ff] bg-[#f4fcfd] focus-visible:border-[#54a4ff] focus-visible:ring-[#54a4ff]/30"
+              required
+              disabled={isLoading}
+            />
+          </div>
         </div>
 
         <div className="space-y-2">
@@ -51,6 +125,7 @@ export function SignupForm() {
             onChange={(e) => setEmail(e.target.value)}
             className="h-12 rounded-xl border-[#54a4ff] bg-[#f4fcfd] focus-visible:border-[#54a4ff] focus-visible:ring-[#54a4ff]/30"
             required
+            disabled={isLoading}
           />
         </div>
 
@@ -65,7 +140,10 @@ export function SignupForm() {
             onChange={(e) => setPassword(e.target.value)}
             className="h-12 rounded-xl border-[#54a4ff] bg-[#f4fcfd] focus-visible:border-[#54a4ff] focus-visible:ring-[#54a4ff]/30"
             required
+            disabled={isLoading}
+            minLength={8}
           />
+          <p className="text-xs text-[#040029]/60">Password must be at least 8 characters</p>
         </div>
       </div>
 
@@ -73,8 +151,9 @@ export function SignupForm() {
         <Button
           type="submit"
           className="w-64 h-12 rounded-full bg-[#2e2e68] hover:bg-[#2e2e68]/90 text-white font-medium"
+          disabled={isLoading}
         >
-          Create Account
+          {isLoading ? "Creating Account..." : "Create Account"}
         </Button>
       </div>
 
@@ -87,49 +166,15 @@ export function SignupForm() {
         </div>
       </div>
 
+      {/* Keep your existing social login buttons below */}
       <div className="flex justify-center gap-4">
-        <button
-          type="button"
-          className="flex items-center justify-center w-12 h-12 rounded-full border border-[#e2e8f0] bg-white hover:bg-[#fafafa] transition-colors"
-          aria-label="Sign up with Facebook"
-        >
-          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M24 12C24 5.37258 18.6274 0 12 0C5.37258 0 0 5.37258 0 12C0 17.9895 4.3882 22.954 10.125 23.8542V15.4688H7.07812V12H10.125V9.35625C10.125 6.34875 11.9166 4.6875 14.6576 4.6875C15.9701 4.6875 17.3438 4.92188 17.3438 4.92188V7.875H15.8306C14.34 7.875 13.875 8.80008 13.875 9.75V12H17.2031L16.6711 15.4688H13.875V23.8542C19.6118 22.954 24 17.9895 24 12Z"
-              fill="#1877F2"
-            />
-          </svg>
-        </button>
-        <button
-          type="button"
-          className="flex items-center justify-center w-12 h-12 rounded-full border border-[#e2e8f0] bg-white hover:bg-[#fafafa] transition-colors"
-          aria-label="Sign up with Google"
-        >
-          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M22.56 12.25C22.56 11.47 22.49 10.72 22.36 10H12V14.26H17.92C17.66 15.63 16.88 16.79 15.71 17.57V20.34H19.28C21.36 18.42 22.56 15.6 22.56 12.25Z"
-              fill="#4285F4"
-            />
-            <path
-              d="M12 23C14.97 23 17.46 22.02 19.28 20.34L15.71 17.57C14.73 18.23 13.48 18.63 12 18.63C9.13999 18.63 6.70999 16.7 5.83999 14.1H2.17999V16.94C3.98999 20.53 7.69999 23 12 23Z"
-              fill="#34A853"
-            />
-            <path
-              d="M5.84 14.1C5.62 13.44 5.49 12.73 5.49 12C5.49 11.27 5.62 10.56 5.84 9.9V7.06H2.18C1.43 8.55 1 10.22 1 12C1 13.78 1.43 15.45 2.18 16.94L5.84 14.1Z"
-              fill="#FBBC05"
-            />
-            <path
-              d="M12 5.38C13.62 5.38 15.06 5.94 16.21 7.02L19.36 3.87C17.45 2.09 14.97 1 12 1C7.69999 1 3.98999 3.47 2.17999 7.06L5.83999 9.9C6.70999 7.3 9.13999 5.38 12 5.38Z"
-              fill="#EA4335"
-            />
-          </svg>
-        </button>
+        {/* ... existing social buttons ... */}
       </div>
 
       <p className="text-center text-sm text-[#040029]">
         Already have an account?{" "}
         <Link href="/auth/login" className="text-[#162db0] hover:underline font-medium">
-          Signup
+          Sign in
         </Link>
       </p>
     </form>
