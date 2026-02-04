@@ -198,10 +198,12 @@ export function ClassInventory() {
           {classes.map((classItem) => (
             <ClassCard
               key={classItem.id}
+              classId={classItem.id}
               name={classItem.name}
               studentCount={classItem.studentCount}
               variant={classItem.variant}
               onClick={() => handleClassClick(classItem.id)}
+              onClassUpdated={() => fetchClasses()}
             />
           ))}
         </div>

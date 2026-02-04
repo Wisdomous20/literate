@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { getSchoolYear } from "@/utils/getSchoolYear";
 import {
   LayoutDashboard,
   FileText,
@@ -51,6 +52,9 @@ export function Sidebar() {
   // Get user's first name from session
   const firstName = session?.user?.name?.split(" ")[0] || "User";
 
+  // Get the current school year from utility
+  const schoolYear = getSchoolYear();
+
   const handleLogout = async () => {
     await signOut({ redirect: true, callbackUrl: "/auth/login" });
   };
@@ -84,7 +88,7 @@ export function Sidebar() {
         <h2 className="text-lg font-semibold text-white">
           Hi, Teacher {firstName}!
         </h2>
-        <p className="text-sm text-white/70">S.Y 2026-2027</p>
+        <p className="text-sm text-white/70">S.Y {schoolYear}</p>
       </div>
 
       {/* Menu Section */}
