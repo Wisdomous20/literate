@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { ChevronDown } from "lucide-react"
+import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -10,31 +10,26 @@ import {
   CartesianGrid,
   ResponsiveContainer,
   Cell,
-} from "recharts"
+} from "recharts";
 
 const data = [
   { name: "Independent", value: 45, color: "#6666FF" },
   { name: "Instructional", value: 45, color: "#54A4FF" },
   { name: "Frustration", value: 45, color: "#00306E" },
-]
+];
 
 const assessmentTypes = [
   "Oral Reading Test",
   "Reading Fluency Test",
   "Reading Comprehension Test",
-]
+];
 
 export function ClassificationChart() {
-  const [selectedType, setSelectedType] = useState(assessmentTypes[0])
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [selectedType, setSelectedType] = useState(assessmentTypes[0]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   return (
-    <div 
-      className="flex h-full flex-col rounded-[20px] bg-white p-6"
-      style={{
-        boxShadow: "0px 0px 20px 1px rgba(84, 164, 255, 0.35)"
-      }}
-    >
+    <div className="flex h-full flex-col rounded-[20px] bg-white p-6 shadow-[0px_0px_20px_1px_rgba(84,164,255,0.35)]">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h3 className="text-[18px] font-semibold text-[#00306E]">
@@ -58,8 +53,8 @@ export function ClassificationChart() {
                   <button
                     key={type}
                     onClick={() => {
-                      setSelectedType(type)
-                      setIsDropdownOpen(false)
+                      setSelectedType(type);
+                      setIsDropdownOpen(false);
                     }}
                     className={`w-full px-3 py-2 text-left text-sm transition-colors hover:bg-[#E4F4FF] ${
                       selectedType === type
@@ -77,15 +72,24 @@ export function ClassificationChart() {
       </div>
       <div className="min-h-[200px] flex-1">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} barSize={80} barGap={50} margin={{ top: 10, right: 20, left: 0, bottom: 30 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E4F4FF" />
+          <BarChart
+            data={data}
+            barSize={80}
+            barGap={50}
+            margin={{ top: 10, right: 20, left: 0, bottom: 30 }}
+          >
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              stroke="#E4F4FF"
+            />
             <XAxis
               dataKey="name"
               axisLine={false}
               tickLine={false}
               tick={(props) => {
                 const { x, y, payload } = props;
-                const item = data.find(d => d.name === payload.value);
+                const item = data.find((d) => d.name === payload.value);
                 return (
                   <g transform={`translate(${x},${y})`}>
                     <text
@@ -131,5 +135,5 @@ export function ClassificationChart() {
         </ResponsiveContainer>
       </div>
     </div>
-  )
+  );
 }
