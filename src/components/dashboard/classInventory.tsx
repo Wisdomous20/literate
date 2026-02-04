@@ -1,109 +1,120 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useCallback } from "react"
-import { ChevronDown, Loader2 } from "lucide-react"
-import { ClassCard } from "./classCard"
-import { CreateClassModal } from "./createClassModal"
-import { createClass } from "@/app/actions/class/createClass"
-import { getClassListBySchoolYear } from "@/app/actions/class/getClassList"
+import { useState, useEffect, useCallback } from "react";
+import { ChevronDown, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ClassCard } from "./classCard";
+import { CreateClassModal } from "./createClassModal";
+import { createClass } from "@/app/actions/class/createClass";
+import { getClassListBySchoolYear } from "@/app/actions/class/getClassList";
 
-type ClassCardVariant = "blue" | "yellow" | "cyan"
+type ClassCardVariant = "blue" | "yellow" | "cyan";
 
 interface ClassItem {
-  id: string
-  name: string
-  studentCount: number
-  variant: ClassCardVariant
+  id: string;
+  name: string;
+  studentCount: number;
+  variant: ClassCardVariant;
 }
 
 // Helper to get current school year
 function getCurrentSchoolYear(): string {
-  const now = new Date()
-  const currentYear = now.getFullYear()
-  const currentMonth = now.getMonth()
-  
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+
   if (currentMonth >= 7) {
-    return `${currentYear}-${currentYear + 1}`
+    return `${currentYear}-${currentYear + 1}`;
   } else {
-    return `${currentYear - 1}-${currentYear}`
+    return `${currentYear - 1}-${currentYear}`;
   }
 }
 
 // Generate school years for dropdown (current and past 2 years)
 function getSchoolYears(): string[] {
-  const current = getCurrentSchoolYear()
-  const [startYear] = current.split("-").map(Number)
-  
+  const current = getCurrentSchoolYear();
+  const [startYear] = current.split("-").map(Number);
+
   return [
     current,
     `${startYear - 1}-${startYear}`,
     `${startYear - 2}-${startYear - 1}`,
-  ]
+  ];
 }
 
 // Assign variant based on index for visual variety
 function getVariant(index: number): ClassCardVariant {
-  const variants: ClassCardVariant[] = ["blue", "yellow", "cyan"]
-  return variants[index % variants.length]
+  const variants: ClassCardVariant[] = ["blue", "yellow", "cyan"];
+  return variants[index % variants.length];
 }
 
 export function ClassInventory() {
-  const schoolYears = getSchoolYears()
-  const [selectedYear, setSelectedYear] = useState(schoolYears[0])
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [classes, setClasses] = useState<ClassItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const router = useRouter();
+  const schoolYears = getSchoolYears();
+  const [selectedYear, setSelectedYear] = useState(schoolYears[0]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [classes, setClasses] = useState<ClassItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Fetch classes when selected year changes
   const fetchClasses = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
-    
+    setIsLoading(true);
+    setError(null);
+
     try {
-      const result = await getClassListBySchoolYear(selectedYear)
-      
+      const result = await getClassListBySchoolYear(selectedYear);
+
       if (result.success && result.classes) {
         const mappedClasses: ClassItem[] = result.classes.map((c, index) => ({
           id: c.id,
           name: c.name,
           studentCount: c.studentCount,
           variant: getVariant(index),
-        }))
-        setClasses(mappedClasses)
+        }));
+        setClasses(mappedClasses);
       } else {
-        setError(result.error || "Failed to fetch classes")
-        setClasses([])
+        setError(result.error || "Failed to fetch classes");
+        setClasses([]);
       }
     } catch {
-      setError("An unexpected error occurred")
-      setClasses([])
+      setError("An unexpected error occurred");
+      setClasses([]);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [selectedYear])
+  }, [selectedYear]);
 
   useEffect(() => {
-    fetchClasses()
-  }, [fetchClasses])
+    fetchClasses();
+  }, [fetchClasses]);
 
-  const handleCreateClass = async (data: { className: string; schoolYear: string }) => {
-    const result = await createClass(data.className)
-    
+  const handleCreateClass = async (data: {
+    className: string;
+    schoolYear: string;
+  }) => {
+    const result = await createClass(data.className);
+
     if (result.success) {
       // Refresh the class list after creating a new class
-      await fetchClasses()
+      await fetchClasses();
     }
-    
-    return result
-  }
+
+    return result;
+  };
+
+  const handleClassClick = (classId: string) => {
+    router.push(`/dashboard/class/${classId}`);
+  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-[20px] font-semibold leading-[30px] text-[#00306E]">Class Inventory</h2>
+        <h2 className="text-[20px] font-semibold leading-[30px] text-[#00306E]">
+          Class Inventory
+        </h2>
         <div className="flex gap-3">
           {/* School Year Dropdown */}
           <div className="relative">
@@ -120,8 +131,8 @@ export function ClassInventory() {
                   <button
                     key={year}
                     onClick={() => {
-                      setSelectedYear(year)
-                      setIsDropdownOpen(false)
+                      setSelectedYear(year);
+                      setIsDropdownOpen(false);
                     }}
                     className={`w-full px-4 py-2 text-left text-sm transition-colors hover:bg-[#E4F4FF] ${
                       selectedYear === year
@@ -137,17 +148,18 @@ export function ClassInventory() {
           </div>
 
           {/* Create Class Button */}
-          <button 
+          <button
+            type="button"
             onClick={() => setIsModalOpen(true)}
-            className="flex justify-center items-center gap-2 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:opacity-90"
-            style={{
-              width: "150px",
-              height: "40px",
-              background: "#2E2E68",
-              border: "1px solid #7A7AFB",
-              boxShadow: "0px 1px 20px rgba(65, 155, 180, 0.47)",
-              borderRadius: "8px"
-            }}
+            className="
+    flex h-[40px] w-[150px] items-center justify-center gap-2
+    rounded-lg border border-[#7A7AFB]
+    bg-[#2E2E68]
+    px-5 py-2.5
+    text-sm font-medium text-white
+    shadow-[0px_1px_20px_rgba(65,155,180,0.47)]
+    transition-opacity hover:opacity-90
+  "
           >
             Create Class
           </button>
@@ -171,8 +183,12 @@ export function ClassInventory() {
       {/* Empty State */}
       {!isLoading && !error && classes.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <p className="text-[#00306E]/70 mb-2">No classes found for {selectedYear}</p>
-          <p className="text-sm text-[#00306E]/50">Click &quot;Create Class&quot; to add your first class</p>
+          <p className="text-[#00306E]/70 mb-2">
+            No classes found for {selectedYear}
+          </p>
+          <p className="text-sm text-[#00306E]/50">
+            Click &quot;Create Class&quot; to add your first class
+          </p>
         </div>
       )}
 
@@ -185,6 +201,7 @@ export function ClassInventory() {
               name={classItem.name}
               studentCount={classItem.studentCount}
               variant={classItem.variant}
+              onClick={() => handleClassClick(classItem.id)}
             />
           ))}
         </div>
@@ -197,5 +214,5 @@ export function ClassInventory() {
         onCreateClass={handleCreateClass}
       />
     </div>
-  )
+  );
 }
