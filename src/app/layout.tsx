@@ -3,7 +3,7 @@ import { Providers } from "@/components/providers/Providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Literate",
+  title: "LiteRate",
   description: "Oral Reading Assessment Platform",
 };
 

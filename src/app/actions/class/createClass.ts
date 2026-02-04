@@ -18,6 +18,7 @@ export async function createClass(name: string) {
   });
 
   if (result.success) {
+    revalidatePath("/dashboard");
     revalidatePath("/classes");
   }
 
