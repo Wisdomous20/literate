@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
+import { signIn } from "next-auth/react";
 
 export function AdminLoginForm() {
   const [email, setEmail] = useState("");
@@ -20,13 +21,31 @@ export function AdminLoginForm() {
     setIsLoading(true);
 
     try {
-      // In a real app, this would call an API to authenticate the admin
-      // For now, simulate a login
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      router.push("/superadmin");
+      // Use NextAuth signIn with existing credentials provider
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("Invalid email or password");
+        return;
+      }
+
+      // Verify user is ADMIN after successful auth
+      const response = await fetch("/api/auth/session");
+      const session = await response.json();
+
+      if (session?.user?.role !== "ADMIN") {
+        setError("Admin access required");
+        return;
+      }
+
+      router.push("/admin-dash");
       router.refresh();
-    } catch {
-      setError("Invalid email or password. Please try again.");
+    } catch (err) {
+      setError("Authentication failed");
     } finally {
       setIsLoading(false);
     }

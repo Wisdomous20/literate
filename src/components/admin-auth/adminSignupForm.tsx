@@ -7,7 +7,8 @@ import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 
 export function AdminSignupForm() {
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -34,11 +35,32 @@ export function AdminSignupForm() {
     setIsLoading(true);
 
     try {
-      // In a real app, this would call an API to create the admin account
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      router.push("/admin/login");
-    } catch {
+      const response = await fetch("/api/auth/admin/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firstName,
+          lastName,
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Failed to create admin account");
+        return;
+      }
+
+      // Redirect to login on success
+      router.push("/admin-auth/login");
+      router.refresh();
+    } catch (err) {
       setError("Failed to create account. Please try again.");
+      console.error("Signup error:", err);
     } finally {
       setIsLoading(false);
     }
@@ -69,20 +91,20 @@ export function AdminSignupForm() {
       )}
 
       <div className="space-y-4">
-        {/* Full Name */}
+        {/* First Name */}
         <div className="space-y-1.5">
           <label
-            htmlFor="admin-name"
+            htmlFor="admin-firstName"
             className="text-sm font-semibold"
             style={{ color: "#040029" }}
           >
-            Full Name
+            First Name
           </label>
           <input
-            id="admin-name"
+            id="admin-firstName"
             type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
             className="h-12 w-full rounded-xl border-2 bg-white px-4 text-base outline-none transition-colors placeholder:opacity-40 focus:border-[#6666FF]"
             style={{
               borderColor: "#54a4ff",
@@ -90,7 +112,32 @@ export function AdminSignupForm() {
             }}
             required
             disabled={isLoading}
-            placeholder="Enter your full name"
+            placeholder="Enter your first name"
+          />
+        </div>
+
+        {/* Last Name */}
+        <div className="space-y-1.5">
+          <label
+            htmlFor="admin-lastName"
+            className="text-sm font-semibold"
+            style={{ color: "#040029" }}
+          >
+            Last Name
+          </label>
+          <input
+            id="admin-lastName"
+            type="text"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            className="h-12 w-full rounded-xl border-2 bg-white px-4 text-base outline-none transition-colors placeholder:opacity-40 focus:border-[#6666FF]"
+            style={{
+              borderColor: "#54a4ff",
+              color: "#040029",
+            }}
+            required
+            disabled={isLoading}
+            placeholder="Enter your last name"
           />
         </div>
 
@@ -141,7 +188,7 @@ export function AdminSignupForm() {
               }}
               required
               disabled={isLoading}
-              placeholder="Minimum 8 characters"
+              placeholder="Enter a strong password (min 8 characters)"
             />
             <button
               type="button"
@@ -180,7 +227,7 @@ export function AdminSignupForm() {
               }}
               required
               disabled={isLoading}
-              placeholder="Re-enter your password"
+              placeholder="Confirm your password"
             />
             <button
               type="button"
@@ -213,7 +260,7 @@ export function AdminSignupForm() {
             <span>Creating account...</span>
           </div>
         ) : (
-          "Create Account"
+          "Create Admin Account"
         )}
       </button>
 
@@ -222,7 +269,7 @@ export function AdminSignupForm() {
         className="text-center text-sm"
         style={{ color: "rgba(4, 0, 41, 0.6)" }}
       >
-        Already have an account?{" "}
+        {"Already have an account? "}
         <Link
           href="/admin-auth/login"
           className="font-semibold transition-colors hover:underline"
