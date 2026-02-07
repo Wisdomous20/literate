@@ -1,7 +1,8 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { PassageTable } from "@/components/admin-dash/passageTable"
+import { CreatePassageModal } from "@/components/admin-dash/createPassageModal"
 
 // Mock data aligned with Prisma schema
 // level: Int, testType: PRE_TEST | POST_TEST, tags: Literal | Inferential | Critical
@@ -21,7 +22,19 @@ const mockPassages = [
 ]
 
 export default function PassagesPage() {
-  const router = useRouter()
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const handleCreatePassage = (data: {
+    title: string
+    content: string
+    language: string
+    level: number
+    tags: string
+    testType: string
+    wordCount: number
+  }) => {
+    console.log("Creating passage:", data)
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -47,7 +60,7 @@ export default function PassagesPage() {
           </h1>
         </div>
         <button
-          onClick={() => router.push("/admin-dash/passages/create")}
+          onClick={() => setIsModalOpen(true)}
           className="rounded-lg px-5 py-2.5 text-sm font-medium text-white transition-colors hover:opacity-90"
           style={{
             background: "#2E2E68",
@@ -68,6 +81,11 @@ export default function PassagesPage() {
         />
       </main>
 
+      <CreatePassageModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCreatePassage={handleCreatePassage}
+      />
     </div>
   )
 }
