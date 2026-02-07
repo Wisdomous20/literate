@@ -1,0 +1,283 @@
+"use client"
+
+import { useState, useCallback, useEffect } from "react"
+import { createPortal } from "react-dom"
+import { X, ChevronDown } from "lucide-react"
+
+interface CreatePassageModalProps {
+  isOpen: boolean
+  onClose: () => void
+  onCreatePassage: (data: {
+    title: string
+    content: string
+    language: string
+    level: number
+    tags: string
+    testType: string
+    wordCount: number
+  }) => void
+}
+
+const languages = ["Filipino", "English"]
+const tags = ["Literal", "Inferential", "Critical"]
+const testTypes = [
+  { label: "Pre-Test", value: "PRE_TEST" },
+  { label: "Post-Test", value: "POST_TEST" },
+]
+
+// Level is Int in schema, representing grade levels
+const levels = [
+  { label: "Kindergarten", value: 0 },
+  { label: "Grade 1", value: 1 },
+  { label: "Grade 2", value: 2 },
+  { label: "Grade 3", value: 3 },
+  { label: "Grade 4", value: 4 },
+  { label: "Grade 5", value: 5 },
+  { label: "Grade 6", value: 6 },
+  { label: "Grade 7", value: 7 },
+  { label: "Grade 8", value: 8 },
+  { label: "Grade 9", value: 9 },
+  { label: "Grade 10", value: 10 },
+  { label: "Grade 11", value: 11 },
+  { label: "Grade 12", value: 12 },
+]
+
+export function CreatePassageModal({ isOpen, onClose, onCreatePassage }: CreatePassageModalProps) {
+  const [title, setTitle] = useState("")
+  const [content, setContent] = useState("")
+  const [language, setLanguage] = useState("")
+  const [level, setLevel] = useState<number | "">("")
+  const [selectedTag, setSelectedTag] = useState("")
+  const [testType, setTestType] = useState("")
+  const [wordCount, setWordCount] = useState(0)
+
+  // Auto-count words
+  useEffect(() => {
+    const words = content.trim().split(/\s+/).filter(Boolean).length
+    setWordCount(words)
+  }, [content])
+
+  // Handle body scroll lock
+  useEffect(() => {
+    if (!isOpen) return
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = originalOverflow
+    }
+  }, [isOpen])
+
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault()
+      if (title.trim() && content.trim() && language && level !== "" && selectedTag && testType) {
+        onCreatePassage({ title, content, language, level: level as number, tags: selectedTag, testType, wordCount })
+        setTitle("")
+        setContent("")
+        setLanguage("")
+        setLevel("")
+        setSelectedTag("")
+        setTestType("")
+        onClose()
+      }
+    },
+    [title, content, language, level, selectedTag, testType, wordCount, onCreatePassage, onClose]
+  )
+
+  if (typeof window === "undefined" || !isOpen) return null
+
+  const modalContent = (
+    <div className="fixed inset-0 flex items-center justify-center" style={{ zIndex: 99999 }}>
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 animate-in fade-in duration-300"
+        style={{
+          backgroundColor: "rgba(0, 0, 0, 0.4)",
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
+        }}
+        onClick={onClose}
+      />
+
+      {/* Modal */}
+      <div className="relative animate-in fade-in zoom-in-95 duration-300">
+        <div
+          className="w-[600px] max-h-[90vh] overflow-auto bg-white p-8"
+          style={{
+            borderRadius: "30px",
+            boxShadow: "0px 10px 60px rgba(0, 48, 110, 0.25)",
+          }}
+        >
+          {/* Close Button */}
+          <button
+            onClick={onClose}
+            className="absolute right-6 top-6 text-[#00306E]/50 transition-colors hover:text-[#00306E]"
+          >
+            <X className="h-5 w-5" />
+          </button>
+
+          {/* Header */}
+          <div className="mb-6">
+            <h2 className="text-[28px] font-bold leading-tight" style={{ color: "#31318A" }}>
+              Create Passage
+            </h2>
+            <p className="mt-1 text-base text-[#00306E]/70">
+              Create a new graded reading passage for assessments
+            </p>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Title */}
+            <div className="flex items-center gap-6">
+              <label className="w-[130px] shrink-0 text-base font-semibold text-[#00306E]">
+                Title
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="flex-1 rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none transition-colors focus:border-[#6666FF]"
+                style={{ boxShadow: "inset 0px 2px 4px rgba(0, 48, 110, 0.08)" }}
+                placeholder="Enter passage title"
+              />
+            </div>
+
+            {/* Content */}
+            <div className="flex gap-6">
+              <label className="w-[130px] shrink-0 pt-3 text-base font-semibold text-[#00306E]">
+                Content
+              </label>
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                rows={5}
+                className="flex-1 resize-none rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none transition-colors focus:border-[#6666FF]"
+                style={{ boxShadow: "inset 0px 2px 4px rgba(0, 48, 110, 0.08)" }}
+                placeholder="Enter passage content..."
+              />
+            </div>
+
+            {/* Word Count (read only) */}
+            <div className="flex items-center gap-6">
+              <label className="w-[130px] shrink-0 text-base font-semibold text-[#00306E]">
+                Word Count
+              </label>
+              <input
+                type="text"
+                value={wordCount}
+                readOnly
+                className="flex-1 cursor-not-allowed rounded-lg border-2 border-[#E4F4FF] bg-[#F8FAFC] px-4 py-3 text-base text-[#00306E]/70 outline-none"
+                style={{ boxShadow: "inset 0px 2px 4px rgba(0, 48, 110, 0.08)" }}
+              />
+            </div>
+
+            {/* Language */}
+            <div className="flex items-center gap-6">
+              <label className="w-[130px] shrink-0 text-base font-semibold text-[#00306E]">
+                Language
+              </label>
+              <div className="relative flex-1">
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  className="w-full appearance-none rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none transition-colors focus:border-[#6666FF]"
+                  style={{ boxShadow: "inset 0px 2px 4px rgba(0, 48, 110, 0.08)" }}
+                >
+                  <option value="">Select language</option>
+                  {languages.map((l) => (
+                    <option key={l} value={l}>{l}</option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#00306E]/50" />
+              </div>
+            </div>
+
+            {/* Level (Int) */}
+            <div className="flex items-center gap-6">
+              <label className="w-[130px] shrink-0 text-base font-semibold text-[#00306E]">
+                Level
+              </label>
+              <div className="relative flex-1">
+                <select
+                  value={level}
+                  onChange={(e) => setLevel(e.target.value === "" ? "" : Number(e.target.value))}
+                  className="w-full appearance-none rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none transition-colors focus:border-[#6666FF]"
+                  style={{ boxShadow: "inset 0px 2px 4px rgba(0, 48, 110, 0.08)" }}
+                >
+                  <option value="">Select level</option>
+                  {levels.map((l) => (
+                    <option key={l.value} value={l.value}>{l.label}</option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#00306E]/50" />
+              </div>
+            </div>
+
+            {/* Tags (Literal / Inferential / Critical) */}
+            <div className="flex items-center gap-6">
+              <label className="w-[130px] shrink-0 text-base font-semibold text-[#00306E]">
+                Tags
+              </label>
+              <div className="flex flex-1 gap-3">
+                {tags.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setSelectedTag(tag)}
+                    className={`flex-1 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-all ${
+                      selectedTag === tag
+                        ? "border-[#6666FF] bg-[#6666FF]/10 text-[#6666FF]"
+                        : "border-[#E4F4FF] bg-white text-[#00306E]/60 hover:border-[#6666FF]/30"
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Test Type (PRE_TEST / POST_TEST) */}
+            <div className="flex items-center gap-6">
+              <label className="w-[130px] shrink-0 text-base font-semibold text-[#00306E]">
+                Test Type
+              </label>
+              <div className="flex flex-1 gap-3">
+                {testTypes.map((t) => (
+                  <button
+                    key={t.value}
+                    type="button"
+                    onClick={() => setTestType(t.value)}
+                    className={`flex-1 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-all ${
+                      testType === t.value
+                        ? "border-[#6666FF] bg-[#6666FF]/10 text-[#6666FF]"
+                        : "border-[#E4F4FF] bg-white text-[#00306E]/60 hover:border-[#6666FF]/30"
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Submit */}
+            <div className="flex justify-center pt-4">
+              <button
+                type="submit"
+                className="rounded-lg px-10 py-3 text-base font-semibold text-white transition-all hover:opacity-90"
+                style={{
+                  background: "#2E2E68",
+                  boxShadow: "0px 4px 15px rgba(46, 46, 104, 0.4)",
+                }}
+              >
+                Create Passage
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
+
+  return createPortal(modalContent, document.body)
+}
