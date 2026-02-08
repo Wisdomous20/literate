@@ -3,7 +3,7 @@ import { BrandPanel } from "@/components/auth/brandPanel"
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[#e4f4ff] flex items-center justify-center p-4">
+    <main className="fixed inset-0 bg-[#e4f4ff] flex items-center justify-center p-4 overflow-hidden">
       <div className="w-full max-w-4xl bg-white rounded-3xl shadow-xl overflow-hidden">
         <div className="grid lg:grid-cols-2">
           {/* Left Panel - Brand */}
