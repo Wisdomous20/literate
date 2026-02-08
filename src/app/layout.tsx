@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "LiteRate",
-  description: "Oral Reading Assessment Platform",
+  description: "Reading Proficiency Assessment Platform",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
