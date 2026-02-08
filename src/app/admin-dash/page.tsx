@@ -38,13 +38,13 @@ const quickLinks = [
   {
     title: "Manage Graded Passages",
     description: "Create and manage standardized reading passages for assessments",
-    href: "/superadmin/passages",
+    href: "/admin-dash/passages/create",
     icon: FileText,
   },
   {
     title: "Comprehension Questions",
     description: "Create and tag literal, inferential, or critical questions",
-    href: "/superadmin/questions",
+    href: "/admin-dash/questions/create",
     icon: HelpCircle,
   },
 ]

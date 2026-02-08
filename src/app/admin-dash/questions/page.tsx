@@ -1,8 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import Link from "next/link"
 import { QuestionTable } from "@/components/admin-dash/questionTable"
-import { CreateQuestionModal } from "@/components/admin-dash/createQuestionModal"
 
 // Mock passages for the dropdown
 const mockPassages = [
@@ -32,19 +31,6 @@ const mockQuestions = [
 ]
 
 export default function QuestionsPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false)
-
-  const handleCreateQuestion = (data: {
-    questionText: string
-    quizId: string
-    tags: string
-    type: string
-    options: string[] | null
-    correctAnswer: string | null
-  }) => {
-    console.log("Creating question:", data)
-  }
-
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
@@ -68,8 +54,8 @@ export default function QuestionsPage() {
             Comprehension Questions
           </h1>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
+        <Link
+          href="/admin-dash/questions/create"
           className="rounded-lg px-5 py-2.5 text-sm font-medium text-white transition-colors hover:opacity-90"
           style={{
             background: "#2E2E68",
@@ -78,7 +64,7 @@ export default function QuestionsPage() {
           }}
         >
           Create Question
-        </button>
+        </Link>
       </header>
 
       <main className="flex flex-1 flex-col px-8 py-6">
@@ -86,15 +72,9 @@ export default function QuestionsPage() {
           questions={mockQuestions}
           onEdit={(q) => console.log("Edit:", q)}
           onDelete={(id) => console.log("Delete:", id)}
+          onView={(q) => console.log("View:", q)}
         />
       </main>
-
-      <CreateQuestionModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onCreateQuestion={handleCreateQuestion}
-        passages={mockPassages}
-      />
     </div>
   )
 }
