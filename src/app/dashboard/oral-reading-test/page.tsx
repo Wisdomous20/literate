@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { ChevronLeft, ChevronRight, Timer, Minus, Plus } from "lucide-react"
 import { DashboardHeader } from "@/components/auth/dashboard/dashboardHeader"
@@ -11,15 +11,27 @@ import { ReadingTimer } from "@/components/oral-reading-test/readingTimer"
 import { MiscueAnalysis } from "@/components/oral-reading-test/miscueAnalysis"
 import { FullScreenPassage } from "@/components/oral-reading-test/fullScreenPassage"
 import { AddPassageModal } from "@/components/oral-reading-test/addPassageModal"
-
-const mockStudent = {
-  name: "Lois",
-  gradeLevel: "Grade 4",
-  classes: ["Narra Class", "Narra Class"],
-  schoolYear: "2026",
-}
+import { getClassListBySchoolYear } from "@/app/actions/class/getClassList"
 
 const samplePassage = `The Department of Education recognizes the significance of reading comprehension and the country's competence to international literacy standards through the implementation of reading assessments such as the Philippine Informal Reading Inventory (Phil-IRI) which is a classroom-based reading comprehension assessment tool used by public elementary and secondary teachers to determine the reading level of the student. It also serves as a reading assessment tool that helps teachers identify the reading level of students and provide appropriate interventions to improve their reading skills.`
+
+// Helper to get current school year
+function getCurrentSchoolYear(): string {
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  const currentMonth = now.getMonth()
+  
+  if (currentMonth >= 7) {
+    return `${currentYear}-${currentYear + 1}`
+  } else {
+    return `${currentYear - 1}-${currentYear}`
+  }
+}
+
+interface ClassItem {
+  id: string
+  name: string
+}
 
 export default function OralReadingTestPage() {
   const router = useRouter()
@@ -36,6 +48,32 @@ export default function OralReadingTestPage() {
   const [selectedTestType, setSelectedTestType] = useState<string | undefined>()
   const [selectedTitle, setSelectedTitle] = useState<string | undefined>()
   const [selectedPassage, setSelectedPassage] = useState<string | undefined>(undefined)
+  const [studentName, setStudentName] = useState("Lois")
+  const [gradeLevel, setGradeLevel] = useState("Grade 4")
+  const [classes, setClasses] = useState<ClassItem[]>([])
+  const [isLoadingClasses, setIsLoadingClasses] = useState(true)
+
+  // Fetch classes on mount
+  useEffect(() => {
+    async function fetchClasses() {
+      setIsLoadingClasses(true)
+      const schoolYear = getCurrentSchoolYear()
+      const result = await getClassListBySchoolYear(schoolYear)
+      
+      if (result.success && result.classes) {
+        const mappedClasses: ClassItem[] = result.classes.map(c => ({
+          id: c.id,
+          name: c.name,
+        }))
+        setClasses(mappedClasses)
+      } else {
+        setClasses([])
+      }
+      setIsLoadingClasses(false)
+    }
+    
+    fetchClasses()
+  }, [])
 
   const hasPassage = passageContent.length > 0
 
@@ -96,11 +134,7 @@ export default function OralReadingTestPage() {
     )
   }
 
-  function formatTime(seconds: number): React.ReactNode {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, "0")}`
-  }
+  const classNames = classes.map(c => c.name)
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
@@ -129,11 +163,19 @@ export default function OralReadingTestPage() {
         <div className="flex min-h-0 flex-1 gap-4">
           {/* Left column: student info, filters, passage, timer */}
           <div className="flex min-h-0 flex-1 flex-col gap-3">
-            <StudentInfoBar
-              studentName={mockStudent.name}
-              gradeLevel={mockStudent.gradeLevel}
-              classes={mockStudent.classes}
-            />
+            {!isLoadingClasses && (
+              <StudentInfoBar
+                studentName={studentName}
+                gradeLevel={gradeLevel}
+                classes={classNames}
+                onStudentNameChange={setStudentName}
+                onGradeLevelChange={setGradeLevel}
+                onClassCreated={(newClass) => {
+                  // Add the new class to the local list
+                  setClasses(prev => [...prev, { id: newClass, name: newClass }])
+                }}
+              />
+            )}
 
             <PassageFilters
               language={hasPassage ? selectedLanguage : undefined}
