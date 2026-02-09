@@ -4,24 +4,20 @@ import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { addQuestionAction } from "@/app/actions/admin/addQuestion";
-import { getAllPassageAction } from "@/app/actions/admin/getAllPassage";
+import { updateQuestionAction } from "@/app/actions/admin/updateQuestion";
 
-interface Passage {
+interface Question {
   id: string;
-  title: string;
+  questionText: string;
+  tags: string;
+  type: string;
+  options?: string[];
+  correctAnswer?: string;
 }
 
-interface PassageApiData {
-  id: string;
-  title: string;
-  content: string;
-  language: string;
-  level: number;
-  tags: string;
-  testType: string;
-  createdAt?: Date;
-  updatedAt?: Date;
+interface UpdateQuestionFormProps {
+  question: Question;
+  onSuccess?: () => void;
 }
 
 const tagOptions = ["Literal", "Inferential", "Critical"] as const;
@@ -30,49 +26,54 @@ const questionTypes = [
   { label: "Essay", value: "ESSAY" },
 ];
 
-export function CreateQuestionForm() {
+export function UpdateQuestionForm({
+  question,
+  onSuccess,
+}: UpdateQuestionFormProps) {
   const router = useRouter();
-  const [questionText, setQuestionText] = useState("");
-  const [passageId, setPassageId] = useState("");
-  const [tags, setTags] = useState("");
-  const [type, setType] = useState("");
-  const [options, setOptions] = useState<string[]>(["", "", "", ""]);
-  const [correctAnswer, setCorrectAnswer] = useState("");
-  const [passages, setPassages] = useState<Passage[]>([]);
+  const [questionText, setQuestionText] = useState(question.questionText);
+  const [tags, setTags] = useState(question.tags);
+  const [type, setType] = useState(question.type);
+  const [options, setOptions] = useState<string[]>(
+    question.type === "MULTIPLE_CHOICE" && question.options
+      ? question.options
+      : ["", "", "", ""],
+  );
+  const [correctAnswer, setCorrectAnswer] = useState(
+    question.correctAnswer || "",
+  );
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingPassages, setIsLoadingPassages] = useState(false);
   const [error, setError] = useState("");
+  const [hasChanges, setHasChanges] = useState(false);
 
-  // Load passages on mount
+  // Track changes
   useEffect(() => {
-    const loadPassages = async () => {
-      setIsLoadingPassages(true);
-      try {
-        const data = await getAllPassageAction();
-        if (data && Array.isArray(data)) {
-          const formattedPassages: Passage[] = data.map(
-            (p: PassageApiData) => ({
-              id: p.id,
-              title: p.title,
-            }),
-          );
-          setPassages(formattedPassages);
-        }
-      } catch (err) {
-        console.error("Error loading passages:", err);
-      } finally {
-        setIsLoadingPassages(false);
-      }
-    };
-    loadPassages();
-  }, []);
+    const hasTextChanged = questionText !== question.questionText;
+    const hasTagsChanged = tags !== question.tags;
+    const hasTypeChanged = type !== question.type;
+    const hasOptionsChanged =
+      question.type === "MULTIPLE_CHOICE" &&
+      JSON.stringify(options) !==
+        JSON.stringify(question.options || ["", "", "", ""]);
+    const hasAnswerChanged =
+      question.type === "MULTIPLE_CHOICE" &&
+      correctAnswer !== (question.correctAnswer || "");
+
+    setHasChanges(
+      hasTextChanged ||
+        hasTagsChanged ||
+        hasTypeChanged ||
+        hasOptionsChanged ||
+        hasAnswerChanged,
+    );
+  }, [questionText, tags, type, options, correctAnswer, question]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
       setError("");
 
-      if (!questionText.trim() || !passageId || !tags || !type) {
+      if (!questionText.trim() || !tags || !type) {
         setError("Please fill in all required fields");
         return;
       }
@@ -93,8 +94,8 @@ export function CreateQuestionForm() {
 
       setIsLoading(true);
       try {
-        await addQuestionAction({
-          passageId,
+        await updateQuestionAction({
+          id: question.id,
           questionText: questionText.trim(),
           tags: tags as "Literal" | "Inferential" | "Critical",
           type: type as "MULTIPLE_CHOICE" | "ESSAY",
@@ -102,17 +103,22 @@ export function CreateQuestionForm() {
             type === "MULTIPLE_CHOICE" ? options.filter(Boolean) : undefined,
           correctAnswer: type === "MULTIPLE_CHOICE" ? correctAnswer : undefined,
         });
-        router.push("/admin-dash/questions");
+
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.push("/admin-dash/questions");
+        }
       } catch (err) {
         const errorMessage =
-          err instanceof Error ? err.message : "Failed to create question";
+          err instanceof Error ? err.message : "Failed to update question";
         setError(errorMessage);
-        console.error("Error creating question:", err);
+        console.error("Error updating question:", err);
       } finally {
         setIsLoading(false);
       }
     },
-    [questionText, passageId, tags, type, options, correctAnswer, router],
+    [questionText, tags, type, options, correctAnswer, question.id, router, onSuccess],
   );
 
   const handleOptionChange = (index: number, value: string) => {
@@ -145,39 +151,11 @@ export function CreateQuestionForm() {
         </div>
       )}
 
-      {/* Passage */}
-      <div className="flex items-center gap-6">
-        <label
-          htmlFor="passage"
-          className="w-[140px] shrink-0 text-base font-semibold text-[#00306E]"
-        >
-          Passage
-        </label>
-
-        <div className="relative flex-1">
-          <select
-            id="passage"
-            value={passageId}
-            onChange={(e) => setPassageId(e.target.value)}
-            className="w-full appearance-none rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none transition-colors focus:border-[#6666FF] shadow-[inset_0px_2px_4px_rgba(0,48,110,0.08)]"
-            disabled={isLoading || isLoadingPassages}
-          >
-            <option value="">
-              {isLoadingPassages ? "Loading passages..." : "Select passage"}
-            </option>
-            {passages.length === 0 && !isLoadingPassages && (
-              <option disabled>No passages available</option>
-            )}
-            {passages.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.title}
-              </option>
-            ))}
-          </select>
-
-          <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#00306E]/50" />
+      {!hasChanges && (
+        <div className="rounded-lg bg-blue-100 p-4 text-sm text-blue-700">
+          No changes made yet.
         </div>
-      </div>
+      )}
 
       {/* Question Text */}
       <div className="flex gap-6">
@@ -320,7 +298,7 @@ export function CreateQuestionForm() {
                 id="correctAnswer"
                 value={correctAnswer}
                 onChange={(e) => setCorrectAnswer(e.target.value)}
-                className="w-full appearance-none rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none transition-colors focus:border-[#6666FF] shadow-inner-soft"
+                className="w-full appearance-none rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none transition-colors focus:border-[#6666FF] shadow-[inset_0px_2px_4px_rgba(0,48,110,0.08)]"
                 disabled={isLoading}
               >
                 <option value="">Select correct answer</option>
@@ -347,10 +325,10 @@ export function CreateQuestionForm() {
         </Link>
         <button
           type="submit"
-          disabled={isLoading}
-          className="submit-btn rounded-lg px-10 py-3 text-base font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50"
+          disabled={isLoading || !hasChanges}
+          className="submit-btn rounded-lg px-10 py-3 text-base font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isLoading ? "Creating..." : "Create Question"}
+          {isLoading ? "Saving..." : "Save Changes"}
         </button>
       </div>
     </form>

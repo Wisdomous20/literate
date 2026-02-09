@@ -4,15 +4,7 @@ export default function CreateQuestionPage() {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <header
-        className="flex h-[118px] items-center px-10"
-        style={{
-          borderBottom: "1px solid #8D8DEC",
-          boxShadow: "0px 4px 4px #54A4FF",
-          background: "transparent",
-          borderTopLeftRadius: "50px",
-        }}
-      >
+      <header className="flex h-[118px] items-center px-10 border-b border-[#8D8DEC] shadow-[0px_4px_4px_#54A4FF] bg-transparent rounded-tl-[50px]">
         <div className="flex items-center gap-3">
           <div className="grid grid-cols-2 gap-0.5">
             <div className="h-2.5 w-2.5 rounded-sm bg-[#31318A]" />

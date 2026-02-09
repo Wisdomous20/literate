@@ -1,48 +1,101 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { QuestionTable } from "@/components/admin-dash/questionTable"
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { QuestionTable } from "@/components/admin-dash/questionTable";
+import { getAllQuestionsAction } from "@/app/actions/admin/getAllQuestion";
+import { deleteQuestionAction } from "@/app/actions/admin/deleteQuestion";
 
-// Mock passages for the dropdown
-const mockPassages = [
-  { id: "1", title: "Ang Munting Ibon" },
-  { id: "2", title: "The Little Red Hen" },
-  { id: "3", title: "Si Juan at ang Daga" },
-  { id: "4", title: "A Day at the Farm" },
-  { id: "5", title: "Ang Pagong at ang Matsing" },
-  { id: "6", title: "The Sun and the Wind" },
-  { id: "7", title: "Ang Alamat ng Pinya" },
-  { id: "8", title: "The Water Cycle" },
-]
+interface RawQuestion {
+  id: string;
+  questionText: string;
+  passageTitle: string;
+  tags: string;
+  type: string;
+  passageLevel: number;
+  language: string;
+}
 
-// Mock questions aligned with Prisma schema
-// tags: Literal | Inferential | Critical, type: MULTIPLE_CHOICE | ESSAY
-const mockQuestions = [
-  { id: "1", questionText: "Ano ang pangalan ng ibon sa kwento?", passageTitle: "Ang Munting Ibon", tags: "Literal" as const, type: "MULTIPLE_CHOICE" as const, passageLevel: 1, language: "Filipino" as const },
-  { id: "2", questionText: "What did the Little Red Hen want to do?", passageTitle: "The Little Red Hen", tags: "Literal" as const, type: "MULTIPLE_CHOICE" as const, passageLevel: 1, language: "English" as const },
-  { id: "3", questionText: "Bakit natatakot si Juan sa daga?", passageTitle: "Si Juan at ang Daga", tags: "Inferential" as const, type: "ESSAY" as const, passageLevel: 2, language: "Filipino" as const },
-  { id: "4", questionText: "What lesson can we learn from the farm animals?", passageTitle: "A Day at the Farm", tags: "Critical" as const, type: "ESSAY" as const, passageLevel: 2, language: "English" as const },
-  { id: "5", questionText: "Sino ang mas matalino, ang pagong o ang matsing?", passageTitle: "Ang Pagong at ang Matsing", tags: "Critical" as const, type: "MULTIPLE_CHOICE" as const, passageLevel: 3, language: "Filipino" as const },
-  { id: "6", questionText: "Why did the sun win the contest?", passageTitle: "The Sun and the Wind", tags: "Inferential" as const, type: "MULTIPLE_CHOICE" as const, passageLevel: 3, language: "English" as const },
-  { id: "7", questionText: "Ano ang naging pinya ayon sa alamat?", passageTitle: "Ang Alamat ng Pinya", tags: "Literal" as const, type: "MULTIPLE_CHOICE" as const, passageLevel: 4, language: "Filipino" as const },
-  { id: "8", questionText: "How does evaporation contribute to the water cycle?", passageTitle: "The Water Cycle", tags: "Inferential" as const, type: "ESSAY" as const, passageLevel: 4, language: "English" as const },
-  { id: "9", questionText: "Do you think the characters made the right decision?", passageTitle: "Ang Pagong at ang Matsing", tags: "Critical" as const, type: "ESSAY" as const, passageLevel: 3, language: "Filipino" as const },
-  { id: "10", questionText: "What is the main idea of the passage?", passageTitle: "The Sun and the Wind", tags: "Literal" as const, type: "MULTIPLE_CHOICE" as const, passageLevel: 3, language: "English" as const },
-]
+interface Question {
+  id: string;
+  questionText: string;
+  passageTitle: string;
+  tags: "Literal" | "Inferential" | "Critical";
+  type: "MULTIPLE_CHOICE" | "ESSAY";
+  passageLevel: number;
+  language: "Filipino" | "English";
+}
 
 export default function QuestionsPage() {
+  const router = useRouter();
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadQuestions = async () => {
+      setIsLoading(true);
+      try {
+        const data = await getAllQuestionsAction();
+        if (data && Array.isArray(data)) {
+          const formattedQuestions: Question[] = data.map((q: RawQuestion) => ({
+            id: q.id,
+            questionText: q.questionText,
+            passageTitle: q.passageTitle,
+            tags: q.tags as "Literal" | "Inferential" | "Critical",
+            type: q.type as "MULTIPLE_CHOICE" | "ESSAY",
+            passageLevel: q.passageLevel,
+            language: q.language as "Filipino" | "English",
+          }));
+          setQuestions(formattedQuestions);
+        }
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to load questions";
+        setError(errorMessage);
+        console.error("Error loading questions:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadQuestions();
+  }, []);
+
+  const handleEdit = (question: Question) => {
+    router.push(`/admin-dash/questions/edit/${question.id}`);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this question?")) {
+      return;
+    }
+
+    setIsDeleting(id);
+    try {
+      await deleteQuestionAction({ id });
+      setQuestions(questions.filter((q) => q.id !== id));
+      setError(""); // Clear any previous errors
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to delete question";
+      setError(errorMessage);
+      console.error("Error deleting question:", err);
+    } finally {
+      setIsDeleting(null);
+    }
+  };
+
+  const handleView = (question: Question) => {
+    router.push(`/admin-dash/questions/view/${question.id}`);
+  };
+
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <header
-        className="flex h-[118px] items-center justify-between px-10"
-        style={{
-          borderBottom: "1px solid #8D8DEC",
-          boxShadow: "0px 4px 4px #54A4FF",
-          background: "transparent",
-          borderTopLeftRadius: "50px",
-        }}
-      >
+      <header className="flex h-[118px] items-center justify-between px-10 border-b border-[#8D8DEC] shadow-[0px_4px_4px_#54A4FF] bg-transparent rounded-tl-[50px]">
         <div className="flex items-center gap-3">
           <div className="grid grid-cols-2 gap-0.5">
             <div className="h-2.5 w-2.5 rounded-sm bg-[#31318A]" />
@@ -68,13 +121,27 @@ export default function QuestionsPage() {
       </header>
 
       <main className="flex flex-1 flex-col px-8 py-6">
-        <QuestionTable
-          questions={mockQuestions}
-          onEdit={(q) => console.log("Edit:", q)}
-          onDelete={(id) => console.log("Delete:", id)}
-          onView={(q) => console.log("View:", q)}
-        />
+        {error && (
+          <div className="mb-4 rounded-lg bg-red-100 p-4 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+        {isLoading ? (
+          <div className="flex items-center justify-center flex-1">
+            <span className="text-lg text-[#00306E]/60">
+              Loading questions...
+            </span>
+          </div>
+        ) : (
+          <QuestionTable
+            questions={questions}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onView={handleView}
+            isDeleting={isDeleting}
+          />
+        )}
       </main>
     </div>
-  )
+  );
 }

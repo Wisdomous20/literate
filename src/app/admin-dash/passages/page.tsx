@@ -1,38 +1,105 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { PassageTable } from "@/components/admin-dash/passageTable"
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { PassageTable } from "@/components/admin-dash/passageTable";
+import { getAllPassageAction } from "@/app/actions/admin/getAllPassage";
+import { deletePassageAction } from "@/app/actions/admin/deletePassage";
 
-// Mock data aligned with Prisma schema
-// level: Int, testType: PRE_TEST | POST_TEST, tags: Literal | Inferential | Critical
-const mockPassages = [
-  { id: "1", title: "Ang Munting Ibon", language: "Filipino" as const, level: 1, tags: "Literal" as const, testType: "PRE_TEST" as const, wordCount: 85, questionsCount: 5 },
-  { id: "2", title: "The Little Red Hen", language: "English" as const, level: 1, tags: "Literal" as const, testType: "PRE_TEST" as const, wordCount: 102, questionsCount: 5 },
-  { id: "3", title: "Si Juan at ang Daga", language: "Filipino" as const, level: 2, tags: "Inferential" as const, testType: "POST_TEST" as const, wordCount: 130, questionsCount: 6 },
-  { id: "4", title: "A Day at the Farm", language: "English" as const, level: 2, tags: "Critical" as const, testType: "PRE_TEST" as const, wordCount: 115, questionsCount: 5 },
-  { id: "5", title: "Ang Pagong at ang Matsing", language: "Filipino" as const, level: 3, tags: "Inferential" as const, testType: "PRE_TEST" as const, wordCount: 168, questionsCount: 7 },
-  { id: "6", title: "The Sun and the Wind", language: "English" as const, level: 3, tags: "Critical" as const, testType: "POST_TEST" as const, wordCount: 155, questionsCount: 6 },
-  { id: "7", title: "Ang Alamat ng Pinya", language: "Filipino" as const, level: 4, tags: "Literal" as const, testType: "POST_TEST" as const, wordCount: 210, questionsCount: 8 },
-  { id: "8", title: "The Water Cycle", language: "English" as const, level: 4, tags: "Inferential" as const, testType: "PRE_TEST" as const, wordCount: 195, questionsCount: 7 },
-  { id: "9", title: "Ang Singsing ni Pedro", language: "Filipino" as const, level: 5, tags: "Critical" as const, testType: "POST_TEST" as const, wordCount: 245, questionsCount: 8 },
-  { id: "10", title: "Exploring the Rainforest", language: "English" as const, level: 5, tags: "Literal" as const, testType: "PRE_TEST" as const, wordCount: 260, questionsCount: 8 },
-  { id: "11", title: "Ang Kwento ni Rizal", language: "Filipino" as const, level: 6, tags: "Critical" as const, testType: "POST_TEST" as const, wordCount: 310, questionsCount: 10 },
-  { id: "12", title: "The Solar System", language: "English" as const, level: 6, tags: "Inferential" as const, testType: "PRE_TEST" as const, wordCount: 290, questionsCount: 9 },
-]
+interface PassageApiData {
+  id: string;
+  title: string;
+  content: string;
+  language: string;
+  level: number;
+  tags: string;
+  testType: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+interface Passage {
+  id: string;
+  title: string;
+  language: "Filipino" | "English";
+  level: number;
+  tags: "Literal" | "Inferential" | "Critical";
+  testType: "PRE_TEST" | "POST_TEST";
+  content: string;
+  wordCount: number;
+  questionsCount: number;
+}
 
 export default function PassagesPage() {
+  const router = useRouter();
+  const [passages, setPassages] = useState<Passage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const loadPassages = async () => {
+      setIsLoading(true);
+      try {
+        const data = await getAllPassageAction();
+        if (data && Array.isArray(data)) {
+          const formattedPassages: Passage[] = data.map(
+            (p: PassageApiData) => ({
+              id: p.id,
+              title: p.title,
+              language: (p.language as "Filipino" | "English") || "English",
+              level: p.level,
+              tags:
+                (p.tags as "Literal" | "Inferential" | "Critical") || "Literal",
+              testType: (p.testType as "PRE_TEST" | "POST_TEST") || "PRE_TEST",
+              content: p.content,
+              wordCount: p.content?.split(/\s+/).filter(Boolean).length || 0,
+              questionsCount: 0,
+            }),
+          );
+          setPassages(formattedPassages);
+        }
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to load passages";
+        setError(errorMessage);
+        console.error("Error loading passages:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadPassages();
+  }, []);
+
+  const handleEdit = (passage: Passage) => {
+    router.push(`/admin-dash/passages/edit/${passage.id}`);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this passage?")) {
+      return;
+    }
+
+    try {
+      await deletePassageAction({ id });
+      setPassages(passages.filter((p) => p.id !== id));
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to delete passage";
+      setError(errorMessage);
+      console.error("Error deleting passage:", err);
+    }
+  };
+
+  const handleView = (passage: Passage) => {
+    router.push(`/admin-dash/passages/view/${passage.id}`);
+  };
+
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <header
-        className="flex h-[118px] items-center justify-between px-10"
-        style={{
-          borderBottom: "1px solid #8D8DEC",
-          boxShadow: "0px 4px 4px #54A4FF",
-          background: "transparent",
-          borderTopLeftRadius: "50px",
-        }}
-      >
+      <header className="flex h-[118px] items-center justify-between px-10 border-b border-[#8D8DEC] shadow-[0px_4px_4px_#54A4FF] bg-transparent rounded-tl-[50px]">
         <div className="flex items-center gap-3">
           <div className="grid grid-cols-2 gap-0.5">
             <div className="h-2.5 w-2.5 rounded-sm bg-[#31318A]" />
@@ -58,13 +125,26 @@ export default function PassagesPage() {
       </header>
 
       <main className="flex flex-1 flex-col px-8 py-6">
-        <PassageTable
-          passages={mockPassages}
-          onEdit={(p) => console.log("Edit:", p)}
-          onDelete={(id) => console.log("Delete:", id)}
-          onView={(p) => console.log("View:", p)}
-        />
+        {error && (
+          <div className="mb-4 rounded-lg bg-red-100 p-4 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+        {isLoading ? (
+          <div className="flex items-center justify-center flex-1">
+            <span className="text-lg text-[#00306E]/60">
+              Loading passages...
+            </span>
+          </div>
+        ) : (
+          <PassageTable
+            passages={passages}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onView={handleView}
+          />
+        )}
       </main>
     </div>
-  )
+  );
 }
