@@ -1,22 +1,24 @@
 "use server";
 
-import { addQuestionService } from "@/service/admin/addQuestionService";
+import { updateQuestionService } from "@/service/admin/updateQuestionService";
 
-interface AddQuestionActionInput {
-  quizId: string;
-  questionText: string;
-  tags: "Literal" | "Inferential" | "Critical";
-  type: "MULTIPLE_CHOICE" | "ESSAY";
-  options?: string[]; // Only for MULTIPLE_CHOICE
-  correctAnswer?: string; // Only for MULTIPLE_CHOICE
+interface UpdateQuestionActionInput {
+  id: string;
+  questionText?: string;
+  tags?: "Literal" | "Inferential" | "Critical";
+  type?: "MULTIPLE_CHOICE" | "ESSAY";
+  options?: string[];
+  correctAnswer?: string;
 }
 
-export async function addQuestionAction(input: AddQuestionActionInput) {
-  const { quizId, questionText, tags, type, options, correctAnswer } = input;
+export async function updateQuestionAction(
+  input: UpdateQuestionActionInput,
+) {
+  const { id, questionText, tags, type, options, correctAnswer } = input;
 
-  // Call the service to add the question
-  const result = await addQuestionService({
-    quizId,
+  // Call the service to update the question
+  const result = await updateQuestionService({
+    id,
     questionText,
     tags,
     type,
@@ -25,7 +27,7 @@ export async function addQuestionAction(input: AddQuestionActionInput) {
   });
 
   if (!result.success) {
-    throw new Error(result.error || "Failed to add question.");
+    throw new Error(result.error || "Failed to update question.");
   }
 
   return result.question;
