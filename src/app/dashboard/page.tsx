@@ -1,7 +1,7 @@
-import { ClassInventory } from "@/components/dashboard/classInventory";
-import { ClassificationChart } from "@/components/dashboard/classificationChart";
-import { QuickActions } from "@/components/dashboard/quickActions";
-import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
+import { ClassInventory } from "@/components/auth/dashboard/classInventory";
+import { ClassificationChart } from "@/components/auth/dashboard/classificationChart";
+import { QuickActions } from "@/components/auth/dashboard/quickActions";
+import { DashboardHeader } from "@/components/auth/dashboard/dashboardHeader";
 
 export default function DashboardPage() {
   return (
