@@ -7,7 +7,7 @@ import { useSettings } from "@/context/settingsContext"
 interface FullScreenPassageProps {
   content: string
   passageTitle?: string
-  onDone: (elapsedSeconds: number, audioURL: string | null) => void
+  onDone: (elapsedSeconds: number, audioURL: string | null, audioBlob: Blob | null) => void
   onClose: () => void
   countdownEnabled?: boolean
   countdownSeconds?: number
@@ -104,7 +104,10 @@ export function FullScreenPassage({
     doneCalledRef.current = true
     stopEverything()
     setTimeout(() => {
-      onDone(secondsRef.current, audioURLRef.current)
+      const audioBlob = audioChunksRef.current.length > 0
+        ? new Blob(audioChunksRef.current, { type: "audio/webm" })
+        : null
+      onDone(secondsRef.current, audioURLRef.current, audioBlob)
     }, 100)
   }, [onDone, stopEverything])
 

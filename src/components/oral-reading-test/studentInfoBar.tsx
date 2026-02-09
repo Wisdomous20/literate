@@ -1,243 +1,195 @@
 "use client"
 
-import { useState } from "react"
-import { ChevronDown, Plus, X } from "lucide-react"
-import { createClass } from "@/app/actions/class/createClass"
+import React, { useState } from "react"
+import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Plus } from "lucide-react"
 
 interface StudentInfoBarProps {
   studentName: string
   gradeLevel: string
   classes: string[]
-  onStudentNameChange?: (name: string) => void
-  onGradeLevelChange?: (level: string) => void
-  onClassCreated?: (newClass: string) => void
+  onStudentNameChange: (name: string) => void
+  onGradeLevelChange: (grade: string) => void
+  onClassCreated: (newClass: string) => void
+  onStudentSelected: (studentId: string) => void
 }
 
-export function StudentInfoBar({
+export default function StudentInfoBar({
   studentName,
   gradeLevel,
   classes,
   onStudentNameChange,
   onGradeLevelChange,
   onClassCreated,
+  onStudentSelected,
 }: StudentInfoBarProps) {
-  const [selectedClass, setSelectedClass] = useState(classes[0] || "")
-  const [isClassDropdownOpen, setIsClassDropdownOpen] = useState(false)
-  const [isCreatingClass, setIsCreatingClass] = useState(false)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [newClassName, setNewClassName] = useState("")
-  const [isCreatingLoading, setIsCreatingLoading] = useState(false)
-  const [creationError, setCreationError] = useState("")
+  const [selectedClass, setSelectedClass] = useState("")
 
-  const handleCreateClass = async () => {
-    if (!newClassName.trim()) {
-      setCreationError("Class name cannot be empty")
+  const handleClassChange = async (value: string) => {
+    if (value === "create-new") {
+      setIsDialogOpen(true)
       return
     }
+    setSelectedClass(value)
 
-    setIsCreatingLoading(true)
-    setCreationError("")
-
-    try {
-      const result = await createClass(newClassName.trim())
-
-      if (result.success) {
-        // Set the newly created class as selected
-        setSelectedClass(newClassName.trim())
-        setNewClassName("")
-        setIsCreatingClass(false)
-        setIsClassDropdownOpen(false)
-
-        // Notify parent component if callback is provided
-        onClassCreated?.(newClassName.trim())
-      } else {
-        setCreationError(result.error || "Failed to create class")
+    // Look up/create student when class is selected and name + grade exist
+    if (studentName.trim() && gradeLevel && value) {
+      try {
+        const response = await fetch("/api/students", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: studentName.trim(),
+            gradeLevel,
+            className: value,
+          }),
+        })
+        if (response.ok) {
+          const data = await response.json()
+          onStudentSelected(data.id)
+        }
+      } catch (error) {
+        console.error("Failed to look up/create student:", error)
       }
-    } catch (error) {
-      setCreationError("An error occurred while creating the class")
-    } finally {
-      setIsCreatingLoading(false)
+    }
+  }
+
+  const handleStudentNameChange = async (name: string) => {
+    onStudentNameChange(name)
+
+    // Look up/create student when all fields are filled
+    if (name.trim() && gradeLevel && selectedClass) {
+      try {
+        const response = await fetch("/api/students", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: name.trim(),
+            gradeLevel,
+            className: selectedClass,
+          }),
+        })
+        if (response.ok) {
+          const data = await response.json()
+          onStudentSelected(data.id)
+        }
+      } catch (error) {
+        console.error("Failed to look up/create student:", error)
+      }
+    }
+  }
+
+  const handleCreateClass = () => {
+    if (newClassName.trim()) {
+      onClassCreated(newClassName.trim())
+      setSelectedClass(newClassName.trim())
+      setNewClassName("")
+      setIsDialogOpen(false)
     }
   }
 
   return (
-    <div className="grid grid-cols-3 gap-3">
-      {/* Student Name - Editable Input */}
-      <div
-        className="rounded-lg px-3 py-2"
-        style={{ background: "rgba(108, 164, 239, 0.09)" }}
-      >
-        <label
-          htmlFor="studentName"
-          className="mb-0.5 block text-xs font-semibold"
-          style={{ color: "#0C1A6D" }}
-        >
-          Student Name
-        </label>
-        <input
-          id="studentName"
-          type="text"
-          value={studentName}
-          onChange={(e) => onStudentNameChange?.(e.target.value)}
-          placeholder="Enter name"
-          className="w-full rounded-lg px-3 py-1.5 text-sm text-[#00306E] outline-none placeholder:text-[#00306E]/40"
-          style={{
-            background: "#EFFDFF",
-            border: "1px solid #54A4FF",
-            boxShadow: "0px 1px 10px rgba(108, 164, 239, 0.25)",
-          }}
-        />
-      </div>
+    <>
+      <div className="flex flex-col sm:flex-row items-start sm:items-end gap-3 p-4 bg-white rounded-lg shadow-sm border">
+        {/* Student Name */}
+        <div className="flex-1 w-full">
+          <label className="block text-xs font-medium text-gray-500 mb-1">
+            Student Name
+          </label>
+          <Input
+            placeholder="Enter student name"
+            value={studentName}
+            onChange={(e) => handleStudentNameChange(e.target.value)}
+          />
+        </div>
 
-      {/* Grade Level - Editable Input */}
-      <div
-        className="rounded-lg px-3 py-2"
-        style={{ background: "rgba(108, 164, 239, 0.09)" }}
-      >
-        <label
-          htmlFor="gradeLevel"
-          className="mb-0.5 block text-xs font-semibold"
-          style={{ color: "#0C1A6D" }}
-        >
-          Grade Level
-        </label>
-        <input
-          id="gradeLevel"
-          type="text"
-          value={gradeLevel}
-          onChange={(e) => onGradeLevelChange?.(e.target.value)}
-          placeholder="Enter grade level"
-          className="w-full rounded-lg px-3 py-1.5 text-sm text-[#00306E] outline-none placeholder:text-[#00306E]/40"
-          style={{
-            background: "#EFFDFF",
-            border: "1px solid #54A4FF",
-            boxShadow: "0px 1px 10px rgba(108, 164, 239, 0.25)",
-          }}
-        />
-      </div>
+        {/* Grade Level */}
+        <div className="w-full sm:w-40">
+          <label className="block text-xs font-medium text-gray-500 mb-1">
+            Grade Level
+          </label>
+          <Select value={gradeLevel} onValueChange={onGradeLevelChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select grade" />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from({ length: 12 }, (_, i) => (
+                <SelectItem key={i + 1} value={String(i + 1)}>
+                  Grade {i + 1}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-      {/* Class Name - Dropdown with Manual Input */}
-      <div
-        className="relative rounded-lg px-3 py-2"
-        style={{ background: "rgba(108, 164, 239, 0.09)" }}
-      >
-        <label
-          className="mb-0.5 block text-xs font-semibold"
-          style={{ color: "#0C1A6D" }}
-        >
-          Class Name
-        </label>
-        {!isCreatingClass ? (
-          <>
-            <button
-              onClick={() => setIsClassDropdownOpen(!isClassDropdownOpen)}
-              className="flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-sm text-[#00306E]"
-              style={{
-                background: "#EFFDFF",
-                border: "1px solid #54A4FF",
-                boxShadow: "0px 1px 10px rgba(108, 164, 239, 0.25)",
-              }}
-            >
-              <span>{selectedClass || "Select class"}</span>
-              <ChevronDown className="h-4 w-4 text-[#54A4FF]" />
-            </button>
-
-            {isClassDropdownOpen && (
-              <div
-                className="absolute left-3 right-3 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-lg bg-white py-1"
-                style={{
-                  border: "1px solid #54A4FF",
-                  boxShadow: "0px 4px 12px rgba(84, 164, 255, 0.2)",
-                }}
-              >
-                {classes.length > 0 ? (
-                  <>
-                    {classes.map((cls, idx) => (
-                      <button
-                        key={`${cls}-${idx}`}
-                        onClick={() => {
-                          setSelectedClass(cls)
-                          setIsClassDropdownOpen(false)
-                        }}
-                        className="w-full px-3 py-1.5 text-left text-sm text-[#00306E] hover:bg-[#E4F4FF]"
-                      >
-                        {cls}
-                      </button>
-                    ))}
-                    <div className="border-t border-[#E4F4FF]" />
-                  </>
-                ) : null}
-
-                {/* Create New Class Option */}
-                <button
-                  onClick={() => {
-                    setIsCreatingClass(true)
-                    setIsClassDropdownOpen(false)
-                  }}
-                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-[#6666FF] hover:bg-[#E4F4FF]"
-                >
+        {/* Class */}
+        <div className="w-full sm:w-48">
+          <label className="block text-xs font-medium text-gray-500 mb-1">
+            Class
+          </label>
+          <Select value={selectedClass} onValueChange={handleClassChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select class" />
+            </SelectTrigger>
+            <SelectContent>
+              {classes.map((cls) => (
+                <SelectItem key={cls} value={cls}>
+                  {cls}
+                </SelectItem>
+              ))}
+              <SelectItem value="create-new">
+                <span className="flex items-center gap-1">
                   <Plus className="h-4 w-4" />
-                  <span>Create new class</span>
-                </button>
-              </div>
-            )}
-          </>
-        ) : (
-          <>
-            {/* Input for new class name */}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newClassName}
-                onChange={(e) => {
-                  setNewClassName(e.target.value)
-                  setCreationError("")
-                }}
-                onKeyPress={(e) => {
-                  if (e.key === "Enter") {
-                    handleCreateClass()
-                  }
-                }}
-                placeholder="Enter class name"
-                autoFocus
-                disabled={isCreatingLoading}
-                className="flex-1 rounded-lg px-3 py-1.5 text-sm text-[#00306E] outline-none placeholder:text-[#00306E]/40 disabled:opacity-50"
-                style={{
-                  background: "#EFFDFF",
-                  border: "1px solid #54A4FF",
-                  boxShadow: "0px 1px 10px rgba(108, 164, 239, 0.25)",
-                }}
-              />
-              <button
-                onClick={handleCreateClass}
-                disabled={isCreatingLoading || !newClassName.trim()}
-                className="rounded-lg px-3 py-1.5 font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-                style={{ background: "#6666FF" }}
-              >
-                {isCreatingLoading ? "..." : "Add"}
-              </button>
-            </div>
-
-            {/* Error message */}
-            {creationError && (
-              <div className="mt-1 text-xs text-red-500">{creationError}</div>
-            )}
-
-            {/* Cancel button */}
-            <button
-              onClick={() => {
-                setIsCreatingClass(false)
-                setNewClassName("")
-                setCreationError("")
-              }}
-              disabled={isCreatingLoading}
-              className="mt-2 flex items-center gap-1 text-xs text-[#00306E] hover:opacity-70 disabled:opacity-50"
-            >
-              <X className="h-3 w-3" />
-              <span>Cancel</span>
-            </button>
-          </>
-        )}
+                  Create New Class
+                </span>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-    </div>
+
+      {/* Create Class Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Class</DialogTitle>
+          </DialogHeader>
+          <Input
+            placeholder="Enter class name"
+            value={newClassName}
+            onChange={(e) => setNewClassName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleCreateClass()
+            }}
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateClass} disabled={!newClassName.trim()}>
+              Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

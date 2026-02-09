@@ -1,10 +1,11 @@
 "use client"
 
+
 import { useState, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { ChevronLeft, ChevronRight, Timer, Minus, Plus } from "lucide-react"
 import { DashboardHeader } from "@/components/auth/dashboard/dashboardHeader"
-import { StudentInfoBar } from "@/components/oral-reading-test/studentInfoBar"
+import StudentInfoBar from "@/components/oral-reading-test/studentInfoBar"
 import { PassageFilters } from "@/components/oral-reading-test/passageFilters"
 import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay"
 import { ReadingTimer } from "@/components/oral-reading-test/readingTimer"
@@ -12,7 +13,6 @@ import { MiscueAnalysis } from "@/components/oral-reading-test/miscueAnalysis"
 import { FullScreenPassage } from "@/components/oral-reading-test/fullScreenPassage"
 import { AddPassageModal } from "@/components/oral-reading-test/addPassageModal"
 import { getClassListBySchoolYear } from "@/app/actions/class/getClassList"
-import { uploadAudioToSupabase } from "@/utils/supabase"
 
 
 
@@ -40,6 +40,7 @@ export default function OralReadingTestPage() {
   const [isFullScreen, setIsFullScreen] = useState(false)
   const [recordedSeconds, setRecordedSeconds] = useState(0)
   const [recordedAudioURL, setRecordedAudioURL] = useState<string | null>(null)
+  const [recordedAudioBlob, setRecordedAudioBlob] = useState<Blob | null>(null)
   const [hasRecording, setHasRecording] = useState(false)
   const [countdownEnabled, setCountdownEnabled] = useState(true)
   const [countdownSeconds, setCountdownSeconds] = useState(3)
@@ -80,7 +81,7 @@ export default function OralReadingTestPage() {
 
   const hasPassage = passageContent.length > 0
 
- const handleSelectPassage = useCallback((passage: {
+  const handleSelectPassage = useCallback((passage: {
     id: string
     title: string
     content: string
@@ -89,16 +90,15 @@ export default function OralReadingTestPage() {
     tags: string
     testType: string
   }) => {
-    // Use the actual passage content from the database
     setPassageContent(passage.content)
     setSelectedLanguage(passage.language)
     setSelectedLevel(`Grade ${passage.level}`)
     setSelectedTestType(passage.testType === "PRE_TEST" ? "Pre-Test" : "Post-Test")
     setSelectedTitle(passage.title)
     setSelectedPassage(passage.id)
-    // Reset any existing recording when passage changes
     setHasRecording(false)
     setRecordedSeconds(0)
+    setRecordedAudioBlob(null)
     if (recordedAudioURL) {
       URL.revokeObjectURL(recordedAudioURL)
       setRecordedAudioURL(null)
@@ -115,9 +115,10 @@ export default function OralReadingTestPage() {
     }
   }, [hasPassage, recordedAudioURL])
 
-  const handleFullScreenDone = useCallback((elapsedSeconds: number, audioURL: string | null) => {
+  const handleFullScreenDone = useCallback((elapsedSeconds: number, audioURL: string | null, audioBlob: Blob | null) => {
     setRecordedSeconds(elapsedSeconds)
     setRecordedAudioURL(audioURL)
+    setRecordedAudioBlob(audioBlob)
     setIsFullScreen(false)
     setHasRecording(true)
   }, [])
@@ -135,6 +136,76 @@ export default function OralReadingTestPage() {
     }
   }, [recordedAudioURL])
 
+  const handleSubmitRecording = useCallback(async () => {
+    if (!recordedAudioBlob || !selectedPassage || !selectedStudentId) {
+      console.log("Submit blocked - missing:", {
+        hasBlob: !!recordedAudioBlob,
+        selectedPassage,
+        selectedStudentId,
+      })
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      // 1. Upload audio to Supabase Storage
+      const { uploadAudioToSupabase } = await import("@/utils/uploadAudioToSupabase")
+      const { url: supabaseAudioUrl, error: uploadError } = await uploadAudioToSupabase(
+        recordedAudioBlob,
+        `${selectedPassage}-${selectedStudentId}-${Date.now()}`
+      )
+
+      if (uploadError || !supabaseAudioUrl) {
+        console.error("Audio upload failed:", uploadError)
+        return
+      }
+
+      console.log("Audio uploaded to:", supabaseAudioUrl)
+
+      // 2. Send audio blob + metadata to analysis API route
+      const formData = new FormData()
+      formData.append("studentId", selectedStudentId)
+      formData.append("passageId", selectedPassage)
+      formData.append("audioUrl", supabaseAudioUrl)
+      formData.append("audio", recordedAudioBlob, "recording.webm")
+
+      console.log("Sending to API:", `/api/oral-reading/${selectedPassage}`)
+
+      const response = await fetch(`/api/oral-reading/${selectedPassage}`, {
+        method: "POST",
+        body: formData,
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        console.error("Analysis API error:", result)
+        return
+      }
+
+      console.log("Session created:", result.sessionId)
+    } catch (err) {
+      console.error("Submit error:", err)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }, [recordedAudioBlob, selectedPassage, selectedStudentId])
+
+
+ useEffect(() => {
+    console.log("useEffect check:", {
+      hasRecording,
+      hasBlob: !!recordedAudioBlob,
+      selectedPassage,
+      selectedStudentId,
+    })
+    if (hasRecording && recordedAudioBlob && selectedPassage && selectedStudentId) {
+      console.log("Submitting recording...")
+      handleSubmitRecording()
+    }
+  }, [hasRecording, recordedAudioBlob, selectedPassage, selectedStudentId, handleSubmitRecording])
+
+
   if (isFullScreen) {
     return (
       <FullScreenPassage
@@ -147,34 +218,6 @@ export default function OralReadingTestPage() {
     )
   }
 
-  const handleSubmitRecording = async () => {
-  if (!recordedAudioURL || !selectedPassage || !selectedStudentId) return
-
-  setIsSubmitting(true)
-  try {
-    // The audio is already uploaded to Supabase via the recording process
-    // Use the recorded audio URL directly
-    const audioUrl = recordedAudioURL
-
-    if (!audioUrl) {
-      console.error("Failed to get audio URL")
-      return
-    }
-
-    // Create the OralReadingSession via your server action with the audioUrl
-    // Note: You'll need to implement createOralReadingSession if it doesn't exist
-    // await createOralReadingSession({
-    //   studentId: selectedStudentId,
-    //   passageId: selectedPassage,
-    //   audioUrl: audioUrl,
-    //   duration: recordedSeconds,
-    // })
-  } catch (err) {
-    console.error("Submit error:", err)
-  } finally {
-    setIsSubmitting(false)
-  }
-}
 
   const classNames = classes.map(c => c.name)
 
@@ -216,6 +259,7 @@ export default function OralReadingTestPage() {
                   // Add the new class to the local list
                   setClasses(prev => [...prev, { id: newClass, name: newClass }])
                 }}
+                onStudentSelected={(studentId: string) => setSelectedStudentId(studentId)}
               />
             )}
 
