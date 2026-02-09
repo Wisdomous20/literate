@@ -12,8 +12,9 @@ import { MiscueAnalysis } from "@/components/oral-reading-test/miscueAnalysis"
 import { FullScreenPassage } from "@/components/oral-reading-test/fullScreenPassage"
 import { AddPassageModal } from "@/components/oral-reading-test/addPassageModal"
 import { getClassListBySchoolYear } from "@/app/actions/class/getClassList"
+import { uploadAudioToSupabase } from "@/utils/supabase"
 
-const samplePassage = `The Department of Education recognizes the significance of reading comprehension and the country's competence to international literacy standards through the implementation of reading assessments such as the Philippine Informal Reading Inventory (Phil-IRI) which is a classroom-based reading comprehension assessment tool used by public elementary and secondary teachers to determine the reading level of the student. It also serves as a reading assessment tool that helps teachers identify the reading level of students and provide appropriate interventions to improve their reading skills.`
+
 
 // Helper to get current school year
 function getCurrentSchoolYear(): string {
@@ -52,6 +53,8 @@ export default function OralReadingTestPage() {
   const [gradeLevel, setGradeLevel] = useState("Grade 4")
   const [classes, setClasses] = useState<ClassItem[]>([])
   const [isLoadingClasses, setIsLoadingClasses] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedStudentId, setSelectedStudentId] = useState<string>("")
 
   // Fetch classes on mount
   useEffect(() => {
@@ -77,12 +80,22 @@ export default function OralReadingTestPage() {
 
   const hasPassage = passageContent.length > 0
 
-  const handleSelectPassage = useCallback((passage: { title: string; language: string; level: string; testType: string }) => {
-    setPassageContent(samplePassage)
+ const handleSelectPassage = useCallback((passage: {
+    id: string
+    title: string
+    content: string
+    language: string
+    level: number
+    tags: string
+    testType: string
+  }) => {
+    // Use the actual passage content from the database
+    setPassageContent(passage.content)
     setSelectedLanguage(passage.language)
-    setSelectedLevel(passage.level)
-    setSelectedTestType(passage.testType)
+    setSelectedLevel(`Grade ${passage.level}`)
+    setSelectedTestType(passage.testType === "PRE_TEST" ? "Pre-Test" : "Post-Test")
     setSelectedTitle(passage.title)
+    setSelectedPassage(passage.id)
     // Reset any existing recording when passage changes
     setHasRecording(false)
     setRecordedSeconds(0)
@@ -133,6 +146,35 @@ export default function OralReadingTestPage() {
       />
     )
   }
+
+  const handleSubmitRecording = async () => {
+  if (!recordedAudioURL || !selectedPassage || !selectedStudentId) return
+
+  setIsSubmitting(true)
+  try {
+    // The audio is already uploaded to Supabase via the recording process
+    // Use the recorded audio URL directly
+    const audioUrl = recordedAudioURL
+
+    if (!audioUrl) {
+      console.error("Failed to get audio URL")
+      return
+    }
+
+    // Create the OralReadingSession via your server action with the audioUrl
+    // Note: You'll need to implement createOralReadingSession if it doesn't exist
+    // await createOralReadingSession({
+    //   studentId: selectedStudentId,
+    //   passageId: selectedPassage,
+    //   audioUrl: audioUrl,
+    //   duration: recordedSeconds,
+    // })
+  } catch (err) {
+    console.error("Submit error:", err)
+  } finally {
+    setIsSubmitting(false)
+  }
+}
 
   const classNames = classes.map(c => c.name)
 
