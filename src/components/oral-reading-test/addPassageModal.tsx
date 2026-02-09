@@ -1,34 +1,37 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { X, ChevronDown, List, LayoutGrid, FileText } from "lucide-react"
+import { getAllPassagesAction } from "@/app/actions/admin/getAllPassage"
 
 interface Passage {
   id: string
   title: string
+  content: string
   language: string
-  level: string
+  level: number
+  tags: string
   testType: string
+  createdAt: Date
+  updatedAt: Date
 }
 
-// Mock passage data
-const mockPassages: Passage[] = [
-  { id: "1", title: "The Philippine Eagle", language: "English", level: "Grade 3", testType: "Pre-Test" },
-  { id: "2", title: "Ang Alamat ng Pinya", language: "Filipino", level: "Grade 4", testType: "Pre-Test" },
-  { id: "3", title: "The Importance of Reading", language: "English", level: "Grade 4", testType: "Post-Test" },
-  { id: "4", title: "Mga Hayop sa Bukid", language: "Filipino", level: "Grade 3", testType: "Pre-Test" },
-  { id: "5", title: "Water Conservation", language: "English", level: "Grade 5", testType: "Pre-Test" },
-  { id: "6", title: "Ang Munting Prinsesa", language: "Filipino", level: "Grade 5", testType: "Post-Test" },
-  { id: "7", title: "Our Solar System", language: "English", level: "Grade 6", testType: "Pre-Test" },
-  { id: "8", title: "Panahon ng Tag-ulan", language: "Filipino", level: "Grade 4", testType: "Pre-Test" },
-  { id: "9", title: "The Life of Jose Rizal", language: "English", level: "Grade 6", testType: "Post-Test" },
-  { id: "10", title: "Kalikasan at Kapaligiran", language: "Filipino", level: "Grade 5", testType: "Pre-Test" },
-  { id: "11", title: "Healthy Eating Habits", language: "English", level: "Grade 3", testType: "Pre-Test" },
-  { id: "12", title: "Ang Simbahan sa Aming Bayan", language: "Filipino", level: "Grade 6", testType: "Post-Test" },
-  { id: "13", title: "Community Helpers", language: "English", level: "Grade 3", testType: "Pre-Test" },
-  { id: "14", title: "Pamilyang Pilipino", language: "Filipino", level: "Grade 4", testType: "Pre-Test" },
-  { id: "15", title: "Climate Change Awareness", language: "English", level: "Grade 6", testType: "Pre-Test" },
-]
+// Helper to display level as "Grade X"
+function formatLevel(level: number): string {
+  return `Grade ${level}`
+}
+
+// Helper to display testType enum as readable string
+function formatTestType(testType: string): string {
+  switch (testType) {
+    case "PRE_TEST":
+      return "Pre-Test"
+    case "POST_TEST":
+      return "Post-Test"
+    default:
+      return testType
+  }
+}
 
 const PASSAGE_LEVELS = ["All Levels", "Grade 3", "Grade 4", "Grade 5", "Grade 6"]
 const TEST_TYPES = ["All", "Pre-Test", "Post-Test"]
@@ -108,12 +111,39 @@ export function AddPassageModal({ isOpen, onClose, onSelectPassage }: AddPassage
   const [selectedLanguage, setSelectedLanguage] = useState(LANGUAGES[0])
   const [selectedPassageId, setSelectedPassageId] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<"list" | "grid">("list")
+  const [passages, setPassages] = useState<Passage[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch passages from the database when modal opens
+  useEffect(() => {
+    if (!isOpen) return
+
+    async function fetchPassages() {
+      setIsLoading(true)
+      setError(null)
+      try {
+        const result = await getAllPassagesAction()
+        if (result.success && result.passages) {
+          setPassages(result.passages as Passage[])
+        } else {
+          setError(result.error || "Failed to load passages")
+        }
+      } catch (err) {
+        setError("An error occurred while loading passages")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchPassages()
+  }, [isOpen])
 
   if (!isOpen) return null
 
-  const filteredPassages = mockPassages.filter((p) => {
-    if (selectedLevel !== PASSAGE_LEVELS[0] && p.level !== selectedLevel) return false
-    if (selectedTestType !== TEST_TYPES[0] && p.testType !== selectedTestType) return false
+  const filteredPassages = passages.filter((p) => {
+    if (selectedLevel !== PASSAGE_LEVELS[0] && formatLevel(p.level) !== selectedLevel) return false
+    if (selectedTestType !== TEST_TYPES[0] && formatTestType(p.testType) !== selectedTestType) return false
     if (selectedLanguage !== LANGUAGES[0] && p.language !== selectedLanguage) return false
     return true
   })
@@ -128,14 +158,12 @@ export function AddPassageModal({ isOpen, onClose, onSelectPassage }: AddPassage
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Overlay */}
       <div
         className="absolute inset-0"
         style={{ background: "rgba(116, 128, 136, 0.53)" }}
         onClick={onClose}
       />
 
-      {/* Modal Card */}
       <div
         className="relative z-10 flex flex-col overflow-hidden"
         style={{
@@ -143,30 +171,20 @@ export function AddPassageModal({ isOpen, onClose, onSelectPassage }: AddPassage
           maxHeight: "85vh",
           background: "#EFFDFF",
           border: "1px solid #54A4FF",
-          boxShadow: "0px 1px 20px 20px rgba(108, 164, 239, 0.37)",
-          borderRadius: "50px",
+          boxShadow: "0px 1px 20px rgba(108, 164, 239, 0.37)",
+          borderRadius: "20px",
         }}
       >
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute right-10 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-[#D5E7FE]"
-        >
-          <X className="h-6 w-6" style={{ color: "#00306E" }} />
-        </button>
+        {/* Header */}
+        <div className="flex shrink-0 items-center justify-between px-8 pt-6 pb-4">
+          <h2
+            className="text-[25px] font-bold"
+            style={{ color: "#5D5DFB", fontFamily: "Poppins, sans-serif" }}
+          >
+            Select a Passage
+          </h2>
 
-        {/* Modal Content */}
-        <div className="flex min-h-0 flex-1 flex-col px-12 pb-10 pt-12 pr-20">
-          {/* Title Row — title + view toggle */}
-          <div className="mb-5 flex shrink-0 items-center justify-between">
-            <h2
-              className="text-[25px] font-bold"
-              style={{ color: "#5D5DFB", fontFamily: "Poppins, sans-serif" }}
-            >
-              Select a Passage
-            </h2>
-
-            {/* View Mode Toggle */}
+          <div className="flex items-center gap-3">
             <div
               className="flex items-center overflow-hidden rounded-lg"
               style={{ border: "1px solid #54A4FF" }}
@@ -199,9 +217,19 @@ export function AddPassageModal({ isOpen, onClose, onSelectPassage }: AddPassage
                 />
               </button>
             </div>
-          </div>
 
-          {/* Filter Dropdowns Row */}
+            <button
+              onClick={onClose}
+              className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-[#E4F4FF]"
+            >
+              <X className="h-5 w-5" style={{ color: "#00306E" }} />
+            </button>
+          </div>
+        </div>
+
+        {/* Scrollable content area */}
+        <div className="flex min-h-0 flex-1 flex-col px-8 pb-6">
+          {/* Filters */}
           <div className="mb-4 flex shrink-0 gap-3">
             <FilterDropdown
               label="Passage Level"
@@ -231,89 +259,88 @@ export function AddPassageModal({ isOpen, onClose, onSelectPassage }: AddPassage
             Results: {filteredPassages.length}
           </p>
 
-          {/* Passage Items — scrollable area that fills remaining space */}
+          {/* Loading / Error / Passage List */}
           <div className="min-h-0 flex-1 overflow-auto pr-1">
-            {viewMode === "list" ? (
-              /* ── List View ── */
+            {isLoading ? (
+              <div className="flex h-32 items-center justify-center">
+                <p className="text-sm text-[#00306E]/60">Loading passages...</p>
+              </div>
+            ) : error ? (
+              <div className="flex h-32 items-center justify-center">
+                <p className="text-sm text-red-500">{error}</p>
+              </div>
+            ) : filteredPassages.length === 0 ? (
+              <div className="flex h-32 items-center justify-center">
+                <p className="text-sm text-[#00306E]/40">No passages found</p>
+              </div>
+            ) : viewMode === "list" ? (
               <div className="flex flex-col gap-2">
-                {filteredPassages.map((passage) => {
-                  const isSelected = selectedPassageId === passage.id
-                  return (
-                    <button
-                      key={passage.id}
-                      onClick={() => setSelectedPassageId(passage.id)}
-                      className="flex w-full shrink-0 items-center rounded-[9px] px-8 text-left transition-colors"
-                      style={{
-                        minHeight: "71px",
-                        background: isSelected ? "rgba(74, 74, 252, 0.23)" : "#FFFFFF",
-                        border: isSelected ? "2px solid #5D5DFB" : "1px solid #5D5DFB",
-                        fontFamily: "Poppins, sans-serif",
-                      }}
-                    >
-                      <span
-                        className="text-[20px] font-medium"
-                        style={{ color: "#0C1A6D" }}
-                      >
+                {filteredPassages.map((passage) => (
+                  <button
+                    key={passage.id}
+                    onClick={() => setSelectedPassageId(passage.id)}
+                    className="flex items-center gap-3 rounded-lg px-4 py-3 text-left transition-colors"
+                    style={{
+                      background:
+                        selectedPassageId === passage.id
+                          ? "rgba(93, 93, 251, 0.1)"
+                          : "white",
+                      border:
+                        selectedPassageId === passage.id
+                          ? "1px solid #5D5DFB"
+                          : "1px solid rgba(84, 164, 255, 0.3)",
+                    }}
+                  >
+                    <FileText className="h-5 w-5 shrink-0" style={{ color: "#5D5DFB" }} />
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold" style={{ color: "#00306E" }}>
                         {passage.title}
-                      </span>
-                    </button>
-                  )
-                })}
+                      </p>
+                      <p className="text-xs" style={{ color: "#6B7DB3" }}>
+                        {passage.language} • {formatLevel(passage.level)} • {formatTestType(passage.testType)}
+                      </p>
+                    </div>
+                  </button>
+                ))}
               </div>
             ) : (
-              /* ── Grid View ── */
-              <div
-                className="grid gap-3"
-                style={{ gridTemplateColumns: "repeat(3, 1fr)" }}
-              >
-                {filteredPassages.map((passage) => {
-                  const isSelected = selectedPassageId === passage.id
-                  return (
-                    <button
-                      key={passage.id}
-                      onClick={() => setSelectedPassageId(passage.id)}
-                      className="flex flex-col justify-center gap-2 rounded-[12px] p-5 text-left transition-colors"
-                      style={{
-                        minHeight: "110px",
-                        background: isSelected ? "rgba(74, 74, 252, 0.23)" : "#FFFFFF",
-                        border: isSelected ? "2px solid #5D5DFB" : "1px solid #5D5DFB",
-                        fontFamily: "Poppins, sans-serif",
-                      }}
-                    >
-                      <span
-                        className="line-clamp-2 text-[15px] font-semibold leading-tight"
-                        style={{ color: "#0C1A6D" }}
-                      >
-                        {passage.title}
-                      </span>
-                      <span
-                        className="text-[11px] font-medium"
-                        style={{ color: "rgba(0, 48, 110, 0.5)" }}
-                      >
-                        {passage.language} · {passage.level} · {passage.testType}
-                      </span>
-                    </button>
-                  )
-                })}
+              <div className="grid grid-cols-3 gap-3">
+                {filteredPassages.map((passage) => (
+                  <button
+                    key={passage.id}
+                    onClick={() => setSelectedPassageId(passage.id)}
+                    className="flex flex-col items-center gap-2 rounded-lg px-4 py-4 text-center transition-colors"
+                    style={{
+                      background:
+                        selectedPassageId === passage.id
+                          ? "rgba(93, 93, 251, 0.1)"
+                          : "white",
+                      border:
+                        selectedPassageId === passage.id
+                          ? "1px solid #5D5DFB"
+                          : "1px solid rgba(84, 164, 255, 0.3)",
+                    }}
+                  >
+                    <FileText className="h-6 w-6" style={{ color: "#5D5DFB" }} />
+                    <p className="text-sm font-semibold" style={{ color: "#00306E" }}>
+                      {passage.title}
+                    </p>
+                    <p className="text-xs" style={{ color: "#6B7DB3" }}>
+                      {passage.language} • {formatLevel(passage.level)} • {formatTestType(passage.testType)}
+                    </p>
+                  </button>
+                ))}
               </div>
             )}
           </div>
 
-          {/* Select Passage Button */}
-          <div className="mt-6 flex shrink-0 justify-center">
+          {/* Select Button */}
+          <div className="mt-4 flex shrink-0 justify-end">
             <button
               onClick={handleSelect}
               disabled={!selectedPassageId}
-              className="text-[15px] font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-              style={{
-                width: "197px",
-                height: "48px",
-                background: "#2E2E68",
-                border: "1px solid #7A7AFB",
-                boxShadow: "0px 1px 20px rgba(65, 155, 180, 0.47)",
-                borderRadius: "8px",
-                fontFamily: "Poppins, sans-serif",
-              }}
+              className="rounded-lg px-8 py-2.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
+              style={{ background: "#5D5DFB" }}
             >
               Select Passage
             </button>

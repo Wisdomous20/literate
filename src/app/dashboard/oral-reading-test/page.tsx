@@ -1,10 +1,11 @@
 "use client"
 
+
 import { useState, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { ChevronLeft, ChevronRight, Timer, Minus, Plus } from "lucide-react"
 import { DashboardHeader } from "@/components/auth/dashboard/dashboardHeader"
-import { StudentInfoBar } from "@/components/oral-reading-test/studentInfoBar"
+import StudentInfoBar from "@/components/oral-reading-test/studentInfoBar"
 import { PassageFilters } from "@/components/oral-reading-test/passageFilters"
 import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay"
 import { ReadingTimer } from "@/components/oral-reading-test/readingTimer"
@@ -13,7 +14,7 @@ import { FullScreenPassage } from "@/components/oral-reading-test/fullScreenPass
 import { AddPassageModal } from "@/components/oral-reading-test/addPassageModal"
 import { getClassListBySchoolYear } from "@/app/actions/class/getClassList"
 
-const samplePassage = `The Department of Education recognizes the significance of reading comprehension and the country's competence to international literacy standards through the implementation of reading assessments such as the Philippine Informal Reading Inventory (Phil-IRI) which is a classroom-based reading comprehension assessment tool used by public elementary and secondary teachers to determine the reading level of the student. It also serves as a reading assessment tool that helps teachers identify the reading level of students and provide appropriate interventions to improve their reading skills.`
+
 
 // Helper to get current school year
 function getCurrentSchoolYear(): string {
@@ -39,6 +40,7 @@ export default function OralReadingTestPage() {
   const [isFullScreen, setIsFullScreen] = useState(false)
   const [recordedSeconds, setRecordedSeconds] = useState(0)
   const [recordedAudioURL, setRecordedAudioURL] = useState<string | null>(null)
+  const [recordedAudioBlob, setRecordedAudioBlob] = useState<Blob | null>(null)
   const [hasRecording, setHasRecording] = useState(false)
   const [countdownEnabled, setCountdownEnabled] = useState(true)
   const [countdownSeconds, setCountdownSeconds] = useState(3)
@@ -52,6 +54,8 @@ export default function OralReadingTestPage() {
   const [gradeLevel, setGradeLevel] = useState("Grade 4")
   const [classes, setClasses] = useState<ClassItem[]>([])
   const [isLoadingClasses, setIsLoadingClasses] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedStudentId, setSelectedStudentId] = useState<string>("")
 
   // Fetch classes on mount
   useEffect(() => {
@@ -77,15 +81,24 @@ export default function OralReadingTestPage() {
 
   const hasPassage = passageContent.length > 0
 
-  const handleSelectPassage = useCallback((passage: { title: string; language: string; level: string; testType: string }) => {
-    setPassageContent(samplePassage)
+  const handleSelectPassage = useCallback((passage: {
+    id: string
+    title: string
+    content: string
+    language: string
+    level: number
+    tags: string
+    testType: string
+  }) => {
+    setPassageContent(passage.content)
     setSelectedLanguage(passage.language)
-    setSelectedLevel(passage.level)
-    setSelectedTestType(passage.testType)
+    setSelectedLevel(`Grade ${passage.level}`)
+    setSelectedTestType(passage.testType === "PRE_TEST" ? "Pre-Test" : "Post-Test")
     setSelectedTitle(passage.title)
-    // Reset any existing recording when passage changes
+    setSelectedPassage(passage.id)
     setHasRecording(false)
     setRecordedSeconds(0)
+    setRecordedAudioBlob(null)
     if (recordedAudioURL) {
       URL.revokeObjectURL(recordedAudioURL)
       setRecordedAudioURL(null)
@@ -102,9 +115,10 @@ export default function OralReadingTestPage() {
     }
   }, [hasPassage, recordedAudioURL])
 
-  const handleFullScreenDone = useCallback((elapsedSeconds: number, audioURL: string | null) => {
+  const handleFullScreenDone = useCallback((elapsedSeconds: number, audioURL: string | null, audioBlob: Blob | null) => {
     setRecordedSeconds(elapsedSeconds)
     setRecordedAudioURL(audioURL)
+    setRecordedAudioBlob(audioBlob)
     setIsFullScreen(false)
     setHasRecording(true)
   }, [])
@@ -122,6 +136,76 @@ export default function OralReadingTestPage() {
     }
   }, [recordedAudioURL])
 
+  const handleSubmitRecording = useCallback(async () => {
+    if (!recordedAudioBlob || !selectedPassage || !selectedStudentId) {
+      console.log("Submit blocked - missing:", {
+        hasBlob: !!recordedAudioBlob,
+        selectedPassage,
+        selectedStudentId,
+      })
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      // 1. Upload audio to Supabase Storage
+      const { uploadAudioToSupabase } = await import("@/utils/uploadAudioToSupabase")
+      const { url: supabaseAudioUrl, error: uploadError } = await uploadAudioToSupabase(
+        recordedAudioBlob,
+        `${selectedPassage}-${selectedStudentId}-${Date.now()}`
+      )
+
+      if (uploadError || !supabaseAudioUrl) {
+        console.error("Audio upload failed:", uploadError)
+        return
+      }
+
+      console.log("Audio uploaded to:", supabaseAudioUrl)
+
+      // 2. Send audio blob + metadata to analysis API route
+      const formData = new FormData()
+      formData.append("studentId", selectedStudentId)
+      formData.append("passageId", selectedPassage)
+      formData.append("audioUrl", supabaseAudioUrl)
+      formData.append("audio", recordedAudioBlob, "recording.webm")
+
+      console.log("Sending to API:", `/api/oral-reading/${selectedPassage}`)
+
+      const response = await fetch(`/api/oral-reading/${selectedPassage}`, {
+        method: "POST",
+        body: formData,
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        console.error("Analysis API error:", result)
+        return
+      }
+
+      console.log("Session created:", result.sessionId)
+    } catch (err) {
+      console.error("Submit error:", err)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }, [recordedAudioBlob, selectedPassage, selectedStudentId])
+
+
+ useEffect(() => {
+    console.log("useEffect check:", {
+      hasRecording,
+      hasBlob: !!recordedAudioBlob,
+      selectedPassage,
+      selectedStudentId,
+    })
+    if (hasRecording && recordedAudioBlob && selectedPassage && selectedStudentId) {
+      console.log("Submitting recording...")
+      handleSubmitRecording()
+    }
+  }, [hasRecording, recordedAudioBlob, selectedPassage, selectedStudentId, handleSubmitRecording])
+
+
   if (isFullScreen) {
     return (
       <FullScreenPassage
@@ -133,6 +217,7 @@ export default function OralReadingTestPage() {
       />
     )
   }
+
 
   const classNames = classes.map(c => c.name)
 
@@ -174,6 +259,7 @@ export default function OralReadingTestPage() {
                   // Add the new class to the local list
                   setClasses(prev => [...prev, { id: newClass, name: newClass }])
                 }}
+                onStudentSelected={(studentId: string) => setSelectedStudentId(studentId)}
               />
             )}
 

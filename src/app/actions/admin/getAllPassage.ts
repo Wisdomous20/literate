@@ -2,13 +2,12 @@
 
 import { getAllPassageService } from "@/service/admin/getAllPassageService";
 
-export async function getAllPassageAction() {
-  // Call the service to fetch all passages
+export async function getAllPassagesAction() {
   const result = await getAllPassageService();
 
   if (!result.success) {
-    throw new Error(result.error || "Failed to fetch passages.");
+    return { success: false, error: result.error || "Failed to fetch passages." };
   }
 
-  return result.passages;
+  return { success: true, passages: result.passages };
 }
