@@ -1,13 +1,13 @@
-import { ClassInventory } from "@/components/auth/dashboard/classInventory"
-import { ClassificationChart } from "@/components/auth/dashboard/classificationChart"
-import { QuickActions } from "@/components/auth/dashboard/quickActions"
-import { DashboardHeader } from "@/components/auth/dashboard/dashboardHeader"
+import { ClassInventory } from "@/components/auth/dashboard/classInventory";
+import { ClassificationChart } from "@/components/auth/dashboard/classificationChart";
+import { QuickActions } from "@/components/auth/dashboard/quickActions";
+import { DashboardHeader } from "@/components/auth/dashboard/dashboardHeader";
 
 export default function DashboardPage() {
   return (
     <div className="flex h-full flex-col">
       <DashboardHeader title="My Dashboard" />
-      
+
       <main className="flex flex-1 flex-col gap-6 px-8 py-6">
         {/* Class Inventory Section */}
         <ClassInventory />
@@ -19,5 +19,5 @@ export default function DashboardPage() {
         </div>
       </main>
     </div>
-  )
+  );
 }
