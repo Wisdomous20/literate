@@ -150,16 +150,17 @@ export default function OralReadingTestPage() {
     try {
       // 1. Upload audio to Supabase Storage
       const { uploadAudioToSupabase } = await import("@/utils/uploadAudioToSupabase")
-      const { url: supabaseAudioUrl, error: uploadError } = await uploadAudioToSupabase(
+      const supabaseAudioUrl = await uploadAudioToSupabase(
         recordedAudioBlob,
-        `${selectedPassage}-${selectedStudentId}-${Date.now()}`
+        selectedStudentId,
+        selectedPassage
       )
 
-      if (uploadError || !supabaseAudioUrl) {
-        console.error("Audio upload failed:", uploadError)
+      if (!supabaseAudioUrl) {
+        console.error("Audio upload failed")
         return
       }
-
+      
       console.log("Audio uploaded to:", supabaseAudioUrl)
 
       // 2. Send audio blob + metadata to analysis API route

@@ -1,31 +1,28 @@
-import { createClient } from "@supabase/supabase-js"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+import { uploadAudioToSupabase as uploadAudioAction } from "@/app/actions/oral-reading/uploadAudioToSupabase"
 
 export async function uploadAudioToSupabase(
   audioBlob: Blob,
-  sessionId: string
-): Promise<{ url: string | null; error: string | null }> {
-  const fileName = `oral-reading/${sessionId}-${Date.now()}.webm`
+  studentId: string,
+  passageId: string
+): Promise<string | null> {
+  try {
+    const timestamp = Date.now()
+    const filePath = `oral-reading/${studentId}-${passageId}-${timestamp}.webm`
 
-  const { data, error } = await supabase.storage
-    .from("audio-recordings")
-    .upload(fileName, audioBlob, {
-      contentType: "audio/webm",
-      upsert: false,
-    })
+    const formData = new FormData()
+    formData.append("file", new File([audioBlob], `${timestamp}.webm`, { type: audioBlob.type || "audio/webm" }))
+    formData.append("filePath", filePath)
 
-  if (error) {
-    console.error("Supabase upload error:", error)
-    return { url: null, error: error.message }
+    const result = await uploadAudioAction(formData)
+
+    if (!result.success) {
+      console.error("Audio upload failed:", result.error)
+      return null
+    }
+
+    return result.url ?? null
+  } catch (error) {
+    console.error("Upload error:", error)
+    return null
   }
-
-  const { data: publicUrlData } = supabase.storage
-    .from("audio-recordings")
-    .getPublicUrl(data.path)
-
-  return { url: publicUrlData.publicUrl, error: null }
 }

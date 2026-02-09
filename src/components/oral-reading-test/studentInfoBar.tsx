@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -18,6 +18,14 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
+import { getStudentsByClassName } from "@/app/actions/student/getAllStudentByClass"
+import { createStudent } from "@/app/actions/student/createStudent"
+
+interface StudentOption {
+  id: string
+  name: string
+  level: number
+}
 
 interface StudentInfoBarProps {
   studentName: string
@@ -41,58 +49,102 @@ export default function StudentInfoBar({
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [newClassName, setNewClassName] = useState("")
   const [selectedClass, setSelectedClass] = useState("")
+  const [students, setStudents] = useState<StudentOption[]>([])
+  const [selectedStudentId, setSelectedStudentId] = useState("")
+  const [isLoadingStudents, setIsLoadingStudents] = useState(false)
+  const [isCreatingStudent, setIsCreatingStudent] = useState(false)
 
-  const handleClassChange = async (value: string) => {
+  // Fetch students when class changes
+  const fetchStudents = useCallback(async (className: string) => {
+    if (!className || className === "create-new") {
+      setStudents([])
+      return
+    }
+
+    setIsLoadingStudents(true)
+    try {
+      const result = await getStudentsByClassName(className)
+      if (result.success && "students" in result) {
+        setStudents(result.students)
+      } else {
+        setStudents([])
+      }
+    } catch (error) {
+      console.error("Failed to fetch students:", error)
+      setStudents([])
+    } finally {
+      setIsLoadingStudents(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!selectedClass || selectedClass === "create-new") {
+      setStudents([])
+      setSelectedStudentId("")
+      return
+    }
+
+    fetchStudents(selectedClass)
+  }, [selectedClass, fetchStudents])
+
+  const handleClassChange = (value: string) => {
     if (value === "create-new") {
       setIsDialogOpen(true)
       return
     }
     setSelectedClass(value)
+    // Reset student selection when class changes
+    setSelectedStudentId("")
+    onStudentNameChange("")
+    onGradeLevelChange("")
+  }
 
-    // Look up/create student when class is selected and name + grade exist
-    if (studentName.trim() && gradeLevel && value) {
-      try {
-        const response = await fetch("/api/students", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: studentName.trim(),
-            gradeLevel,
-            className: value,
-          }),
-        })
-        if (response.ok) {
-          const data = await response.json()
-          onStudentSelected(data.id)
-        }
-      } catch (error) {
-        console.error("Failed to look up/create student:", error)
-      }
+  const handleStudentSelect = (studentId: string) => {
+    if (studentId === "create-new") {
+      setSelectedStudentId("create-new")
+      onStudentNameChange("")
+      onGradeLevelChange("")
+      return
+    }
+
+    const student = students.find((s) => s.id === studentId)
+    if (student) {
+      setSelectedStudentId(studentId)
+      onStudentNameChange(student.name)
+      onGradeLevelChange(String(student.level))
+      onStudentSelected(student.id)
     }
   }
 
-  const handleStudentNameChange = async (name: string) => {
-    onStudentNameChange(name)
+  const handleCreateNewStudent = async () => {
+    if (!studentName.trim() || !gradeLevel || !selectedClass || isCreatingStudent) return
 
-    // Look up/create student when all fields are filled
-    if (name.trim() && gradeLevel && selectedClass) {
-      try {
-        const response = await fetch("/api/students", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: name.trim(),
-            gradeLevel,
-            className: selectedClass,
-          }),
-        })
-        if (response.ok) {
-          const data = await response.json()
-          onStudentSelected(data.id)
-        }
-      } catch (error) {
-        console.error("Failed to look up/create student:", error)
+    const parsedLevel = parseInt(gradeLevel, 10)
+    if (isNaN(parsedLevel) || parsedLevel < 1 || parsedLevel > 12) {
+      console.error("Invalid grade level:", gradeLevel)
+      return
+    }
+
+    setIsCreatingStudent(true)
+    try {
+      const result = await createStudent(
+        studentName.trim(),
+        parsedLevel,
+        selectedClass
+      )
+
+      if (result.success && result.student) {
+        onStudentSelected(result.student.id)
+        setSelectedStudentId(result.student.id)
+        // Refresh student list so the new student appears in the dropdown
+        await fetchStudents(selectedClass)
+      } else {
+        console.error("Failed to create student:", result.error)
       }
+    } catch (error) {
+      console.error("Failed to create student:", error)
+    } finally {
+      setIsCreatingStudent(false)
     }
   }
 
@@ -108,37 +160,6 @@ export default function StudentInfoBar({
   return (
     <>
       <div className="flex flex-col sm:flex-row items-start sm:items-end gap-3 p-4 bg-white rounded-lg shadow-sm border">
-        {/* Student Name */}
-        <div className="flex-1 w-full">
-          <label className="block text-xs font-medium text-gray-500 mb-1">
-            Student Name
-          </label>
-          <Input
-            placeholder="Enter student name"
-            value={studentName}
-            onChange={(e) => handleStudentNameChange(e.target.value)}
-          />
-        </div>
-
-        {/* Grade Level */}
-        <div className="w-full sm:w-40">
-          <label className="block text-xs font-medium text-gray-500 mb-1">
-            Grade Level
-          </label>
-          <Select value={gradeLevel} onValueChange={onGradeLevelChange}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select grade" />
-            </SelectTrigger>
-            <SelectContent>
-              {Array.from({ length: 12 }, (_, i) => (
-                <SelectItem key={i + 1} value={String(i + 1)}>
-                  Grade {i + 1}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
         {/* Class */}
         <div className="w-full sm:w-48">
           <label className="block text-xs font-medium text-gray-500 mb-1">
@@ -163,6 +184,101 @@ export default function StudentInfoBar({
             </SelectContent>
           </Select>
         </div>
+
+        {/* Student Selection */}
+        <div className="w-full sm:w-52">
+          <label className="block text-xs font-medium text-gray-500 mb-1">
+            Student
+          </label>
+          <Select
+            value={selectedStudentId}
+            onValueChange={handleStudentSelect}
+            disabled={!selectedClass || isLoadingStudents}
+          >
+            <SelectTrigger>
+              <SelectValue
+                placeholder={
+                  isLoadingStudents
+                    ? "Loading..."
+                    : selectedClass
+                      ? "Select student"
+                      : "Select class first"
+                }
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {students.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.name} (Grade {s.level})
+                </SelectItem>
+              ))}
+              <SelectItem value="create-new">
+                <span className="flex items-center gap-1">
+                  <Plus className="h-4 w-4" />
+                  Add New Student
+                </span>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Student Name & Grade — shown only when creating new student */}
+        {selectedStudentId === "create-new" && (
+          <>
+            <div className="flex-1 w-full">
+              <label className="block text-xs font-medium text-gray-500 mb-1">
+                Student Name
+              </label>
+              <Input
+                placeholder="Enter student name"
+                value={studentName}
+                onChange={(e) => onStudentNameChange(e.target.value)}
+                disabled={isCreatingStudent}
+              />
+            </div>
+
+            {/* Grade Level */}
+            <div className="w-full sm:w-40">
+              <label className="block text-xs font-medium text-gray-500 mb-1">
+                Grade Level
+              </label>
+              <Select
+                value={gradeLevel}
+                onValueChange={onGradeLevelChange}
+                disabled={isCreatingStudent}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select grade" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 12 }, (_, i) => (
+                    <SelectItem key={i + 1} value={String(i + 1)}>
+                      Grade {i + 1}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Save student button */}
+            <div className="w-full sm:w-auto">
+              <label className="block text-xs font-medium text-gray-500 mb-1 invisible">
+                Action
+              </label>
+              <Button
+                onClick={handleCreateNewStudent}
+                disabled={
+                  !studentName.trim() ||
+                  !gradeLevel ||
+                  !selectedClass ||
+                  isCreatingStudent
+                }
+              >
+                {isCreatingStudent ? "Adding..." : "Add Student"}
+              </Button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Create Class Dialog */}
