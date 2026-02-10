@@ -3,8 +3,8 @@ import { Providers } from "@/components/providers/Providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Literate",
-  description: "Oral Reading Assessment Platform",
+  title: "LiteRate",
+  description: "Reading Proficiency Assessment Platform",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
