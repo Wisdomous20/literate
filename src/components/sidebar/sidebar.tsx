@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useState } from "react"
 import Link from "next/link"
@@ -37,7 +37,7 @@ const menuItems = [
     href: "/dashboard/reading-comprehension",
     icon: ClipboardList,
   },
-]
+];
 
 const generalItems = [
   {
@@ -45,7 +45,7 @@ const generalItems = [
     href: "/dashboard/settings-page",
     icon: Settings,
   },
-]
+];
 
 export function Sidebar() {
   const pathname = usePathname()
@@ -53,11 +53,14 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
 
   // Get user's first name from session
-  const firstName = session?.user?.name?.split(" ")[0] || "User"
+  const firstName = session?.user?.name?.split(" ")[0] || "User";
+
+  // Get the current school year from utility
+  // const schoolYear = getSchoolYear();
 
   const handleLogout = async () => {
-    await signOut({ redirect: true, callbackUrl: "/auth/login" })
-  }
+    await signOut({ redirect: true, callbackUrl: "/auth/login" });
+  };
 
   return (
     <aside
@@ -92,10 +95,7 @@ export function Sidebar() {
             xmlns="http://www.w3.org/2000/svg"
             className="h-8 w-8"
           >
-            <path
-              d="M16 4L6 10V22L16 28L26 22V10L16 4Z"
-              fill="white"
-            />
+            <path d="M16 4L6 10V22L16 28L26 22V10L16 4Z" fill="white" />
             <path
               d="M16 4L6 10M16 4L26 10M16 4V16M6 10V22L16 28M6 10L16 16M26 10V22L16 28M26 10L16 16M16 28V16"
               stroke="#6666FF"
@@ -135,7 +135,7 @@ export function Sidebar() {
         )}
         <nav className="space-y-1">
           {menuItems.map((item) => {
-            const isActive = pathname === item.href
+            const isActive = pathname === item.href;
             return (
               <Link
                 key={item.href}
@@ -145,8 +145,8 @@ export function Sidebar() {
                   "flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-all duration-200",
                   collapsed ? "justify-center px-0" : "px-2",
                   isActive
-                    ? "text-white"
-                    : "text-white/90 hover:text-white"
+                    ? "text-white bg-[rgba(93,93,251,0.6)]"
+                    : "text-white/90 hover:text-white",
                 )}
                 style={isActive ? {
                   backgroundColor: "rgba(93, 93, 251, 0.6)",
@@ -160,7 +160,7 @@ export function Sidebar() {
                 </div>
                 {!collapsed && <span className="text-[13px]">{item.label}</span>}
               </Link>
-            )
+            );
           })}
         </nav>
 
@@ -184,7 +184,7 @@ export function Sidebar() {
         )}
         <nav className="space-y-1">
           {generalItems.map((item) => {
-            const isActive = pathname === item.href
+            const isActive = pathname === item.href;
             return (
               <Link
                 key={item.href}
@@ -194,8 +194,8 @@ export function Sidebar() {
                   "flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-all duration-200",
                   collapsed ? "justify-center px-0" : "px-2",
                   isActive
-                    ? "text-white"
-                    : "text-white/90 hover:text-white"
+                    ? "text-white bg-[rgba(93,93,251,0.6)]"
+                    : "text-white/90 hover:text-white",
                 )}
                 style={isActive ? {
                   backgroundColor: "rgba(93, 93, 251, 0.6)",
@@ -209,7 +209,7 @@ export function Sidebar() {
                 </div>
                 {!collapsed && <span className="text-[13px]">{item.label}</span>}
               </Link>
-            )
+            );
           })}
         </nav>
       </div>
@@ -243,5 +243,5 @@ export function Sidebar() {
         </button>
       </div>
     </aside>
-  )
+  );
 }
