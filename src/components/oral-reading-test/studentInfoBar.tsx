@@ -1,14 +1,7 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
-import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import React, { useState, useEffect, useCallback, useRef } from "react"
+import { ChevronDown, Plus, Search, X } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -17,7 +10,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
 import { getStudentsByClassName } from "@/app/actions/student/getAllStudentByClass"
 import { createStudent } from "@/app/actions/student/createStudent"
 
@@ -25,6 +17,7 @@ interface StudentOption {
   id: string
   name: string
   level: number
+  className: string
 }
 
 interface StudentInfoBarProps {
@@ -49,102 +42,107 @@ export default function StudentInfoBar({
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [newClassName, setNewClassName] = useState("")
   const [selectedClass, setSelectedClass] = useState("")
-  const [students, setStudents] = useState<StudentOption[]>([])
-  const [selectedStudentId, setSelectedStudentId] = useState("")
+  const [allStudents, setAllStudents] = useState<StudentOption[]>([])
   const [isLoadingStudents, setIsLoadingStudents] = useState(false)
-  const [isCreatingStudent, setIsCreatingStudent] = useState(false)
+  const [isClassDropdownOpen, setIsClassDropdownOpen] = useState(false)
+  const [isGradeDropdownOpen, setIsGradeDropdownOpen] = useState(false)
+  const [isStudentInputFocused, setIsStudentInputFocused] = useState(false)
+  const [selectedStudentId, setSelectedStudentId] = useState("")
+  const studentInputRef = useRef<HTMLInputElement>(null)
+  const studentDropdownRef = useRef<HTMLDivElement>(null)
 
-  // Fetch students when class changes
-  const fetchStudents = useCallback(async (className: string) => {
-    if (!className || className === "create-new") {
-      setStudents([])
+  // Fetch students from ALL classes on mount and when classes change
+  const fetchAllStudents = useCallback(async () => {
+    if (classes.length === 0) {
+      setAllStudents([])
       return
     }
 
     setIsLoadingStudents(true)
     try {
-      const result = await getStudentsByClassName(className)
-      if (result.success && "students" in result) {
-        setStudents(result.students)
-      } else {
-        setStudents([])
-      }
+      const results = await Promise.all(
+        classes.map(async (cls) => {
+          const result = await getStudentsByClassName(cls)
+          if (result.success && "students" in result && result.students) {
+            return result.students.map((s) => ({
+              id: s.id,
+              name: s.name,
+              level: s.level ?? 0,
+              className: cls,
+            }))
+          }
+          return []
+        })
+      )
+      const all = results.flat()
+      console.log("Fetched all students:", all.length, all)
+      setAllStudents(all)
     } catch (error) {
       console.error("Failed to fetch students:", error)
-      setStudents([])
+      setAllStudents([])
     } finally {
       setIsLoadingStudents(false)
     }
-  }, [])
+  }, [classes])
 
   useEffect(() => {
-    if (!selectedClass || selectedClass === "create-new") {
-      setStudents([])
-      setSelectedStudentId("")
-      return
-    }
+    fetchAllStudents()
+  }, [fetchAllStudents])
 
-    fetchStudents(selectedClass)
-  }, [selectedClass, fetchStudents])
+  // Close student suggestions on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        studentDropdownRef.current &&
+        !studentDropdownRef.current.contains(e.target as Node) &&
+        studentInputRef.current &&
+        !studentInputRef.current.contains(e.target as Node)
+      ) {
+        setIsStudentInputFocused(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
   const handleClassChange = (value: string) => {
     if (value === "create-new") {
       setIsDialogOpen(true)
+      setIsClassDropdownOpen(false)
       return
     }
     setSelectedClass(value)
-    // Reset student selection when class changes
-    setSelectedStudentId("")
-    onStudentNameChange("")
+    setIsClassDropdownOpen(false)
+  }
+
+  const handleClearClassFilter = () => {
+    setSelectedClass("")
+    setIsClassDropdownOpen(false)
+  }
+
+  const handleGradeChange = (value: string) => {
+    onGradeLevelChange(value)
+    setIsGradeDropdownOpen(false)
+  }
+
+  const handleClearGradeFilter = () => {
     onGradeLevelChange("")
+    setIsGradeDropdownOpen(false)
   }
 
-  const handleStudentSelect = (studentId: string) => {
-    if (studentId === "create-new") {
-      setSelectedStudentId("create-new")
-      onStudentNameChange("")
-      onGradeLevelChange("")
-      return
-    }
-
-    const student = students.find((s) => s.id === studentId)
-    if (student) {
-      setSelectedStudentId(studentId)
-      onStudentNameChange(student.name)
-      onGradeLevelChange(String(student.level))
-      onStudentSelected(student.id)
-    }
+  const handleStudentSelect = (student: StudentOption) => {
+    setSelectedStudentId(student.id)
+    onStudentNameChange(student.name)
+    onGradeLevelChange(String(student.level))
+    setSelectedClass(student.className)
+    onStudentSelected(student.id)
+    setIsStudentInputFocused(false)
   }
 
-  const handleCreateNewStudent = async () => {
-    if (!studentName.trim() || !gradeLevel || !selectedClass || isCreatingStudent) return
-
-    const parsedLevel = parseInt(gradeLevel, 10)
-    if (isNaN(parsedLevel) || parsedLevel < 1 || parsedLevel > 12) {
-      console.error("Invalid grade level:", gradeLevel)
-      return
-    }
-
-    setIsCreatingStudent(true)
-    try {
-      const result = await createStudent(
-        studentName.trim(),
-        parsedLevel,
-        selectedClass
-      )
-
-      if (result.success && result.student) {
-        onStudentSelected(result.student.id)
-        setSelectedStudentId(result.student.id)
-        // Refresh student list so the new student appears in the dropdown
-        await fetchStudents(selectedClass)
-      } else {
-        console.error("Failed to create student:", result.error)
-      }
-    } catch (error) {
-      console.error("Failed to create student:", error)
-    } finally {
-      setIsCreatingStudent(false)
+  const handleStudentNameInput = (value: string) => {
+    onStudentNameChange(value)
+    if (selectedStudentId) {
+      setSelectedStudentId("")
     }
   }
 
@@ -157,128 +155,215 @@ export default function StudentInfoBar({
     }
   }
 
+  const hasFilters = !!selectedClass || !!gradeLevel
+  const searchQuery = studentName.trim().toLowerCase()
+  const hasSearchQuery = searchQuery.length >= 3
+
+  // Filter students based on filters and search
+  const displayStudents = allStudents.filter((s) => {
+    // Apply class filter if set
+    if (selectedClass && s.className !== selectedClass) return false
+    // Apply grade filter if set
+    if (gradeLevel && String(s.level) !== gradeLevel) return false
+
+    // If no filters and no search query (or < 3 chars) → show nothing
+    if (!hasFilters && !hasSearchQuery) return false
+
+    // If search query is typed, further narrow by name match
+    if (hasSearchQuery) {
+      return s.name.toLowerCase().includes(searchQuery)
+    }
+
+    // Filters are set but no search query → show all under filter
+    return true
+  })
+
+  const showSuggestions =
+    isStudentInputFocused &&
+    !isLoadingStudents &&
+    displayStudents.length > 0
+
   return (
     <>
-      <div className="flex flex-col sm:flex-row items-start sm:items-end gap-3 p-4 bg-white rounded-lg shadow-sm border">
-        {/* Class */}
-        <div className="w-full sm:w-48">
-          <label className="block text-xs font-medium text-gray-500 mb-1">
-            Class
-          </label>
-          <Select value={selectedClass} onValueChange={handleClassChange}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select class" />
-            </SelectTrigger>
-            <SelectContent>
-              {classes.map((cls) => (
-                <SelectItem key={cls} value={cls}>
-                  {cls}
-                </SelectItem>
-              ))}
-              <SelectItem value="create-new">
-                <span className="flex items-center gap-1">
-                  <Plus className="h-4 w-4" />
-                  Create New Class
-                </span>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Student Selection */}
-        <div className="w-full sm:w-52">
-          <label className="block text-xs font-medium text-gray-500 mb-1">
-            Student
-          </label>
-          <Select
-            value={selectedStudentId}
-            onValueChange={handleStudentSelect}
-            disabled={!selectedClass || isLoadingStudents}
+      <div className="grid grid-cols-3 gap-3">
+        {/* 1) Student Name — Left (Search Input) */}
+        <div
+          className="relative rounded-lg px-3 py-2"
+          style={{ background: "rgba(108, 164, 239, 0.09)" }}
+        >
+          <label
+            className="mb-0.5 block text-xs font-semibold"
+            style={{ color: "#0C1A6D" }}
           >
-            <SelectTrigger>
-              <SelectValue
-                placeholder={
-                  isLoadingStudents
-                    ? "Loading..."
-                    : selectedClass
-                      ? "Select student"
-                      : "Select class first"
-                }
-              />
-            </SelectTrigger>
-            <SelectContent>
-              {students.map((s) => (
-                <SelectItem key={s.id} value={s.id}>
-                  {s.name} (Grade {s.level})
-                </SelectItem>
+            Student Name
+          </label>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#54A4FF]" />
+            <input
+              ref={studentInputRef}
+              type="text"
+              value={studentName}
+              onChange={(e) => handleStudentNameInput(e.target.value)}
+              onFocus={() => setIsStudentInputFocused(true)}
+              placeholder="Search or type student name"
+              className="w-full rounded-lg py-1.5 pl-8 pr-3 text-sm text-[#00306E] outline-none placeholder:text-[#00306E]/40"
+              style={{
+                background: "#EFFDFF",
+                border: "1px solid #54A4FF",
+                boxShadow: "0px 1px 10px rgba(108, 164, 239, 0.25)",
+              }}
+            />
+          </div>
+
+          {/* Student search suggestions */}
+          {showSuggestions && (
+            <div
+              ref={studentDropdownRef}
+              className="absolute left-3 right-3 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-lg bg-white py-1"
+              style={{
+                border: "1px solid #54A4FF",
+                boxShadow: "0px 4px 12px rgba(84, 164, 255, 0.2)",
+              }}
+            >
+              {displayStudents.map((s) => (
+                <button
+                  key={s.id}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleStudentSelect(s)}
+                  className="flex w-full items-center justify-between px-3 py-1.5 text-left text-sm text-[#00306E] hover:bg-[#E4F4FF]"
+                >
+                  <span className="font-medium">{s.name}</span>
+                  <span className="text-xs text-[#54A4FF]">
+                    Grade {s.level} · {s.className}
+                  </span>
+                </button>
               ))}
-              <SelectItem value="create-new">
-                <span className="flex items-center gap-1">
-                  <Plus className="h-4 w-4" />
-                  Add New Student
-                </span>
-              </SelectItem>
-            </SelectContent>
-          </Select>
+            </div>
+          )}
         </div>
 
-        {/* Student Name & Grade — shown only when creating new student */}
-        {selectedStudentId === "create-new" && (
-          <>
-            <div className="flex-1 w-full">
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                Student Name
-              </label>
-              <Input
-                placeholder="Enter student name"
-                value={studentName}
-                onChange={(e) => onStudentNameChange(e.target.value)}
-                disabled={isCreatingStudent}
-              />
-            </div>
+        {/* 2) Grade Level — Middle (Dropdown Grade 1–10, also a filter) */}
+        <div
+          className="relative rounded-lg px-3 py-2"
+          style={{ background: "rgba(108, 164, 239, 0.09)" }}
+        >
+          <label
+            className="mb-0.5 block text-xs font-semibold"
+            style={{ color: "#0C1A6D" }}
+          >
+            Grade Level
+          </label>
+          <button
+            onClick={() => setIsGradeDropdownOpen(!isGradeDropdownOpen)}
+            className="flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-sm text-[#00306E]"
+            style={{
+              background: "#EFFDFF",
+              border: "1px solid #54A4FF",
+              boxShadow: "0px 1px 10px rgba(108, 164, 239, 0.25)",
+            }}
+          >
+            <span>{gradeLevel ? `Grade ${gradeLevel}` : "Select grade"}</span>
+            <ChevronDown className="h-4 w-4 text-[#54A4FF]" />
+          </button>
 
-            {/* Grade Level */}
-            <div className="w-full sm:w-40">
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                Grade Level
-              </label>
-              <Select
-                value={gradeLevel}
-                onValueChange={onGradeLevelChange}
-                disabled={isCreatingStudent}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select grade" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 12 }, (_, i) => (
-                    <SelectItem key={i + 1} value={String(i + 1)}>
-                      Grade {i + 1}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {isGradeDropdownOpen && (
+            <div
+              className="absolute left-3 right-3 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-lg bg-white py-1"
+              style={{
+                border: "1px solid #54A4FF",
+                boxShadow: "0px 4px 12px rgba(84, 164, 255, 0.2)",
+              }}
+            >
+              {Array.from({ length: 10 }, (_, i) => {
+                const isActive = gradeLevel === String(i + 1)
+                return (
+                  <button
+                    key={i + 1}
+                    onClick={() => {
+                      if (isActive) {
+                        onGradeLevelChange("")
+                      } else {
+                        onGradeLevelChange(String(i + 1))
+                      }
+                      setIsGradeDropdownOpen(false)
+                    }}
+                    className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm text-[#00306E] hover:bg-[#E4F4FF] ${
+                      isActive ? "bg-[#E4F4FF] font-semibold" : ""
+                    }`}
+                  >
+                    <span>Grade {i + 1}</span>
+                    {isActive && <X className="h-3.5 w-3.5 text-[#54A4FF]" />}
+                  </button>
+                )
+              })}
             </div>
+          )}
+        </div>
 
-            {/* Save student button */}
-            <div className="w-full sm:w-auto">
-              <label className="block text-xs font-medium text-gray-500 mb-1 invisible">
-                Action
-              </label>
-              <Button
-                onClick={handleCreateNewStudent}
-                disabled={
-                  !studentName.trim() ||
-                  !gradeLevel ||
-                  !selectedClass ||
-                  isCreatingStudent
-                }
+        {/* 3) Class Name — Right (also a filter) */}
+        <div
+          className="relative rounded-lg px-3 py-2"
+          style={{ background: "rgba(108, 164, 239, 0.09)" }}
+        >
+          <label
+            className="mb-0.5 block text-xs font-semibold"
+            style={{ color: "#0C1A6D" }}
+          >
+            Class Name
+          </label>
+          <button
+            onClick={() => setIsClassDropdownOpen(!isClassDropdownOpen)}
+            className="flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-sm text-[#00306E]"
+            style={{
+              background: "#EFFDFF",
+              border: "1px solid #54A4FF",
+              boxShadow: "0px 1px 10px rgba(108, 164, 239, 0.25)",
+            }}
+          >
+            <span>{selectedClass || "Select class"}</span>
+            <ChevronDown className="h-4 w-4 text-[#54A4FF]" />
+          </button>
+
+          {isClassDropdownOpen && (
+            <div
+              className="absolute left-3 right-3 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-lg bg-white py-1"
+              style={{
+                border: "1px solid #54A4FF",
+                boxShadow: "0px 4px 12px rgba(84, 164, 255, 0.2)",
+              }}
+            >
+              {classes.map((cls, idx) => {
+                const isActive = selectedClass === cls
+                return (
+                  <button
+                    key={`${cls}-${idx}`}
+                    onClick={() => {
+                      if (isActive) {
+                        setSelectedClass("")
+                      } else {
+                        handleClassChange(cls)
+                      }
+                      setIsClassDropdownOpen(false)
+                    }}
+                    className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm text-[#00306E] hover:bg-[#E4F4FF] ${
+                      isActive ? "bg-[#E4F4FF] font-semibold" : ""
+                    }`}
+                  >
+                    <span>{cls}</span>
+                    {isActive && <X className="h-3.5 w-3.5 text-[#54A4FF]" />}
+                  </button>
+                )
+              })}
+              <button
+                onClick={() => handleClassChange("create-new")}
+                className="flex w-full items-center gap-1 px-3 py-1.5 text-left text-sm text-[#54A4FF] hover:bg-[#E4F4FF]"
               >
-                {isCreatingStudent ? "Adding..." : "Add Student"}
-              </Button>
+                <Plus className="h-4 w-4" />
+                Create New Class
+              </button>
             </div>
-          </>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Create Class Dialog */}
@@ -287,7 +372,7 @@ export default function StudentInfoBar({
           <DialogHeader>
             <DialogTitle>Create New Class</DialogTitle>
           </DialogHeader>
-          <Input
+          <input
             placeholder="Enter class name"
             value={newClassName}
             onChange={(e) => setNewClassName(e.target.value)}
@@ -295,6 +380,12 @@ export default function StudentInfoBar({
               if (e.key === "Enter") handleCreateClass()
             }}
             autoFocus
+            className="w-full rounded-lg px-3 py-2 text-sm text-[#00306E] outline-none placeholder:text-[#00306E]/40"
+            style={{
+              background: "#EFFDFF",
+              border: "1px solid #54A4FF",
+              boxShadow: "0px 1px 10px rgba(108, 164, 239, 0.25)",
+            }}
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>

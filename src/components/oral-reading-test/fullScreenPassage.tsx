@@ -42,8 +42,19 @@ export function FullScreenPassage({
   const anchorRefs = useRef<(HTMLSpanElement | null)[]>([])
   const doneCalledRef = useRef(false)
   const secondsRef = useRef(0)
+  const processedResultsRef = useRef(0)
 
-  // Keep a ref in sync with seconds so the speech callback always has the latest value
+  // Refs for settings so speech callback always has latest values
+  const autoScrollRef = useRef(autoScrollEnabled)
+  const autoFinishRef = useRef(autoFinishEnabled)
+  useEffect(() => {
+    autoScrollRef.current = autoScrollEnabled
+  }, [autoScrollEnabled])
+  useEffect(() => {
+    autoFinishRef.current = autoFinishEnabled
+  }, [autoFinishEnabled])
+
+  // Keep a ref in sync with seconds
   useEffect(() => {
     secondsRef.current = seconds
   }, [seconds])
@@ -112,9 +123,8 @@ export function FullScreenPassage({
   }, [onDone, stopEverything])
 
   // Start speech recognition for passive auto-scroll + auto-finish
-  const startSpeechRecognition = useCallback(() => {
-    // Only start if at least one speech feature is enabled
-    if (!autoScrollEnabled && !autoFinishEnabled) return
+  const startSpeechRecognition = useCallback((sharedStream: MediaStream) => {
+    if (!autoScrollRef.current && !autoFinishRef.current) return
 
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechRecognitionAPI) {
@@ -129,43 +139,59 @@ export function FullScreenPassage({
     recognition.lang = "en-US"
 
     const totalTrackable = trackableIndices.length
+    processedResultsRef.current = 0
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      const lastResult = event.results[event.results.length - 1]
-      const transcript = lastResult[0].transcript.trim()
-      const spokenWords = transcript.split(/\s+/)
+      // Process all results from where we last left off
+      for (let r = processedResultsRef.current; r < event.results.length; r++) {
+        const result = event.results[r]
+        // Only process final results to avoid duplicate processing of interim
+        // But also process interim for the very latest result for responsiveness
+        if (!result.isFinal && r < event.results.length - 1) continue
 
-      for (const spoken of spokenWords) {
-        const normalizedSpoken = normalize(spoken)
-        if (!normalizedSpoken) continue
+        const transcript = result[0].transcript.trim()
+        const spokenWords = transcript.split(/\s+/)
 
-        const currentTrackPos = wordTrackIndexRef.current
-        const searchWindow = Math.min(currentTrackPos + 8, totalTrackable)
+        for (const spoken of spokenWords) {
+          const normalizedSpoken = normalize(spoken)
+          if (!normalizedSpoken) continue
 
-        for (let i = currentTrackPos; i < searchWindow; i++) {
-          const tokenIdx = trackableIndices[i]
-          const passageWord = normalize(tokenMeta[tokenIdx].text)
+          const currentTrackPos = wordTrackIndexRef.current
+          // Wide search window to handle skips and mispronunciations
+          const searchEnd = Math.min(currentTrackPos + 30, totalTrackable)
 
-          if (passageWord && normalizedSpoken === passageWord) {
-            wordTrackIndexRef.current = i + 1
+          for (let i = currentTrackPos; i < searchEnd; i++) {
+            const tokenIdx = trackableIndices[i]
+            const passageWord = normalize(tokenMeta[tokenIdx].text)
 
-            // Silent auto-scroll
-            if (autoScrollEnabled) {
-              anchorRefs.current[tokenIdx]?.scrollIntoView({
-                behavior: "smooth",
-                block: "center",
-              })
+            if (passageWord && normalizedSpoken === passageWord) {
+              wordTrackIndexRef.current = i + 1
+
+              // Auto-scroll
+              if (autoScrollRef.current) {
+                anchorRefs.current[tokenIdx]?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                })
+              }
+
+              // Auto-finish when last word is reached
+              if (autoFinishRef.current && i + 1 >= totalTrackable) {
+                console.log("Auto-finish triggered: last word detected")
+                setTimeout(() => {
+                  finishReading()
+                }, 500)
+                return
+              }
+
+              break
             }
-
-            // Auto-finish when last word is reached
-            if (autoFinishEnabled && i + 1 >= totalTrackable) {
-              setTimeout(() => {
-                finishReading()
-              }, 500)
-            }
-
-            break
           }
+        }
+
+        // Update processed count only for final results
+        if (result.isFinal) {
+          processedResultsRef.current = r + 1
         }
       }
     }
@@ -178,6 +204,8 @@ export function FullScreenPassage({
 
     recognition.onend = () => {
       if (hasStartedRef.current && recognitionRef.current && !doneCalledRef.current) {
+        // Reset processed count on restart since results array resets
+        processedResultsRef.current = 0
         try {
           recognition.start()
         } catch {
@@ -186,16 +214,23 @@ export function FullScreenPassage({
       }
     }
 
-    recognition.start()
-  }, [autoScrollEnabled, autoFinishEnabled, tokenMeta, trackableIndices, finishReading])
+    try {
+      recognition.start()
+      console.log("Speech recognition started, autoFinish:", autoFinishRef.current, "autoScroll:", autoScrollRef.current)
+    } catch (err) {
+      console.error("Failed to start speech recognition:", err)
+    }
+  }, [tokenMeta, trackableIndices, finishReading])
 
-  // Start recording + timer + speech recognition
+  // Start recording + timer + speech recognition using SHARED stream
   const startRecordingAndTimer = useCallback(async () => {
     if (hasStartedRef.current) return
     hasStartedRef.current = true
 
+    let stream: MediaStream | null = null
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       streamRef.current = stream
       const mediaRecorder = new MediaRecorder(stream)
       mediaRecorderRef.current = mediaRecorder
@@ -210,7 +245,7 @@ export function FullScreenPassage({
       mediaRecorder.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" })
         audioURLRef.current = URL.createObjectURL(audioBlob)
-        stream.getTracks().forEach((track) => track.stop())
+        stream?.getTracks().forEach((track) => track.stop())
       }
 
       mediaRecorder.start()
@@ -218,7 +253,10 @@ export function FullScreenPassage({
       console.error("Microphone access denied")
     }
 
-    startSpeechRecognition()
+    // Start speech recognition (uses browser's built-in mic access)
+    if (stream) {
+      startSpeechRecognition(stream)
+    }
 
     intervalRef.current = setInterval(() => {
       setSeconds((prev) => prev + 1)
