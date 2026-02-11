@@ -1,6 +1,7 @@
 "use client"
 
 import { MoreVertical } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 interface MiscueItem {
   label: string
@@ -24,13 +25,19 @@ interface MiscueAnalysisProps {
   totalMiscue?: number
   oralFluencyScore?: string
   classificationLevel?: string
+  studentName?: string
+  gradeLevel?: string
 }
 
 export function MiscueAnalysis({
   totalMiscue = 0,
   oralFluencyScore = "--",
   classificationLevel = "--",
+  studentName,
+  gradeLevel,
 }: MiscueAnalysisProps) {
+  const router = useRouter()
+
   return (
     <div
       className="flex h-full flex-col justify-between rounded-[10px] px-5 py-4"
@@ -137,12 +144,9 @@ export function MiscueAnalysis({
         {/* View Full Report Button */}
         <div className="mt-2.5 flex justify-center">
           <button
-            className="rounded-[5px] px-5 py-1.5 text-[10px] font-semibold text-white transition-colors hover:opacity-90"
-            style={{
-              background: "#2E2E68",
-              border: "1px solid #0C1A6D",
-              boxShadow: "0px 1px 20px rgba(65, 155, 180, 0.47)",
-            }}
+            onClick={() => router.push("/dashboard/oral-reading-test/report")}
+            className="mt-3 w-full rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90"
+            style={{ background: "#6666FF" }}
           >
             View Full Report
           </button>
