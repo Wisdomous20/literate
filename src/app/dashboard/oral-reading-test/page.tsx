@@ -1,7 +1,6 @@
 "use client"
 
-
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { ChevronLeft, ChevronRight, Timer, Minus, Plus } from "lucide-react"
 import { DashboardHeader } from "@/components/auth/dashboard/dashboardHeader"
@@ -13,15 +12,14 @@ import { MiscueAnalysis } from "@/components/oral-reading-test/miscueAnalysis"
 import { FullScreenPassage } from "@/components/oral-reading-test/fullScreenPassage"
 import { AddPassageModal } from "@/components/oral-reading-test/addPassageModal"
 import { getClassListBySchoolYear } from "@/app/actions/class/getClassList"
-
-
+import { ReadinessCheckButton } from "@/components/oral-reading-test/readinessCheck"
 
 // Helper to get current school year
 function getCurrentSchoolYear(): string {
   const now = new Date()
   const currentYear = now.getFullYear()
   const currentMonth = now.getMonth()
-  
+
   if (currentMonth >= 7) {
     return `${currentYear}-${currentYear + 1}`
   } else {
@@ -34,8 +32,68 @@ interface ClassItem {
   name: string
 }
 
+const STORAGE_KEY = "oral-reading-session"
+const AUDIO_STORAGE_KEY = "oral-reading-audio"
+
+interface SessionState {
+  studentName: string
+  gradeLevel: string
+  selectedStudentId: string
+  selectedClassName: string
+  passageContent: string
+  selectedLanguage?: string
+  selectedLevel?: string
+  selectedTestType?: string
+  selectedTitle?: string
+  selectedPassage?: string
+  countdownEnabled: boolean
+  countdownSeconds: number
+  hasRecording: boolean
+  recordedSeconds: number
+}
+
+function loadSession(): Partial<SessionState> {
+  if (typeof window === "undefined") return {}
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch {}
+  return {}
+}
+
+function saveSession(state: SessionState) {
+  if (typeof window === "undefined") return
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  } catch {}
+}
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onloadend = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(blob)
+  })
+}
+
+function base64ToBlob(base64: string): Blob {
+  const [meta, data] = base64.split(",")
+  const mimeMatch = meta.match(/:(.*?);/)
+  const mime = mimeMatch ? mimeMatch[1] : "audio/webm"
+  const binary = atob(data)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i)
+  }
+  return new Blob([bytes], { type: mime })
+}
+
 export default function OralReadingTestPage() {
   const router = useRouter()
+  const isRestoredRef = useRef(true)
+
+  // Initialize with defaults (matches server render)
   const [passageContent, setPassageContent] = useState("")
   const [isFullScreen, setIsFullScreen] = useState(false)
   const [recordedSeconds, setRecordedSeconds] = useState(0)
@@ -49,13 +107,111 @@ export default function OralReadingTestPage() {
   const [selectedLevel, setSelectedLevel] = useState<string | undefined>()
   const [selectedTestType, setSelectedTestType] = useState<string | undefined>()
   const [selectedTitle, setSelectedTitle] = useState<string | undefined>()
-  const [selectedPassage, setSelectedPassage] = useState<string | undefined>(undefined)
-  const [studentName, setStudentName] = useState("Lois")
-  const [gradeLevel, setGradeLevel] = useState("Grade 4")
+  const [selectedPassage, setSelectedPassage] = useState<string | undefined>()
+  const [studentName, setStudentName] = useState("")
+  const [gradeLevel, setGradeLevel] = useState("")
   const [classes, setClasses] = useState<ClassItem[]>([])
   const [isLoadingClasses, setIsLoadingClasses] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedStudentId, setSelectedStudentId] = useState<string>("")
+  const [selectedClassName, setSelectedClassName] = useState<string>("")
+  const [isHydrated, setIsHydrated] = useState(false)
+
+  // Restore session from sessionStorage AFTER hydration (avoids SSR mismatch)
+  useEffect(() => {
+    const loaded = loadSession()
+
+    if (loaded.studentName !== undefined) setStudentName(loaded.studentName)
+    if (loaded.gradeLevel !== undefined) setGradeLevel(loaded.gradeLevel)
+    if (loaded.selectedStudentId !== undefined) setSelectedStudentId(loaded.selectedStudentId)
+    if (loaded.selectedClassName !== undefined) setSelectedClassName(loaded.selectedClassName)
+    if (loaded.passageContent !== undefined) setPassageContent(loaded.passageContent)
+    if (loaded.selectedLanguage !== undefined) setSelectedLanguage(loaded.selectedLanguage)
+    if (loaded.selectedLevel !== undefined) setSelectedLevel(loaded.selectedLevel)
+    if (loaded.selectedTestType !== undefined) setSelectedTestType(loaded.selectedTestType)
+    if (loaded.selectedTitle !== undefined) setSelectedTitle(loaded.selectedTitle)
+    if (loaded.selectedPassage !== undefined) setSelectedPassage(loaded.selectedPassage)
+    if (loaded.countdownEnabled !== undefined) setCountdownEnabled(loaded.countdownEnabled)
+    if (loaded.countdownSeconds !== undefined) setCountdownSeconds(loaded.countdownSeconds)
+    if (loaded.hasRecording !== undefined) setHasRecording(loaded.hasRecording)
+    if (loaded.recordedSeconds !== undefined) setRecordedSeconds(loaded.recordedSeconds)
+
+    // Restore audio blob
+    try {
+      const audioBase64 = sessionStorage.getItem(AUDIO_STORAGE_KEY)
+      if (audioBase64 && loaded.hasRecording) {
+        const blob = base64ToBlob(audioBase64)
+        const url = URL.createObjectURL(blob)
+        setRecordedAudioBlob(blob)
+        setRecordedAudioURL(url)
+      }
+    } catch (err) {
+      console.error("Failed to restore audio:", err)
+    }
+
+    // Mark hydration complete — this allows the save effects to start working
+    setIsHydrated(true)
+
+    // Mark restore as complete after a short delay (for auto-submit guard)
+    const timer = setTimeout(() => {
+      isRestoredRef.current = false
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Save audio to sessionStorage when it changes (only after hydration)
+  useEffect(() => {
+    if (!isHydrated) return
+    if (recordedAudioBlob) {
+      blobToBase64(recordedAudioBlob).then((base64) => {
+        try {
+          sessionStorage.setItem(AUDIO_STORAGE_KEY, base64)
+        } catch (err) {
+          console.error("Failed to save audio to sessionStorage:", err)
+        }
+      })
+    } else {
+      sessionStorage.removeItem(AUDIO_STORAGE_KEY)
+    }
+  }, [recordedAudioBlob, isHydrated])
+
+  // Persist session state on every change (only after hydration)
+  useEffect(() => {
+    if (!isHydrated) return
+    saveSession({
+      studentName,
+      gradeLevel,
+      selectedStudentId,
+      selectedClassName,
+      passageContent,
+      selectedLanguage,
+      selectedLevel,
+      selectedTestType,
+      selectedTitle,
+      selectedPassage,
+      countdownEnabled,
+      countdownSeconds,
+      hasRecording,
+      recordedSeconds,
+    })
+  }, [
+    isHydrated,
+    studentName,
+    gradeLevel,
+    selectedStudentId,
+    selectedClassName,
+    passageContent,
+    selectedLanguage,
+    selectedLevel,
+    selectedTestType,
+    selectedTitle,
+    selectedPassage,
+    countdownEnabled,
+    countdownSeconds,
+    hasRecording,
+    recordedSeconds,
+  ])
 
   // Fetch classes on mount
   useEffect(() => {
@@ -63,7 +219,7 @@ export default function OralReadingTestPage() {
       setIsLoadingClasses(true)
       const schoolYear = getCurrentSchoolYear()
       const result = await getClassListBySchoolYear(schoolYear)
-      
+
       if (result.success && result.classes) {
         const mappedClasses: ClassItem[] = result.classes.map(c => ({
           id: c.id,
@@ -75,7 +231,7 @@ export default function OralReadingTestPage() {
       }
       setIsLoadingClasses(false)
     }
-    
+
     fetchClasses()
   }, [])
 
@@ -116,6 +272,7 @@ export default function OralReadingTestPage() {
   }, [hasPassage, recordedAudioURL])
 
   const handleFullScreenDone = useCallback((elapsedSeconds: number, audioURL: string | null, audioBlob: Blob | null) => {
+    isRestoredRef.current = false
     setRecordedSeconds(elapsedSeconds)
     setRecordedAudioURL(audioURL)
     setRecordedAudioBlob(audioBlob)
@@ -148,7 +305,6 @@ export default function OralReadingTestPage() {
 
     setIsSubmitting(true)
     try {
-      // 1. Upload audio to Supabase Storage
       const { uploadAudioToSupabase } = await import("@/utils/uploadAudioToSupabase")
       const supabaseAudioUrl = await uploadAudioToSupabase(
         recordedAudioBlob,
@@ -160,10 +316,9 @@ export default function OralReadingTestPage() {
         console.error("Audio upload failed")
         return
       }
-      
+
       console.log("Audio uploaded to:", supabaseAudioUrl)
 
-      // 2. Send audio blob + metadata to analysis API route
       const formData = new FormData()
       formData.append("studentId", selectedStudentId)
       formData.append("passageId", selectedPassage)
@@ -177,10 +332,19 @@ export default function OralReadingTestPage() {
         body: formData,
       })
 
-      const result = await response.json()
+      const responseText = await response.text()
+      console.log("Raw API response:", response.status, responseText)
+
+      let result
+      try {
+        result = JSON.parse(responseText)
+      } catch {
+        console.error("Analysis API non-JSON response:", response.status, responseText)
+        return
+      }
 
       if (!response.ok) {
-        console.error("Analysis API error:", result)
+        console.error("Analysis API error:", response.status, result)
         return
       }
 
@@ -192,20 +356,14 @@ export default function OralReadingTestPage() {
     }
   }, [recordedAudioBlob, selectedPassage, selectedStudentId])
 
-
- useEffect(() => {
-    console.log("useEffect check:", {
-      hasRecording,
-      hasBlob: !!recordedAudioBlob,
-      selectedPassage,
-      selectedStudentId,
-    })
+  // Auto-submit only for FRESH recordings, not restored ones
+  useEffect(() => {
+    if (isRestoredRef.current) return
     if (hasRecording && recordedAudioBlob && selectedPassage && selectedStudentId) {
       console.log("Submitting recording...")
       handleSubmitRecording()
     }
   }, [hasRecording, recordedAudioBlob, selectedPassage, selectedStudentId, handleSubmitRecording])
-
 
   if (isFullScreen) {
     return (
@@ -219,29 +377,28 @@ export default function OralReadingTestPage() {
     )
   }
 
-
   const classNames = classes.map(c => c.name)
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <DashboardHeader title="Oral Reading Test" />
 
-      <main className="flex min-h-0 flex-1 flex-col gap-3 px-8 py-4">
+      <main className="flex min-h-0 flex-1 flex-col gap-3 px-4 py-4 md:px-6 lg:px-8">
         {/* Nav row */}
         <div className="flex items-center justify-between">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-1 text-lg font-semibold text-[#00306E] transition-colors hover:text-[#6666FF]"
+            className="flex items-center gap-1 text-sm font-semibold text-[#00306E] transition-colors hover:text-[#6666FF] md:text-base lg:text-lg"
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
             <span>Previous</span>
           </button>
-          <h2 className="flex-1 text-center text-xl font-bold" style={{ color: "#0C1A6D" }}>
+          <h2 className="flex-1 text-center text-base font-bold md:text-lg lg:text-xl" style={{ color: "#0C1A6D" }}>
             Student Information
           </h2>
-          <button className="flex items-center gap-1 text-lg font-semibold text-[#00306E] transition-colors hover:text-[#6666FF]">
+          <button className="flex items-center gap-1 text-sm font-semibold text-[#00306E] transition-colors hover:text-[#6666FF] md:text-base lg:text-lg">
             <span>Proceed to Comprehension</span>
-            <ChevronRight className="h-5 w-5" />
+            <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
           </button>
         </div>
 
@@ -254,13 +411,14 @@ export default function OralReadingTestPage() {
                 studentName={studentName}
                 gradeLevel={gradeLevel}
                 classes={classNames}
+                selectedClassName={selectedClassName}
                 onStudentNameChange={setStudentName}
                 onGradeLevelChange={setGradeLevel}
                 onClassCreated={(newClass) => {
-                  // Add the new class to the local list
                   setClasses(prev => [...prev, { id: newClass, name: newClass }])
                 }}
                 onStudentSelected={(studentId: string) => setSelectedStudentId(studentId)}
+                onClassChange={setSelectedClassName}
               />
             )}
 
@@ -303,54 +461,58 @@ export default function OralReadingTestPage() {
               onTryAgain={handleTryAgain}
             />
 
-            {/* Countdown Toggle */}
-            <div className="flex items-center gap-2 self-start">
-              <Timer className="h-4 w-4" style={{ color: "#6666FF" }} />
-              <span className="text-xs font-medium" style={{ color: "#31318A" }}>
-                Countdown
-              </span>
-              <button
-                onClick={() => setCountdownEnabled(!countdownEnabled)}
-                className="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors"
-                style={{ background: countdownEnabled ? "#6666FF" : "#C4C4FF" }}
-              >
-                <span
-                  className="inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform"
-                  style={{
-                    transform: countdownEnabled ? "translateX(17px)" : "translateX(3px)",
-                  }}
-                />
-              </button>
-              {countdownEnabled && (
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setCountdownSeconds(Math.max(1, countdownSeconds - 1))}
-                    className="flex h-5 w-5 items-center justify-center rounded transition-colors hover:opacity-70"
-                    style={{ background: "rgba(102, 102, 255, 0.15)" }}
-                  >
-                    <Minus className="h-3 w-3" style={{ color: "#6666FF" }} />
-                  </button>
+            {/* Countdown Toggle + Readiness Check Button */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Timer className="h-4 w-4" style={{ color: "#6666FF" }} />
+                <span className="text-xs font-medium" style={{ color: "#31318A" }}>
+                  Countdown
+                </span>
+                <button
+                  onClick={() => setCountdownEnabled(!countdownEnabled)}
+                  className="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors"
+                  style={{ background: countdownEnabled ? "#6666FF" : "#C4C4FF" }}
+                >
                   <span
-                    className="w-5 text-center text-xs font-bold tabular-nums"
-                    style={{ color: "#6666FF" }}
-                  >
-                    {countdownSeconds}
-                  </span>
-                  <button
-                    onClick={() => setCountdownSeconds(Math.min(10, countdownSeconds + 1))}
-                    className="flex h-5 w-5 items-center justify-center rounded transition-colors hover:opacity-70"
-                    style={{ background: "rgba(102, 102, 255, 0.15)" }}
-                  >
-                    <Plus className="h-3 w-3" style={{ color: "#6666FF" }} />
-                  </button>
-                  <span className="text-[10px] font-medium" style={{ color: "#31318A" }}>sec</span>
-                </div>
-              )}
+                    className="inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform"
+                    style={{
+                      transform: countdownEnabled ? "translateX(17px)" : "translateX(3px)",
+                    }}
+                  />
+                </button>
+                {countdownEnabled && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setCountdownSeconds(Math.max(1, countdownSeconds - 1))}
+                      className="flex h-5 w-5 items-center justify-center rounded transition-colors hover:opacity-70"
+                      style={{ background: "rgba(102, 102, 255, 0.15)" }}
+                    >
+                      <Minus className="h-3 w-3" style={{ color: "#6666FF" }} />
+                    </button>
+                    <span
+                      className="w-5 text-center text-xs font-bold tabular-nums"
+                      style={{ color: "#6666FF" }}
+                    >
+                      {countdownSeconds}
+                    </span>
+                    <button
+                      onClick={() => setCountdownSeconds(Math.min(10, countdownSeconds + 1))}
+                      className="flex h-5 w-5 items-center justify-center rounded transition-colors hover:opacity-70"
+                      style={{ background: "rgba(102, 102, 255, 0.15)" }}
+                    >
+                      <Plus className="h-3 w-3" style={{ color: "#6666FF" }} />
+                    </button>
+                    <span className="text-[10px] font-medium" style={{ color: "#31318A" }}>sec</span>
+                  </div>
+                )}
+              </div>
+
+              <ReadinessCheckButton />
             </div>
           </div>
 
-          {/* Right column: MiscueAnalysis — full height */}
-          <div className="w-[280px] shrink-0 self-stretch">
+          {/* Right column: MiscueAnalysis — responsive width */}
+          <div className="w-[240px] shrink-0 self-stretch md:w-[270px] lg:w-[300px] xl:w-[320px]">
             <MiscueAnalysis />
           </div>
         </div>
