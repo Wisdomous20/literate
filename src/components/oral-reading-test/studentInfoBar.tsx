@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { getStudentsByClassName } from "@/app/actions/student/getAllStudentByClass"
-import { createStudent } from "@/app/actions/student/createStudent"
 
 interface StudentOption {
   id: string
@@ -50,13 +49,20 @@ export default function StudentInfoBar({
   const [selectedStudentId, setSelectedStudentId] = useState("")
   const studentInputRef = useRef<HTMLInputElement>(null)
   const studentDropdownRef = useRef<HTMLDivElement>(null)
+  const fetchedClassesRef = useRef<string>("")
 
-  // Fetch students from ALL classes on mount and when classes change
+  // Fetch students from ALL classes — skip if classes haven't changed
   const fetchAllStudents = useCallback(async () => {
     if (classes.length === 0) {
       setAllStudents([])
+      fetchedClassesRef.current = ""
       return
     }
+
+    // Skip re-fetch if the same classes
+    const classesKey = classes.slice().sort().join("|")
+    if (classesKey === fetchedClassesRef.current) return
+    fetchedClassesRef.current = classesKey
 
     setIsLoadingStudents(true)
     try {
@@ -75,7 +81,6 @@ export default function StudentInfoBar({
         })
       )
       const all = results.flat()
-      console.log("Fetched all students:", all.length, all)
       setAllStudents(all)
     } catch (error) {
       console.error("Failed to fetch students:", error)
@@ -115,20 +120,6 @@ export default function StudentInfoBar({
     setIsClassDropdownOpen(false)
   }
 
-  const handleClearClassFilter = () => {
-    setSelectedClass("")
-    setIsClassDropdownOpen(false)
-  }
-
-  const handleGradeChange = (value: string) => {
-    onGradeLevelChange(value)
-    setIsGradeDropdownOpen(false)
-  }
-
-  const handleClearGradeFilter = () => {
-    onGradeLevelChange("")
-    setIsGradeDropdownOpen(false)
-  }
 
   const handleStudentSelect = (student: StudentOption) => {
     setSelectedStudentId(student.id)
@@ -185,7 +176,7 @@ export default function StudentInfoBar({
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {/* 1) Student Name — Left (Search Input) */}
         <div
           className="relative rounded-lg px-3 py-2"
@@ -205,7 +196,7 @@ export default function StudentInfoBar({
               value={studentName}
               onChange={(e) => handleStudentNameInput(e.target.value)}
               onFocus={() => setIsStudentInputFocused(true)}
-              placeholder="Search or type student name"
+              placeholder="Search student name"
               className="w-full rounded-lg py-1.5 pl-8 pr-3 text-sm text-[#00306E] outline-none placeholder:text-[#00306E]/40"
               style={{
                 background: "#EFFDFF",
@@ -230,10 +221,10 @@ export default function StudentInfoBar({
                   key={s.id}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => handleStudentSelect(s)}
-                  className="flex w-full items-center justify-between px-3 py-1.5 text-left text-sm text-[#00306E] hover:bg-[#E4F4FF]"
+                  className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm text-[#00306E] hover:bg-[#E4F4FF]"
                 >
-                  <span className="font-medium">{s.name}</span>
-                  <span className="text-xs text-[#54A4FF]">
+                  <span className="truncate font-medium">{s.name}</span>
+                  <span className="shrink-0 text-xs text-[#54A4FF]">
                     Grade {s.level} · {s.className}
                   </span>
                 </button>
@@ -309,7 +300,7 @@ export default function StudentInfoBar({
             className="mb-0.5 block text-xs font-semibold"
             style={{ color: "#0C1A6D" }}
           >
-            Class Name
+            Class
           </label>
           <button
             onClick={() => setIsClassDropdownOpen(!isClassDropdownOpen)}

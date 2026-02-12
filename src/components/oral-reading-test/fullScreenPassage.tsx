@@ -340,7 +340,7 @@ export function FullScreenPassage({
       onMouseMove={handleMouseMove}
     >
       {/* Passage Card */}
-      <div className="flex min-h-0 flex-1 flex-col items-center px-8 pt-8 pb-4">
+      <div className="flex min-h-0 flex-1 flex-col items-center px-4 pt-4 pb-2 md:px-6 md:pt-6 md:pb-3 lg:px-8 lg:pt-8 lg:pb-4">
         <div
           className="relative flex w-full max-w-[1368px] flex-1 flex-col overflow-hidden"
           style={{
@@ -353,7 +353,7 @@ export function FullScreenPassage({
           {/* Close Button */}
           <button
             onClick={handleClose}
-            className="absolute right-6 top-5 z-10 flex h-9 w-9 items-center justify-center rounded-full transition-opacity duration-500 hover:opacity-70"
+            className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full transition-opacity duration-500 hover:opacity-70 md:right-6 md:top-5"
             style={{ opacity: showOverlayUI ? 1 : 0, pointerEvents: showOverlayUI ? "auto" : "none" }}
             title="Exit fullscreen"
           >
@@ -362,7 +362,7 @@ export function FullScreenPassage({
 
           {/* Recording indicator */}
           <div
-            className="absolute left-6 top-6 flex items-center gap-2 transition-opacity duration-500"
+            className="absolute left-4 top-4 flex items-center gap-2 transition-opacity duration-500 md:left-6 md:top-6"
             style={{ opacity: showOverlayUI ? 1 : 0 }}
           >
             <span className="relative flex h-3 w-3">
@@ -374,7 +374,7 @@ export function FullScreenPassage({
 
           {/* Top fade edge */}
           <div
-            className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-16"
+            className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-12 md:h-16"
             style={{
               background: "linear-gradient(to bottom, #EFFDFF 0%, transparent 100%)",
               borderRadius: "25px 25px 0 0",
@@ -382,13 +382,12 @@ export function FullScreenPassage({
           />
 
           {/* Passage Content */}
-          <div className="flex flex-1 flex-col items-center overflow-auto px-16 pt-20">
+          <div className="flex flex-1 flex-col items-center overflow-auto px-6 pt-14 md:px-12 md:pt-16 lg:px-16 lg:pt-20">
             <p
-              className="text-center leading-[2.4]"
+              className="text-center text-lg leading-[2.2] md:text-xl md:leading-[2.3] lg:text-[22px] lg:leading-[2.4]"
               style={{
                 color: "#00306E",
-                fontSize: "22px",
-                maxWidth: "680px",
+                maxWidth: "min(680px, 90%)",
                 fontFamily: "Georgia, 'Times New Roman', serif",
                 letterSpacing: "0.01em",
                 wordSpacing: "0.05em",
@@ -403,12 +402,12 @@ export function FullScreenPassage({
                 </span>
               ))}
             </p>
-            <div className="w-full shrink-0" style={{ height: "80px" }} />
+            <div className="w-full shrink-0 h-16 md:h-20" />
           </div>
 
           {/* Bottom fade edge */}
           <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-16"
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-12 md:h-16"
             style={{
               background: "linear-gradient(to top, #EFFDFF 0%, transparent 100%)",
               borderRadius: "0 0 25px 25px",
@@ -418,13 +417,13 @@ export function FullScreenPassage({
       </div>
 
       {/* Bottom Controls — ALWAYS visible */}
-      <div className="shrink-0 flex flex-col items-center gap-1.5 px-8 pb-5 pt-2">
-        <span className="text-base font-medium" style={{ color: "#00306E" }}>
+      <div className="shrink-0 flex flex-col items-center gap-1 px-4 pb-3 pt-1 md:gap-1.5 md:px-8 md:pb-5 md:pt-2">
+        <span className="text-sm font-medium md:text-base" style={{ color: "#00306E" }}>
           {passageTitle}
         </span>
 
         <span
-          className="text-lg font-medium tabular-nums"
+          className="text-base font-medium tabular-nums md:text-lg"
           style={{ color: "#00306E" }}
         >
           {formatTime(seconds)}
@@ -432,13 +431,10 @@ export function FullScreenPassage({
 
         <button
           onClick={finishReading}
-          className="text-[15px] font-semibold text-white transition-all duration-200 hover:brightness-110"
+          className="rounded-lg px-10 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:brightness-110 md:px-12 md:py-3 md:text-[15px]"
           style={{
-            width: "239px",
-            height: "48px",
             background: "#6666FF",
             boxShadow: "0px 1px 20px rgba(102, 102, 255, 0.4)",
-            borderRadius: "8px",
           }}
         >
           Done

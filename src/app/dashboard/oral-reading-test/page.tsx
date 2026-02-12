@@ -360,22 +360,22 @@ export default function OralReadingTestPage() {
     <div className="flex h-screen flex-col overflow-hidden">
       <DashboardHeader title="Oral Reading Test" />
 
-      <main className="flex min-h-0 flex-1 flex-col gap-3 px-8 py-4">
+      <main className="flex min-h-0 flex-1 flex-col gap-3 px-4 py-4 md:px-6 lg:px-8">
         {/* Nav row */}
         <div className="flex items-center justify-between">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-1 text-lg font-semibold text-[#00306E] transition-colors hover:text-[#6666FF]"
+            className="flex items-center gap-1 text-sm font-semibold text-[#00306E] transition-colors hover:text-[#6666FF] md:text-base lg:text-lg"
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
             <span>Previous</span>
           </button>
-          <h2 className="flex-1 text-center text-xl font-bold" style={{ color: "#0C1A6D" }}>
+          <h2 className="flex-1 text-center text-base font-bold md:text-lg lg:text-xl" style={{ color: "#0C1A6D" }}>
             Student Information
           </h2>
-          <button className="flex items-center gap-1 text-lg font-semibold text-[#00306E] transition-colors hover:text-[#6666FF]">
+          <button className="flex items-center gap-1 text-sm font-semibold text-[#00306E] transition-colors hover:text-[#6666FF] md:text-base lg:text-lg">
             <span>Proceed to Comprehension</span>
-            <ChevronRight className="h-5 w-5" />
+            <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
           </button>
         </div>
 
@@ -486,8 +486,8 @@ export default function OralReadingTestPage() {
             </div>
           </div>
 
-          {/* Right column: MiscueAnalysis — full height */}
-          <div className="w-[280px] shrink-0 self-stretch">
+          {/* Right column: MiscueAnalysis — responsive width */}
+          <div className="w-[240px] shrink-0 self-stretch md:w-[270px] lg:w-[300px] xl:w-[320px]">
             <MiscueAnalysis />
           </div>
         </div>

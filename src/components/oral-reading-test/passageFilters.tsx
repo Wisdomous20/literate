@@ -41,13 +41,13 @@ export function PassageFilters({
   onOpenPassageModal,
 }: PassageFiltersProps) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center gap-3">
       <FilterLabel label="Language (English / Filipino)" value={language} />
       <FilterLabel label="Passage Level" value={passageLevel} />
       <FilterLabel label="Test Type" value={testType} />
       <button
         onClick={onOpenPassageModal}
-        className="shrink-0 rounded-lg px-6 py-2 text-[15px] font-semibold text-white transition-colors hover:opacity-90"
+        className="shrink-0 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors hover:opacity-90 md:px-6 md:text-[15px]"
         style={{
           background: "#2E2E68",
           border: "1px solid #7A7AFB",

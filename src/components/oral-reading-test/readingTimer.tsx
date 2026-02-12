@@ -86,7 +86,7 @@ function AudioPlayer({ src }: { src: string }) {
 
   return (
     <div
-      className="flex w-full max-w-[562px] items-center gap-2.5 rounded-lg px-3 py-2"
+      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2"
       style={{
         background: "rgba(102, 102, 255, 0.08)",
         border: "1.5px solid #8D8DEC",
@@ -213,17 +213,14 @@ export function ReadingTimer({
           <button
             onClick={onStartReading}
             disabled={isDisabled}
-            className="flex items-center justify-center gap-2 text-sm font-semibold text-white transition-all duration-200 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold text-white transition-all duration-200 disabled:cursor-not-allowed md:px-8 lg:px-10"
             style={{
-              width: "200px",
-              height: "42px",
               background: isDisabled
                 ? "rgba(102, 102, 255, 0.3)"
                 : "#6666FF",
               boxShadow: isDisabled
                 ? "none"
                 : "0px 1px 20px rgba(102, 102, 255, 0.4)",
-              borderRadius: "8px",
               opacity: isDisabled ? 0.6 : 1,
             }}
             title={isDisabled ? "Add a passage first to start reading" : undefined}
@@ -236,14 +233,11 @@ export function ReadingTimer({
         {hasRecording && (
           <button
             onClick={onTryAgain}
-            className="text-sm font-semibold text-white transition-colors hover:opacity-90"
+            className="rounded-lg px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:opacity-90 md:px-8 lg:px-10"
             style={{
-              width: "200px",
-              height: "42px",
               background: "#2E2E68",
               border: "1px solid #0C1A6D",
               boxShadow: "0px 1px 20px rgba(65, 155, 180, 0.47)",
-              borderRadius: "8px",
             }}
           >
             Try Again
