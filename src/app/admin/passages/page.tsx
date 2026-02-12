@@ -3,93 +3,97 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { QuestionTable } from "@/components/admin-dash/questionTable";
-import { getAllQuestionsAction } from "@/app/actions/admin/getAllQuestion";
-import { deleteQuestionAction } from "@/app/actions/admin/deleteQuestion";
+import { PassageTable } from "@/components/admin-dash/passageTable";
+import { getAllPassagesAction } from "@/app/actions/admin/getAllPassage";
+import { deletePassageAction } from "@/app/actions/admin/deletePassage";
 
-interface RawQuestion {
+interface PassageApiData {
   id: string;
-  questionText: string;
-  passageTitle: string;
-  tags: string;
-  type: string;
-  passageLevel: number;
+  title: string;
+  content: string;
   language: string;
+  level: number;
+  tags: string;
+  testType: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
-interface Question {
+interface Passage {
   id: string;
-  questionText: string;
-  passageTitle: string;
-  tags: "Literal" | "Inferential" | "Critical";
-  type: "MULTIPLE_CHOICE" | "ESSAY";
-  passageLevel: number;
+  title: string;
   language: "Filipino" | "English";
+  level: number;
+  tags: "Literal" | "Inferential" | "Critical";
+  testType: "PRE_TEST" | "POST_TEST";
+  content: string;
+  wordCount: number;
+  questionsCount: number;
 }
 
-export default function QuestionsPage() {
+export default function PassagesPage() {
   const router = useRouter();
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [passages, setPassages] = useState<Passage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadQuestions = async () => {
+    const loadPassages = async () => {
       setIsLoading(true);
       try {
-        const data = await getAllQuestionsAction();
+        const data = await getAllPassagesAction();
         if (data && Array.isArray(data)) {
-          const formattedQuestions: Question[] = data.map((q: RawQuestion) => ({
-            id: q.id,
-            questionText: q.questionText,
-            passageTitle: q.passageTitle,
-            tags: q.tags as "Literal" | "Inferential" | "Critical",
-            type: q.type as "MULTIPLE_CHOICE" | "ESSAY",
-            passageLevel: q.passageLevel,
-            language: q.language as "Filipino" | "English",
-          }));
-          setQuestions(formattedQuestions);
+          const formattedPassages: Passage[] = data.map(
+            (p: PassageApiData) => ({
+              id: p.id,
+              title: p.title,
+              language: (p.language as "Filipino" | "English") || "English",
+              level: p.level,
+              tags:
+                (p.tags as "Literal" | "Inferential" | "Critical") || "Literal",
+              testType: (p.testType as "PRE_TEST" | "POST_TEST") || "PRE_TEST",
+              content: p.content,
+              wordCount: p.content?.split(/\s+/).filter(Boolean).length || 0,
+              questionsCount: 0,
+            }),
+          );
+          setPassages(formattedPassages);
         }
       } catch (err) {
         const errorMessage =
-          err instanceof Error ? err.message : "Failed to load questions";
+          err instanceof Error ? err.message : "Failed to load passages";
         setError(errorMessage);
-        console.error("Error loading questions:", err);
+        console.error("Error loading passages:", err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadQuestions();
+    loadPassages();
   }, []);
 
-  const handleEdit = (question: Question) => {
-    router.push(`/admin-dash/questions/edit/${question.id}`);
+  const handleEdit = (passage: Passage) => {
+    router.push(`/admin/passages/edit/${passage.id}`);
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this question?")) {
+    if (!confirm("Are you sure you want to delete this passage?")) {
       return;
     }
 
-    setIsDeleting(id);
     try {
-      await deleteQuestionAction({ id });
-      setQuestions(questions.filter((q) => q.id !== id));
-      setError(""); // Clear any previous errors
+      await deletePassageAction({ id });
+      setPassages(passages.filter((p) => p.id !== id));
     } catch (err) {
       const errorMessage =
-        err instanceof Error ? err.message : "Failed to delete question";
+        err instanceof Error ? err.message : "Failed to delete passage";
       setError(errorMessage);
-      console.error("Error deleting question:", err);
-    } finally {
-      setIsDeleting(null);
+      console.error("Error deleting passage:", err);
     }
   };
 
-  const handleView = (question: Question) => {
-    router.push(`/admin-dash/questions/view/${question.id}`);
+  const handleView = (passage: Passage) => {
+    router.push(`/admin/passages/view/${passage.id}`);
   };
 
   return (
@@ -104,11 +108,11 @@ export default function QuestionsPage() {
             <div className="h-2.5 w-2.5 rounded-sm bg-[#31318A]" />
           </div>
           <h1 className="text-[25px] font-semibold leading-[38px] text-[#31318A]">
-            Comprehension Questions
+            Graded Passages
           </h1>
         </div>
         <Link
-          href="/admin-dash/questions/create"
+          href="/admin/passages/create"
           className="rounded-lg px-5 py-2.5 text-sm font-medium text-white transition-colors hover:opacity-90"
           style={{
             background: "#2E2E68",
@@ -116,7 +120,7 @@ export default function QuestionsPage() {
             boxShadow: "0px 1px 20px rgba(65, 155, 180, 0.47)",
           }}
         >
-          Create Question
+          Create Passage
         </Link>
       </header>
 
@@ -129,16 +133,15 @@ export default function QuestionsPage() {
         {isLoading ? (
           <div className="flex items-center justify-center flex-1">
             <span className="text-lg text-[#00306E]/60">
-              Loading questions...
+              Loading passages...
             </span>
           </div>
         ) : (
-          <QuestionTable
-            questions={questions}
+          <PassageTable
+            passages={passages}
             onEdit={handleEdit}
             onDelete={handleDelete}
             onView={handleView}
-            isDeleting={isDeleting}
           />
         )}
       </main>

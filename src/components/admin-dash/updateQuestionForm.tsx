@@ -107,7 +107,7 @@ export function UpdateQuestionForm({
         if (onSuccess) {
           onSuccess();
         } else {
-          router.push("/admin-dash/questions");
+          router.push("/admin/questions");
         }
       } catch (err) {
         const errorMessage =
@@ -318,7 +318,7 @@ export function UpdateQuestionForm({
       {/* Submit */}
       <div className="flex justify-center gap-4 pt-8">
         <Link
-          href="/admin-dash/questions"
+          href="/admin/questions"
           className="rounded-lg px-10 py-3 text-base font-semibold text-[#00306E] transition-all hover:bg-[#E4F4FF]"
         >
           Cancel

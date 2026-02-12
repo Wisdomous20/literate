@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { addQuestionAction } from "@/app/actions/admin/addQuestion";
-import { getAllPassageAction } from "@/app/actions/admin/getAllPassage";
+import { getAllPassagesAction } from "@/app/actions/admin/getAllPassage";
 
 interface Passage {
   id: string;
@@ -48,7 +48,7 @@ export function CreateQuestionForm() {
     const loadPassages = async () => {
       setIsLoadingPassages(true);
       try {
-        const data = await getAllPassageAction();
+        const data = await getAllPassagesAction();
         if (data && Array.isArray(data)) {
           const formattedPassages: Passage[] = data.map(
             (p: PassageApiData) => ({
@@ -102,7 +102,7 @@ export function CreateQuestionForm() {
             type === "MULTIPLE_CHOICE" ? options.filter(Boolean) : undefined,
           correctAnswer: type === "MULTIPLE_CHOICE" ? correctAnswer : undefined,
         });
-        router.push("/admin-dash/questions");
+        router.push("/admin/questions");
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Failed to create question";
@@ -340,7 +340,7 @@ export function CreateQuestionForm() {
       {/* Submit */}
       <div className="flex justify-center gap-4 pt-8">
         <Link
-          href="/admin-dash/questions"
+          href="/admin/questions"
           className="rounded-lg px-10 py-3 text-base font-semibold text-[#00306E] transition-all hover:bg-[#E4F4FF]"
         >
           Cancel
