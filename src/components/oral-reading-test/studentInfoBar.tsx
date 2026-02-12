@@ -23,24 +23,28 @@ interface StudentInfoBarProps {
   studentName: string
   gradeLevel: string
   classes: string[]
+  selectedClassName?: string
   onStudentNameChange: (name: string) => void
   onGradeLevelChange: (grade: string) => void
   onClassCreated: (newClass: string) => void
   onStudentSelected: (studentId: string) => void
+  onClassChange?: (className: string) => void
 }
 
 export default function StudentInfoBar({
   studentName,
   gradeLevel,
   classes,
+  selectedClassName,
   onStudentNameChange,
   onGradeLevelChange,
   onClassCreated,
   onStudentSelected,
+  onClassChange,
 }: StudentInfoBarProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [newClassName, setNewClassName] = useState("")
-  const [selectedClass, setSelectedClass] = useState("")
+  const [selectedClass, setSelectedClass] = useState(selectedClassName ?? "")
   const [allStudents, setAllStudents] = useState<StudentOption[]>([])
   const [isLoadingStudents, setIsLoadingStudents] = useState(false)
   const [isClassDropdownOpen, setIsClassDropdownOpen] = useState(false)
@@ -117,6 +121,7 @@ export default function StudentInfoBar({
       return
     }
     setSelectedClass(value)
+    onClassChange?.(value)
     setIsClassDropdownOpen(false)
   }
 
@@ -126,6 +131,7 @@ export default function StudentInfoBar({
     onStudentNameChange(student.name)
     onGradeLevelChange(String(student.level))
     setSelectedClass(student.className)
+    onClassChange?.(student.className)
     onStudentSelected(student.id)
     setIsStudentInputFocused(false)
   }
@@ -331,6 +337,7 @@ export default function StudentInfoBar({
                     onClick={() => {
                       if (isActive) {
                         setSelectedClass("")
+                        onClassChange?.("")
                       } else {
                         handleClassChange(cls)
                       }

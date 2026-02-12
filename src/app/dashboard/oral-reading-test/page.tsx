@@ -39,6 +39,7 @@ interface SessionState {
   studentName: string
   gradeLevel: string
   selectedStudentId: string
+  selectedClassName: string
   passageContent: string
   selectedLanguage?: string
   selectedLevel?: string
@@ -88,49 +89,57 @@ function base64ToBlob(base64: string): Blob {
   return new Blob([bytes], { type: mime })
 }
 
-// Read session once at module level so initial useState calls get the right values
-function getInitialSession() {
-  if (typeof window === "undefined") return null
-  try {
-    const raw = sessionStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw) as Partial<SessionState>
-  } catch {}
-  return null
-}
-
 export default function OralReadingTestPage() {
   const router = useRouter()
   const isRestoredRef = useRef(true)
-  const initialSession = useRef(getInitialSession())
-  const init = initialSession.current
 
-  // Initialize state directly from sessionStorage — no restore effect needed
-  const [passageContent, setPassageContent] = useState(init?.passageContent ?? "")
+  // Initialize with defaults (matches server render)
+  const [passageContent, setPassageContent] = useState("")
   const [isFullScreen, setIsFullScreen] = useState(false)
-  const [recordedSeconds, setRecordedSeconds] = useState(init?.recordedSeconds ?? 0)
+  const [recordedSeconds, setRecordedSeconds] = useState(0)
   const [recordedAudioURL, setRecordedAudioURL] = useState<string | null>(null)
   const [recordedAudioBlob, setRecordedAudioBlob] = useState<Blob | null>(null)
-  const [hasRecording, setHasRecording] = useState(init?.hasRecording ?? false)
-  const [countdownEnabled, setCountdownEnabled] = useState(init?.countdownEnabled ?? true)
-  const [countdownSeconds, setCountdownSeconds] = useState(init?.countdownSeconds ?? 3)
+  const [hasRecording, setHasRecording] = useState(false)
+  const [countdownEnabled, setCountdownEnabled] = useState(true)
+  const [countdownSeconds, setCountdownSeconds] = useState(3)
   const [isPassageModalOpen, setIsPassageModalOpen] = useState(false)
-  const [selectedLanguage, setSelectedLanguage] = useState<string | undefined>(init?.selectedLanguage)
-  const [selectedLevel, setSelectedLevel] = useState<string | undefined>(init?.selectedLevel)
-  const [selectedTestType, setSelectedTestType] = useState<string | undefined>(init?.selectedTestType)
-  const [selectedTitle, setSelectedTitle] = useState<string | undefined>(init?.selectedTitle)
-  const [selectedPassage, setSelectedPassage] = useState<string | undefined>(init?.selectedPassage)
-  const [studentName, setStudentName] = useState(init?.studentName ?? "")
-  const [gradeLevel, setGradeLevel] = useState(init?.gradeLevel ?? "")
+  const [selectedLanguage, setSelectedLanguage] = useState<string | undefined>()
+  const [selectedLevel, setSelectedLevel] = useState<string | undefined>()
+  const [selectedTestType, setSelectedTestType] = useState<string | undefined>()
+  const [selectedTitle, setSelectedTitle] = useState<string | undefined>()
+  const [selectedPassage, setSelectedPassage] = useState<string | undefined>()
+  const [studentName, setStudentName] = useState("")
+  const [gradeLevel, setGradeLevel] = useState("")
   const [classes, setClasses] = useState<ClassItem[]>([])
   const [isLoadingClasses, setIsLoadingClasses] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [selectedStudentId, setSelectedStudentId] = useState<string>(init?.selectedStudentId ?? "")
+  const [selectedStudentId, setSelectedStudentId] = useState<string>("")
+  const [selectedClassName, setSelectedClassName] = useState<string>("")
+  const [isHydrated, setIsHydrated] = useState(false)
 
-  // Restore audio blob from sessionStorage (can only be done in an effect since it needs URL.createObjectURL)
+  // Restore session from sessionStorage AFTER hydration (avoids SSR mismatch)
   useEffect(() => {
+    const loaded = loadSession()
+
+    if (loaded.studentName !== undefined) setStudentName(loaded.studentName)
+    if (loaded.gradeLevel !== undefined) setGradeLevel(loaded.gradeLevel)
+    if (loaded.selectedStudentId !== undefined) setSelectedStudentId(loaded.selectedStudentId)
+    if (loaded.selectedClassName !== undefined) setSelectedClassName(loaded.selectedClassName)
+    if (loaded.passageContent !== undefined) setPassageContent(loaded.passageContent)
+    if (loaded.selectedLanguage !== undefined) setSelectedLanguage(loaded.selectedLanguage)
+    if (loaded.selectedLevel !== undefined) setSelectedLevel(loaded.selectedLevel)
+    if (loaded.selectedTestType !== undefined) setSelectedTestType(loaded.selectedTestType)
+    if (loaded.selectedTitle !== undefined) setSelectedTitle(loaded.selectedTitle)
+    if (loaded.selectedPassage !== undefined) setSelectedPassage(loaded.selectedPassage)
+    if (loaded.countdownEnabled !== undefined) setCountdownEnabled(loaded.countdownEnabled)
+    if (loaded.countdownSeconds !== undefined) setCountdownSeconds(loaded.countdownSeconds)
+    if (loaded.hasRecording !== undefined) setHasRecording(loaded.hasRecording)
+    if (loaded.recordedSeconds !== undefined) setRecordedSeconds(loaded.recordedSeconds)
+
+    // Restore audio blob
     try {
       const audioBase64 = sessionStorage.getItem(AUDIO_STORAGE_KEY)
-      if (audioBase64 && init?.hasRecording) {
+      if (audioBase64 && loaded.hasRecording) {
         const blob = base64ToBlob(audioBase64)
         const url = URL.createObjectURL(blob)
         setRecordedAudioBlob(blob)
@@ -140,17 +149,20 @@ export default function OralReadingTestPage() {
       console.error("Failed to restore audio:", err)
     }
 
-    // Mark restore as complete after a short delay
+    // Mark hydration complete — this allows the save effects to start working
+    setIsHydrated(true)
+
+    // Mark restore as complete after a short delay (for auto-submit guard)
     const timer = setTimeout(() => {
       isRestoredRef.current = false
     }, 500)
 
     return () => clearTimeout(timer)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Save audio to sessionStorage when it changes
+  // Save audio to sessionStorage when it changes (only after hydration)
   useEffect(() => {
+    if (!isHydrated) return
     if (recordedAudioBlob) {
       blobToBase64(recordedAudioBlob).then((base64) => {
         try {
@@ -159,18 +171,19 @@ export default function OralReadingTestPage() {
           console.error("Failed to save audio to sessionStorage:", err)
         }
       })
-    } else if (!isRestoredRef.current) {
-      // Only remove audio if this isn't the initial mount (where blob is null before restore)
+    } else {
       sessionStorage.removeItem(AUDIO_STORAGE_KEY)
     }
-  }, [recordedAudioBlob])
+  }, [recordedAudioBlob, isHydrated])
 
-  // Persist session state on every change
+  // Persist session state on every change (only after hydration)
   useEffect(() => {
+    if (!isHydrated) return
     saveSession({
       studentName,
       gradeLevel,
       selectedStudentId,
+      selectedClassName,
       passageContent,
       selectedLanguage,
       selectedLevel,
@@ -183,9 +196,11 @@ export default function OralReadingTestPage() {
       recordedSeconds,
     })
   }, [
+    isHydrated,
     studentName,
     gradeLevel,
     selectedStudentId,
+    selectedClassName,
     passageContent,
     selectedLanguage,
     selectedLevel,
@@ -257,7 +272,7 @@ export default function OralReadingTestPage() {
   }, [hasPassage, recordedAudioURL])
 
   const handleFullScreenDone = useCallback((elapsedSeconds: number, audioURL: string | null, audioBlob: Blob | null) => {
-    isRestoredRef.current = false // ensure auto-submit fires for fresh recordings
+    isRestoredRef.current = false
     setRecordedSeconds(elapsedSeconds)
     setRecordedAudioURL(audioURL)
     setRecordedAudioBlob(audioBlob)
@@ -290,7 +305,6 @@ export default function OralReadingTestPage() {
 
     setIsSubmitting(true)
     try {
-      // 1. Upload audio to Supabase Storage
       const { uploadAudioToSupabase } = await import("@/utils/uploadAudioToSupabase")
       const supabaseAudioUrl = await uploadAudioToSupabase(
         recordedAudioBlob,
@@ -302,10 +316,9 @@ export default function OralReadingTestPage() {
         console.error("Audio upload failed")
         return
       }
-      
+
       console.log("Audio uploaded to:", supabaseAudioUrl)
 
-      // 2. Send audio blob + metadata to analysis API route
       const formData = new FormData()
       formData.append("studentId", selectedStudentId)
       formData.append("passageId", selectedPassage)
@@ -319,10 +332,19 @@ export default function OralReadingTestPage() {
         body: formData,
       })
 
-      const result = await response.json()
+      const responseText = await response.text()
+      console.log("Raw API response:", response.status, responseText)
+
+      let result
+      try {
+        result = JSON.parse(responseText)
+      } catch {
+        console.error("Analysis API non-JSON response:", response.status, responseText)
+        return
+      }
 
       if (!response.ok) {
-        console.error("Analysis API error:", result)
+        console.error("Analysis API error:", response.status, result)
         return
       }
 
@@ -334,23 +356,14 @@ export default function OralReadingTestPage() {
     }
   }, [recordedAudioBlob, selectedPassage, selectedStudentId])
 
-
   // Auto-submit only for FRESH recordings, not restored ones
   useEffect(() => {
-    console.log("useEffect check:", {
-      hasRecording,
-      hasBlob: !!recordedAudioBlob,
-      selectedPassage,
-      selectedStudentId,
-      isRestored: isRestoredRef.current,
-    })
-    if (isRestoredRef.current) return // skip auto-submit on restore
+    if (isRestoredRef.current) return
     if (hasRecording && recordedAudioBlob && selectedPassage && selectedStudentId) {
       console.log("Submitting recording...")
       handleSubmitRecording()
     }
   }, [hasRecording, recordedAudioBlob, selectedPassage, selectedStudentId, handleSubmitRecording])
-
 
   if (isFullScreen) {
     return (
@@ -363,7 +376,6 @@ export default function OralReadingTestPage() {
       />
     )
   }
-
 
   const classNames = classes.map(c => c.name)
 
@@ -399,12 +411,14 @@ export default function OralReadingTestPage() {
                 studentName={studentName}
                 gradeLevel={gradeLevel}
                 classes={classNames}
+                selectedClassName={selectedClassName}
                 onStudentNameChange={setStudentName}
                 onGradeLevelChange={setGradeLevel}
                 onClassCreated={(newClass) => {
                   setClasses(prev => [...prev, { id: newClass, name: newClass }])
                 }}
                 onStudentSelected={(studentId: string) => setSelectedStudentId(studentId)}
+                onClassChange={setSelectedClassName}
               />
             )}
 
