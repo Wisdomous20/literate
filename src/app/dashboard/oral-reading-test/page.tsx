@@ -88,39 +88,49 @@ function base64ToBlob(base64: string): Blob {
   return new Blob([bytes], { type: mime })
 }
 
+// Read session once at module level so initial useState calls get the right values
+function getInitialSession() {
+  if (typeof window === "undefined") return null
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY)
+    if (raw) return JSON.parse(raw) as Partial<SessionState>
+  } catch {}
+  return null
+}
+
 export default function OralReadingTestPage() {
   const router = useRouter()
   const isRestoredRef = useRef(true)
+  const initialSession = useRef(getInitialSession())
+  const init = initialSession.current
 
-  // Initialize with defaults (matches server render)
-  const [passageContent, setPassageContent] = useState("")
+  // Initialize state directly from sessionStorage — no restore effect needed
+  const [passageContent, setPassageContent] = useState(init?.passageContent ?? "")
   const [isFullScreen, setIsFullScreen] = useState(false)
-  const [recordedSeconds, setRecordedSeconds] = useState(0)
+  const [recordedSeconds, setRecordedSeconds] = useState(init?.recordedSeconds ?? 0)
   const [recordedAudioURL, setRecordedAudioURL] = useState<string | null>(null)
   const [recordedAudioBlob, setRecordedAudioBlob] = useState<Blob | null>(null)
-  const [hasRecording, setHasRecording] = useState(false)
-  const [countdownEnabled, setCountdownEnabled] = useState(true)
-  const [countdownSeconds, setCountdownSeconds] = useState(3)
+  const [hasRecording, setHasRecording] = useState(init?.hasRecording ?? false)
+  const [countdownEnabled, setCountdownEnabled] = useState(init?.countdownEnabled ?? true)
+  const [countdownSeconds, setCountdownSeconds] = useState(init?.countdownSeconds ?? 3)
   const [isPassageModalOpen, setIsPassageModalOpen] = useState(false)
-  const [selectedLanguage, setSelectedLanguage] = useState<string | undefined>()
-  const [selectedLevel, setSelectedLevel] = useState<string | undefined>()
-  const [selectedTestType, setSelectedTestType] = useState<string | undefined>()
-  const [selectedTitle, setSelectedTitle] = useState<string | undefined>()
-  const [selectedPassage, setSelectedPassage] = useState<string | undefined>()
-  const [studentName, setStudentName] = useState("")
-  const [gradeLevel, setGradeLevel] = useState("")
+  const [selectedLanguage, setSelectedLanguage] = useState<string | undefined>(init?.selectedLanguage)
+  const [selectedLevel, setSelectedLevel] = useState<string | undefined>(init?.selectedLevel)
+  const [selectedTestType, setSelectedTestType] = useState<string | undefined>(init?.selectedTestType)
+  const [selectedTitle, setSelectedTitle] = useState<string | undefined>(init?.selectedTitle)
+  const [selectedPassage, setSelectedPassage] = useState<string | undefined>(init?.selectedPassage)
+  const [studentName, setStudentName] = useState(init?.studentName ?? "")
+  const [gradeLevel, setGradeLevel] = useState(init?.gradeLevel ?? "")
   const [classes, setClasses] = useState<ClassItem[]>([])
   const [isLoadingClasses, setIsLoadingClasses] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [selectedStudentId, setSelectedStudentId] = useState<string>("")
-  const [isHydrated, setIsHydrated] = useState(false)
+  const [selectedStudentId, setSelectedStudentId] = useState<string>(init?.selectedStudentId ?? "")
 
-  // Restore session from sessionStorage AFTER hydration
+  // Restore audio blob from sessionStorage (can only be done in an effect since it needs URL.createObjectURL)
   useEffect(() => {
     try {
       const audioBase64 = sessionStorage.getItem(AUDIO_STORAGE_KEY)
-      const loaded = loadSession()
-      if (audioBase64 && loaded.hasRecording) {
+      if (audioBase64 && init?.hasRecording) {
         const blob = base64ToBlob(audioBase64)
         const url = URL.createObjectURL(blob)
         setRecordedAudioBlob(blob)
@@ -130,13 +140,13 @@ export default function OralReadingTestPage() {
       console.error("Failed to restore audio:", err)
     }
 
-    // Mark restore as complete
+    // Mark restore as complete after a short delay
     const timer = setTimeout(() => {
       isRestoredRef.current = false
     }, 500)
 
-    setIsHydrated(true)
     return () => clearTimeout(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Save audio to sessionStorage when it changes
@@ -149,7 +159,8 @@ export default function OralReadingTestPage() {
           console.error("Failed to save audio to sessionStorage:", err)
         }
       })
-    } else {
+    } else if (!isRestoredRef.current) {
+      // Only remove audio if this isn't the initial mount (where blob is null before restore)
       sessionStorage.removeItem(AUDIO_STORAGE_KEY)
     }
   }, [recordedAudioBlob])
