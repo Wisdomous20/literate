@@ -65,7 +65,7 @@ export default function QuestionsPage() {
   }, []);
 
   const handleEdit = (question: Question) => {
-    router.push(`/admin-dash/questions/edit/${question.id}`);
+    router.push(`/admin/questions/edit/${question.id}`);
   };
 
   const handleDelete = async (id: string) => {
@@ -89,7 +89,7 @@ export default function QuestionsPage() {
   };
 
   const handleView = (question: Question) => {
-    router.push(`/admin-dash/questions/view/${question.id}`);
+    router.push(`/admin/questions/view/${question.id}`);
   };
 
   return (
@@ -108,7 +108,7 @@ export default function QuestionsPage() {
           </h1>
         </div>
         <Link
-          href="/admin-dash/questions/create"
+          href="/admin/questions/create"
           className="rounded-lg px-5 py-2.5 text-sm font-medium text-white transition-colors hover:opacity-90"
           style={{
             background: "#2E2E68",

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PassageTable } from "@/components/admin-dash/passageTable";
-import { getAllPassageAction } from "@/app/actions/admin/getAllPassage";
+import { getAllPassagesAction } from "@/app/actions/admin/getAllPassage";
 import { deletePassageAction } from "@/app/actions/admin/deletePassage";
 
 interface PassageApiData {
@@ -15,6 +15,7 @@ interface PassageApiData {
   level: number;
   tags: string;
   testType: string;
+  questions?: { id: string; text: string }[]; // Include questions for count
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -41,23 +42,23 @@ export default function PassagesPage() {
     const loadPassages = async () => {
       setIsLoading(true);
       try {
-        const data = await getAllPassageAction();
-        if (data && Array.isArray(data)) {
-          const formattedPassages: Passage[] = data.map(
-            (p: PassageApiData) => ({
-              id: p.id,
-              title: p.title,
-              language: (p.language as "Filipino" | "English") || "English",
-              level: p.level,
-              tags:
-                (p.tags as "Literal" | "Inferential" | "Critical") || "Literal",
-              testType: (p.testType as "PRE_TEST" | "POST_TEST") || "PRE_TEST",
-              content: p.content,
-              wordCount: p.content?.split(/\s+/).filter(Boolean).length || 0,
-              questionsCount: 0,
-            }),
-          );
+        const { success, passages: apiPassages, error } = await getAllPassagesAction();
+
+        if (success && Array.isArray(apiPassages)) {
+          const formattedPassages: Passage[] = apiPassages.map((p: PassageApiData) => ({
+            id: p.id,
+            title: p.title,
+            language: (p.language as "Filipino" | "English") || "English",
+            level: p.level,
+            tags: (p.tags as "Literal" | "Inferential" | "Critical") || "Literal",
+            testType: (p.testType as "PRE_TEST" | "POST_TEST") || "PRE_TEST",
+            content: p.content,
+            wordCount: p.content?.split(/\s+/).filter(Boolean).length || 0,
+            questionsCount: p.questions?.length || 0, // ✅ Dynamic questions count
+          }));
           setPassages(formattedPassages);
+        } else {
+          setError(error || "Failed to load passages");
         }
       } catch (err) {
         const errorMessage =
@@ -73,13 +74,11 @@ export default function PassagesPage() {
   }, []);
 
   const handleEdit = (passage: Passage) => {
-    router.push(`/admin-dash/passages/edit/${passage.id}`);
+    router.push(`/admin/passages/edit/${passage.id}`);
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this passage?")) {
-      return;
-    }
+    if (!confirm("Are you sure you want to delete this passage?")) return;
 
     try {
       await deletePassageAction({ id });
@@ -93,7 +92,7 @@ export default function PassagesPage() {
   };
 
   const handleView = (passage: Passage) => {
-    router.push(`/admin-dash/passages/view/${passage.id}`);
+    router.push(`/admin/passages/view/${passage.id}`);
   };
 
   return (
@@ -112,7 +111,7 @@ export default function PassagesPage() {
           </h1>
         </div>
         <Link
-          href="/admin-dash/passages/create"
+          href="/admin/passages/create"
           className="rounded-lg px-5 py-2.5 text-sm font-medium text-white transition-colors hover:opacity-90"
           style={{
             background: "#2E2E68",
@@ -124,12 +123,14 @@ export default function PassagesPage() {
         </Link>
       </header>
 
+      {/* Main Content */}
       <main className="flex flex-1 flex-col px-8 py-6">
         {error && (
           <div className="mb-4 rounded-lg bg-red-100 p-4 text-sm text-red-700">
             {error}
           </div>
         )}
+
         {isLoading ? (
           <div className="flex items-center justify-center flex-1">
             <span className="text-lg text-[#00306E]/60">
