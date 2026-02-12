@@ -43,29 +43,33 @@ export function CreateQuestionForm() {
   const [isLoadingPassages, setIsLoadingPassages] = useState(false);
   const [error, setError] = useState("");
 
-  // Load passages on mount
   useEffect(() => {
-    const loadPassages = async () => {
-      setIsLoadingPassages(true);
-      try {
-        const data = await getAllPassagesAction();
-        if (data && Array.isArray(data)) {
-          const formattedPassages: Passage[] = data.map(
-            (p: PassageApiData) => ({
-              id: p.id,
-              title: p.title,
-            }),
-          );
-          setPassages(formattedPassages);
-        }
-      } catch (err) {
-        console.error("Error loading passages:", err);
-      } finally {
-        setIsLoadingPassages(false);
+  const loadPassages = async () => {
+    setIsLoadingPassages(true);
+    try {
+      const result = await getAllPassagesAction(); // result is { success, passages, error }
+
+      if (result.success && Array.isArray(result.passages)) {
+        const formattedPassages: Passage[] = result.passages.map(
+          (p: PassageApiData) => ({
+            id: p.id,
+            title: p.title,
+          })
+        );
+        setPassages(formattedPassages);
+      } else {
+        console.error("Failed to load passages:", result.error);
       }
-    };
-    loadPassages();
-  }, []);
+    } catch (err) {
+      console.error("Error loading passages:", err);
+    } finally {
+      setIsLoadingPassages(false);
+    }
+  };
+
+  loadPassages();
+}, []);
+
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -348,7 +352,7 @@ export function CreateQuestionForm() {
         <button
           type="submit"
           disabled={isLoading}
-          className="submit-btn rounded-lg px-10 py-3 text-base font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50"
+          className="submit-btn bg-[#2E2E68] rounded-lg px-10 py-3 text-base font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50"
         >
           {isLoading ? "Creating..." : "Create Question"}
         </button>

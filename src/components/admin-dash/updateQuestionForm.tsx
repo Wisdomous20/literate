@@ -326,7 +326,7 @@ export function UpdateQuestionForm({
         <button
           type="submit"
           disabled={isLoading || !hasChanges}
-          className="submit-btn rounded-lg px-10 py-3 text-base font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="submit-btn bg-[#2E2E68] rounded-lg px-10 py-3 text-base font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? "Saving..." : "Save Changes"}
         </button>

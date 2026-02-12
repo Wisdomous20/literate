@@ -209,9 +209,9 @@ export function PassageTable({
             Test Type
           </span>
           <span className="text-[15px] font-medium text-[#00306E]">Words</span>
-          <span className="text-[15px] font-medium text-[#00306E]">
+          {/* <span className="text-[15px] font-medium text-[#00306E]">
             {"Q's"}
-          </span>
+          </span> */}
           <span className="text-right text-[15px] font-medium text-[#00306E]">
             Actions
           </span>
@@ -249,26 +249,24 @@ export function PassageTable({
                 </span>
                 <span className="text-sm">
                   <span
-  className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${tagColors[passage.tags]}`}
->
-
+                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${tagColors[passage.tags]}`}
+                  >
                     {passage.tags}
                   </span>
                 </span>
                 <span className="text-sm text-[#00306E]">
                   <span
-  className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${tagColors[passage.tags]}`}
->
-
+                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${tagColors[passage.tags]}`}
+                  >
                     {getTestTypeLabel(passage.testType)}
                   </span>
                 </span>
                 <span className="text-sm text-[#00306E]">
                   {passage.wordCount}
                 </span>
-                <span className="text-sm text-[#00306E]">
+                {/* <span className="text-sm text-[#00306E]">
                   {passage.questionsCount}
-                </span>
+                </span> */}
                 <div className="flex items-center justify-end gap-2">
                   <button
                     onClick={() => onView(passage)}

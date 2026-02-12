@@ -15,6 +15,7 @@ interface PassageApiData {
   level: number;
   tags: string;
   testType: string;
+  questions?: { id: string; text: string }[]; // Include questions for count
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -41,23 +42,23 @@ export default function PassagesPage() {
     const loadPassages = async () => {
       setIsLoading(true);
       try {
-        const data = await getAllPassagesAction();
-        if (data && Array.isArray(data)) {
-          const formattedPassages: Passage[] = data.map(
-            (p: PassageApiData) => ({
-              id: p.id,
-              title: p.title,
-              language: (p.language as "Filipino" | "English") || "English",
-              level: p.level,
-              tags:
-                (p.tags as "Literal" | "Inferential" | "Critical") || "Literal",
-              testType: (p.testType as "PRE_TEST" | "POST_TEST") || "PRE_TEST",
-              content: p.content,
-              wordCount: p.content?.split(/\s+/).filter(Boolean).length || 0,
-              questionsCount: 0,
-            }),
-          );
+        const { success, passages: apiPassages, error } = await getAllPassagesAction();
+
+        if (success && Array.isArray(apiPassages)) {
+          const formattedPassages: Passage[] = apiPassages.map((p: PassageApiData) => ({
+            id: p.id,
+            title: p.title,
+            language: (p.language as "Filipino" | "English") || "English",
+            level: p.level,
+            tags: (p.tags as "Literal" | "Inferential" | "Critical") || "Literal",
+            testType: (p.testType as "PRE_TEST" | "POST_TEST") || "PRE_TEST",
+            content: p.content,
+            wordCount: p.content?.split(/\s+/).filter(Boolean).length || 0,
+            questionsCount: p.questions?.length || 0, // ✅ Dynamic questions count
+          }));
           setPassages(formattedPassages);
+        } else {
+          setError(error || "Failed to load passages");
         }
       } catch (err) {
         const errorMessage =
@@ -77,9 +78,7 @@ export default function PassagesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this passage?")) {
-      return;
-    }
+    if (!confirm("Are you sure you want to delete this passage?")) return;
 
     try {
       await deletePassageAction({ id });
@@ -124,12 +123,14 @@ export default function PassagesPage() {
         </Link>
       </header>
 
+      {/* Main Content */}
       <main className="flex flex-1 flex-col px-8 py-6">
         {error && (
           <div className="mb-4 rounded-lg bg-red-100 p-4 text-sm text-red-700">
             {error}
           </div>
         )}
+
         {isLoading ? (
           <div className="flex items-center justify-center flex-1">
             <span className="text-lg text-[#00306E]/60">
