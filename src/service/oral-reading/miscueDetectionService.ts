@@ -85,6 +85,65 @@ function detectTranspositions(alignedWords: AlignedWord[]): Set<number> {
   return indices
 }
 
+function detectRepetitions(alignedWords: AlignedWord[]): Set<number> {
+  const indices = new Set<number>()
+
+  for (let i = 0; i < alignedWords.length - 1; i++) {
+    const current = alignedWords[i]
+    const next = alignedWords[i + 1]
+
+    // An EXACT match followed by an INSERTION of the same word (student repeated)
+    if (
+      current.match === "EXACT" &&
+      next.match === "INSERTION" &&
+      current.expected &&
+      next.spoken
+    ) {
+      const sim = similarityRatio(
+        normalizeWord(current.expected),
+        normalizeWord(next.spoken)
+      )
+      if (sim > 0.8) {
+        indices.add(i + 1) // mark the insertion as a repetition
+      }
+    }
+
+    // Two consecutive INSERTION words that are the same (stuttered/repeated insertion)
+    if (
+      current.match === "INSERTION" &&
+      next.match === "INSERTION" &&
+      current.spoken &&
+      next.spoken
+    ) {
+      const sim = similarityRatio(
+        normalizeWord(current.spoken),
+        normalizeWord(next.spoken)
+      )
+      if (sim > 0.8) {
+        indices.add(i + 1) // mark the second one as repetition
+      }
+    }
+
+    // A MISMATCH followed by an INSERTION of the same spoken word
+    if (
+      current.match === "MISMATCH" &&
+      next.match === "INSERTION" &&
+      current.spoken &&
+      next.spoken
+    ) {
+      const sim = similarityRatio(
+        normalizeWord(current.spoken),
+        normalizeWord(next.spoken)
+      )
+      if (sim > 0.8) {
+        indices.add(i + 1)
+      }
+    }
+  }
+
+  return indices
+}
+
 export function detectMiscues(
   alignedWords: AlignedWord[],
   language: string
@@ -92,6 +151,8 @@ export function detectMiscues(
   const miscues: MiscueResult[] = [];
   const selfCorrectedIndices = detectSelfCorrections(alignedWords);
   const transposedIndices = detectTranspositions(alignedWords);
+  const repetitionIndices = detectRepetitions(alignedWords);
+
 
   for (let i = 0; i < alignedWords.length; i++) {
     const aligned = alignedWords[i];
@@ -104,6 +165,18 @@ export function detectMiscues(
         wordIndex: aligned.expectedIndex ?? aligned.spokenIndex ?? i,
         timestamp: aligned.timestamp,
         isSelfCorrected: true,
+      });
+      continue;
+    }
+
+    if (repetitionIndices.has(i)) {
+      miscues.push({
+        miscueType: "REPETITION",
+        expectedWord: aligned.expected ?? "",
+        spokenWord: aligned.spoken,
+        wordIndex: aligned.expectedIndex ?? aligned.spokenIndex ?? i,
+        timestamp: aligned.timestamp,
+        isSelfCorrected: false,
       });
       continue;
     }

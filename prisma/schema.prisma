@@ -70,24 +70,29 @@ model Student {
   class               Class                @relation(fields: [classId], references: [id], onDelete: Cascade)
   classId             String
   assessments         Assessment[]
-  oralReadingSessions OralReadingSession[]
   deletedAt           DateTime?
 }
 
 model Assessment {
-  id            String             @id @default(uuid())
-  studentId     String
-  student       Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  type          AssessmentType
-  dateTaken     DateTime           @default(now())
-  oralReading   OralReadingSession?
-  comprehension ComprehensionTest?
+  id             String              @id @default(uuid())
+  studentId      String
+  student        Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  type           AssessmentType
+  passageId      String
+  passage        Passage             @relation(fields: [passageId], references: [id])
+  quizId         String?
+  quiz           Quiz?               @relation(fields: [quizId], references: [id])
+  dateTaken      DateTime            @default(now())
+  quizScore      Int?
+  quizTotal      Int?
+  quizLevel      String?
+
+  oralReading    OralReadingSession?
+  studentAnswers StudentAnswer[]
 }
 
 model OralReadingSession {
   id             String            @id @default(cuid())
-  studentId      String
-  passageId      String
   assessmentId   String?           @unique
   audioUrl       String            @default("")
   transcript     String?
@@ -101,8 +106,6 @@ model OralReadingSession {
   updatedAt      DateTime          @updatedAt
   deletedAt      DateTime?
 
-  student        Student               @relation(fields: [studentId], references: [id])
-  passage        Passage               @relation(fields: [passageId], references: [id])
   assessment     Assessment?            @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
   miscues        OralReadingMiscue[]
   behaviors      OralReadingBehavior[]
@@ -150,13 +153,15 @@ model OralReadingBehavior {
   session OralReadingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
 
-model ComprehensionTest {
+model StudentAnswer {
   id           String     @id @default(uuid())
-  assessmentId String     @unique
+  assessmentId String
   assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
-  score        Int
-  totalItems   Int
-  level        String
+  questionId   String
+  question     Question   @relation(fields: [questionId], references: [id])
+  answer       String
+  isCorrect    Boolean
+  createdAt    DateTime   @default(now())
 }
 
 model Session {
@@ -170,41 +175,44 @@ model Session {
 }
 
 model Passage {
-  id                  String               @id @default(uuid())
-  title               String
-  content             String
-  language            String
-  level               Int
-  tags                Tags
-  testType            testType
-  oralReadingSessions OralReadingSession[]
-  quiz                Quiz?
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
+  id          String               @id @default(uuid())
+  title       String
+  content     String
+  language    String
+  level       Int
+  tags        Tags
+  testType    testType
+  assessments Assessment[]
+  quiz        Quiz?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
 }
 
 model Quiz {
-  id          String     @id @default(uuid())
-  passageId   String     @unique // Add @unique for one-to-one
-  passage     Passage    @relation(fields: [passageId], references: [id], onDelete: Cascade)
+  id          String       @id @default(uuid())
+  passageId   String       @unique
+  passage     Passage      @relation(fields: [passageId], references: [id], onDelete: Cascade)
   questions   Question[]
+  assessments Assessment[]
   totalScore  Int
   totalNumber Int
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
+
 model Question {
-  id            String       @id @default(uuid())
-  quizId        String
-  quiz          Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  questionText  String
-  tags          Tags
-  type          QuestionType
-  options       Json? // Only for MULTIPLE_CHOICE (null for essay)
-  correctAnswer String? // Only for MULTIPLE_CHOICE (null for essay)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  id             String          @id @default(uuid())
+  quizId         String
+  quiz           Quiz            @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  questionText   String
+  tags           Tags
+  type           QuestionType
+  options        Json?
+  correctAnswer  String?
+  studentAnswers StudentAnswer[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 }
 
 model VerificationToken {
@@ -222,7 +230,7 @@ model VerificationToken {
 enum AssessmentType {
   ORAL_READING
   COMPREHENSION
-  ORAL_READING_TEST
+  READING_FLUENCY
 }
 
 enum userType {
@@ -261,6 +269,7 @@ enum MiscueType {
   TRANSPOSITION
   INSERTION
   SELF_CORRECTION
+  REPETITION
 }
 
 enum ReadingBehaviorType {
