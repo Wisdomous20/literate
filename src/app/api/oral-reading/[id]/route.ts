@@ -8,6 +8,8 @@ export async function POST(request: NextRequest) {
     const studentId = formData.get("studentId") as string;
     const passageId = formData.get("passageId") as string;
     const audioFile = formData.get("audio") as File;
+    const audioUrl = (formData.get("audioUrl") as string) || "";
+
 
     if (!studentId || !passageId || !audioFile) {
       return NextResponse.json(
@@ -27,10 +29,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const assessment = await prisma.assessment.create({
+      data: {
+        studentId,
+        type: "ORAL_READING",
+        passageId,
+      },
+    });
+
     const session = await prisma.oralReadingSession.create({
       data: {
         studentId,
         passageId,
+        assessmentId: assessment.id,
+        audioUrl,
         status: "PROCESSING",
       },
     });
