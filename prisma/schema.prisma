@@ -80,15 +80,10 @@ model Assessment {
   type           AssessmentType
   passageId      String
   passage        Passage             @relation(fields: [passageId], references: [id])
-  quizId         String?
-  quiz           Quiz?               @relation(fields: [quizId], references: [id])
   dateTaken      DateTime            @default(now())
-  quizScore      Int?
-  quizTotal      Int?
-  quizLevel      String?
-
+  
+  comprehension ComprehensionTest?
   oralReading    OralReadingSession?
-  studentAnswers StudentAnswer[]
 }
 
 model OralReadingSession {
@@ -153,16 +148,7 @@ model OralReadingBehavior {
   session OralReadingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
 
-model StudentAnswer {
-  id           String     @id @default(uuid())
-  assessmentId String
-  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
-  questionId   String
-  question     Question   @relation(fields: [questionId], references: [id])
-  answer       String
-  isCorrect    Boolean
-  createdAt    DateTime   @default(now())
-}
+
 
 model Session {
   id           String   @id @default(cuid())
@@ -188,32 +174,57 @@ model Passage {
   updatedAt   DateTime             @updatedAt
 }
 
+model ComprehensionTest {
+  id           String     @id @default(uuid())
+  assessmentId String     @unique
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  quizId       String
+  quiz         Quiz       @relation(fields: [quizId], references: [id])
+  score        Int
+  totalItems   Int
+  level        String
+  answers      ComprehensionAnswer[]
+}
+
+model ComprehensionAnswer {
+  id                  String            @id @default(uuid())
+  comprehensionTestId String
+  comprehensionTest   ComprehensionTest @relation(fields: [comprehensionTestId], references: [id], onDelete: Cascade)
+  questionId          String
+  question            Question          @relation(fields: [questionId], references: [id])
+  answer              String
+  isCorrect           Boolean?
+  createdAt           DateTime          @default(now())
+}
+
+
 model Quiz {
-  id          String       @id @default(uuid())
-  passageId   String       @unique
-  passage     Passage      @relation(fields: [passageId], references: [id], onDelete: Cascade)
-  questions   Question[]
-  assessments Assessment[]
-  totalScore  Int
-  totalNumber Int
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id                String              @id @default(uuid())
+  passageId         String              @unique
+  passage           Passage             @relation(fields: [passageId], references: [id], onDelete: Cascade)
+  questions         Question[]
+  comprehensionTests ComprehensionTest[]
+  totalScore        Int
+  totalNumber       Int
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 }
 
 
 model Question {
-  id             String          @id @default(uuid())
-  quizId         String
-  quiz           Quiz            @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  questionText   String
-  tags           Tags
-  type           QuestionType
-  options        Json?
-  correctAnswer  String?
-  studentAnswers StudentAnswer[]
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id            String                @id @default(uuid())
+  quizId        String
+  quiz          Quiz                  @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  questionText  String
+  tags          Tags
+  type          QuestionType
+  options       Json?
+  correctAnswer String?
+  answers       ComprehensionAnswer[]
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
 }
+
 
 model VerificationToken {
   id        String   @id @default(cuid())

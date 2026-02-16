@@ -1,26 +1,26 @@
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma"
 
 interface CreateAssessmentInput {
   studentId: string
-  type: "ORAL_READING" | "COMPREHENSION" | "ORAL_READING_TEST"
+  type: "ORAL_READING" | "COMPREHENSION" | "READING_FLUENCY"
+  passageId: string
+  quizId?: string
 }
 
-export default async function createAssessment(input: CreateAssessmentInput) {
-  const { studentId, type } = input
 
-  const student = await prisma.student.findUnique({
-    where: { id: studentId },
-  })
+export async function createAssessment(input: CreateAssessmentInput) {
+  const { studentId, type, passageId, quizId } = input
 
-  if (!student) {
-    throw new Error("Student not found")
+  if (!studentId || !type || !passageId) {
+    throw new Error("studentId, type, and passageId are required")
   }
 
-  return  await prisma.assessment.create({
+  return prisma.assessment.create({
     data: {
       studentId,
       type,
+      passageId,
+      ...(quizId && { quizId }),
     },
-  });
-
+  })
 }

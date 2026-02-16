@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { studentId, type } = body
+    const { studentId, type, passageId } = body
 
     if (!studentId || !type) {
       return NextResponse.json(
@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
       data: {
         studentId,
         type,
+        passageId: passageId || null,
       },
     })
 
@@ -34,17 +35,30 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const studentId = searchParams.get("studentId")
+    const type = searchParams.get("type")
+
+    const where: Record<string, unknown> = {}
+    if (studentId) where.studentId = studentId
+    if (type) where.type = type
 
     const assessments = await prisma.assessment.findMany({
-      where: studentId ? { studentId } : undefined,
+      where,
       include: {
+        passage: { select: { id: true, title: true, language: true, level: true } },
         oralReading: {
           include: {
             miscues: true,
             behaviors: true,
           },
         },
-        comprehension: true,
+        comprehension: {
+          include: {
+            quiz: true,
+            answers: {
+              include: { question: true },
+            },
+          },
+        },
         student: { select: { id: true, name: true } },
       },
       orderBy: { dateTaken: "desc" },
