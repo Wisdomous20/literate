@@ -2,10 +2,10 @@
 
 import { createAssessmentService } from "@/service/assessment/createAssessmentService";
 
-export async function createAssessment(input: {
+export async function createAssessmentAction(input: {
   studentId: string;
-  type: string;
-  passageId?: string;
+  type: "ORAL_READING" | "COMPREHENSION" | "READING_FLUENCY";
+  passageId: string;
 }) {
   const result = await createAssessmentService(input);
 
