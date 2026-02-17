@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PassageTable } from "@/components/admin-dash/passageTable";
-import { getAllPassageAction } from "@/app/actions/admin/getAllPassage";
+import { getAllPassagesAction } from "@/app/actions/admin/getAllPassage";
 import { deletePassageAction } from "@/app/actions/admin/deletePassage";
 
 interface PassageApiData {
@@ -41,7 +41,7 @@ export default function PassagesPage() {
     const loadPassages = async () => {
       setIsLoading(true);
       try {
-        const data = await getAllPassageAction();
+        const data = await getAllPassagesAction();
         if (data && Array.isArray(data)) {
           const formattedPassages: Passage[] = data.map(
             (p: PassageApiData) => ({

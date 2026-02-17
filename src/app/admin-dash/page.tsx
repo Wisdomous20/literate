@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { FileText, HelpCircle, BookOpen, Users } from "lucide-react";
 import Link from "next/link";
-import { getAllPassageAction } from "@/app/actions/admin/getAllPassage";
+import { getAllPassagesAction } from "../actions/admin/getAllPassage";
 
 export default function AdminDashboard() {
   const [passageCount, setPassageCount] = useState(0);
@@ -12,7 +12,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        const passages = await getAllPassageAction();
+        const passages = await getAllPassagesAction();
         if (Array.isArray(passages)) {
           setPassageCount(passages.length);
         }
