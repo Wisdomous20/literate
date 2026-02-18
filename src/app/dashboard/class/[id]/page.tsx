@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { ClassListsHeader } from "@/components/class-lists/classListsHeader";
@@ -13,6 +13,7 @@ import { getClassById } from "@/app/actions/class/getClassById";
 import { createStudent } from "@/app/actions/student/createStudent";
 import { deleteStudent } from "@/app/actions/student/deleteStudent";
 import { updateStudent } from "@/app/actions/student/updateStudent";
+import { useCachedFetch, invalidateCache } from "@/lib/clientCache";
 
 interface StudentData {
   id: string;
@@ -48,43 +49,31 @@ export default function ClassListsPage() {
   const classId = params.id as string;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [classData, setClassData] = useState<ClassData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!classId) return;
+  // Use cached fetch for class data — keyed by class ID
+  const {
+    data: result,
+    isLoading: loading,
+    error: fetchHookError,
+    refetch,
+  } = useCachedFetch(
+    `class-detail-${classId}`,
+    () => getClassById(classId),
+    { ttlMs: 2 * 60 * 1000, enabled: !!classId }
+  );
 
-    let isMounted = true;
-
-    const fetchData = async () => {
-      const result = await getClassById(classId);
-
-      if (!isMounted) return;
-
-      if (result.success && result.classItem) {
-        setClassData(result.classItem);
-        setError(null);
-      } else {
-        setError(result.error || "Failed to fetch class data");
-      }
-
-      setLoading(false);
-    };
-
-    fetchData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [classId]);
+  const classData: ClassData | null =
+    result?.success && result.classItem ? result.classItem : null;
+  const error =
+    !loading && result && !result.success
+      ? result.error || "Failed to fetch class data"
+      : fetchHookError;
 
   const refetchClassData = async () => {
-    const result = await getClassById(classId);
-
-    if (result.success && result.classItem) {
-      setClassData(result.classItem);
-    }
+    // Invalidate this class detail and all class list caches
+    invalidateCache(`class-detail-${classId}`);
+    invalidateCache("class-list-", true);
+    await refetch();
   };
 
   const handleCreateStudent = () => {
