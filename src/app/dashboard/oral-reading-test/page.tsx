@@ -325,9 +325,9 @@ export default function OralReadingTestPage() {
       formData.append("audioUrl", supabaseAudioUrl)
       formData.append("audio", recordedAudioBlob, "recording.webm")
 
-      console.log("Sending to API:", `/api/oral-reading/${selectedPassage}`)
+      console.log("Sending to API:", `/api/fluency-reading/${selectedPassage}`)
 
-      const response = await fetch(`/api/oral-reading/${selectedPassage}`, {
+      const response = await fetch(`/api/fluency-reading/${selectedPassage}`, {
         method: "POST",
         body: formData,
       })
