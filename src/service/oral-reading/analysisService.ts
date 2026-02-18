@@ -28,7 +28,7 @@ export async function analyzeOralReading(
   const miscues = detectMiscues(alignedWords, language);
 
   // 5. Detect behaviors (timing-based, language-independent)
-  const behaviors = detectBehaviors(alignedWords, passageText);
+  const behaviors = detectBehaviors(alignedWords);
 
   // 6. Calculate metrics
   const duration = whisperResult.duration;

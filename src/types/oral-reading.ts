@@ -28,6 +28,7 @@ export interface MiscueResult {
     | "TRANSPOSITION"
     | "INSERTION"
     | "SELF_CORRECTION"
+    | "REPETITION"
   expectedWord: string
   spokenWord: string | null
   wordIndex: number
