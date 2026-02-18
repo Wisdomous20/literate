@@ -59,7 +59,7 @@ export function Sidebar() {
   // const schoolYear = getSchoolYear();
 
   const handleLogout = async () => {
-    await signOut({ redirect: true, callbackUrl: "/auth/login" });
+    await signOut({ redirect: true, callbackUrl: "/login" });
   };
 
   return (

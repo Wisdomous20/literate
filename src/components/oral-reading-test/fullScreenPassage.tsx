@@ -42,8 +42,19 @@ export function FullScreenPassage({
   const anchorRefs = useRef<(HTMLSpanElement | null)[]>([])
   const doneCalledRef = useRef(false)
   const secondsRef = useRef(0)
+  const processedResultsRef = useRef(0)
 
-  // Keep a ref in sync with seconds so the speech callback always has the latest value
+  // Refs for settings so speech callback always has latest values
+  const autoScrollRef = useRef(autoScrollEnabled)
+  const autoFinishRef = useRef(autoFinishEnabled)
+  useEffect(() => {
+    autoScrollRef.current = autoScrollEnabled
+  }, [autoScrollEnabled])
+  useEffect(() => {
+    autoFinishRef.current = autoFinishEnabled
+  }, [autoFinishEnabled])
+
+  // Keep a ref in sync with seconds
   useEffect(() => {
     secondsRef.current = seconds
   }, [seconds])
@@ -112,9 +123,8 @@ export function FullScreenPassage({
   }, [onDone, stopEverything])
 
   // Start speech recognition for passive auto-scroll + auto-finish
-  const startSpeechRecognition = useCallback(() => {
-    // Only start if at least one speech feature is enabled
-    if (!autoScrollEnabled && !autoFinishEnabled) return
+  const startSpeechRecognition = useCallback((sharedStream: MediaStream) => {
+    if (!autoScrollRef.current && !autoFinishRef.current) return
 
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechRecognitionAPI) {
@@ -129,43 +139,59 @@ export function FullScreenPassage({
     recognition.lang = "en-US"
 
     const totalTrackable = trackableIndices.length
+    processedResultsRef.current = 0
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      const lastResult = event.results[event.results.length - 1]
-      const transcript = lastResult[0].transcript.trim()
-      const spokenWords = transcript.split(/\s+/)
+      // Process all results from where we last left off
+      for (let r = processedResultsRef.current; r < event.results.length; r++) {
+        const result = event.results[r]
+        // Only process final results to avoid duplicate processing of interim
+        // But also process interim for the very latest result for responsiveness
+        if (!result.isFinal && r < event.results.length - 1) continue
 
-      for (const spoken of spokenWords) {
-        const normalizedSpoken = normalize(spoken)
-        if (!normalizedSpoken) continue
+        const transcript = result[0].transcript.trim()
+        const spokenWords = transcript.split(/\s+/)
 
-        const currentTrackPos = wordTrackIndexRef.current
-        const searchWindow = Math.min(currentTrackPos + 8, totalTrackable)
+        for (const spoken of spokenWords) {
+          const normalizedSpoken = normalize(spoken)
+          if (!normalizedSpoken) continue
 
-        for (let i = currentTrackPos; i < searchWindow; i++) {
-          const tokenIdx = trackableIndices[i]
-          const passageWord = normalize(tokenMeta[tokenIdx].text)
+          const currentTrackPos = wordTrackIndexRef.current
+          // Wide search window to handle skips and mispronunciations
+          const searchEnd = Math.min(currentTrackPos + 30, totalTrackable)
 
-          if (passageWord && normalizedSpoken === passageWord) {
-            wordTrackIndexRef.current = i + 1
+          for (let i = currentTrackPos; i < searchEnd; i++) {
+            const tokenIdx = trackableIndices[i]
+            const passageWord = normalize(tokenMeta[tokenIdx].text)
 
-            // Silent auto-scroll
-            if (autoScrollEnabled) {
-              anchorRefs.current[tokenIdx]?.scrollIntoView({
-                behavior: "smooth",
-                block: "center",
-              })
+            if (passageWord && normalizedSpoken === passageWord) {
+              wordTrackIndexRef.current = i + 1
+
+              // Auto-scroll
+              if (autoScrollRef.current) {
+                anchorRefs.current[tokenIdx]?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                })
+              }
+
+              // Auto-finish when last word is reached
+              if (autoFinishRef.current && i + 1 >= totalTrackable) {
+                console.log("Auto-finish triggered: last word detected")
+                setTimeout(() => {
+                  finishReading()
+                }, 500)
+                return
+              }
+
+              break
             }
-
-            // Auto-finish when last word is reached
-            if (autoFinishEnabled && i + 1 >= totalTrackable) {
-              setTimeout(() => {
-                finishReading()
-              }, 500)
-            }
-
-            break
           }
+        }
+
+        // Update processed count only for final results
+        if (result.isFinal) {
+          processedResultsRef.current = r + 1
         }
       }
     }
@@ -178,6 +204,8 @@ export function FullScreenPassage({
 
     recognition.onend = () => {
       if (hasStartedRef.current && recognitionRef.current && !doneCalledRef.current) {
+        // Reset processed count on restart since results array resets
+        processedResultsRef.current = 0
         try {
           recognition.start()
         } catch {
@@ -186,16 +214,23 @@ export function FullScreenPassage({
       }
     }
 
-    recognition.start()
-  }, [autoScrollEnabled, autoFinishEnabled, tokenMeta, trackableIndices, finishReading])
+    try {
+      recognition.start()
+      console.log("Speech recognition started, autoFinish:", autoFinishRef.current, "autoScroll:", autoScrollRef.current)
+    } catch (err) {
+      console.error("Failed to start speech recognition:", err)
+    }
+  }, [tokenMeta, trackableIndices, finishReading])
 
-  // Start recording + timer + speech recognition
+  // Start recording + timer + speech recognition using SHARED stream
   const startRecordingAndTimer = useCallback(async () => {
     if (hasStartedRef.current) return
     hasStartedRef.current = true
 
+    let stream: MediaStream | null = null
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       streamRef.current = stream
       const mediaRecorder = new MediaRecorder(stream)
       mediaRecorderRef.current = mediaRecorder
@@ -210,7 +245,7 @@ export function FullScreenPassage({
       mediaRecorder.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" })
         audioURLRef.current = URL.createObjectURL(audioBlob)
-        stream.getTracks().forEach((track) => track.stop())
+        stream?.getTracks().forEach((track) => track.stop())
       }
 
       mediaRecorder.start()
@@ -218,7 +253,10 @@ export function FullScreenPassage({
       console.error("Microphone access denied")
     }
 
-    startSpeechRecognition()
+    // Start speech recognition (uses browser's built-in mic access)
+    if (stream) {
+      startSpeechRecognition(stream)
+    }
 
     intervalRef.current = setInterval(() => {
       setSeconds((prev) => prev + 1)
@@ -302,7 +340,7 @@ export function FullScreenPassage({
       onMouseMove={handleMouseMove}
     >
       {/* Passage Card */}
-      <div className="flex min-h-0 flex-1 flex-col items-center px-8 pt-8 pb-4">
+      <div className="flex min-h-0 flex-1 flex-col items-center px-4 pt-4 pb-2 md:px-6 md:pt-6 md:pb-3 lg:px-8 lg:pt-8 lg:pb-4">
         <div
           className="relative flex w-full max-w-[1368px] flex-1 flex-col overflow-hidden"
           style={{
@@ -315,7 +353,7 @@ export function FullScreenPassage({
           {/* Close Button */}
           <button
             onClick={handleClose}
-            className="absolute right-6 top-5 z-10 flex h-9 w-9 items-center justify-center rounded-full transition-opacity duration-500 hover:opacity-70"
+            className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full transition-opacity duration-500 hover:opacity-70 md:right-6 md:top-5"
             style={{ opacity: showOverlayUI ? 1 : 0, pointerEvents: showOverlayUI ? "auto" : "none" }}
             title="Exit fullscreen"
           >
@@ -324,7 +362,7 @@ export function FullScreenPassage({
 
           {/* Recording indicator */}
           <div
-            className="absolute left-6 top-6 flex items-center gap-2 transition-opacity duration-500"
+            className="absolute left-4 top-4 flex items-center gap-2 transition-opacity duration-500 md:left-6 md:top-6"
             style={{ opacity: showOverlayUI ? 1 : 0 }}
           >
             <span className="relative flex h-3 w-3">
@@ -336,7 +374,7 @@ export function FullScreenPassage({
 
           {/* Top fade edge */}
           <div
-            className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-16"
+            className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-12 md:h-16"
             style={{
               background: "linear-gradient(to bottom, #EFFDFF 0%, transparent 100%)",
               borderRadius: "25px 25px 0 0",
@@ -344,13 +382,12 @@ export function FullScreenPassage({
           />
 
           {/* Passage Content */}
-          <div className="flex flex-1 flex-col items-center overflow-auto px-16 pt-20">
+          <div className="flex flex-1 flex-col items-center overflow-auto px-6 pt-14 md:px-12 md:pt-16 lg:px-16 lg:pt-20">
             <p
-              className="text-center leading-[2.4]"
+              className="text-center text-lg leading-[2.2] md:text-xl md:leading-[2.3] lg:text-[22px] lg:leading-[2.4]"
               style={{
                 color: "#00306E",
-                fontSize: "22px",
-                maxWidth: "680px",
+                maxWidth: "min(680px, 90%)",
                 fontFamily: "Georgia, 'Times New Roman', serif",
                 letterSpacing: "0.01em",
                 wordSpacing: "0.05em",
@@ -365,12 +402,12 @@ export function FullScreenPassage({
                 </span>
               ))}
             </p>
-            <div className="w-full shrink-0" style={{ height: "80px" }} />
+            <div className="w-full shrink-0 h-16 md:h-20" />
           </div>
 
           {/* Bottom fade edge */}
           <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-16"
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-12 md:h-16"
             style={{
               background: "linear-gradient(to top, #EFFDFF 0%, transparent 100%)",
               borderRadius: "0 0 25px 25px",
@@ -380,13 +417,13 @@ export function FullScreenPassage({
       </div>
 
       {/* Bottom Controls — ALWAYS visible */}
-      <div className="shrink-0 flex flex-col items-center gap-1.5 px-8 pb-5 pt-2">
-        <span className="text-base font-medium" style={{ color: "#00306E" }}>
+      <div className="shrink-0 flex flex-col items-center gap-1 px-4 pb-3 pt-1 md:gap-1.5 md:px-8 md:pb-5 md:pt-2">
+        <span className="text-sm font-medium md:text-base" style={{ color: "#00306E" }}>
           {passageTitle}
         </span>
 
         <span
-          className="text-lg font-medium tabular-nums"
+          className="text-base font-medium tabular-nums md:text-lg"
           style={{ color: "#00306E" }}
         >
           {formatTime(seconds)}
@@ -394,13 +431,10 @@ export function FullScreenPassage({
 
         <button
           onClick={finishReading}
-          className="text-[15px] font-semibold text-white transition-all duration-200 hover:brightness-110"
+          className="rounded-lg px-10 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:brightness-110 md:px-12 md:py-3 md:text-[15px]"
           style={{
-            width: "239px",
-            height: "48px",
             background: "#6666FF",
             boxShadow: "0px 1px 20px rgba(102, 102, 255, 0.4)",
-            borderRadius: "8px",
           }}
         >
           Done

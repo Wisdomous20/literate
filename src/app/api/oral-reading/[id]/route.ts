@@ -2,6 +2,25 @@ import { NextRequest, NextResponse } from "next/server"
 import { createAssessmentService } from "@/service/assessment/createAssessmentService"
 import { createOralReadingSessionService } from "@/service/oral-reading/createOralReadingSessionService"
 
+function serializeError(err: unknown): string {
+  if (err instanceof Error) {
+    return `${err.name}: ${err.message}`;
+  }
+  try {
+    const str = JSON.stringify(err);
+    if (str && str !== "{}") return str;
+  } catch {}
+  return String(err);
+}
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
+export const maxDuration = 60; // allow up to 60 seconds for Whisper processing
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
@@ -51,14 +70,40 @@ export async function POST(request: NextRequest) {
       }
       const status = result.code ? statusMap[result.code] ?? 500 : 500
 
+        if (analysis.behaviors.length > 0) {
+          await tx.oralReadingBehavior.createMany({
+            data: analysis.behaviors.map((b) => ({
+              sessionId: session.id,
+              behaviorType: b.behaviorType,
+              startIndex: b.startIndex,
+              endIndex: b.endIndex,
+              startTime: b.startTime,
+              endTime: b.endTime,
+              notes: b.notes,
+            })),
+          });
+        }
+      });
+
       return NextResponse.json(
-        {
-          error: result.error,
-          sessionId: result.sessionId,
-          assessmentId: assessmentResult.assessment.id,
-        },
-        { status }
-      )
+        { sessionId: session.id, status: "COMPLETED", analysis },
+        { status: 201 }
+      );
+    } catch (analysisError) {
+      const errorMsg = serializeError(analysisError);
+      console.error("Analysis failed:", errorMsg, analysisError);
+      try {
+        await prisma.oralReadingSession.update({
+          where: { id: session.id },
+          data: { status: "FAILED" },
+        });
+      } catch (updateErr) {
+        console.error("Failed to update session status:", updateErr);
+      }
+      return NextResponse.json(
+        { error: errorMsg, sessionId: session.id },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json(
@@ -71,9 +116,10 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
-    console.error("Error in oral reading API:", error)
+    const errorMsg = serializeError(error);
+    console.error("Error creating session:", errorMsg, error);
     return NextResponse.json(
-      { error: "Failed to create oral reading session" },
+      { error: errorMsg },
       { status: 500 }
     )
   }

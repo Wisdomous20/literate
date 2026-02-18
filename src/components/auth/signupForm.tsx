@@ -3,7 +3,7 @@
 import React from "react"
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+// import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -17,7 +17,7 @@ export function SignupForm() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  // const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -61,7 +61,7 @@ export function SignupForm() {
         </div>
         <p className="text-center text-sm text-[#040029]">
           Already verified?{" "}
-          <Link href="/auth/login" className="text-[#162db0] hover:underline font-medium">
+          <Link href="/login" className="text-[#162db0] hover:underline font-medium">
             Sign in
           </Link>
         </p>
@@ -173,7 +173,7 @@ export function SignupForm() {
 
       <p className="text-center text-sm text-[#040029]">
         Already have an account?{" "}
-        <Link href="/auth/login" className="text-[#162db0] hover:underline font-medium">
+        <Link href="/login" className="text-[#162db0] hover:underline font-medium">
           Sign in
         </Link>
       </p>
