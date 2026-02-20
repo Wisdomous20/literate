@@ -114,6 +114,15 @@ export default function StudentInfoBar({
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
+  // Clear auto-filled student when filters change
+  const clearAutoFill = () => {
+    if (selectedStudentId) {
+      onStudentNameChange("")
+      setSelectedStudentId("")
+      onStudentSelected("")
+    }
+  }
+
   const handleClassChange = (value: string) => {
     if (value === "create-new") {
       setIsDialogOpen(true)
@@ -123,6 +132,7 @@ export default function StudentInfoBar({
     setSelectedClass(value)
     onClassChange?.(value)
     setIsClassDropdownOpen(false)
+    clearAutoFill()
   }
 
 
@@ -154,7 +164,7 @@ export default function StudentInfoBar({
 
   const hasFilters = !!selectedClass || !!gradeLevel
   const searchQuery = studentName.trim().toLowerCase()
-  const hasSearchQuery = searchQuery.length >= 3
+  const hasSearchQuery = searchQuery.length >= 1
 
   // Filter students based on filters and search
   const displayStudents = allStudents.filter((s) => {
@@ -163,12 +173,12 @@ export default function StudentInfoBar({
     // Apply grade filter if set
     if (gradeLevel && String(s.level) !== gradeLevel) return false
 
-    // If no filters and no search query (or < 3 chars) → show nothing
+    // If no filters and no search query → show nothing
     if (!hasFilters && !hasSearchQuery) return false
 
-    // If search query is typed, further narrow by name match
+    // If search query is typed, further narrow by name match (starts with)
     if (hasSearchQuery) {
-      return s.name.toLowerCase().includes(searchQuery)
+      return s.name.toLowerCase().startsWith(searchQuery)
     }
 
     // Filters are set but no search query → show all under filter
@@ -282,6 +292,7 @@ export default function StudentInfoBar({
                       } else {
                         onGradeLevelChange(String(i + 1))
                       }
+                      clearAutoFill()
                       setIsGradeDropdownOpen(false)
                     }}
                     className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm text-[#00306E] hover:bg-[#E4F4FF] ${
@@ -338,10 +349,11 @@ export default function StudentInfoBar({
                       if (isActive) {
                         setSelectedClass("")
                         onClassChange?.("")
+                        clearAutoFill()
+                        setIsClassDropdownOpen(false)
                       } else {
                         handleClassChange(cls)
                       }
-                      setIsClassDropdownOpen(false)
                     }}
                     className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm text-[#00306E] hover:bg-[#E4F4FF] ${
                       isActive ? "bg-[#E4F4FF] font-semibold" : ""
