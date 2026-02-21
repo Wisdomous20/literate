@@ -1,7 +1,8 @@
 "use client"
 
 import React, { useState, useEffect, useCallback, useRef } from "react"
-import { ChevronDown, Plus, Search, X } from "lucide-react"
+import { ChevronDown, Plus, Search, X, CheckCircle, XCircle } from "lucide-react"
+import { createClass } from "@/app/actions/class/createClass"
 import {
   Dialog,
   DialogContent,
@@ -51,8 +52,14 @@ export default function StudentInfoBar({
   const [isGradeDropdownOpen, setIsGradeDropdownOpen] = useState(false)
   const [isStudentInputFocused, setIsStudentInputFocused] = useState(false)
   const [selectedStudentId, setSelectedStudentId] = useState("")
+  const [isCreatingClass, setIsCreatingClass] = useState(false)
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
   const studentInputRef = useRef<HTMLInputElement>(null)
   const studentDropdownRef = useRef<HTMLDivElement>(null)
+  const gradeDropdownRef = useRef<HTMLDivElement>(null)
+  const gradeButtonRef = useRef<HTMLButtonElement>(null)
+  const classDropdownRef = useRef<HTMLDivElement>(null)
+  const classButtonRef = useRef<HTMLButtonElement>(null)
   const fetchedClassesRef = useRef<string>("")
 
   // Fetch students from ALL classes — skip if classes haven't changed
@@ -98,21 +105,46 @@ export default function StudentInfoBar({
     fetchAllStudents()
   }, [fetchAllStudents])
 
-  // Close student suggestions on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
+      const target = e.target as Node
+
+      // Close student suggestions
       if (
         studentDropdownRef.current &&
-        !studentDropdownRef.current.contains(e.target as Node) &&
+        !studentDropdownRef.current.contains(target) &&
         studentInputRef.current &&
-        !studentInputRef.current.contains(e.target as Node)
+        !studentInputRef.current.contains(target)
       ) {
         setIsStudentInputFocused(false)
+      }
+
+      // Close grade dropdown
+      if (
+        isGradeDropdownOpen &&
+        gradeDropdownRef.current &&
+        !gradeDropdownRef.current.contains(target) &&
+        gradeButtonRef.current &&
+        !gradeButtonRef.current.contains(target)
+      ) {
+        setIsGradeDropdownOpen(false)
+      }
+
+      // Close class dropdown
+      if (
+        isClassDropdownOpen &&
+        classDropdownRef.current &&
+        !classDropdownRef.current.contains(target) &&
+        classButtonRef.current &&
+        !classButtonRef.current.contains(target)
+      ) {
+        setIsClassDropdownOpen(false)
       }
     }
     document.addEventListener("mousedown", handleClickOutside)
     return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
+  }, [isGradeDropdownOpen, isClassDropdownOpen])
 
   // Clear auto-filled student when filters change
   const clearAutoFill = () => {
@@ -153,12 +185,35 @@ export default function StudentInfoBar({
     }
   }
 
-  const handleCreateClass = () => {
-    if (newClassName.trim()) {
-      onClassCreated(newClassName.trim())
-      setSelectedClass(newClassName.trim())
-      setNewClassName("")
-      setIsDialogOpen(false)
+  // Auto-dismiss toast after 4 seconds
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 4000)
+      return () => clearTimeout(timer)
+    }
+  }, [toast])
+
+  const handleCreateClass = async () => {
+    const trimmedName = newClassName.trim()
+    if (!trimmedName) return
+
+    setIsCreatingClass(true)
+    try {
+      const result = await createClass(trimmedName)
+      if (result.success) {
+        onClassCreated(trimmedName)
+        setSelectedClass(trimmedName)
+        onClassChange?.(trimmedName)
+        setNewClassName("")
+        setIsDialogOpen(false)
+        setToast({ message: `Class "${trimmedName}" created successfully!`, type: "success" })
+      } else {
+        setToast({ message: result.error || "Failed to create class.", type: "error" })
+      }
+    } catch {
+      setToast({ message: "Something went wrong. Please try again.", type: "error" })
+    } finally {
+      setIsCreatingClass(false)
     }
   }
 
@@ -192,6 +247,32 @@ export default function StudentInfoBar({
 
   return (
     <>
+      {/* Toast notification — fixed upper right */}
+      {toast && (
+        <div
+          className={`fixed top-6 right-6 z-50 flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium shadow-lg animate-in slide-in-from-right duration-300 ${
+            toast.type === "success"
+              ? "bg-green-50 border border-green-200 text-green-800"
+              : "bg-red-50 border border-red-200 text-red-800"
+          }`}
+        >
+          {toast.type === "success" ? (
+            <CheckCircle className="h-4 w-4 flex-shrink-0 text-green-500" />
+          ) : (
+            <XCircle className="h-4 w-4 flex-shrink-0 text-red-500" />
+          )}
+          <span className="flex-1">{toast.message}</span>
+          <button
+            onClick={() => setToast(null)}
+            className={`ml-1 rounded-full p-0.5 transition-colors ${
+              toast.type === "success" ? "hover:bg-green-200" : "hover:bg-red-200"
+            }`}
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {/* 1) Student Name — Left (Search Input) */}
         <div
@@ -261,6 +342,7 @@ export default function StudentInfoBar({
             Grade Level
           </label>
           <button
+            ref={gradeButtonRef}
             onClick={() => setIsGradeDropdownOpen(!isGradeDropdownOpen)}
             className="flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-sm text-[#00306E]"
             style={{
@@ -275,6 +357,7 @@ export default function StudentInfoBar({
 
           {isGradeDropdownOpen && (
             <div
+              ref={gradeDropdownRef}
               className="absolute left-3 right-3 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-lg bg-white py-1"
               style={{
                 border: "1px solid #54A4FF",
@@ -320,6 +403,7 @@ export default function StudentInfoBar({
             Class
           </label>
           <button
+            ref={classButtonRef}
             onClick={() => setIsClassDropdownOpen(!isClassDropdownOpen)}
             className="flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-sm text-[#00306E]"
             style={{
@@ -334,12 +418,20 @@ export default function StudentInfoBar({
 
           {isClassDropdownOpen && (
             <div
+              ref={classDropdownRef}
               className="absolute left-3 right-3 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-lg bg-white py-1"
               style={{
                 border: "1px solid #54A4FF",
                 boxShadow: "0px 4px 12px rgba(84, 164, 255, 0.2)",
               }}
             >
+              <button
+                onClick={() => handleClassChange("create-new")}
+                className="flex w-full items-center gap-1 px-3 py-1.5 text-left text-sm text-[#54A4FF] hover:bg-[#E4F4FF]"
+              >
+                <Plus className="h-4 w-4" />
+                Create New Class
+              </button>
               {classes.map((cls, idx) => {
                 const isActive = selectedClass === cls
                 return (
@@ -364,13 +456,6 @@ export default function StudentInfoBar({
                   </button>
                 )
               })}
-              <button
-                onClick={() => handleClassChange("create-new")}
-                className="flex w-full items-center gap-1 px-3 py-1.5 text-left text-sm text-[#54A4FF] hover:bg-[#E4F4FF]"
-              >
-                <Plus className="h-4 w-4" />
-                Create New Class
-              </button>
             </div>
           )}
         </div>
@@ -401,8 +486,8 @@ export default function StudentInfoBar({
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCreateClass} disabled={!newClassName.trim()}>
-              Create
+            <Button onClick={handleCreateClass} disabled={!newClassName.trim() || isCreatingClass}>
+              {isCreatingClass ? "Creating..." : "Create"}
             </Button>
           </DialogFooter>
         </DialogContent>
