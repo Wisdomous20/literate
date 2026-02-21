@@ -11,8 +11,9 @@ export async function analyzeOralReading(
   language: string
 ): Promise<OralReadingAnalysis> {
   // 1. Transcribe with Whisper (language-aware)
-  const whisperResult = await transcribeAudio(audioBuffer, fileName, language);
+  const whisperResult = await transcribeAudio(audioBuffer, fileName, language, passageText);
 
+  //add layer to normalize passage words and transcribed words for better comparison (e.g. ignore punctuation, case, etc.)
   // 2. Tokenize passage
   const passageWords = passageText.split(/\s+/).filter((w) => w.length > 0);
   const spokenWords = whisperResult.words.map((w) => ({
