@@ -112,6 +112,30 @@ function detectTranspositions(alignedWords: AlignedWord[]): Set<number> {
     }
   }
 
+  const WINDOW = 5
+
+  for (let i = 0; i < alignedWords.length; i++) {
+    const a = alignedWords[i]
+    if (a.match !== "INSERTION" || !a.spoken) continue
+
+    const spokenNorm = normalizeWord(a.spoken)
+
+    for (let j = Math.max(0, i - WINDOW); j <= Math.min(alignedWords.length - 1, i + WINDOW); j++) {
+      if (j === i) continue
+      const b = alignedWords[j]
+
+      if (b.match !== "OMISSION" || !b.expected) continue
+
+      const expectedNorm = normalizeWord(b.expected)
+
+      if (spokenNorm === expectedNorm || isSimilar(a.spoken, b.expected)) {
+        indices.add(i) // the INSERTION
+        indices.add(j) // the OMISSION
+        break
+      }
+    }
+  }
+
   return indices
 }
 
