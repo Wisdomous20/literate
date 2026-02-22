@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { ChevronLeft, ChevronRight, Timer, Minus, Plus } from "lucide-react"
+import { ChevronLeft, ChevronRight, Timer, Minus, Plus, CheckCircle, XCircle, X } from "lucide-react"
 import { DashboardHeader } from "@/components/auth/dashboard/dashboardHeader"
 import StudentInfoBar from "@/components/oral-reading-test/studentInfoBar"
 import { PassageFilters } from "@/components/oral-reading-test/passageFilters"
@@ -13,6 +13,7 @@ import { FullScreenPassage } from "@/components/oral-reading-test/fullScreenPass
 import { AddPassageModal } from "@/components/oral-reading-test/addPassageModal"
 import { getClassListBySchoolYear } from "@/app/actions/class/getClassList"
 import { ReadinessCheckButton } from "@/components/oral-reading-test/readinessCheck"
+import { createStudent } from "@/app/actions/student/createStudent"
 
 // Helper to get current school year
 function getCurrentSchoolYear(): string {
@@ -116,6 +117,7 @@ export default function OralReadingTestPage() {
   const [selectedStudentId, setSelectedStudentId] = useState<string>("")
   const [selectedClassName, setSelectedClassName] = useState<string>("")
   const [isHydrated, setIsHydrated] = useState(false)
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
 
   // Restore session from sessionStorage AFTER hydration (avoids SSR mismatch)
   useEffect(() => {
@@ -271,14 +273,33 @@ export default function OralReadingTestPage() {
     }
   }, [hasPassage, recordedAudioURL])
 
-  const handleFullScreenDone = useCallback((elapsedSeconds: number, audioURL: string | null, audioBlob: Blob | null) => {
+  const handleFullScreenDone = useCallback(async (elapsedSeconds: number, audioURL: string | null, audioBlob: Blob | null) => {
     isRestoredRef.current = false
     setRecordedSeconds(elapsedSeconds)
     setRecordedAudioURL(audioURL)
     setRecordedAudioBlob(audioBlob)
     setIsFullScreen(false)
     setHasRecording(true)
-  }, [])
+
+    // Auto-create student if not selected from suggestions
+    if (!selectedStudentId && studentName.trim() && gradeLevel && selectedClassName) {
+      try {
+        const result = await createStudent(
+          studentName.trim(),
+          parseInt(gradeLevel),
+          selectedClassName
+        )
+        if (result.success && result.student?.id) {
+          setSelectedStudentId(result.student.id)
+          setToast({ message: `Student "${studentName.trim()}" successfully created!`, type: "success" })
+        } else {
+          setToast({ message: result.error || "Failed to create student.", type: "error" })
+        }
+      } catch {
+        setToast({ message: "Failed to create student. Please try again.", type: "error" })
+      }
+    }
+  }, [selectedStudentId, studentName, gradeLevel, selectedClassName])
 
   const handleFullScreenClose = useCallback(() => {
     setIsFullScreen(false)
@@ -292,6 +313,41 @@ export default function OralReadingTestPage() {
       setRecordedAudioURL(null)
     }
   }, [recordedAudioURL])
+
+  const handleStartNew = useCallback(() => {
+    // Revoke audio URL to free memory
+    if (recordedAudioURL) {
+      URL.revokeObjectURL(recordedAudioURL)
+    }
+    // Reset all state to initial values
+    setStudentName("")
+    setGradeLevel("")
+    setSelectedStudentId("")
+    setSelectedClassName("")
+    setPassageContent("")
+    setSelectedLanguage(undefined)
+    setSelectedLevel(undefined)
+    setSelectedTestType(undefined)
+    setSelectedTitle(undefined)
+    setSelectedPassage(undefined)
+    setHasRecording(false)
+    setRecordedSeconds(0)
+    setRecordedAudioURL(null)
+    setRecordedAudioBlob(null)
+    setCountdownEnabled(true)
+    setCountdownSeconds(3)
+    // Clear sessionStorage
+    sessionStorage.removeItem(STORAGE_KEY)
+    sessionStorage.removeItem(AUDIO_STORAGE_KEY)
+  }, [recordedAudioURL])
+
+  // Auto-dismiss toast after 4 seconds
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 4000)
+      return () => clearTimeout(timer)
+    }
+  }, [toast])
 
   const handleSubmitRecording = useCallback(async () => {
     if (!recordedAudioBlob || !selectedPassage || !selectedStudentId) {
@@ -314,6 +370,7 @@ export default function OralReadingTestPage() {
 
       if (!supabaseAudioUrl) {
         console.error("Audio upload failed")
+        setToast({ message: "Audio upload failed. Please try again.", type: "error" })
         return
       }
 
@@ -340,17 +397,21 @@ export default function OralReadingTestPage() {
         result = JSON.parse(responseText)
       } catch {
         console.error("Analysis API non-JSON response:", response.status, responseText)
+        setToast({ message: "Session submission failed. Unexpected server response.", type: "error" })
         return
       }
 
       if (!response.ok) {
         console.error("Analysis API error:", response.status, result)
+        setToast({ message: "Session submission failed. Please try again.", type: "error" })
         return
       }
 
       console.log("Session created:", result.sessionId)
+      setToast({ message: "Reading Fluency Session Successful!", type: "success" })
     } catch (err) {
       console.error("Submit error:", err)
+      setToast({ message: "Something went wrong. Please try again.", type: "error" })
     } finally {
       setIsSubmitting(false)
     }
@@ -382,6 +443,32 @@ export default function OralReadingTestPage() {
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <DashboardHeader title="Oral Reading Test" />
+
+      {/* Toast notification — fixed upper right */}
+      {toast && (
+        <div
+          className={`fixed top-6 right-6 z-50 flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium shadow-lg transition-all duration-300 ${
+            toast.type === "success"
+              ? "bg-green-50 border border-green-200 text-green-800"
+              : "bg-red-50 border border-red-200 text-red-800"
+          }`}
+        >
+          {toast.type === "success" ? (
+            <CheckCircle className="h-4 w-4 flex-shrink-0 text-green-500" />
+          ) : (
+            <XCircle className="h-4 w-4 flex-shrink-0 text-red-500" />
+          )}
+          <span className="flex-1">{toast.message}</span>
+          <button
+            onClick={() => setToast(null)}
+            className={`ml-1 rounded-full p-0.5 transition-colors ${
+              toast.type === "success" ? "hover:bg-green-200" : "hover:bg-red-200"
+            }`}
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
 
       <main className="flex min-h-0 flex-1 flex-col gap-3 px-4 py-4 md:px-6 lg:px-8">
         {/* Nav row */}
@@ -459,6 +546,7 @@ export default function OralReadingTestPage() {
               recordedSeconds={recordedSeconds}
               recordedAudioURL={recordedAudioURL}
               onTryAgain={handleTryAgain}
+              onStartNew={handleStartNew}
             />
 
             {/* Countdown Toggle + Readiness Check Button */}
@@ -513,7 +601,7 @@ export default function OralReadingTestPage() {
 
           {/* Right column: MiscueAnalysis — responsive width */}
           <div className="w-[240px] shrink-0 self-stretch md:w-[270px] lg:w-[300px] xl:w-[320px]">
-            <MiscueAnalysis />
+            <MiscueAnalysis disabled={!hasRecording} />
           </div>
         </div>
       </main>
