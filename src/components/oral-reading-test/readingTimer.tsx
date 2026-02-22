@@ -10,6 +10,7 @@ interface ReadingTimerProps {
   recordedSeconds: number
   recordedAudioURL: string | null
   onTryAgain: () => void
+  onStartNew: () => void
 }
 
 const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 2]
@@ -182,6 +183,7 @@ export function ReadingTimer({
   recordedSeconds,
   recordedAudioURL,
   onTryAgain,
+  onStartNew,
 }: ReadingTimerProps) {
   const formatTime = (totalSeconds: number) => {
     const hrs = Math.floor(totalSeconds / 3600)
@@ -231,17 +233,25 @@ export function ReadingTimer({
         )}
 
         {hasRecording && (
-          <button
-            onClick={onTryAgain}
-            className="rounded-lg px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:opacity-90 md:px-8 lg:px-10"
-            style={{
-              background: "#2E2E68",
-              border: "1px solid #0C1A6D",
-              boxShadow: "0px 1px 20px rgba(65, 155, 180, 0.47)",
-            }}
-          >
-            Try Again
-          </button>
+          <>
+            <button
+              onClick={onTryAgain}
+              className="rounded-lg px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:opacity-90 md:px-8 lg:px-10"
+              style={{
+                background: "#2E2E68",
+                border: "1px solid #0C1A6D",
+                boxShadow: "0px 1px 20px rgba(65, 155, 180, 0.47)",
+              }}
+            >
+              Try Again
+            </button>
+            <button
+              onClick={onStartNew}
+              className="rounded-lg border border-[#6666FF] bg-transparent px-6 py-2.5 text-sm font-semibold text-[#6666FF] transition-all duration-200 hover:bg-[#6666FF] hover:text-white md:px-8 lg:px-10"
+            >
+              Start New
+            </button>
+          </>
         )}
       </div>
     </div>

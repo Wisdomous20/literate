@@ -48,6 +48,11 @@ export default function StudentInfoBar({
   const [selectedClass, setSelectedClass] = useState(selectedClassName ?? "")
   const [allStudents, setAllStudents] = useState<StudentOption[]>([])
   const [isLoadingStudents, setIsLoadingStudents] = useState(false)
+
+  // Sync internal state when parent resets selectedClassName (e.g. Start New)
+  useEffect(() => {
+    setSelectedClass(selectedClassName ?? "")
+  }, [selectedClassName])
   const [isClassDropdownOpen, setIsClassDropdownOpen] = useState(false)
   const [isGradeDropdownOpen, setIsGradeDropdownOpen] = useState(false)
   const [isStudentInputFocused, setIsStudentInputFocused] = useState(false)

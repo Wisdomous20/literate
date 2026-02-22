@@ -314,6 +314,33 @@ export default function OralReadingTestPage() {
     }
   }, [recordedAudioURL])
 
+  const handleStartNew = useCallback(() => {
+    // Revoke audio URL to free memory
+    if (recordedAudioURL) {
+      URL.revokeObjectURL(recordedAudioURL)
+    }
+    // Reset all state to initial values
+    setStudentName("")
+    setGradeLevel("")
+    setSelectedStudentId("")
+    setSelectedClassName("")
+    setPassageContent("")
+    setSelectedLanguage(undefined)
+    setSelectedLevel(undefined)
+    setSelectedTestType(undefined)
+    setSelectedTitle(undefined)
+    setSelectedPassage(undefined)
+    setHasRecording(false)
+    setRecordedSeconds(0)
+    setRecordedAudioURL(null)
+    setRecordedAudioBlob(null)
+    setCountdownEnabled(true)
+    setCountdownSeconds(3)
+    // Clear sessionStorage
+    sessionStorage.removeItem(STORAGE_KEY)
+    sessionStorage.removeItem(AUDIO_STORAGE_KEY)
+  }, [recordedAudioURL])
+
   // Auto-dismiss toast after 4 seconds
   useEffect(() => {
     if (toast) {
@@ -381,7 +408,7 @@ export default function OralReadingTestPage() {
       }
 
       console.log("Session created:", result.sessionId)
-      setToast({ message: "Oral reading session submitted successfully!", type: "success" })
+      setToast({ message: "Reading Fluency Session Successful!", type: "success" })
     } catch (err) {
       console.error("Submit error:", err)
       setToast({ message: "Something went wrong. Please try again.", type: "error" })
@@ -519,6 +546,7 @@ export default function OralReadingTestPage() {
               recordedSeconds={recordedSeconds}
               recordedAudioURL={recordedAudioURL}
               onTryAgain={handleTryAgain}
+              onStartNew={handleStartNew}
             />
 
             {/* Countdown Toggle + Readiness Check Button */}
@@ -573,7 +601,7 @@ export default function OralReadingTestPage() {
 
           {/* Right column: MiscueAnalysis — responsive width */}
           <div className="w-[240px] shrink-0 self-stretch md:w-[270px] lg:w-[300px] xl:w-[320px]">
-            <MiscueAnalysis />
+            <MiscueAnalysis disabled={!hasRecording} />
           </div>
         </div>
       </main>

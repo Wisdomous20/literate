@@ -27,6 +27,7 @@ interface MiscueAnalysisProps {
   classificationLevel?: string
   studentName?: string
   gradeLevel?: string
+  disabled?: boolean
 }
 
 export function MiscueAnalysis({
@@ -35,12 +36,13 @@ export function MiscueAnalysis({
   classificationLevel = "--",
   studentName,
   gradeLevel,
+  disabled = false,
 }: MiscueAnalysisProps) {
   const router = useRouter()
 
   return (
     <div
-      className="flex h-full flex-col rounded-[10px] px-5 py-4"
+      className={`flex h-full flex-col rounded-[10px] px-5 py-4 transition-opacity duration-300 ${disabled ? "pointer-events-none opacity-60" : "opacity-100"}`}
       style={{
         background: "#EFFDFF",
         border: "1px solid #54A4FF",
@@ -49,7 +51,7 @@ export function MiscueAnalysis({
     >
       {/* Title */}
       <h3
-        className="mb-2 text-[15px] font-bold"
+        className={`mb-2 text-[15px] ${disabled ? "font-medium" : "font-bold"}`}
         style={{ color: "#003366" }}
       >
         Miscue Analysis
