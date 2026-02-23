@@ -10,6 +10,7 @@ export interface WhisperSegment {
   start: number
   end: number
   words: WhisperWord[]
+  no_speech_prob?: number 
 }
 
 export interface WhisperTranscriptResponse {
