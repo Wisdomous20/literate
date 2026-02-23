@@ -11,11 +11,9 @@ export async function GET(
     const session = await prisma.oralReadingSession.findUnique({
       where: { id },
       include: {
-        passage: true,
         miscues: { orderBy: { wordIndex: "asc" } },
         behaviors: true,
         wordTimestamps: { orderBy: { index: "asc" } },
-        student: { select: { id: true, name: true } },
         assessment: true,
       },
     })
