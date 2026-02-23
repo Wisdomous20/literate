@@ -75,13 +75,15 @@ export async function createOralReadingSessionService(
       await tx.oralReadingSession.update({
         where: { id: session.id },
         data: {
-          transcript: analysis.transcript,
-          wordsPerMinute: analysis.wordsPerMinute,
-          accuracy: analysis.accuracy,
-          totalWords: analysis.totalWords,
-          totalMiscues: analysis.totalMiscues,
-          duration: analysis.duration,
-          status: "COMPLETED",
+        transcript: analysis.transcript,
+        wordsPerMinute: analysis.wordsPerMinute,
+        accuracy: analysis.accuracy,
+        totalWords: analysis.totalWords,
+        totalMiscues: analysis.totalMiscues,
+        duration: analysis.duration,
+        oralFluencyScore: analysis.oralFluencyScore,
+        classificationLevel: analysis.classificationLevel,
+        status: "COMPLETED",
         },
       })
 
