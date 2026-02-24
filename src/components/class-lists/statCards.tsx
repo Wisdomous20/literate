@@ -16,21 +16,21 @@ function StatCard({
   tailwindIconColor,
 }: StatCardProps) {
   return (
-    <div className="flex flex-col justify-between rounded-[20px] p-5 min-h-[140px] bg-[#EFFDFF] border border-[#54A4FF] shadow-[0px_1px_20px_rgba(108,164,239,0.37)]">
-      <div className="flex items-start gap-3">
+    <div className="flex flex-col justify-between rounded-[10px] p-4 min-h-[100px] bg-[#EFFDFF] border border-[#54A4FF] shadow-[0px_1px_10px_rgba(108,164,239,0.2)]">
+      <div className="flex items-start gap-2">
         <div
-          className={`flex h-12 w-12 items-center justify-center rounded-[10px] bg-[rgba(74,74,252,0.06)] border border-[#DAE6FF]`}
+          className={`flex h-10 w-10 items-center justify-center rounded-[8px] bg-[rgba(74,74,252,0.06)] border border-[#DAE6FF]`}
         >
           <FileText
-            className={`h-5 w-5 ${tailwindIconColor}`}
+            className={`h-4 w-4 ${tailwindIconColor}`}
             aria-hidden="true"
           />
         </div>
-        <span className="text-base font-bold leading-[27px] text-[#003366]">
+        <span className="text-sm font-semibold leading-[20px] text-[#003366]">
           {title}
         </span>
       </div>
-      <span className={`text-[43px] font-bold leading-[64px] ${tailwindColor}`}>
+      <span className={`text-[32px] font-bold leading-[40px] ${tailwindColor}`}>
         {value}
       </span>
     </div>
@@ -51,7 +51,7 @@ export function StatCards({
   frustratedCount,
 }: StatCardsProps) {
   return (
-    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       <StatCard
         title="No. of Assessed Students"
         value={assessedCount}

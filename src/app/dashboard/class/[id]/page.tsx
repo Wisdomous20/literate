@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Search } from "lucide-react";
 import { ClassListsHeader } from "@/components/class-lists/classListsHeader";
 import { StatCards } from "@/components/class-lists/statCards";
 import { AssessmentTypeFilterDropdown } from "@/components/class-lists/assessmentTypeFilter";
@@ -49,8 +49,11 @@ export default function ClassListsPage() {
   const classId = params.id as string;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortOption, setSortOption] = useState<
+    "nameAsc" | "nameDesc" | "gradeAsc" | "gradeDesc"
+  >("nameAsc"); // State for sorting
 
-  // Use cached fetch for class data — keyed by class ID
   const {
     data: result,
     isLoading: loading,
@@ -59,18 +62,18 @@ export default function ClassListsPage() {
   } = useCachedFetch(
     `class-detail-${classId}`,
     () => getClassById(classId),
-    { ttlMs: 2 * 60 * 1000, enabled: !!classId }
+    { ttlMs: 24 * 60 * 60 * 1000, enabled: !!classId }, // 1 day TTL
   );
 
   const classData: ClassData | null =
     result?.success && result.classItem ? result.classItem : null;
+
   const error =
     !loading && result && !result.success
       ? result.error || "Failed to fetch class data"
       : fetchHookError;
 
   const refetchClassData = async () => {
-    // Invalidate this class detail and all class list caches
     invalidateCache(`class-detail-${classId}`);
     invalidateCache("class-list-", true);
     await refetch();
@@ -125,16 +128,37 @@ export default function ClassListsPage() {
   };
 
   const handleAssessmentFilterChange = () => {
-    // TODO: Fetch stats based on assessment type filter when backend supports it
+    // future backend integration
   };
 
   const transformStudentsForTable = (students: StudentData[]) => {
-    return students.map((student) => ({
-      id: student.id,
-      name: student.name,
-      gradeLevel: levelToGradeLevel(student.level),
-      lastAssessment: null as string | null,
-    }));
+    const transformed = students
+      .map((student) => ({
+        id: student.id,
+        name: student.name,
+        gradeLevel: levelToGradeLevel(student.level),
+        lastAssessment: null as string | null,
+      }))
+      .filter((student) =>
+        student.name.toLowerCase().includes(searchQuery.toLowerCase()),
+      );
+
+    // Apply sorting based on the selected sort option
+    if (sortOption === "nameAsc") {
+      return transformed.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortOption === "nameDesc") {
+      return transformed.sort((a, b) => b.name.localeCompare(a.name));
+    } else if (sortOption === "gradeAsc") {
+      return transformed.sort((a, b) =>
+        a.gradeLevel.localeCompare(b.gradeLevel),
+      );
+    } else if (sortOption === "gradeDesc") {
+      return transformed.sort((a, b) =>
+        b.gradeLevel.localeCompare(a.gradeLevel),
+      );
+    }
+
+    return transformed;
   };
 
   const calculateStats = () => {
@@ -146,10 +170,13 @@ export default function ClassListsPage() {
     };
   };
 
-  if (loading) {
+  // Skeleton loading state
+  if (loading && !classData) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-lg text-[#00306E]">Loading class data...</div>
+      <div className="flex flex-col gap-4 p-8">
+        <div className="h-8 w-1/3 bg-gray-200 animate-pulse rounded" />
+        <div className="h-6 w-1/2 bg-gray-200 animate-pulse rounded" />
+        <div className="h-96 w-full bg-gray-100 animate-pulse rounded" />
       </div>
     );
   }
@@ -172,11 +199,18 @@ export default function ClassListsPage() {
   const tableStudents = transformStudentsForTable(classData.students);
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex min-h-screen flex-col overflow-y-auto">
       <ClassListsHeader onCreateStudent={handleCreateStudent} />
 
       <main className="flex flex-1 flex-col gap-5 px-8 py-6">
-        {/* Previous Button and Assessment Filter in one row */}
+        {/* Optional: Subtle updating indicator */}
+        {loading && (
+          <div className="absolute top-2 right-2 text-xs text-blue-500 z-50">
+            Updating...
+          </div>
+        )}
+
+        {/* Previous + Assessment Filter */}
         <div className="flex items-center justify-between">
           <button
             onClick={() => router.back()}
@@ -198,19 +232,60 @@ export default function ClassListsPage() {
           frustratedCount={stats.frustrated}
         />
 
-        <div className="flex flex-1 flex-col gap-4">
+        {/* Class Info + Search + Sort */}
+        <div className="flex items-center justify-between">
           <ClassInfo
             className={classData.name}
             schoolYear={classData.schoolYear}
           />
 
-          <StudentTable
-            students={tableStudents}
-            totalStudents={classData.students.length}
-            onDeleteStudent={handleDeleteStudent}
-            onUpdateStudent={handleUpdateStudent}
-          />
+          <div className="flex items-center gap-4">
+            {/* Search */}
+            <div className="flex items-center gap-3 rounded-full px-4 py-2 bg-[#F4FCFD] border border-[rgba(84,164,255,0.38)] w-[350px]">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E4F4FF]">
+                <Search className="h-4 w-4 text-[#162DB0]" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search Anything..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1 bg-transparent text-sm text-[#00306E] outline-none"
+              />
+            </div>
+
+            {/* Sort Dropdown */}
+            <div className="relative">
+              <select
+                value={sortOption}
+                onChange={(e) =>
+                  setSortOption(
+                    e.target.value as
+                      | "nameAsc"
+                      | "nameDesc"
+                      | "gradeAsc"
+                      | "gradeDesc",
+                  )
+                }
+                className="px-4 py-2 bg-[#E4F4FF] rounded-md text-[#03438D] text-sm"
+                aria-label="Sort students"
+                title="Sort students"
+              >
+                <option value="nameAsc">Name: A to Z</option>
+                <option value="nameDesc">Name: Z to A</option>
+                <option value="gradeAsc">Grade Level: Ascending</option>
+                <option value="gradeDesc">Grade Level: Descending</option>
+              </select>
+            </div>
+          </div>
         </div>
+
+        <StudentTable
+          students={tableStudents}
+          totalStudents={tableStudents.length}
+          onDeleteStudent={handleDeleteStudent}
+          onUpdateStudent={handleUpdateStudent}
+        />
       </main>
 
       <CreateStudentModal

@@ -10,41 +10,98 @@ interface CacheEntry<T> {
 // Global in-memory cache store (persists across component mounts during session)
 const cacheStore = new Map<string, CacheEntry<unknown>>();
 
-// Default TTL: 2 minutes
-const DEFAULT_TTL_MS = 2 * 60 * 1000;
+// Default TTL: 1 day
+const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000; // 1 day in milliseconds
+
+// Maximum cache size (for in-memory cache)
+const MAX_CACHE_SIZE = 100;
 
 /**
- * Get a cached value if it exists and hasn't expired.
+ * Save data to localStorage.
  */
-export function getCached<T>(key: string, ttlMs: number = DEFAULT_TTL_MS): T | null {
-  const entry = cacheStore.get(key) as CacheEntry<T> | undefined;
-  if (!entry) return null;
+function saveToLocalStorage<T>(key: string, data: T): void {
+  const entry = { data, timestamp: Date.now() };
+  localStorage.setItem(key, JSON.stringify(entry));
+}
+
+/**
+ * Load data from localStorage.
+ */
+function loadFromLocalStorage<T>(key: string, ttlMs: number): T | null {
+  if (typeof window === "undefined" || !window.localStorage) {
+    return null; // Return null if localStorage is not available
+  }
+
+  const stored = localStorage.getItem(key);
+  if (!stored) return null;
+
+  const entry: CacheEntry<T> = JSON.parse(stored);
   if (Date.now() - entry.timestamp > ttlMs) {
-    cacheStore.delete(key);
+    localStorage.removeItem(key); // Remove expired entry
     return null;
   }
   return entry.data;
 }
 
 /**
+ * Enforce cache size limit (LRU eviction).
+ */
+function enforceCacheSize() {
+  while (cacheStore.size > MAX_CACHE_SIZE) {
+    const oldestKey = cacheStore.keys().next().value;
+    if (oldestKey !== undefined) {
+      cacheStore.delete(oldestKey);
+    }
+  }
+}
+
+/**
+ * Get a cached value if it exists and hasn't expired.
+ * Now supports both in-memory and localStorage.
+ */
+export function getCached<T>(
+  key: string,
+  ttlMs: number = DEFAULT_TTL_MS,
+): T | null {
+  const entry = cacheStore.get(key) as CacheEntry<T> | undefined;
+  if (entry) {
+    if (Date.now() - entry.timestamp > ttlMs) {
+      cacheStore.delete(key);
+      return null;
+    }
+    return entry.data;
+  }
+
+  // Fallback to localStorage
+  const local = loadFromLocalStorage<T>(key, ttlMs);
+  return local;
+}
+
+/**
  * Set a value in the cache.
+ * Now saves to both in-memory and localStorage.
  */
 export function setCache<T>(key: string, data: T): void {
   cacheStore.set(key, { data, timestamp: Date.now() });
+  enforceCacheSize(); // Ensure cache size limit
+  saveToLocalStorage(key, data); // Save to localStorage
 }
 
 /**
  * Invalidate a specific cache key or all keys matching a prefix.
+ * Now removes data from both in-memory and localStorage.
  */
 export function invalidateCache(keyOrPrefix: string, prefix = false): void {
   if (prefix) {
     for (const key of cacheStore.keys()) {
       if (key.startsWith(keyOrPrefix)) {
         cacheStore.delete(key);
+        localStorage.removeItem(key);
       }
     }
   } else {
     cacheStore.delete(keyOrPrefix);
+    localStorage.removeItem(keyOrPrefix);
   }
 }
 
@@ -57,12 +114,12 @@ export function invalidateCache(keyOrPrefix: string, prefix = false): void {
  *
  * @param key - Unique cache key
  * @param fetcher - Async function that fetches the data
- * @param options - TTL in ms (default 2 min), enabled flag
+ * @param options - TTL in ms (default 1 day), enabled flag
  */
 export function useCachedFetch<T>(
   key: string,
   fetcher: () => Promise<T>,
-  options?: { ttlMs?: number; enabled?: boolean }
+  options?: { ttlMs?: number; enabled?: boolean },
 ) {
   const { ttlMs = DEFAULT_TTL_MS, enabled = true } = options ?? {};
   const cached = enabled ? getCached<T>(key, ttlMs) : null;
@@ -92,7 +149,9 @@ export function useCachedFetch<T>(
         }
       } catch (err) {
         if (isMountedRef.current) {
-          setError(err instanceof Error ? err.message : "An unexpected error occurred");
+          setError(
+            err instanceof Error ? err.message : "An unexpected error occurred",
+          );
         }
       } finally {
         if (isMountedRef.current) {
@@ -100,7 +159,7 @@ export function useCachedFetch<T>(
         }
       }
     },
-    [key]
+    [key],
   );
 
   // On mount or key change: serve cached data immediately, revalidate in background if stale

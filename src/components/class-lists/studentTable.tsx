@@ -1,15 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
-  Search,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Edit2,
   Trash2,
   X,
   Check,
+  Loader2,
 } from "lucide-react";
 
 interface Student {
@@ -48,7 +47,6 @@ export function StudentTable({
   onUpdateStudent,
 }: StudentTableProps) {
   const [activeTab, setActiveTab] = useState<TabType>("all");
-  const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -56,19 +54,23 @@ export function StudentTable({
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-  const studentsPerPage = 5;
-  const totalPages = Math.ceil(students.length / studentsPerPage);
+  const studentsPerPage = 10; // Updated to 10 students per page
+
+  /* Reset page when tab changes */
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab]);
 
   const filteredStudents = students.filter((student) => {
-    const matchesSearch = student.name
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    if (activeTab === "completed")
-      return matchesSearch && student.lastAssessment !== null;
-    if (activeTab === "awaiting")
-      return matchesSearch && student.lastAssessment === null;
-    return matchesSearch;
+    if (activeTab === "completed") return student.lastAssessment !== null;
+    if (activeTab === "awaiting") return student.lastAssessment === null;
+    return true;
   });
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredStudents.length / studentsPerPage),
+  );
 
   const paginatedStudents = filteredStudents.slice(
     (currentPage - 1) * studentsPerPage,
@@ -96,32 +98,37 @@ export function StudentTable({
   const handleSaveEdit = async (studentId: string) => {
     if (!onUpdateStudent || !editName.trim()) return;
 
-    setIsUpdating(true);
-    await onUpdateStudent(studentId, editName.trim(), editGradeLevel);
-    setIsUpdating(false);
-    setEditingId(null);
+    try {
+      setIsUpdating(true);
+      await onUpdateStudent(studentId, editName.trim(), editGradeLevel);
+      setEditingId(null);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const handleDelete = async (studentId: string) => {
     if (!onDeleteStudent) return;
 
-    setIsDeleting(studentId);
-    await onDeleteStudent(studentId);
-    setIsDeleting(null);
+    try {
+      setIsDeleting(studentId);
+      await onDeleteStudent(studentId);
+    } finally {
+      setIsDeleting(null);
+    }
   };
 
   return (
     <div className="flex flex-1 flex-col">
-      {/* Search and Filters Row */}
+      {/* Tabs and Total Students in one row */}
       <div className="mb-4 flex items-center justify-between">
         {/* Tabs */}
         <div className="flex items-center gap-6">
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`relative pb-2 text-[13px] font-bold transition-colors ${
+              className={`relative pb-2 text-[13px] font-bold ${
                 activeTab === tab.id ? "text-[#00306E]" : "text-[#404040]/70"
               }`}
             >
@@ -133,50 +140,17 @@ export function StudentTable({
           ))}
         </div>
 
-        <div className="flex items-center gap-4">
-          {/* Search Bar */}
-          <div className="flex items-center gap-3 rounded-full px-4 py-2 bg-[#F4FCFD] border border-[rgba(84,164,255,0.38)] w-[350px]">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E4F4FF]">
-              <Search className="h-4 w-4 text-[#162DB0]" aria-hidden="true" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search Anything..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 bg-transparent text-sm text-[#00306E] placeholder:text-[#00306E]/60 outline-none"
-              aria-label="Search students"
-            />
-          </div>
-
-          {/* Sort By */}
-          <button
-            type="button"
-            className="flex items-center gap-2 px-4 py-2 bg-[#E4F4FF]"
-            aria-label="Sort students"
-          >
-            <span className="text-base font-medium text-[#03438D]">
-              Sort By
-            </span>
-            <ChevronDown
-              className="h-5 w-5 text-[#03438D]"
-              aria-hidden="true"
-            />
-          </button>
+        {/* Total Students */}
+        <div>
+          <span className="text-[15px] font-bold text-[#162DB0]">
+            {totalStudents} Total Students
+          </span>
         </div>
-      </div>
-
-      {/* Total Students Count */}
-      <div className="mb-4 text-right">
-        <span className="text-[15px] font-bold text-[#162DB0]">
-          {totalStudents} Total Students
-        </span>
       </div>
 
       {/* Table */}
       <div className="flex-1 overflow-hidden rounded-t-[5px] bg-[#E4F4FF] border border-[rgba(74,74,252,0.08)]">
-        {/* Table Header */}
-        <div className="grid grid-cols-[1fr_1fr_1fr_120px] px-6 py-3 bg-[rgba(74,74,252,0.12)] border-b border-[rgba(74,74,252,0.08)]">
+        <div className="grid grid-cols-[1fr_1fr_1fr_120px] px-6 py-3 bg-[rgba(74,74,252,0.12)] border-b">
           <span className="text-[17px] font-medium text-[#00306E]">Name</span>
           <span className="text-[17px] font-medium text-[#00306E]">
             Grade Level
@@ -184,11 +158,10 @@ export function StudentTable({
           <span className="text-[17px] font-medium text-[#00306E]">
             Last Assessment
           </span>
-          <span></span>
+          <span />
         </div>
 
-        {/* Table Body */}
-        <div className="divide-y divide-[rgba(74,74,252,0.88)]">
+        <div className="divide-y divide-[rgba(74,74,252,0.08)]">
           {paginatedStudents.length === 0 ? (
             <div className="px-6 py-8 text-center text-[#00306E]/60">
               No students found
@@ -202,95 +175,69 @@ export function StudentTable({
                 {editingId === student.id ? (
                   <>
                     <input
-                      id="editName"
-                      type="text"
+                      aria-label="Edit name"
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
-                      className="mr-2 rounded border border-[#162DB0]/30 px-2 py-1 text-base text-[#00306E] outline-none focus:border-[#162DB0]"
-                      aria-label="Edit student name"
+                      disabled={isUpdating}
+                      className="mr-2 rounded border border-[#162DB0]/30 px-2 py-1"
                     />
                     <select
-                      id="editGradeLevel"
+                      aria-label="Edit grade level"
                       value={editGradeLevel}
                       onChange={(e) => setEditGradeLevel(e.target.value)}
-                      className="mr-2 rounded border border-[#162DB0]/30 px-2 py-1 text-base text-[#00306E] outline-none focus:border-[#162DB0]"
-                      aria-label="Edit grade level"
+                      disabled={isUpdating}
+                      className="mr-2 rounded border border-[#162DB0]/30 px-2 py-1"
                     >
                       {gradeLevels.map((grade) => (
-                        <option key={grade} value={grade}>
-                          {grade}
-                        </option>
+                        <option key={grade}>{grade}</option>
                       ))}
                     </select>
-                    <span className="text-base text-[#00306E]">
-                      {student.lastAssessment
-                        ? `Last Assessed: ${student.lastAssessment}`
-                        : "N/A"}
-                    </span>
-                    <div className="flex items-center justify-end gap-2">
+                    <span>{student.lastAssessment ?? "N/A"}</span>
+                    <div className="flex justify-end gap-2">
                       <button
-                        type="button"
-                        onClick={() => handleSaveEdit(student.id)}
                         disabled={isUpdating}
-                        className="text-green-600 hover:opacity-70 disabled:opacity-50"
-                        aria-label="Save student changes"
+                        onClick={() => handleSaveEdit(student.id)}
                       >
-                        <Check className="h-5 w-5" />
+                        {isUpdating ? (
+                          <Loader2 className="h-5 w-5 animate-spin text-[#162DB0]" />
+                        ) : (
+                          <Check className="h-5 w-5 text-green-600" />
+                        )}
                       </button>
                       <button
                         type="button"
-                        onClick={handleCancelEdit}
                         disabled={isUpdating}
-                        className="text-[#DE3B40] hover:opacity-70 disabled:opacity-50"
+                        onClick={handleCancelEdit}
                         aria-label="Cancel edit"
                       >
-                        <X className="h-5 w-5" />
+                        <X className="h-5 w-5 text-red-600" />
                       </button>
                     </div>
                   </>
                 ) : (
                   <>
-                    <span className="text-base font-medium text-[#00306E]">
-                      {student.name}
-                    </span>
-                    <span className="text-base text-[#00306E]">
-                      {student.gradeLevel}
-                    </span>
-                    <span className="text-base text-[#00306E]">
-                      {student.lastAssessment
-                        ? `Last Assessed: ${student.lastAssessment}`
-                        : "N/A"}
-                    </span>
-                    <div className="flex items-center justify-end gap-3">
-                      {student.lastAssessment ? (
-                        <button
-                          type="button"
-                          className="rounded-lg border border-[#162DB0]/20 bg-white px-4 py-1.5 text-xs font-medium text-[#162DB0] transition-colors hover:bg-[#E4F4FF]"
-                          aria-label={`View report for ${student.name}`}
-                        >
-                          View Report
-                        </button>
-                      ) : (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => handleEdit(student)}
-                            className="text-[#162DB0] hover:opacity-70"
-                            aria-label={`Edit ${student.name}`}
-                          >
-                            <Edit2 className="h-5 w-5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(student.id)}
-                            disabled={isDeleting === student.id}
-                            className="text-[#DE3B40] hover:opacity-70 disabled:opacity-50"
-                            aria-label={`Delete ${student.name}`}
-                          >
-                            <Trash2 className="h-5 w-5" />
-                          </button>
-                        </>
-                      )}
+                    <span>{student.name}</span>
+                    <span>{student.gradeLevel}</span>
+                    <span>{student.lastAssessment ?? "N/A"}</span>
+                    <div className="flex justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(student)}
+                        aria-label="Edit student"
+                        title="Edit student"
+                      >
+                        <Edit2 className="h-5 w-5 text-[#162DB0]" />
+                      </button>
+                      <button
+                        disabled={isDeleting === student.id}
+                        onClick={() => handleDelete(student.id)}
+                      >
+                        {isDeleting === student.id ? (
+                          <Loader2 className="h-5 w-5 animate-spin text-red-600" />
+                        ) : (
+                          <Trash2 className="h-5 w-5 text-red-600" />
+                        )}
+                      </button>
                     </div>
                   </>
                 )}
@@ -301,59 +248,28 @@ export function StudentTable({
       </div>
 
       {/* Pagination */}
-      <div className="mt-4 flex items-center justify-between">
-        <span className="text-sm text-[#00306E]">
-          Page {currentPage} of {totalPages || 1}
+      <div className="mt-4 flex justify-between">
+        <span>
+          Page {currentPage} of {totalPages}
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => setCurrentPage(1)}
             disabled={currentPage === 1}
-            className="flex h-8 w-8 items-center justify-center rounded border border-[#162DB0]/20 bg-white text-[#00306E] disabled:opacity-50"
+            onClick={() => setCurrentPage(1)}
             aria-label="Go to first page"
+            title="Go to first page"
           >
             <ChevronLeft className="h-4 w-4" />
-            <ChevronLeft className="h-4 w-4 -ml-2" />
           </button>
-          {Array.from({ length: Math.min(5, totalPages || 1) }, (_, i) => {
-            let pageNum: number | string = i + 1;
-            if (totalPages > 5) {
-              if (i === 3) pageNum = "...";
-              else if (i === 4) pageNum = totalPages;
-            }
-            return (
-              <button
-                key={i}
-                type="button"
-                onClick={() =>
-                  typeof pageNum === "number" && setCurrentPage(pageNum)
-                }
-                className={`flex h-8 w-8 items-center justify-center rounded text-sm font-medium ${
-                  currentPage === pageNum
-                    ? "bg-[#162DB0] text-white"
-                    : "border border-[#162DB0]/20 bg-white text-[#00306E]"
-                }`}
-                disabled={pageNum === "..."}
-                aria-label={
-                  typeof pageNum === "number"
-                    ? `Go to page ${pageNum}`
-                    : undefined
-                }
-              >
-                {pageNum}
-              </button>
-            );
-          })}
           <button
             type="button"
+            disabled={currentPage === totalPages}
             onClick={() => setCurrentPage(totalPages)}
-            disabled={currentPage === totalPages || totalPages === 0}
-            className="flex h-8 w-8 items-center justify-center rounded border border-[#162DB0]/20 bg-white text-[#00306E] disabled:opacity-50"
             aria-label="Go to last page"
+            title="Go to last page"
           >
             <ChevronRight className="h-4 w-4" />
-            <ChevronRight className="h-4 w-4 -ml-2" />
           </button>
         </div>
       </div>
