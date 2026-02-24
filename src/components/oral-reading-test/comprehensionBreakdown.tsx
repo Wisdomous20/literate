@@ -1,6 +1,5 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { MoreVertical } from "lucide-react"
 
 interface BreakdownItem {
@@ -29,8 +28,6 @@ export function ComprehensionBreakdown({
   level = "--",
   disabled = false,
 }: ComprehensionBreakdownProps) {
-  const router = useRouter()
-
   return (
     <div
       className={`flex h-full flex-col rounded-[20px] px-5 py-4 transition-opacity duration-300 ${disabled ? "pointer-events-none opacity-40" : "opacity-100"}`}
@@ -141,7 +138,6 @@ export function ComprehensionBreakdown({
         {/* View Full Report Button */}
         <div className="mt-2.5 flex justify-center">
           <button
-            onClick={() => router.push("/dashboard/oral-reading-test/comprehension/report")}
             className="mt-3 w-full rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90"
             style={{ background: "#6666FF" }}
           >
