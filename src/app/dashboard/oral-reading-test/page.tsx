@@ -484,6 +484,7 @@ export default function OralReadingTestPage() {
             Student Information
           </h2>
           <button
+            onClick={() => hasRecording && router.push("/dashboard/oral-reading-test/comprehension")}
             className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-300 md:text-base ${
               hasRecording
                 ? "bg-[#6666FF] text-white shadow-lg hover:bg-[#5555EE] animate-[pulseGlow_2s_ease-in-out_infinite]"
