@@ -90,10 +90,10 @@ export default function OralReadingReportPage() {
   const classification = "—"
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-screen flex-col overflow-hidden">
       <ReportHeader />
 
-      <main className="flex-1 overflow-y-auto max-w-[1200px] mx-auto px-6 py-6 md:px-8 lg:px-12 space-y-6 w-full">
+      <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth max-w-[1200px] mx-auto px-6 py-6 md:px-8 lg:px-12 space-y-6 w-full">
         {/* Top row: Student Info + Metric Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
           <StudentInfoCard
