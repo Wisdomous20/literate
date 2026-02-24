@@ -4,6 +4,19 @@ import { alignWords } from "./alignmentService";
 import { detectMiscues } from "./miscueDetectionService";
 import { detectBehaviors } from "./behaviorDetectionService";
 
+
+function computeOralFluencyScore(totalWords: number, totalMiscues: number): number {
+  if (totalWords <= 0) return 0;
+  const score = ((totalWords - totalMiscues) / totalWords) * 100;
+  return Math.round(score * 10) / 10;
+}
+
+function classifyReadingLevel(oralFluencyScore: number): "INDEPENDENT" | "INSTRUCTIONAL" | "FRUSTRATION" {
+  if (oralFluencyScore >= 97) return "INDEPENDENT";
+  if (oralFluencyScore >= 90) return "INSTRUCTIONAL";
+  return "FRUSTRATION";
+}
+
 export async function analyzeOralReading(
   audioBuffer: Buffer,
   fileName: string,
@@ -49,5 +62,7 @@ export async function analyzeOralReading(
     miscues,
     behaviors,
     alignedWords,
+    oralFluencyScore: computeOralFluencyScore(totalWords, countedMiscues),
+    classificationLevel: classifyReadingLevel(computeOralFluencyScore(totalWords, countedMiscues)),
   };
 }

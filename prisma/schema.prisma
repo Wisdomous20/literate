@@ -1,3 +1,9 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -9,18 +15,18 @@ datasource db {
 
 model User {
   id                String              @id @default(cuid())
+  role              userType            @default(USER)
+  firstName         String?
+  lastName          String?
   email             String?             @unique
   password          String?
   emailVerified     DateTime?
   isVerified        Boolean             @default(false)
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  firstName         String?
-  lastName          String?
-  role              userType            @default(USER)
-  class             Class[]
   accounts          Account[]
   sessions          Session[]
+  class             Class[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
   verificationToken VerificationToken[]
 
   @@map("users")
@@ -39,7 +45,8 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
@@ -47,79 +54,86 @@ model Account {
 
 model Class {
   id         String    @id @default(uuid())
-  userId     String
-  archived   Boolean   @default(false)
-  createdAt  DateTime  @default(now())
   name       String
-  schoolYear String
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  createdAt  DateTime  @default(now())
+  schoolYear String
+  archived   Boolean   @default(false)
   students   Student[]
 }
 
 model Student {
   id          String       @id @default(uuid())
-  level       Int
-  classId     String
-  deletedAt   DateTime?
   name        String
-  assessments Assessment[]
+  level       Int
   class       Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
+  classId     String
+  assessments Assessment[]
+  deletedAt   DateTime?
 }
 
 model Assessment {
-  id            String              @id @default(uuid())
-  studentId     String
-  type          AssessmentType
-  dateTaken     DateTime            @default(now())
-  passageId     String
-  passage       Passage             @relation(fields: [passageId], references: [id])
-  student       Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  id        String         @id @default(uuid())
+  studentId String
+  student   Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  type      AssessmentType
+  passageId String
+  passage   Passage        @relation(fields: [passageId], references: [id])
+  dateTaken DateTime       @default(now())
+
   comprehension ComprehensionTest?
   oralReading   OralReadingSession?
 }
 
 model OralReadingSession {
-  id             String                @id @default(cuid())
-  assessmentId   String?               @unique
-  audioUrl       String                @default("")
-  transcript     String?
-  wordsPerMinute Float?
-  accuracy       Float?
-  totalWords     Int?
-  totalMiscues   Int?
-  duration       Float?
-  status         OralReadingStatus     @default(PENDING)
-  createdAt      DateTime              @default(now())
-  updatedAt      DateTime              @updatedAt
-  deletedAt      DateTime?
-  behaviors      OralReadingBehavior[]
-  miscues        OralReadingMiscue[]
+  id                  String  @id @default(cuid())
+  assessmentId        String? @unique
+  audioUrl            String  @default("")
+  transcript          String?
+  wordsPerMinute      Float?
+  accuracy            Float?
+  totalWords          Int?
+  totalMiscues        Int?
+  duration            Float?
+  oralFluencyScore    Float?
+  classificationLevel String?
+
+  status    OralReadingStatus @default(PENDING)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  deletedAt DateTime?
+
   assessment     Assessment?           @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  miscues        OralReadingMiscue[]
+  behaviors      OralReadingBehavior[]
   wordTimestamps WordTimestamp[]
 }
 
 model WordTimestamp {
-  id         String             @id @default(cuid())
+  id         String @id @default(cuid())
   sessionId  String
   word       String
   startTime  Float
   endTime    Float
   confidence Float?
   index      Int
-  session    OralReadingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  session OralReadingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
 
 model OralReadingMiscue {
-  id              String             @id @default(cuid())
+  id              String     @id @default(cuid())
   sessionId       String
   miscueType      MiscueType
   expectedWord    String
   spokenWord      String?
   wordIndex       Int
   timestamp       Float?
-  isSelfCorrected Boolean            @default(false)
-  createdAt       DateTime           @default(now())
-  session         OralReadingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  isSelfCorrected Boolean    @default(false)
+  createdAt       DateTime   @default(now())
+
+  session OralReadingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
 
 model OralReadingBehavior {
@@ -132,7 +146,8 @@ model OralReadingBehavior {
   endTime      Float?
   notes        String?
   createdAt    DateTime            @default(now())
-  session      OralReadingSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  session OralReadingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
 
 model Session {
@@ -153,59 +168,59 @@ model Passage {
   level       Int
   tags        Tags
   testType    testType
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
   assessments Assessment[]
   quiz        Quiz?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
 model ComprehensionTest {
   id           String                @id @default(uuid())
   assessmentId String                @unique
+  assessment   Assessment            @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
   quizId       String
+  quiz         Quiz                  @relation(fields: [quizId], references: [id])
   score        Int
   totalItems   Int
   level        String
   answers      ComprehensionAnswer[]
-  assessment   Assessment            @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
-  quiz         Quiz                  @relation(fields: [quizId], references: [id])
 }
 
 model ComprehensionAnswer {
   id                  String            @id @default(uuid())
   comprehensionTestId String
+  comprehensionTest   ComprehensionTest @relation(fields: [comprehensionTestId], references: [id], onDelete: Cascade)
   questionId          String
+  question            Question          @relation(fields: [questionId], references: [id])
   answer              String
   isCorrect           Boolean?
   createdAt           DateTime          @default(now())
-  comprehensionTest   ComprehensionTest @relation(fields: [comprehensionTestId], references: [id], onDelete: Cascade)
-  question            Question          @relation(fields: [questionId], references: [id])
 }
 
 model Quiz {
   id                 String              @id @default(uuid())
   passageId          String              @unique
+  passage            Passage             @relation(fields: [passageId], references: [id], onDelete: Cascade)
+  questions          Question[]
+  comprehensionTests ComprehensionTest[]
   totalScore         Int
+  totalNumber        Int
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
-  totalNumber        Int
-  comprehensionTests ComprehensionTest[]
-  questions          Question[]
-  passage            Passage             @relation(fields: [passageId], references: [id], onDelete: Cascade)
 }
 
 model Question {
   id            String                @id @default(uuid())
   quizId        String
+  quiz          Quiz                  @relation(fields: [quizId], references: [id], onDelete: Cascade)
   questionText  String
   tags          Tags
   type          QuestionType
   options       Json?
   correctAnswer String?
+  answers       ComprehensionAnswer[]
   createdAt     DateTime              @default(now())
   updatedAt     DateTime              @updatedAt
-  answers       ComprehensionAnswer[]
-  quiz          Quiz                  @relation(fields: [quizId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {
@@ -214,7 +229,8 @@ model VerificationToken {
   token     String   @unique
   expires   DateTime
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("verification_tokens")
 }
