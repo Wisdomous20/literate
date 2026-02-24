@@ -278,27 +278,27 @@ export default function StudentInfoBar({
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {/* 1) Student Name — Left (Search Input) */}
+      <div className="grid grid-cols-[1fr_160px_180px] items-start gap-3">
+        {/* 1) Student Name — primary search input */}
         <div
           className="relative rounded-lg px-3 py-2"
           style={{ background: "rgba(108, 164, 239, 0.09)" }}
         >
-          <label
-            className="mb-0.5 block text-xs font-semibold"
-            style={{ color: "#0C1A6D" }}
-          >
-            Student Name
-          </label>
+            <label
+              className="text-[10px] font-bold uppercase tracking-widest mb-0.5 block"
+              style={{ color: "#0C1A6D" }}
+            >
+              STUDENT NAME
+            </label>
           <div className="relative">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#54A4FF]" />
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#6666FF]" />
             <input
               ref={studentInputRef}
               type="text"
               value={studentName}
               onChange={(e) => handleStudentNameInput(e.target.value)}
               onFocus={() => setIsStudentInputFocused(true)}
-              placeholder="Search student name"
+              placeholder="Search or type student name"
               className="w-full rounded-lg py-1.5 pl-8 pr-3 text-sm text-[#00306E] outline-none placeholder:text-[#00306E]/40"
               style={{
                 background: "#EFFDFF",
@@ -335,134 +335,152 @@ export default function StudentInfoBar({
           )}
         </div>
 
-        {/* 2) Grade Level — Middle (Dropdown Grade 1–10, also a filter) */}
-        <div
-          className="relative rounded-lg px-3 py-2"
-          style={{ background: "rgba(108, 164, 239, 0.09)" }}
-        >
-          <label
-            className="mb-0.5 block text-xs font-semibold"
-            style={{ color: "#0C1A6D" }}
-          >
+        {/* 2) Grade Level — chip/tag filter */}
+        <div className="flex flex-col gap-1 pt-2">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-[#6666FF]">
             Grade Level
-          </label>
-          <button
-            ref={gradeButtonRef}
-            onClick={() => setIsGradeDropdownOpen(!isGradeDropdownOpen)}
-            className="flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-sm text-[#00306E]"
-            style={{
-              background: "#EFFDFF",
-              border: "1px solid #54A4FF",
-              boxShadow: "0px 1px 10px rgba(108, 164, 239, 0.25)",
-            }}
-          >
-            <span>{gradeLevel ? `Grade ${gradeLevel}` : "Select grade"}</span>
-            <ChevronDown className="h-4 w-4 text-[#54A4FF]" />
-          </button>
-
-          {isGradeDropdownOpen && (
-            <div
-              ref={gradeDropdownRef}
-              className="absolute left-3 right-3 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-lg bg-white py-1"
-              style={{
-                border: "1px solid #54A4FF",
-                boxShadow: "0px 4px 12px rgba(84, 164, 255, 0.2)",
+          </span>
+          <div className="relative" ref={gradeDropdownRef}>
+            <button
+              ref={gradeButtonRef}
+              onClick={() => {
+                setIsGradeDropdownOpen(!isGradeDropdownOpen)
+                setIsClassDropdownOpen(false)
               }}
-            >
-              {Array.from({ length: 10 }, (_, i) => {
-                const isActive = gradeLevel === String(i + 1)
-                return (
-                  <button
-                    key={i + 1}
-                    onClick={() => {
-                      if (isActive) {
-                        onGradeLevelChange("")
-                      } else {
-                        onGradeLevelChange(String(i + 1))
-                      }
-                      clearAutoFill()
-                      setIsGradeDropdownOpen(false)
-                    }}
-                    className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm text-[#00306E] hover:bg-[#E4F4FF] ${
-                      isActive ? "bg-[#E4F4FF] font-semibold" : ""
-                    }`}
-                  >
-                    <span>Grade {i + 1}</span>
-                    {isActive && <X className="h-3.5 w-3.5 text-[#54A4FF]" />}
-                  </button>
-                )
-              })}
-            </div>
-          )}
+              className={`flex w-full items-center justify-between gap-2 rounded-full border px-4 py-1.5 text-xs font-medium transition-all ${
+                  gradeLevel
+                    ? "border-[#6666FF] bg-[#6666FF] text-white shadow-sm"
+                    : "border-dashed border-[#6666FF]/60 bg-transparent text-[#00306E] hover:border-[#6666FF] hover:bg-[#EEEEFF]"
+                }`}
+              >
+              <span className="truncate">{gradeLevel ? `Grade ${gradeLevel}` : "Select"}</span>
+              {gradeLevel ? (
+                <X
+                  className="h-3 w-3 flex-shrink-0 cursor-pointer hover:opacity-70"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onGradeLevelChange("")
+                    clearAutoFill()
+                  }}
+                />
+              ) : (
+                <ChevronDown className="h-3 w-3 flex-shrink-0" />
+              )}
+            </button>
+
+            {isGradeDropdownOpen && (
+              <div
+                className="absolute left-0 top-full z-10 mt-1.5 w-36 max-h-48 overflow-y-auto rounded-lg bg-white py-1"
+                  style={{
+                    border: "1px solid #6666FF",
+                    boxShadow: "0px 4px 12px rgba(102, 102, 255, 0.2)",
+                  }}
+                >
+                {Array.from({ length: 10 }, (_, i) => {
+                  const grade = String(i + 1)
+                  const isActive = gradeLevel === grade
+                  return (
+                    <button
+                      key={grade}
+                      onClick={() => {
+                        if (isActive) {
+                          onGradeLevelChange("")
+                        } else {
+                          onGradeLevelChange(grade)
+                        }
+                        clearAutoFill()
+                        setIsGradeDropdownOpen(false)
+                      }}
+                      className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm hover:bg-[#EEEEFF] ${
+                        isActive ? "bg-[#EEEEFF] font-semibold text-[#6666FF]" : "text-[#00306E]"
+                      }`}
+                    >
+                      <span>Grade {grade}</span>
+                      {isActive && <X className="h-3.5 w-3.5 text-[#6666FF]" />}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* 3) Class Name — Right (also a filter) */}
-        <div
-          className="relative rounded-lg px-3 py-2"
-          style={{ background: "rgba(108, 164, 239, 0.09)" }}
-        >
-          <label
-            className="mb-0.5 block text-xs font-semibold"
-            style={{ color: "#0C1A6D" }}
-          >
+        {/* 3) Class — chip/tag filter */}
+        <div className="flex flex-col gap-1 pt-2">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-[#6666FF]">
             Class
-          </label>
-          <button
-            ref={classButtonRef}
-            onClick={() => setIsClassDropdownOpen(!isClassDropdownOpen)}
-            className="flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-sm text-[#00306E]"
-            style={{
-              background: "#EFFDFF",
-              border: "1px solid #54A4FF",
-              boxShadow: "0px 1px 10px rgba(108, 164, 239, 0.25)",
-            }}
-          >
-            <span>{selectedClass || "Select class"}</span>
-            <ChevronDown className="h-4 w-4 text-[#54A4FF]" />
-          </button>
-
-          {isClassDropdownOpen && (
-            <div
-              ref={classDropdownRef}
-              className="absolute left-3 right-3 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-lg bg-white py-1"
-              style={{
-                border: "1px solid #54A4FF",
-                boxShadow: "0px 4px 12px rgba(84, 164, 255, 0.2)",
+          </span>
+          <div className="relative" ref={classDropdownRef}>
+            <button
+              ref={classButtonRef}
+              onClick={() => {
+                setIsClassDropdownOpen(!isClassDropdownOpen)
+                setIsGradeDropdownOpen(false)
               }}
+              className={`flex w-full items-center justify-between gap-2 rounded-full border px-4 py-1.5 text-xs font-medium transition-all ${
+                selectedClass
+                  ? "border-[#6666FF] bg-[#6666FF] text-white shadow-sm"
+                  : "border-dashed border-[#6666FF]/60 bg-transparent text-[#00306E] hover:border-[#6666FF] hover:bg-[#EEEEFF]"
+              }`}
             >
-              <button
-                onClick={() => handleClassChange("create-new")}
-                className="flex w-full items-center gap-1 px-3 py-1.5 text-left text-sm text-[#54A4FF] hover:bg-[#E4F4FF]"
+              <span className="truncate">{selectedClass || "Select"}</span>
+              {selectedClass ? (
+                <X
+                  className="h-3 w-3 flex-shrink-0 cursor-pointer hover:opacity-70"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setSelectedClass("")
+                    onClassChange?.("")
+                    clearAutoFill()
+                  }}
+                />
+              ) : (
+                <ChevronDown className="h-3 w-3" />
+              )}
+            </button>
+
+            {isClassDropdownOpen && (
+              <div
+                className="absolute right-0 top-full z-10 mt-1.5 w-44 max-h-48 overflow-y-auto rounded-lg bg-white py-1"
+                style={{
+                  border: "1px solid #6666FF",
+                  boxShadow: "0px 4px 12px rgba(102, 102, 255, 0.2)",
+                }}
               >
-                <Plus className="h-4 w-4" />
-                Create New Class
-              </button>
-              {classes.map((cls, idx) => {
-                const isActive = selectedClass === cls
-                return (
-                  <button
-                    key={`${cls}-${idx}`}
-                    onClick={() => {
-                      if (isActive) {
-                        setSelectedClass("")
-                        onClassChange?.("")
-                        clearAutoFill()
-                        setIsClassDropdownOpen(false)
-                      } else {
-                        handleClassChange(cls)
-                      }
-                    }}
-                    className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm text-[#00306E] hover:bg-[#E4F4FF] ${
-                      isActive ? "bg-[#E4F4FF] font-semibold" : ""
-                    }`}
-                  >
-                    <span>{cls}</span>
-                    {isActive && <X className="h-3.5 w-3.5 text-[#54A4FF]" />}
-                  </button>
-                )
-              })}
-            </div>
-          )}
+                <button
+                  onClick={() => handleClassChange("create-new")}
+                  className="flex w-full items-center gap-1.5 border-b border-[#EEEEFF] px-3 py-1.5 text-left text-sm font-semibold text-[#6666FF] hover:bg-[#EEEEFF]"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Create New Class
+                </button>
+                {classes.map((cls, idx) => {
+                  const isActive = selectedClass === cls
+                  return (
+                    <button
+                      key={`${cls}-${idx}`}
+                      onClick={() => {
+                        if (isActive) {
+                          setSelectedClass("")
+                          onClassChange?.("")
+                          clearAutoFill()
+                          setIsClassDropdownOpen(false)
+                        } else {
+                          handleClassChange(cls)
+                        }
+                      }}
+                      className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm hover:bg-[#EEEEFF] ${
+                        isActive ? "bg-[#EEEEFF] font-semibold text-[#6666FF]" : "text-[#00306E]"
+                      }`}
+                    >
+                      <span>{cls}</span>
+                      {isActive && <X className="h-3.5 w-3.5 text-[#6666FF]" />}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

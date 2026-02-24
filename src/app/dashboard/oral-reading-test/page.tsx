@@ -483,8 +483,20 @@ export default function OralReadingTestPage() {
           <h2 className="flex-1 text-center text-base font-bold md:text-lg lg:text-xl" style={{ color: "#0C1A6D" }}>
             Student Information
           </h2>
-          <button className="flex items-center gap-1 text-sm font-semibold text-[#00306E] transition-colors hover:text-[#6666FF] md:text-base lg:text-lg">
-            <span>Proceed to Comprehension</span>
+          <button
+            className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-300 md:text-base ${
+              hasRecording
+                ? "bg-[#6666FF] text-white shadow-lg hover:bg-[#5555EE] animate-[pulseGlow_2s_ease-in-out_infinite]"
+                : "text-[#00306E]/40 cursor-not-allowed"
+            }`}
+            disabled={!hasRecording}
+            style={
+              hasRecording
+                ? { boxShadow: "0 0 20px rgba(102, 102, 255, 0.4), 0 4px 12px rgba(102, 102, 255, 0.3)" }
+                : undefined
+            }
+          >
+            <span>Continue to Comprehension</span>
             <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
           </button>
         </div>

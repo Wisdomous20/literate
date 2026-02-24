@@ -50,12 +50,9 @@ export function MiscueAnalysis({
       }}
     >
       {/* Title */}
-      <h3
-        className={`mb-2 text-[15px] ${disabled ? "font-medium" : "font-bold"}`}
-        style={{ color: "#003366" }}
-      >
+      <span className="text-[10px] font-bold uppercase tracking-widest text-[#6666FF] mb-2 block">
         Miscue Analysis
-      </h3>
+      </span>
 
       {/* Miscue Items List — scrollable if needed on small screens */}
       <div className="flex flex-1 flex-col overflow-y-auto">
@@ -103,7 +100,7 @@ export function MiscueAnalysis({
           {/* Total Miscue */}
           <div
             className="flex items-center justify-between rounded px-3 py-1.5"
-            style={{ background: "rgba(237, 232, 234, 0.69)" }}
+            style={{ background: "rgba(230, 230, 250, 0.5)" }}
           >
             <span className="text-xs font-bold" style={{ color: "#31318A" }}>
               Total Miscue
@@ -116,7 +113,7 @@ export function MiscueAnalysis({
           {/* Oral Fluency Score */}
           <div
             className="flex items-center justify-between rounded px-3 py-1.5"
-            style={{ background: "#EFFAED" }}
+            style={{ background: "rgba(230, 230, 250, 0.35)" }}
           >
             <span className="text-xs font-bold" style={{ color: "#31318A" }}>
               Oral Fluency Score
@@ -129,7 +126,7 @@ export function MiscueAnalysis({
           {/* Classification Level */}
           <div
             className="flex items-center justify-between rounded px-3 py-1.5"
-            style={{ background: "#DFFDEA" }}
+            style={{ background: "rgba(230, 230, 250, 0.2)" }}
           >
             <span className="text-xs font-bold" style={{ color: "#31318A" }}>
               Classification Level
