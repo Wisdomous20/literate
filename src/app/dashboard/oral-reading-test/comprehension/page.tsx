@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { ChevronLeft, ChevronDown, Clock } from "lucide-react"
+import { ChevronLeft, ChevronRight, ChevronDown, Clock } from "lucide-react"
 import { DashboardHeader } from "@/components/auth/dashboard/dashboardHeader"
 import { ComprehensionBreakdown } from "@/components/oral-reading-test/comprehensionBreakdown"
 
@@ -116,15 +116,34 @@ export default function OralReadingComprehensionPage() {
 
       {/* Two-column layout */}
       <div className="flex flex-1 min-h-0 flex-col gap-4 px-4 py-4 md:px-6 lg:px-8">
-        {/* Previous Button — above both columns */}
-        <button
-          onClick={handleGoBack}
-          className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:bg-[#5555EE] md:text-base self-start"
-          style={{ boxShadow: "0 0 20px rgba(102, 102, 255, 0.4), 0 4px 12px rgba(102, 102, 255, 0.3)" }}
-        >
-          <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
-          <span>Previous</span>
-        </button>
+        {/* Navigation buttons — Previous & Final Report */}
+        <div className="flex items-center justify-between">
+          <button
+            onClick={handleGoBack}
+            className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:bg-[#5555EE] md:text-base"
+            style={{ boxShadow: "0 0 20px rgba(102, 102, 255, 0.4), 0 4px 12px rgba(102, 102, 255, 0.3)" }}
+          >
+            <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
+            <span>Previous</span>
+          </button>
+          <button
+            onClick={() => isSubmitted && router.push("/dashboard/oral-reading-test/comprehension/report")}
+            className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-300 md:text-base ${
+              isSubmitted
+                ? "bg-[#6666FF] text-white shadow-lg hover:bg-[#5555EE] animate-[pulseGlow_2s_ease-in-out_infinite]"
+                : "text-[#00306E]/40 cursor-not-allowed"
+            }`}
+            disabled={!isSubmitted}
+            style={
+              isSubmitted
+                ? { boxShadow: "0 0 20px rgba(102, 102, 255, 0.4), 0 4px 12px rgba(102, 102, 255, 0.3)" }
+                : undefined
+            }
+          >
+            <span>Final Report</span>
+            <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
+          </button>
+        </div>
 
         {/* Two columns: left (info bar + scrollable questions) | right (breakdown aligned with timer top) */}
         <div className="flex flex-1 min-h-0 gap-4">
@@ -243,7 +262,7 @@ export default function OralReadingComprehensionPage() {
         </div>
           </div>
 
-          {/* Right column: Comprehension Breakdown — top aligned with timer */}
+          {/* Right column: Comprehension Breakdown */}
           <div className="w-[280px] shrink-0 md:w-[300px] lg:w-[320px]">
             <ComprehensionBreakdown disabled={!isSubmitted} />
           </div>
