@@ -126,3 +126,18 @@
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(102, 102, 255, 0.3), 0 4px 12px rgba(102, 102, 255, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(102, 102, 255, 0.5), 0 4px 20px rgba(102, 102, 255, 0.4);
+  }
+}
+
+/* Hide browser native password reveal button */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}

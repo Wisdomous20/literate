@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { addQuestionAction } from "@/app/actions/admin/addQuestion";
-import { getAllPassageAction } from "@/app/actions/admin/getAllPassage";
+import { getAllPassagesAction } from "@/app/actions/passage/getAllPassage";
 
 interface Passage {
   id: string;
@@ -30,6 +30,42 @@ const questionTypes = [
   { label: "Essay", value: "ESSAY" },
 ];
 
+// Validation function
+function validateForm(
+  questionText: string,
+  passageId: string,
+  tags: string,
+  type: string,
+  options: string[],
+  correctAnswer: string,
+) {
+  if (!questionText.trim()) {
+    return "Question text is required";
+  }
+  if (!passageId) {
+    return "Please select a passage";
+  }
+  if (!tags) {
+    return "Please select a tag";
+  }
+  if (!type) {
+    return "Please select a question type";
+  }
+  if (type === "MULTIPLE_CHOICE") {
+    const filledOptions = options.filter(Boolean);
+    if (filledOptions.length < 2) {
+      return "Please provide at least 2 options for multiple choice questions";
+    }
+    if (!correctAnswer) {
+      return "Please select a correct answer";
+    }
+    if (!filledOptions.includes(correctAnswer)) {
+      return "Correct answer must match one of the provided options";
+    }
+  }
+  return "";
+}
+
 export function CreateQuestionForm() {
   const router = useRouter();
   const [questionText, setQuestionText] = useState("");
@@ -43,20 +79,22 @@ export function CreateQuestionForm() {
   const [isLoadingPassages, setIsLoadingPassages] = useState(false);
   const [error, setError] = useState("");
 
-  // Load passages on mount
   useEffect(() => {
     const loadPassages = async () => {
       setIsLoadingPassages(true);
       try {
-        const data = await getAllPassageAction();
-        if (data && Array.isArray(data)) {
-          const formattedPassages: Passage[] = data.map(
+        const result = await getAllPassagesAction(); // result is { success, passages, error }
+
+        if (result.success && Array.isArray(result.passages)) {
+          const formattedPassages: Passage[] = result.passages.map(
             (p: PassageApiData) => ({
               id: p.id,
               title: p.title,
             }),
           );
           setPassages(formattedPassages);
+        } else {
+          console.error("Failed to load passages:", result.error);
         }
       } catch (err) {
         console.error("Error loading passages:", err);
@@ -64,6 +102,7 @@ export function CreateQuestionForm() {
         setIsLoadingPassages(false);
       }
     };
+
     loadPassages();
   }, []);
 
@@ -72,23 +111,18 @@ export function CreateQuestionForm() {
       e.preventDefault();
       setError("");
 
-      if (!questionText.trim() || !passageId || !tags || !type) {
-        setError("Please fill in all required fields");
+      // Use validation
+      const validationError = validateForm(
+        questionText,
+        passageId,
+        tags,
+        type,
+        options,
+        correctAnswer,
+      );
+      if (validationError) {
+        setError(validationError);
         return;
-      }
-
-      if (type === "MULTIPLE_CHOICE") {
-        const filledOptions = options.filter(Boolean);
-        if (filledOptions.length < 2) {
-          setError(
-            "Please provide at least 2 options for multiple choice questions",
-          );
-          return;
-        }
-        if (!correctAnswer) {
-          setError("Please select a correct answer");
-          return;
-        }
       }
 
       setIsLoading(true);
@@ -102,7 +136,7 @@ export function CreateQuestionForm() {
             type === "MULTIPLE_CHOICE" ? options.filter(Boolean) : undefined,
           correctAnswer: type === "MULTIPLE_CHOICE" ? correctAnswer : undefined,
         });
-        router.push("/admin-dash/questions");
+        router.push("/admin/questions");
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Failed to create question";
@@ -340,7 +374,7 @@ export function CreateQuestionForm() {
       {/* Submit */}
       <div className="flex justify-center gap-4 pt-8">
         <Link
-          href="/admin-dash/questions"
+          href="/admin/questions"
           className="rounded-lg px-10 py-3 text-base font-semibold text-[#00306E] transition-all hover:bg-[#E4F4FF]"
         >
           Cancel
@@ -348,7 +382,7 @@ export function CreateQuestionForm() {
         <button
           type="submit"
           disabled={isLoading}
-          className="submit-btn rounded-lg px-10 py-3 text-base font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50"
+          className="submit-btn bg-[#2E2E68] rounded-lg px-10 py-3 text-base font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50"
         >
           {isLoading ? "Creating..." : "Create Question"}
         </button>

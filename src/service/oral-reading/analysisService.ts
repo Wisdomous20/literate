@@ -4,6 +4,19 @@ import { alignWords } from "./alignmentService";
 import { detectMiscues } from "./miscueDetectionService";
 import { detectBehaviors } from "./behaviorDetectionService";
 
+
+function computeOralFluencyScore(totalWords: number, totalMiscues: number): number {
+  if (totalWords <= 0) return 0;
+  const score = ((totalWords - totalMiscues) / totalWords) * 100;
+  return Math.round(score * 10) / 10;
+}
+
+function classifyReadingLevel(oralFluencyScore: number): "INDEPENDENT" | "INSTRUCTIONAL" | "FRUSTRATION" {
+  if (oralFluencyScore >= 97) return "INDEPENDENT";
+  if (oralFluencyScore >= 90) return "INSTRUCTIONAL";
+  return "FRUSTRATION";
+}
+
 export async function analyzeOralReading(
   audioBuffer: Buffer,
   fileName: string,
@@ -11,8 +24,9 @@ export async function analyzeOralReading(
   language: string
 ): Promise<OralReadingAnalysis> {
   // 1. Transcribe with Whisper (language-aware)
-  const whisperResult = await transcribeAudio(audioBuffer, fileName, language);
+  const whisperResult = await transcribeAudio(audioBuffer, fileName, language, passageText);
 
+  //add layer to normalize passage words and transcribed words for better comparison (e.g. ignore punctuation, case, etc.)
   // 2. Tokenize passage
   const passageWords = passageText.split(/\s+/).filter((w) => w.length > 0);
   const spokenWords = whisperResult.words.map((w) => ({
@@ -28,7 +42,7 @@ export async function analyzeOralReading(
   const miscues = detectMiscues(alignedWords, language);
 
   // 5. Detect behaviors (timing-based, language-independent)
-  const behaviors = detectBehaviors(alignedWords, passageText);
+  const behaviors = detectBehaviors(alignedWords);
 
   // 6. Calculate metrics
   const duration = whisperResult.duration;
@@ -48,5 +62,7 @@ export async function analyzeOralReading(
     miscues,
     behaviors,
     alignedWords,
+    oralFluencyScore: computeOralFluencyScore(totalWords, countedMiscues),
+    classificationLevel: classifyReadingLevel(computeOralFluencyScore(totalWords, countedMiscues)),
   };
 }

@@ -63,6 +63,26 @@ export async function createQuizService(
     };
   }
 
+    for (const q of questions) {
+    if (!q.questionText || !q.tags || !q.type) {
+      return {
+        success: false,
+        error: "Each question must have questionText, tags, and type",
+        code: "VALIDATION_ERROR",
+      };
+    }
+
+    if (q.type === "MULTIPLE_CHOICE") {
+      if (!q.options || q.options.length < 2 || !q.correctAnswer) {
+        return {
+          success: false,
+          error: "Multiple choice questions require at least 2 options and a correctAnswer",
+          code: "VALIDATION_ERROR",
+        };
+      }
+    }
+  }
+
   try {
     // Create the quiz
     const quiz = await prisma.quiz.create({
@@ -76,7 +96,7 @@ export async function createQuizService(
             tags: q.tags,
             type: q.type,
             options: q.type === "MULTIPLE_CHOICE" ? q.options : undefined,
-            correctAnswer: q.type === "MULTIPLE_CHOICE" ? q.correctAnswer : undefined,
+            correctAnswer: q.type === "MULTIPLE_CHOICE" || undefined,
           })),
         },
       },

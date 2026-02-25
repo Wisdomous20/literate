@@ -1,28 +1,55 @@
-"use client"
+"use client";
 
-import React from "react"
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { registerUserAction } from "@/app/actions/auth/register"
+import React from "react";
+import { useState } from "react";
+import Link from "next/link";
+// import { useRouter } from "next/navigation"
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { registerUserAction } from "@/app/actions/auth/register";
+
+function validateEmail(email: string) {
+  // Simple email regex for demonstration
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
 
 export function SignupForm() {
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
+  const [success, setSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  // const router = useRouter()
+
+  const validate = () => {
+    const errors: { [key: string]: string } = {};
+    if (!firstName.trim()) errors.firstName = "First name is required.";
+    if (!lastName.trim()) errors.lastName = "Last name is required.";
+    if (!email.trim()) errors.email = "Email is required.";
+    else if (!validateEmail(email))
+      errors.email = "Enter a valid email address.";
+    if (!password) errors.password = "Password is required.";
+    else if (password.length < 8)
+      errors.password = "Password must be at least 8 characters.";
+    return errors;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    setIsLoading(true)
+    e.preventDefault();
+    setError(null);
+    setFieldErrors({});
+    setIsLoading(true);
+
+    const errors = validate();
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const result = await registerUserAction({
@@ -30,50 +57,72 @@ export function SignupForm() {
         lastName,
         email,
         password,
-      })
+      });
 
       if (!result.success) {
-        setError(result.error || "Registration failed. Please try again.")
+        setError(result.error || "Registration failed. Please try again.");
       } else {
-        setSuccess(true)
+        setSuccess(true);
         // Optionally redirect after successful registration
         // router.push("/auth/login")
       }
     } catch (err) {
-      setError("An unexpected error occurred. Please try again.")
+      setError("An unexpected error occurred. Please try again.");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   if (success) {
     return (
       <div className="space-y-6">
         <div className="space-y-4 text-center py-8">
           <div className="flex justify-center mb-4">
-            <svg className="w-16 h-16 text-[#2e2e68]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="w-16 h-16 text-[#2e2e68]"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
           </div>
           <h2 className="text-xl font-bold text-[#040029]">Check your email</h2>
-          <p className="text-[#040029]/70">We&apos;ve sent a verification link to {email}</p>
-          <p className="text-sm text-[#040029]/60">Please check your inbox and verify your email to complete registration.</p>
+          <p className="text-[#040029]/70">
+            We&apos;ve sent a verification link to {email}
+          </p>
+          <p className="text-sm text-[#040029]/60">
+            Please check your inbox and verify your email to complete
+            registration.
+          </p>
         </div>
         <p className="text-center text-sm text-[#040029]">
           Already verified?{" "}
-          <Link href="/auth/login" className="text-[#162db0] hover:underline font-medium">
+          <Link
+            href="/login"
+            className="text-[#162db0] hover:underline font-medium"
+          >
             Sign in
           </Link>
         </p>
       </div>
-    )
+    );
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold text-[#040029]">Create your account</h1>
-        <p className="text-[#040029]/70">Create your LiteRate account for a smarter reading evaluation!</p>
+        <h1 className="text-2xl font-bold text-[#040029]">
+          Create your account
+        </h1>
+        <p className="text-[#040029]/70">
+          Create your LiteRate account for a smarter reading evaluation!
+        </p>
       </div>
 
       {error && (
@@ -93,10 +142,13 @@ export function SignupForm() {
               type="text"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
-              className="h-12 rounded-xl border-[#54a4ff] bg-[#f4fcfd] focus-visible:border-[#54a4ff] focus-visible:ring-[#54a4ff]/30"
+              className={`h-12 rounded-xl border-[#54a4ff] bg-[#f4fcfd] focus-visible:border-[#54a4ff] focus-visible:ring-[#54a4ff]/30 ${fieldErrors.firstName ? "border-red-400" : ""}`}
               required
               disabled={isLoading}
             />
+            {fieldErrors.firstName && (
+              <p className="text-xs text-red-600">{fieldErrors.firstName}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="lastName" className="text-[#040029] font-semibold">
@@ -107,10 +159,13 @@ export function SignupForm() {
               type="text"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
-              className="h-12 rounded-xl border-[#54a4ff] bg-[#f4fcfd] focus-visible:border-[#54a4ff] focus-visible:ring-[#54a4ff]/30"
+              className={`h-12 rounded-xl border-[#54a4ff] bg-[#f4fcfd] focus-visible:border-[#54a4ff] focus-visible:ring-[#54a4ff]/30 ${fieldErrors.lastName ? "border-red-400" : ""}`}
               required
               disabled={isLoading}
             />
+            {fieldErrors.lastName && (
+              <p className="text-xs text-red-600">{fieldErrors.lastName}</p>
+            )}
           </div>
         </div>
 
@@ -123,10 +178,13 @@ export function SignupForm() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="h-12 rounded-xl border-[#54a4ff] bg-[#f4fcfd] focus-visible:border-[#54a4ff] focus-visible:ring-[#54a4ff]/30"
+            className={`h-12 rounded-xl border-[#54a4ff] bg-[#f4fcfd] focus-visible:border-[#54a4ff] focus-visible:ring-[#54a4ff]/30 ${fieldErrors.email ? "border-red-400" : ""}`}
             required
             disabled={isLoading}
           />
+          {fieldErrors.email && (
+            <p className="text-xs text-red-600">{fieldErrors.email}</p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -138,12 +196,17 @@ export function SignupForm() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="h-12 rounded-xl border-[#54a4ff] bg-[#f4fcfd] focus-visible:border-[#54a4ff] focus-visible:ring-[#54a4ff]/30"
+            className={`h-12 rounded-xl border-[#54a4ff] bg-[#f4fcfd] focus-visible:border-[#54a4ff] focus-visible:ring-[#54a4ff]/30 ${fieldErrors.password ? "border-red-400" : ""}`}
             required
             disabled={isLoading}
             minLength={8}
           />
-          <p className="text-xs text-[#040029]/60">Password must be at least 8 characters</p>
+          <p className="text-xs text-[#040029]/60">
+            Password must be at least 8 characters
+          </p>
+          {fieldErrors.password && (
+            <p className="text-xs text-red-600">{fieldErrors.password}</p>
+          )}
         </div>
       </div>
 
@@ -173,10 +236,13 @@ export function SignupForm() {
 
       <p className="text-center text-sm text-[#040029]">
         Already have an account?{" "}
-        <Link href="/auth/login" className="text-[#162db0] hover:underline font-medium">
+        <Link
+          href="/login"
+          className="text-[#162db0] hover:underline font-medium"
+        >
           Sign in
         </Link>
       </p>
     </form>
-  )
+  );
 }

@@ -116,7 +116,7 @@ export function UpdatePassageForm({
       if (onSuccess) {
         onSuccess();
       } else {
-        router.push("/admin-dash/passages");
+        router.push("/admin/passages");
       }
     } catch (err) {
       const errorMessage =
@@ -298,7 +298,7 @@ export function UpdatePassageForm({
       {/* Submit */}
       <div className="flex justify-center gap-4 pt-8">
         <Link
-          href="/admin-dash/passages"
+          href="/admin/passages"
           className="rounded-lg px-10 py-3 text-base font-semibold text-[#00306E] transition-all hover:bg-[#E4F4FF]"
         >
           Cancel

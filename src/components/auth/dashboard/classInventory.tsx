@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { ChevronDown, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ClassCard } from "./classCard";
@@ -15,6 +15,12 @@ interface ClassItem {
   name: string;
   studentCount: number;
   variant: ClassCardVariant;
+}
+
+interface RawClass {
+  id: string;
+  name: string;
+  studentCount: number;
 }
 
 // Helper to get current school year
@@ -51,36 +57,31 @@ function getVariant(index: number): ClassCardVariant {
 export function ClassInventory() {
   const router = useRouter();
   const schoolYears = getSchoolYears();
-  const [selectedYear, setSelectedYear] = useState(schoolYears[0]);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [classes, setClasses] = useState<ClassItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [selectedYear, setSelectedYear] = useState<string>(schoolYears[0]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-  // Fetch classes when selected year changes
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [fetchResult, setFetchResult] = useState<{
+    success?: boolean;
+    classes?: RawClass[];
+    error?: string;
+  } | null>(null);
+  const [fetchHookError, setFetchHookError] = useState<string | null>(null);
+
   const fetchClasses = useCallback(async () => {
     setIsLoading(true);
-    setError(null);
-
+    setFetchHookError(null);
     try {
       const result = await getClassListBySchoolYear(selectedYear);
-
-      if (result.success && result.classes) {
-        const mappedClasses: ClassItem[] = result.classes.map((c, index) => ({
-          id: c.id,
-          name: c.name,
-          studentCount: c.studentCount,
-          variant: getVariant(index),
-        }));
-        setClasses(mappedClasses);
+      setFetchResult(result);
+    } catch (err: unknown) {
+      setFetchResult(null);
+      if (err instanceof Error) {
+        setFetchHookError(err.message);
       } else {
-        setError(result.error || "Failed to fetch classes");
-        setClasses([]);
+        setFetchHookError("Failed to fetch classes");
       }
-    } catch {
-      setError("An unexpected error occurred");
-      setClasses([]);
     } finally {
       setIsLoading(false);
     }
@@ -90,6 +91,23 @@ export function ClassInventory() {
     fetchClasses();
   }, [fetchClasses]);
 
+  const refetch = fetchClasses;
+
+  const classes: ClassItem[] =
+    fetchResult?.success && Array.isArray(fetchResult.classes)
+      ? fetchResult.classes.map((c: RawClass, index: number) => ({
+          id: c.id,
+          name: c.name,
+          studentCount: c.studentCount,
+          variant: getVariant(index),
+        }))
+      : [];
+
+  const error =
+    !isLoading && fetchResult && !fetchResult.success
+      ? fetchResult.error || "Failed to fetch classes"
+      : fetchHookError;
+
   const handleCreateClass = async (data: {
     className: string;
     schoolYear: string;
@@ -97,8 +115,7 @@ export function ClassInventory() {
     const result = await createClass(data.className);
 
     if (result.success) {
-      // Refresh the class list after creating a new class
-      await fetchClasses();
+      await refetch();
     }
 
     return result;
@@ -108,13 +125,29 @@ export function ClassInventory() {
     router.push(`/dashboard/class/${classId}`);
   };
 
+  const handleClassUpdated = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
+
+  // Show only first 10 classes in grid, rest via "View All"
+  const previewClasses = classes.slice(0, 10);
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-[20px] font-semibold leading-[30px] text-[#00306E]">
-          Class Inventory
-        </h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-[20px] font-semibold leading-[30px] text-[#00306E]">
+            Class Inventory
+          </h2>
+          <button
+            type="button"
+            onClick={() => router.push("/dashboard/class/all")}
+            className="ml-2 rounded-lg border border-[#7A7AFB] bg-white px-3 py-1.5 text-xs font-medium text-[#2E2E68] hover:bg-[#E4F4FF] transition-colors"
+          >
+            View All
+          </button>
+        </div>
         <div className="flex gap-3">
           {/* School Year Dropdown */}
           <div className="relative">
@@ -192,10 +225,10 @@ export function ClassInventory() {
         </div>
       )}
 
-      {/* Class Grid - 5 columns on large screens, 4 on medium, 3 on small */}
-      {!isLoading && !error && classes.length > 0 && (
+      {/* Class Grid - show only preview */}
+      {!isLoading && !error && previewClasses.length > 0 && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
-          {classes.map((classItem) => (
+          {previewClasses.map((classItem) => (
             <ClassCard
               key={classItem.id}
               classId={classItem.id}
@@ -203,7 +236,7 @@ export function ClassInventory() {
               studentCount={classItem.studentCount}
               variant={classItem.variant}
               onClick={() => handleClassClick(classItem.id)}
-              onClassUpdated={() => fetchClasses()}
+              onClassUpdated={handleClassUpdated}
             />
           ))}
         </div>

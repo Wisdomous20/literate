@@ -7,7 +7,7 @@ interface PassageDisplayProps {
 export function PassageDisplay({ content }: PassageDisplayProps) {
   return (
     <div
-      className="h-full overflow-auto p-5"
+      className="h-full overflow-auto p-4 md:p-5"
       style={{
         background: "#EFFDFF",
         border: "1px solid #54A4FF",
@@ -16,12 +16,12 @@ export function PassageDisplay({ content }: PassageDisplayProps) {
       }}
     >
       {content ? (
-        <p className="whitespace-pre-wrap text-sm leading-relaxed text-[#00306E]">
+        <p className="whitespace-pre-wrap text-sm leading-relaxed text-[#00306E] lg:text-base lg:leading-relaxed">
           {content}
         </p>
       ) : (
         <div className="flex h-full items-center justify-center">
-          <p className="text-sm text-[#00306E]/40">
+          <p className="text-center text-sm text-[#00306E]/40">
             Click Add Passage button and select reading passages to start oral reading test
           </p>
         </div>

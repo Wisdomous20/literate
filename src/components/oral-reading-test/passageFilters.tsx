@@ -1,6 +1,6 @@
 "use client"
 
-import { FileText } from "lucide-react"
+import { Globe, BarChart3, ClipboardList, type LucideIcon } from "lucide-react"
 
 interface PassageFiltersProps {
   language?: string
@@ -11,9 +11,11 @@ interface PassageFiltersProps {
 }
 
 function FilterLabel({
+  icon: Icon,
   label,
   value,
 }: {
+  icon: LucideIcon
   label: string
   value?: string
 }) {
@@ -27,7 +29,7 @@ function FilterLabel({
         color: "#00306E",
       }}
     >
-      <FileText className="h-4 w-4 shrink-0 text-[#5D5DFB]" />
+      <Icon className="h-4 w-4 shrink-0 text-[#5D5DFB]" />
       <span className="text-left">{value || label}</span>
     </div>
   )
@@ -41,13 +43,13 @@ export function PassageFilters({
   onOpenPassageModal,
 }: PassageFiltersProps) {
   return (
-    <div className="flex items-center gap-3">
-      <FilterLabel label="Language (English / Filipino)" value={language} />
-      <FilterLabel label="Passage Level" value={passageLevel} />
-      <FilterLabel label="Test Type" value={testType} />
+    <div className="flex flex-wrap items-center gap-3">
+      <FilterLabel icon={Globe} label="Language (English / Filipino)" value={language} />
+      <FilterLabel icon={BarChart3} label="Passage Level" value={passageLevel} />
+      <FilterLabel icon={ClipboardList} label="Test Type" value={testType} />
       <button
         onClick={onOpenPassageModal}
-        className="shrink-0 rounded-lg px-6 py-2 text-[15px] font-semibold text-white transition-colors hover:opacity-90"
+        className="shrink-0 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors hover:opacity-90 md:px-6 md:text-[15px]"
         style={{
           background: "#2E2E68",
           border: "1px solid #7A7AFB",

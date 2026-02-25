@@ -9,7 +9,7 @@ function getTimedWords(alignedWords: AlignedWord[]) {
 function detectWordByWordReading(alignedWords: AlignedWord[]): BehaviorResult[] {
   const behaviors: BehaviorResult[] = []
   const timedWords = getTimedWords(alignedWords)
-  if (timedWords.length < 4) return behaviors
+  if (timedWords.length < 6) return behaviors
 
   const gaps: number[] = []
   for (let i = 1; i < timedWords.length; i++) {
@@ -22,21 +22,27 @@ function detectWordByWordReading(alignedWords: AlignedWord[]): BehaviorResult[] 
   const stdDev = Math.sqrt(
     gaps.reduce((sum, g) => sum + Math.pow(g - avgGap, 2), 0) / gaps.length
   )
-  const longPauseRatio = gaps.filter((g) => g > 0.3).length / gaps.length
+  const gapCov = stdDev / avgGap
+  const longPauseRatio = gaps.filter(g => g > 0.4).length / gaps.length
 
-  if (avgGap >= 0.4 && stdDev / avgGap < 0.5 && longPauseRatio > 0.6) {
+  if (
+    avgGap >= 0.45 &&
+    gapCov < 0.4 &&
+    longPauseRatio > 0.7
+  ) {
     behaviors.push({
       behaviorType: "WORD_BY_WORD_READING",
       startIndex: timedWords[0].expectedIndex ?? 0,
       endIndex: timedWords[timedWords.length - 1].expectedIndex ?? timedWords.length - 1,
       startTime: timedWords[0].timestamp,
       endTime: timedWords[timedWords.length - 1].endTimestamp,
-      notes: `Avg gap: ${avgGap.toFixed(3)}s, StdDev: ${stdDev.toFixed(3)}s, Long pause ratio: ${(longPauseRatio * 100).toFixed(1)}%`,
+      notes: `Avg gap: ${avgGap.toFixed(3)}s, CoV: ${gapCov.toFixed(3)}, Long pause ratio: ${(longPauseRatio * 100).toFixed(1)}%`,
     })
   }
 
   return behaviors
 }
+ 
 
 function detectMonotonousReading(alignedWords: AlignedWord[]): BehaviorResult[] {
   const behaviors: BehaviorResult[] = []
@@ -76,68 +82,67 @@ function detectMonotonousReading(alignedWords: AlignedWord[]): BehaviorResult[] 
 }
 
 function detectPunctuationDismissal(
-  alignedWords: AlignedWord[],
-  passageText: string
+  alignedWords: AlignedWord[]
 ): BehaviorResult[] {
+
   const behaviors: BehaviorResult[] = []
-  const words = passageText.split(/\s+/)
-  const punctPositions: { index: number; char: string }[] = []
-
-  for (let i = 0; i < words.length; i++) {
-    const lastChar = words[i].slice(-1)
-    if ([",", ".", "!", "?", ";", ":"].includes(lastChar)) {
-      punctPositions.push({ index: i, char: lastChar })
-    }
-  }
-
-  if (punctPositions.length === 0) return behaviors
-
-  const timedWordMap = new Map<number, AlignedWord>()
-  for (const w of alignedWords) {
-    if (w.expectedIndex !== null && w.endTimestamp !== null) {
-      timedWordMap.set(w.expectedIndex, w)
-    }
-  }
 
   const PAUSE_THRESHOLDS: Record<string, number> = {
-    ".": 0.2, "!": 0.2, "?": 0.2,
-    ",": 0.1, ";": 0.15, ":": 0.15,
+    ".": 0.35,
+    "!": 0.35,
+    "?": 0.35,
+    ",": 0.2,
+    ";": 0.3,
+    ":": 0.3,
   }
 
-  let dismissedCount = 0
-  for (const punct of punctPositions) {
-    const curr = timedWordMap.get(punct.index)
-    const next = timedWordMap.get(punct.index + 1)
-    if (!curr || !next || curr.endTimestamp === null || next.timestamp === null) continue
+  let dismissed = 0
+  let total = 0
+
+  for (let i = 0; i < alignedWords.length - 1; i++) {
+    const curr = alignedWords[i]
+    const next = alignedWords[i + 1]
+
+    if (!curr.expected || curr.endTimestamp == null || next.timestamp == null) continue
+
+    // extract punctuation from expected word
+    const match = curr.expected.match(/[.,!?;:]$/)
+    if (!match) continue
+
+    const punct = match[0]
+    const threshold = PAUSE_THRESHOLDS[punct]
+    if (!threshold) continue
+
+    total++
 
     const pause = next.timestamp - curr.endTimestamp
-    if (pause < (PAUSE_THRESHOLDS[punct.char] ?? 0.1)) {
-      dismissedCount++
+
+    if (pause < threshold) {
+      dismissed++
     }
   }
 
-  const ratio = dismissedCount / punctPositions.length
-  if (ratio > 0.5) {
+  if (total > 0 && dismissed / total > 0.5) {
     behaviors.push({
       behaviorType: "DISMISSAL_OF_PUNCTUATION",
       startIndex: null,
       endIndex: null,
       startTime: null,
       endTime: null,
-      notes: `Dismissed ${dismissedCount}/${punctPositions.length} (${(ratio * 100).toFixed(1)}%)`,
+      notes: `Dismissed ${dismissed}/${total}`
     })
   }
 
   return behaviors
 }
 
+
 export function detectBehaviors(
   alignedWords: AlignedWord[],
-  passageText: string
 ): BehaviorResult[] {
   return [
     ...detectWordByWordReading(alignedWords),
     ...detectMonotonousReading(alignedWords),
-    ...detectPunctuationDismissal(alignedWords, passageText),
+    ...detectPunctuationDismissal(alignedWords),
   ]
 }

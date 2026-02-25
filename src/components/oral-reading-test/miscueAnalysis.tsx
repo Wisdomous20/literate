@@ -1,6 +1,7 @@
 "use client"
 
 import { MoreVertical } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 interface MiscueItem {
   label: string
@@ -24,80 +25,82 @@ interface MiscueAnalysisProps {
   totalMiscue?: number
   oralFluencyScore?: string
   classificationLevel?: string
+  studentName?: string
+  gradeLevel?: string
+  disabled?: boolean
 }
 
 export function MiscueAnalysis({
   totalMiscue = 0,
   oralFluencyScore = "--",
   classificationLevel = "--",
+  studentName,
+  gradeLevel,
+  disabled = false,
 }: MiscueAnalysisProps) {
+  const router = useRouter()
+
   return (
     <div
-      className="flex h-full flex-col justify-between rounded-[10px] px-5 py-4"
+      className={`flex h-full flex-col rounded-[10px] px-5 py-4 transition-opacity duration-300 ${disabled ? "pointer-events-none opacity-60" : "opacity-100"}`}
       style={{
         background: "#EFFDFF",
         border: "1px solid #54A4FF",
         boxShadow: "0px 1px 20px rgba(108, 164, 239, 0.37)",
       }}
     >
-      {/* Top section: Title + Miscue Items */}
-      <div>
-        {/* Title */}
-        <h3
-          className="mb-2 text-[15px] font-bold"
-          style={{ color: "#003366" }}
-        >
-          Miscue Analysis
-        </h3>
+      {/* Title */}
+      <span className="text-[10px] font-bold uppercase tracking-widest text-[#6666FF] mb-2 block">
+        Miscue Analysis
+      </span>
 
-        {/* Miscue Items List */}
-        <div className="flex flex-col">
-          {miscueItems.map((item, index) => (
-            <div key={item.label}>
-              <div className="flex items-center justify-between py-1.5">
-                <div className="flex items-center gap-2.5">
-                  {/* Color-coded count badge */}
-                  <div
-                    className="flex h-6 w-7 items-center justify-center rounded-[5px] text-sm font-bold"
-                    style={{
-                      background: item.color,
-                      border: "1px solid #DAE6FF",
-                      color: item.textColor,
-                    }}
-                  >
-                    {item.count}
-                  </div>
-                  {/* Label */}
-                  <span
-                    className="text-sm font-bold"
-                    style={{ color: "#31318A" }}
-                  >
-                    {item.label}
-                  </span>
-                </div>
-                {/* Three-dot menu */}
-                <MoreVertical className="h-4 w-4 text-[#00454D]" />
-              </div>
-              {/* Divider (not after the last item) */}
-              {index < miscueItems.length - 1 && (
+      {/* Miscue Items List — scrollable if needed on small screens */}
+      <div className="flex flex-1 flex-col overflow-y-auto">
+        {miscueItems.map((item, index) => (
+          <div key={item.label}>
+            <div className="flex items-center justify-between py-1.5">
+              <div className="flex items-center gap-2.5">
+                {/* Color-coded count badge */}
                 <div
-                  className="h-px"
-                  style={{ background: "rgba(18, 48, 220, 0.25)" }}
-                />
-              )}
+                  className="flex h-6 w-7 items-center justify-center rounded-[5px] text-sm font-bold"
+                  style={{
+                    background: item.color,
+                    border: "1px solid #DAE6FF",
+                    color: item.textColor,
+                  }}
+                >
+                  {item.count}
+                </div>
+                {/* Label */}
+                <span
+                  className="text-sm font-bold"
+                  style={{ color: "#31318A" }}
+                >
+                  {item.label}
+                </span>
+              </div>
+              {/* Three-dot menu */}
+              <MoreVertical className="h-4 w-4 text-[#00454D]" />
             </div>
-          ))}
-        </div>
+            {/* Divider (not after the last item) */}
+            {index < miscueItems.length - 1 && (
+              <div
+                className="h-px"
+                style={{ background: "rgba(18, 48, 220, 0.25)" }}
+              />
+            )}
+          </div>
+        ))}
       </div>
 
-      {/* Bottom section: Results + Button */}
-      <div className="pt-2">
+      {/* Bottom section: Results + Button — always pinned to bottom */}
+      <div className="mt-auto pt-2">
         {/* Results Section */}
         <div className="flex flex-col gap-1.5">
           {/* Total Miscue */}
           <div
             className="flex items-center justify-between rounded px-3 py-1.5"
-            style={{ background: "rgba(237, 232, 234, 0.69)" }}
+            style={{ background: "rgba(230, 230, 250, 0.5)" }}
           >
             <span className="text-xs font-bold" style={{ color: "#31318A" }}>
               Total Miscue
@@ -110,7 +113,7 @@ export function MiscueAnalysis({
           {/* Oral Fluency Score */}
           <div
             className="flex items-center justify-between rounded px-3 py-1.5"
-            style={{ background: "#EFFAED" }}
+            style={{ background: "rgba(230, 230, 250, 0.35)" }}
           >
             <span className="text-xs font-bold" style={{ color: "#31318A" }}>
               Oral Fluency Score
@@ -123,7 +126,7 @@ export function MiscueAnalysis({
           {/* Classification Level */}
           <div
             className="flex items-center justify-between rounded px-3 py-1.5"
-            style={{ background: "#DFFDEA" }}
+            style={{ background: "rgba(230, 230, 250, 0.2)" }}
           >
             <span className="text-xs font-bold" style={{ color: "#31318A" }}>
               Classification Level
@@ -137,12 +140,9 @@ export function MiscueAnalysis({
         {/* View Full Report Button */}
         <div className="mt-2.5 flex justify-center">
           <button
-            className="rounded-[5px] px-5 py-1.5 text-[10px] font-semibold text-white transition-colors hover:opacity-90"
-            style={{
-              background: "#2E2E68",
-              border: "1px solid #0C1A6D",
-              boxShadow: "0px 1px 20px rgba(65, 155, 180, 0.47)",
-            }}
+            onClick={() => router.push("/dashboard/oral-reading-test/report")}
+            className="mt-3 w-full rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90"
+            style={{ background: "#6666FF" }}
           >
             View Full Report
           </button>
