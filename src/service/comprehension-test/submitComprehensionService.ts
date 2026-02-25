@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { gradeEssayAnswer } from "./gradeEssayService";
+import classifyComprehensionLevel from "./classifyComprehensionLevel";
 
 interface SubmitAnswer {
   questionId: string;
@@ -13,12 +14,6 @@ interface SubmitComprehensionInput {
   answers: SubmitAnswer[];
 }
 
-function classifyComprehensionLevel(percentage: number): string {
-  if (percentage >= 80) return "INDEPENDENT";
-  if (percentage >= 59) return "INSTRUCTIONAL";
-  return "FRUSTRATION";
-}
-
 export async function submitComprehensionService(input: SubmitComprehensionInput) {
   const { studentId, passageId, quizId, answers } = input;
 
@@ -26,7 +21,7 @@ export async function submitComprehensionService(input: SubmitComprehensionInput
     // Fetch all questions with correct answers for grading
     const questions = await prisma.question.findMany({
       where: { quizId },
-      select: { id: true, type: true, correctAnswer: true },
+      select: { id: true, type: true, correctAnswer: true, questionText: true },
     });
 
    const passage = await prisma.passage.findUnique({
