@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     const assessmentResult = await createAssessmentService({
       studentId,
       passageId,
-      type: "ORAL_READING",
+      type: "READING_FLUENCY",
     })
 
     if (!assessmentResult.success || !assessmentResult.assessment) {
