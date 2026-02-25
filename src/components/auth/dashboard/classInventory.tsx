@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { ChevronDown, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ClassCard } from "./classCard";
 import { CreateClassModal } from "./createClassModal";
 import { createClass } from "@/app/actions/class/createClass";
 import { getClassListBySchoolYear } from "@/app/actions/class/getClassList";
-import { useCachedFetch, invalidateCache } from "@/lib/clientCache";
 
 type ClassCardVariant = "blue" | "yellow" | "cyan";
 
@@ -16,6 +15,12 @@ interface ClassItem {
   name: string;
   studentCount: number;
   variant: ClassCardVariant;
+}
+
+interface RawClass {
+  id: string;
+  name: string;
+  studentCount: number;
 }
 
 // Helper to get current school year
@@ -52,25 +57,45 @@ function getVariant(index: number): ClassCardVariant {
 export function ClassInventory() {
   const router = useRouter();
   const schoolYears = getSchoolYears();
-  const [selectedYear, setSelectedYear] = useState(schoolYears[0]);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedYear, setSelectedYear] = useState<string>(schoolYears[0]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-  // Use cached fetch for class list — keyed by school year
-  const {
-    data: fetchResult,
-    isLoading,
-    error: fetchHookError,
-    refetch,
-  } = useCachedFetch(
-    `class-list-${selectedYear}`,
-    () => getClassListBySchoolYear(selectedYear),
-    { ttlMs: 2 * 60 * 1000 },
-  );
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [fetchResult, setFetchResult] = useState<{
+    success?: boolean;
+    classes?: RawClass[];
+    error?: string;
+  } | null>(null);
+  const [fetchHookError, setFetchHookError] = useState<string | null>(null);
+
+  const fetchClasses = useCallback(async () => {
+    setIsLoading(true);
+    setFetchHookError(null);
+    try {
+      const result = await getClassListBySchoolYear(selectedYear);
+      setFetchResult(result);
+    } catch (err: unknown) {
+      setFetchResult(null);
+      if (err instanceof Error) {
+        setFetchHookError(err.message);
+      } else {
+        setFetchHookError("Failed to fetch classes");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedYear]);
+
+  useEffect(() => {
+    fetchClasses();
+  }, [fetchClasses]);
+
+  const refetch = fetchClasses;
 
   const classes: ClassItem[] =
-    fetchResult?.success && fetchResult.classes
-      ? fetchResult.classes.map((c, index) => ({
+    fetchResult?.success && Array.isArray(fetchResult.classes)
+      ? fetchResult.classes.map((c: RawClass, index: number) => ({
           id: c.id,
           name: c.name,
           studentCount: c.studentCount,
@@ -90,8 +115,6 @@ export function ClassInventory() {
     const result = await createClass(data.className);
 
     if (result.success) {
-      // Invalidate all class-list caches and refetch current
-      invalidateCache("class-list-", true);
       await refetch();
     }
 
@@ -103,7 +126,6 @@ export function ClassInventory() {
   };
 
   const handleClassUpdated = useCallback(async () => {
-    invalidateCache("class-list-", true);
     await refetch();
   }, [refetch]);
 

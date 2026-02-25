@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ChevronLeft, Search } from "lucide-react";
+import { ChevronLeft, Search, ChevronUp, ChevronDown } from "lucide-react";
 import { ClassListsHeader } from "@/components/class-lists/classListsHeader";
 import { StatCards } from "@/components/class-lists/statCards";
-import { AssessmentTypeFilterDropdown } from "@/components/class-lists/assessmentTypeFilter";
+import { AssessmentTypeFilterDropdown, AssessmentTypeFilter } from "@/components/class-lists/assessmentTypeFilter";
 import { StudentTable } from "@/components/class-lists/studentTable";
 import { ClassInfo } from "@/components/class-lists/classInfo";
 import { CreateStudentModal } from "@/components/class-lists/createStudentModal";
@@ -13,7 +13,6 @@ import { getClassById } from "@/app/actions/class/getClassById";
 import { createStudent } from "@/app/actions/student/createStudent";
 import { deleteStudent } from "@/app/actions/student/deleteStudent";
 import { updateStudent } from "@/app/actions/student/updateStudent";
-import { useCachedFetch, invalidateCache } from "@/lib/clientCache";
 
 interface StudentData {
   id: string;
@@ -52,31 +51,47 @@ export default function ClassListsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOption, setSortOption] = useState<
     "nameAsc" | "nameDesc" | "gradeAsc" | "gradeDesc"
-  >("nameAsc"); // State for sorting
+  >("nameAsc");
 
-  const {
-    data: result,
-    isLoading: loading,
-    error: fetchHookError,
-    refetch,
-  } = useCachedFetch(
-    `class-detail-${classId}`,
-    () => getClassById(classId),
-    { ttlMs: 24 * 60 * 60 * 1000, enabled: !!classId }, // 1 day TTL
-  );
+  // Track assessment type and stat card collapse
+  const [assessmentType, setAssessmentType] = useState<AssessmentTypeFilter>("ORAL_READING");
+  const [showStats, setShowStats] = useState(true);
 
-  const classData: ClassData | null =
-    result?.success && result.classItem ? result.classItem : null;
+  // Remove caching: use local state for loading, error, and data
+  const [classData, setClassData] = useState<ClassData | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
-  const error =
-    !loading && result && !result.success
-      ? result.error || "Failed to fetch class data"
-      : fetchHookError;
+  const fetchClassData = useCallback(async () => {
+    if (!classId) return;
+    setLoading(true);
+    setFetchError(null);
+    try {
+      const result = await getClassById(classId);
+      if (result?.success && result.classItem) {
+        setClassData(result.classItem);
+      } else {
+        setClassData(null);
+        setFetchError(result?.error || "Failed to fetch class data");
+      }
+    } catch (err: unknown) {
+      setClassData(null);
+      if (err instanceof Error) {
+        setFetchError(err.message);
+      } else {
+        setFetchError("Failed to fetch class data");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [classId]);
+
+  useEffect(() => {
+    fetchClassData();
+  }, [fetchClassData]);
 
   const refetchClassData = async () => {
-    invalidateCache(`class-detail-${classId}`);
-    invalidateCache("class-list-", true);
-    await refetch();
+    await fetchClassData();
   };
 
   const handleCreateStudent = () => {
@@ -127,8 +142,9 @@ export default function ClassListsPage() {
     }
   };
 
-  const handleAssessmentFilterChange = () => {
-    // future backend integration
+  const handleAssessmentFilterChange = (type: AssessmentTypeFilter) => {
+    setAssessmentType(type);
+    setShowStats(true); // Optionally always open stats when switching type
   };
 
   const transformStudentsForTable = (students: StudentData[]) => {
@@ -161,13 +177,45 @@ export default function ClassListsPage() {
     return transformed;
   };
 
-  const calculateStats = () => {
+  // Dummy stats for each assessment type (replace with real logic as needed)
+  const calculateStats = (type: AssessmentTypeFilter) => {
+    if (type === "ORAL_READING") {
+      return {
+        assessed: 10,
+        independent: 5,
+        instructional: 3,
+        frustrated: 2,
+      };
+    }
+    if (type === "COMPREHENSION") {
+      return {
+        assessed: 8,
+        independent: 4,
+        instructional: 2,
+        frustrated: 2,
+      };
+    }
+    if (type === "ORAL_READING_TEST") {
+      return {
+        assessed: 12,
+        independent: 6,
+        instructional: 4,
+        frustrated: 2,
+      };
+    }
     return {
       assessed: 0,
       independent: 0,
       instructional: 0,
       frustrated: 0,
     };
+  };
+
+  // For label display
+  const assessmentTypeLabels: Record<AssessmentTypeFilter, string> = {
+    ORAL_READING: "Oral Reading Test",
+    COMPREHENSION: "Reading Comprehension Test",
+    ORAL_READING_TEST: "Reading Fluency Test",
   };
 
   // Skeleton loading state
@@ -181,10 +229,10 @@ export default function ClassListsPage() {
     );
   }
 
-  if (error || !classData) {
+  if (fetchError || !classData) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
-        <div className="text-lg text-red-500">{error || "Class not found"}</div>
+        <div className="text-lg text-red-500">{fetchError || "Class not found"}</div>
         <button
           onClick={() => router.back()}
           className="text-[#31318A] hover:underline"
@@ -195,7 +243,7 @@ export default function ClassListsPage() {
     );
   }
 
-  const stats = calculateStats();
+  const stats = calculateStats(assessmentType);
   const tableStudents = transformStudentsForTable(classData.students);
 
   return (
@@ -225,12 +273,33 @@ export default function ClassListsPage() {
           />
         </div>
 
-        <StatCards
-          assessedCount={stats.assessed}
-          independentCount={stats.independent}
-          instructionalCount={stats.instructional}
-          frustratedCount={stats.frustrated}
-        />
+        {/* Collapsible StatCards for all assessment types */}
+        <div>
+          <button
+            className="flex items-center gap-2 mb-2 text-[#00306E] font-semibold focus:outline-none"
+            onClick={() => setShowStats((prev) => !prev)}
+            aria-expanded={showStats}
+            aria-controls="stat-cards-panel"
+            type="button"
+          >
+            <span>
+              Show {assessmentTypeLabels[assessmentType]} Statistics
+            </span>
+            {showStats ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+          </button>
+          {showStats && (
+            <StatCards
+              assessedCount={stats.assessed}
+              independentCount={stats.independent}
+              instructionalCount={stats.instructional}
+              frustratedCount={stats.frustrated}
+            />
+          )}
+        </div>
 
         {/* Class Info + Search + Sort */}
         <div className="flex items-center justify-between">

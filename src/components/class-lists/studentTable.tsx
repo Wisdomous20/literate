@@ -170,7 +170,13 @@ export function StudentTable({
             paginatedStudents.map((student) => (
               <div
                 key={student.id}
-                className="grid grid-cols-[1fr_1fr_1fr_120px] items-center px-6 py-4"
+                className="
+          grid grid-cols-[1fr_1fr_1fr_120px] items-center px-6 py-4 mb-auto
+          bg-white/10 backdrop-blur-xl rounded-50px
+          shadow-[0_4px_24px_0_rgba(74,74,252,0.10)]
+          hover:bg-white/80 hover:shadow-[0_8px_32px_0_rgba(74,74,252,0.15)]
+          transition-all duration-200
+        "
               >
                 {editingId === student.id ? (
                   <>

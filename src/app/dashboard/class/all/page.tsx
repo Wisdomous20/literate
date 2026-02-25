@@ -1,11 +1,8 @@
 "use client";
-import AllClassesPage, {
-  ClassItem,
-} from "@/components/auth/dashboard/allClasses";
-import { useCachedFetch, invalidateCache } from "@/lib/clientCache";
+import AllClassesPage, { ClassItem } from "@/components/auth/dashboard/allClasses";
 import { getClassListBySchoolYear } from "@/app/actions/class/getClassList";
 import { createClass } from "@/app/actions/class/createClass";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { CreateClassModal } from "@/components/auth/dashboard/createClassModal";
 
 function getAllSchoolYears(): string[] {
@@ -33,14 +30,15 @@ export default function Page() {
   const [selectedYear, setSelectedYear] = useState<string>(years[0]);
   const [showCreate, setShowCreate] = useState(false);
 
-  const {
-    data: allClassesData,
-    isLoading,
-    error,
-    refetch,
-  } = useCachedFetch(
-    `all-classes-${selectedYear}`,
-    async () => {
+  // Remove caching: use local state for loading, error, and data
+  const [allClassesData, setAllClassesData] = useState<ClassItem[] | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchClasses = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
       let result: ApiClassItem[] = [];
       const res = await getClassListBySchoolYear(selectedYear);
       if (res.success && Array.isArray(res.classes)) {
@@ -64,26 +62,36 @@ export default function Page() {
         }
         return b.id.localeCompare(a.id);
       });
-      return result.map((item) => ({
-        ...item,
-        createdAt: item.createdAt
-          ? typeof item.createdAt === "string"
-            ? item.createdAt
-            : new Date(item.createdAt).toISOString()
-          : undefined,
-      })) as ClassItem[];
-    },
-    { ttlMs: 2 * 60 * 1000 },
-  );
+      setAllClassesData(
+        result.map((item) => ({
+          ...item,
+          createdAt: item.createdAt
+            ? typeof item.createdAt === "string"
+              ? item.createdAt
+              : new Date(item.createdAt).toISOString()
+            : undefined,
+        })) as ClassItem[],
+      );
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to fetch classes");
+      setAllClassesData(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedYear]);
 
-  // This is the logic from ClassInventory
+  useEffect(() => {
+    fetchClasses();
+  }, [fetchClasses]);
+
+  const refetch = fetchClasses;
+
   const handleCreateClass = async (data: {
     className: string;
     schoolYear: string;
   }) => {
     const result = await createClass(data.className);
     if (result.success) {
-      invalidateCache("all-classes-", true);
       await refetch();
       setShowCreate(false);
     }
