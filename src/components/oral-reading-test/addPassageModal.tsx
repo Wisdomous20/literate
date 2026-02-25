@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { X, ChevronDown, List, LayoutGrid, FileText } from "lucide-react"
-import { getAllPassagesAction } from "@/app/actions/admin/getAllPassage"
+import { getAllPassagesAction } from "@/app/actions/passage/getAllPassage"
 
 interface Passage {
   id: string

@@ -16,7 +16,6 @@ export async function getQuizByPassageService(passageId: string) {
             tags: true,
             type: true,
             options: true,
-            // NOTE: Do NOT select correctAnswer here — it's sent to the client
           },
         },
       },
