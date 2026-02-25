@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { FileText, HelpCircle, BookOpen, Users } from "lucide-react";
 import Link from "next/link";
-import { getAllPassagesAction } from "@/app/actions/admin/getAllPassage";
+import { getAllPassagesAction } from "@/app/actions/passage/getAllPassage";
 
 export default function AdminDashboard() {
   const [passageCount, setPassageCount] = useState(0);

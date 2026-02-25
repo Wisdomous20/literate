@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
-import { getPassageByIdAction } from "@/app/actions/admin/getPassageById";
+import { getPassageByIdAction } from "@/app/actions/passage/getPassageById";
 
 interface Passage {
   id: string;
