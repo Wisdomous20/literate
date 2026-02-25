@@ -19,7 +19,7 @@ export const config = {
   },
 };
 
-export const maxDuration = 60; // allow up to 60 seconds for Whisper processing
+export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
   try {
@@ -70,40 +70,10 @@ export async function POST(request: NextRequest) {
       }
       const status = result.code ? statusMap[result.code] ?? 500 : 500
 
-        if (analysis.behaviors.length > 0) {
-          await tx.oralReadingBehavior.createMany({
-            data: analysis.behaviors.map((b) => ({
-              sessionId: session.id,
-              behaviorType: b.behaviorType,
-              startIndex: b.startIndex,
-              endIndex: b.endIndex,
-              startTime: b.startTime,
-              endTime: b.endTime,
-              notes: b.notes,
-            })),
-          });
-        }
-      });
-
       return NextResponse.json(
-        { sessionId: session.id, status: "COMPLETED", analysis },
-        { status: 201 }
-      );
-    } catch (analysisError) {
-      const errorMsg = serializeError(analysisError);
-      console.error("Analysis failed:", errorMsg, analysisError);
-      try {
-        await prisma.oralReadingSession.update({
-          where: { id: session.id },
-          data: { status: "FAILED" },
-        });
-      } catch (updateErr) {
-        console.error("Failed to update session status:", updateErr);
-      }
-      return NextResponse.json(
-        { error: errorMsg, sessionId: session.id },
-        { status: 500 }
-      );
+        { error: result.error || "Failed to create session" },
+        { status }
+      )
     }
 
     return NextResponse.json(

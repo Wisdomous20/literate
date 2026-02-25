@@ -1,48 +1,39 @@
 "use client"
 
-import { MoreVertical } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { MoreVertical } from "lucide-react"
 
-interface MiscueItem {
+interface BreakdownItem {
   label: string
-  count: number
+  value: string | number
   color: string
   textColor: string
 }
 
-const miscueItems: MiscueItem[] = [
-  { label: "Mispronunciation", count: 0, color: "rgba(253, 182, 210, 0.44)", textColor: "#C41048" },
-  { label: "Omission", count: 0, color: "rgba(180, 170, 240, 0.4)", textColor: "#4B3BA3" },
-  { label: "Substitutions", count: 0, color: "rgba(160, 200, 255, 0.4)", textColor: "#1A5FB4" },
-  { label: "Transposition", count: 0, color: "rgba(255, 180, 200, 0.35)", textColor: "#B4365A" },
-  { label: "Reversal", count: 0, color: "rgba(200, 165, 130, 0.35)", textColor: "#6E4023" },
-  { label: "Insertion", count: 0, color: "rgba(140, 220, 160, 0.4)", textColor: "#1E7A35" },
-  { label: "Repetition", count: 0, color: "rgba(255, 200, 140, 0.45)", textColor: "#B85C00" },
-  { label: "Self-Correction", count: 0, color: "rgba(250, 230, 140, 0.45)", textColor: "#8A6D00" },
+const breakdownItems: BreakdownItem[] = [
+  { label: "Literal", value: "--", color: "rgba(160, 200, 255, 0.4)", textColor: "#1A5FB4" },
+  { label: "Inferential", value: "--", color: "rgba(180, 170, 240, 0.4)", textColor: "#4B3BA3" },
+  { label: "Critical", value: "--", color: "rgba(253, 182, 210, 0.44)", textColor: "#C41048" },
 ]
 
-interface MiscueAnalysisProps {
-  totalMiscue?: number
-  oralFluencyScore?: string
-  classificationLevel?: string
-  studentName?: string
-  gradeLevel?: string
+interface ComprehensionBreakdownProps {
+  score?: number
+  totalItems?: number
+  level?: string
   disabled?: boolean
 }
 
-export function MiscueAnalysis({
-  totalMiscue = 0,
-  oralFluencyScore = "--",
-  classificationLevel = "--",
-  studentName,
-  gradeLevel,
+export function ComprehensionBreakdown({
+  score = 0,
+  totalItems = 0,
+  level = "--",
   disabled = false,
-}: MiscueAnalysisProps) {
+}: ComprehensionBreakdownProps) {
   const router = useRouter()
 
   return (
     <div
-      className={`flex h-full flex-col rounded-[10px] px-5 py-4 transition-opacity duration-300 ${disabled ? "pointer-events-none opacity-60" : "opacity-100"}`}
+      className={`flex h-full flex-col rounded-[20px] px-5 py-4 transition-opacity duration-300 ${disabled ? "pointer-events-none opacity-40" : "opacity-100"}`}
       style={{
         background: "#EFFDFF",
         border: "1px solid #54A4FF",
@@ -50,17 +41,17 @@ export function MiscueAnalysis({
       }}
     >
       {/* Title */}
-      <span className="text-[10px] font-bold uppercase tracking-widest text-[#6666FF] mb-2 block">
-        Miscue Analysis
+      <span className="text-[10px] font-bold uppercase tracking-widest text-[#6666FF] mb-3 block">
+        Comprehension Breakdown
       </span>
 
-      {/* Miscue Items List — scrollable if needed on small screens */}
+      {/* Breakdown Items */}
       <div className="flex flex-1 flex-col overflow-y-auto">
-        {miscueItems.map((item, index) => (
+        {breakdownItems.map((item, index) => (
           <div key={item.label}>
-            <div className="flex items-center justify-between py-1.5">
+            <div className="flex items-center justify-between py-2">
               <div className="flex items-center gap-2.5">
-                {/* Color-coded count badge */}
+                {/* Color-coded badge */}
                 <div
                   className="flex h-6 w-7 items-center justify-center rounded-[5px] text-sm font-bold"
                   style={{
@@ -69,7 +60,7 @@ export function MiscueAnalysis({
                     color: item.textColor,
                   }}
                 >
-                  {item.count}
+                  {item.value}
                 </div>
                 {/* Label */}
                 <span
@@ -82,8 +73,8 @@ export function MiscueAnalysis({
               {/* Three-dot menu */}
               <MoreVertical className="h-4 w-4 text-[#00454D]" />
             </div>
-            {/* Divider (not after the last item) */}
-            {index < miscueItems.length - 1 && (
+            {/* Divider */}
+            {index < breakdownItems.length - 1 && (
               <div
                 className="h-px"
                 style={{ background: "rgba(18, 48, 220, 0.25)" }}
@@ -93,46 +84,56 @@ export function MiscueAnalysis({
         ))}
       </div>
 
-      {/* Bottom section: Results + Button — always pinned to bottom */}
-      <div className="mt-auto pt-2">
-        {/* Results Section */}
+      {/* Bottom Results */}
+      <div className="mt-auto pt-3">
         <div className="flex flex-col gap-1.5">
-          {/* Total Miscue */}
+          {/* Score */}
           <div
             className="flex items-center justify-between rounded px-3 py-1.5"
             style={{ background: "rgba(230, 230, 250, 0.5)" }}
           >
             <span className="text-xs font-bold" style={{ color: "#31318A" }}>
-              Total Miscue
+              Score
             </span>
-            <span className="text-[17px] font-semibold" style={{ color: "#2E2EA3", fontFamily: "Kanit, sans-serif" }}>
-              {totalMiscue}
+            <span
+              className="text-[17px] font-semibold"
+              style={{ color: "#2E2EA3", fontFamily: "Kanit, sans-serif" }}
+            >
+              {disabled ? "--" : `${score}/${totalItems}`}
             </span>
           </div>
 
-          {/* Oral Fluency Score */}
+          {/* Percentage */}
           <div
             className="flex items-center justify-between rounded px-3 py-1.5"
             style={{ background: "rgba(230, 230, 250, 0.35)" }}
           >
             <span className="text-xs font-bold" style={{ color: "#31318A" }}>
-              Oral Fluency Score
+              Percentage
             </span>
-            <span className="text-[17px] font-semibold" style={{ color: "#2E2EA3", fontFamily: "Kanit, sans-serif" }}>
-              {oralFluencyScore}
+            <span
+              className="text-[17px] font-semibold"
+              style={{ color: "#2E2EA3", fontFamily: "Kanit, sans-serif" }}
+            >
+              {disabled || totalItems === 0
+                ? "--"
+                : `${Math.round((score / totalItems) * 100)}%`}
             </span>
           </div>
 
-          {/* Classification Level */}
+          {/* Level */}
           <div
             className="flex items-center justify-between rounded px-3 py-1.5"
             style={{ background: "rgba(230, 230, 250, 0.2)" }}
           >
             <span className="text-xs font-bold" style={{ color: "#31318A" }}>
-              Classification Level
+              Comprehension Level
             </span>
-            <span className="text-[17px] font-semibold" style={{ color: "#2E2EA3", fontFamily: "Kanit, sans-serif" }}>
-              {classificationLevel}
+            <span
+              className="text-[17px] font-semibold"
+              style={{ color: "#2E2EA3", fontFamily: "Kanit, sans-serif" }}
+            >
+              {level}
             </span>
           </div>
         </div>
@@ -140,7 +141,7 @@ export function MiscueAnalysis({
         {/* View Full Report Button */}
         <div className="mt-2.5 flex justify-center">
           <button
-            onClick={() => router.push("/dashboard/oral-reading-test/report")}
+            onClick={() => router.push("/dashboard/oral-reading-test/comprehension/report")}
             className="mt-3 w-full rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90"
             style={{ background: "#6666FF" }}
           >
