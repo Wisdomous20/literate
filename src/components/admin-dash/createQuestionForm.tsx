@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { addQuestionAction } from "@/app/actions/admin/addQuestion";
-import { getAllPassagesAction } from "@/app/actions/admin/getAllPassage";
+import { getAllPassagesAction } from "@/app/actions/passage/getAllPassage";
 
 interface Passage {
   id: string;

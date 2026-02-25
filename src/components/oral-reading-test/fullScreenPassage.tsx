@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { X } from "lucide-react"
+import { X, ArrowDownToLine, CircleCheckBig } from "lucide-react"
 import { useSettings } from "@/context/settingsContext"
 
 interface FullScreenPassageProps {
@@ -44,6 +44,10 @@ export function FullScreenPassage({
   const secondsRef = useRef(0)
   const processedResultsRef = useRef(0)
 
+  // Toast notifications state
+  const [toasts, setToasts] = useState<{ id: string; label: string; icon: "scroll" | "finish" }[]>([])
+  const toastsShownRef = useRef(false)
+
   // Refs for settings so speech callback always has latest values
   const autoScrollRef = useRef(autoScrollEnabled)
   const autoFinishRef = useRef(autoFinishEnabled)
@@ -58,6 +62,29 @@ export function FullScreenPassage({
   useEffect(() => {
     secondsRef.current = seconds
   }, [seconds])
+
+  // Show toast notifications once after countdown ends
+  useEffect(() => {
+    if (!isCountingDown && !toastsShownRef.current) {
+      toastsShownRef.current = true
+      const newToasts: { id: string; label: string; icon: "scroll" | "finish" }[] = []
+      if (autoScrollEnabled) {
+        newToasts.push({ id: "scroll", label: "Auto Scroll Activated", icon: "scroll" })
+      }
+      if (autoFinishEnabled) {
+        newToasts.push({ id: "finish", label: "Auto Finish Enabled", icon: "finish" })
+      }
+      if (newToasts.length > 0) {
+        setTimeout(() => {
+          setToasts(newToasts)
+          // Auto-dismiss toasts after 3 seconds
+          setTimeout(() => {
+            setToasts([])
+          }, 3000)
+        }, 0)
+      }
+    }
+  }, [isCountingDown, autoScrollEnabled, autoFinishEnabled])
 
   // Split into words and whitespace tokens
   const tokens = content.split(/(\s+)/).filter(Boolean)
@@ -339,6 +366,28 @@ export function FullScreenPassage({
       style={{ background: "#E4F4FF" }}
       onMouseMove={handleMouseMove}
     >
+      {/* Toast Notifications */}
+      <div className="fixed top-6 left-1/2 z-[60] flex -translate-x-1/2 flex-col items-center gap-2">
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            className="animate-in slide-in-from-top-2 fade-in flex items-center gap-2 rounded-full px-4 py-2 shadow-lg backdrop-blur-sm"
+            style={{
+              background: "rgba(102, 102, 255, 0.9)",
+              color: "#FFFFFF",
+              animation: "toast-enter 0.3s ease-out, toast-exit 0.4s ease-in 2.6s forwards",
+            }}
+          >
+            {toast.icon === "scroll" ? (
+              <ArrowDownToLine className="h-4 w-4" />
+            ) : (
+              <CircleCheckBig className="h-4 w-4" />
+            )}
+            <span className="text-sm font-medium">{toast.label}</span>
+          </div>
+        ))}
+      </div>
+
       {/* Passage Card */}
       <div className="flex min-h-0 flex-1 flex-col items-center px-4 pt-4 pb-2 md:px-6 md:pt-6 md:pb-3 lg:px-8 lg:pt-8 lg:pb-4">
         <div
@@ -360,16 +409,51 @@ export function FullScreenPassage({
             <X className="h-6 w-6" style={{ color: "#7A7AFB" }} />
           </button>
 
-          {/* Recording indicator */}
+          {/* Top-left indicators: Recording + Feature badges */}
           <div
-            className="absolute left-4 top-4 flex items-center gap-2 transition-opacity duration-500 md:left-6 md:top-6"
+            className="absolute left-4 top-4 z-10 flex flex-col gap-2 transition-opacity duration-500 md:left-6 md:top-6"
             style={{ opacity: showOverlayUI ? 1 : 0 }}
           >
-            <span className="relative flex h-3 w-3">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-              <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500" />
-            </span>
-            <span className="text-xs font-medium text-red-500">Recording</span>
+            {/* Recording indicator */}
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-3 w-3">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500" />
+              </span>
+              <span className="text-xs font-medium text-red-500">Recording</span>
+            </div>
+
+            {/* Auto Scroll badge */}
+            {autoScrollEnabled && (
+              <div
+                className="flex items-center gap-1.5 rounded-full px-2.5 py-1"
+                style={{
+                  background: "rgba(102, 102, 255, 0.10)",
+                  border: "1px solid rgba(102, 102, 255, 0.3)",
+                }}
+              >
+                <ArrowDownToLine className="h-3 w-3" style={{ color: "#6666FF" }} />
+                <span className="text-[11px] font-medium" style={{ color: "#6666FF" }}>
+                  Auto Scroll
+                </span>
+              </div>
+            )}
+
+            {/* Auto Finish badge */}
+            {autoFinishEnabled && (
+              <div
+                className="flex items-center gap-1.5 rounded-full px-2.5 py-1"
+                style={{
+                  background: "rgba(34, 197, 94, 0.10)",
+                  border: "1px solid rgba(34, 197, 94, 0.3)",
+                }}
+              >
+                <CircleCheckBig className="h-3 w-3" style={{ color: "#16a34a" }} />
+                <span className="text-[11px] font-medium" style={{ color: "#16a34a" }}>
+                  Auto Finish
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Top fade edge */}
@@ -440,6 +524,30 @@ export function FullScreenPassage({
           Done
         </button>
       </div>
+
+      {/* Toast animation keyframes */}
+      <style jsx>{`
+        @keyframes toast-enter {
+          from {
+            opacity: 0;
+            transform: translateY(-8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes toast-exit {
+          from {
+            opacity: 1;
+            transform: translateY(0);
+          }
+          to {
+            opacity: 0;
+            transform: translateY(-8px);
+          }
+        }
+      `}</style>
     </div>
   )
 }

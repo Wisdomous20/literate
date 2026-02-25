@@ -1,26 +1,62 @@
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma"
 
 interface CreateAssessmentInput {
   studentId: string
-  type: "ORAL_READING" | "COMPREHENSION" | "ORAL_READING_TEST"
+  type: "ORAL_READING" | "COMPREHENSION" | "READING_FLUENCY"
+  passageId: string
 }
 
-export default async function createAssessment(input: CreateAssessmentInput) {
-  const { studentId, type } = input
+interface CreateAssessmentResult {
+  success: boolean
+  assessment?: {
+    id: string
+    studentId: string
+    type: string
+    passageId: string
+    dateTaken: Date
+  }
+  error?: string
+  code?: "VALIDATION_ERROR" | "INTERNAL_ERROR"
+}
 
-  const student = await prisma.student.findUnique({
-    where: { id: studentId },
-  })
+export async function createAssessmentService(
+  input: CreateAssessmentInput
+): Promise<CreateAssessmentResult> {
+  const { studentId, type, passageId } = input
 
-  if (!student) {
-    throw new Error("Student not found")
+  if (!studentId || !type || !passageId) {
+    return {
+      success: false,
+      error: "studentId, type, and passageId are required.",
+      code: "VALIDATION_ERROR",
+    }
   }
 
-  return  await prisma.assessment.create({
-    data: {
-      studentId,
-      type,
-    },
-  });
+  try {
+    const assessment = await prisma.assessment.create({
+      data: {
+        studentId,
+        type,
+        passageId,
+      },
+    })
 
+    return {
+      success: true,
+      assessment: {
+        id: assessment.id,
+        studentId: assessment.studentId,
+        type: assessment.type,
+        passageId: assessment.passageId,
+        dateTaken: assessment.dateTaken,
+      },
+    }
+  } catch (error) {
+    console.error("Error creating assessment:", error)
+    return {
+      success: false,
+      error: "An internal error occurred while creating the assessment.",
+      code: "INTERNAL_ERROR",
+    }
+  }
 }

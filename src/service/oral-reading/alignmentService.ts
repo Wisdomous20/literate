@@ -1,5 +1,6 @@
 import { AlignedWord } from "@/types/oral-reading"
 import { normalizeWord } from "./whisperService"
+import { similarityRatio } from "./miscueDetectionService"
 
 interface SpokenWordEntry {
   word: string
@@ -16,7 +17,7 @@ export function alignWords(
 
   const MATCH_SCORE = 2
   const MISMATCH_PENALTY = -1
-  const GAP_PENALTY = -2
+  const GAP_PENALTY = -1.5  // Less harsh gap penalty to prefer fuzzy matches over gaps
 
   const dp: number[][] = Array.from({ length: n + 1 }, () =>
     Array(m + 1).fill(0)
@@ -30,8 +31,14 @@ export function alignWords(
       const normalExpected = normalizeWord(passageWords[i - 1])
       const normalSpoken = normalizeWord(spokenWords[j - 1].word)
 
+      const sim = similarityRatio(normalExpected, normalSpoken)
+
       const matchScore =
-        normalExpected === normalSpoken ? MATCH_SCORE : MISMATCH_PENALTY
+        sim > 0.8
+          ? MATCH_SCORE
+          : sim > 0.4
+          ? MISMATCH_PENALTY / 2
+          : MISMATCH_PENALTY
 
       dp[i][j] = Math.max(
         dp[i - 1][j - 1] + matchScore,
@@ -51,10 +58,16 @@ export function alignWords(
       j > 0 &&
       dp[i][j] ===
         dp[i - 1][j - 1] +
-          (normalizeWord(passageWords[i - 1]) ===
-          normalizeWord(spokenWords[j - 1].word)
-            ? MATCH_SCORE
-            : MISMATCH_PENALTY)
+          ((() => {
+            const ne = normalizeWord(passageWords[i - 1])
+            const ns = normalizeWord(spokenWords[j - 1].word)
+            const s = similarityRatio(ne, ns)
+            return s > 0.8
+              ? MATCH_SCORE
+              : s > 0.4
+              ? MISMATCH_PENALTY / 2
+              : MISMATCH_PENALTY
+          })())
     ) {
       const normalExpected = normalizeWord(passageWords[i - 1])
       const normalSpoken = normalizeWord(spokenWords[j - 1].word)
@@ -109,20 +122,19 @@ export function tokenizeForComparison(
   const lang = language.toLowerCase().trim();
 
   if (lang === "tagalog" || lang === "tl" || lang === "filipino" || lang === "fil") {
-    // Tagalog: treat "ng" as single phoneme, "ñ" as single character
     const tokens: string[] = [];
-    let i = 0;
-    while (i < normalized.length) {
+    let idx = 0;
+    while (idx < normalized.length) {
       if (
-        i + 1 < normalized.length &&
-        normalized[i] === "n" &&
-        normalized[i + 1] === "g"
+        idx + 1 < normalized.length &&
+        normalized[idx] === "n" &&
+        normalized[idx + 1] === "g"
       ) {
         tokens.push("ng");
-        i += 2;
+        idx += 2;
       } else {
-        tokens.push(normalized[i]);
-        i++;
+        tokens.push(normalized[idx]);
+        idx++;
       }
     }
     return tokens;
@@ -138,26 +150,26 @@ export function levenshteinDistance(
 ): number {
   const tokensA = tokenizeForComparison(a, language);
   const tokensB = tokenizeForComparison(b, language);
-  const m = tokensA.length;
-  const n = tokensB.length;
+  const mLen = tokensA.length;
+  const nLen = tokensB.length;
 
-  const dp: number[][] = Array.from({ length: m + 1 }, () =>
-    Array(n + 1).fill(0)
+  const dpArr: number[][] = Array.from({ length: mLen + 1 }, () =>
+    Array(nLen + 1).fill(0)
   );
 
-  for (let i = 0; i <= m; i++) dp[i][0] = i;
-  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let x = 0; x <= mLen; x++) dpArr[x][0] = x;
+  for (let y = 0; y <= nLen; y++) dpArr[0][y] = y;
 
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      dp[i][j] =
-        tokensA[i - 1] === tokensB[j - 1]
-          ? dp[i - 1][j - 1]
-          : 1 + Math.min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]);
+  for (let x = 1; x <= mLen; x++) {
+    for (let y = 1; y <= nLen; y++) {
+      dpArr[x][y] =
+        tokensA[x - 1] === tokensB[y - 1]
+          ? dpArr[x - 1][y - 1]
+          : 1 + Math.min(dpArr[x - 1][y - 1], dpArr[x - 1][y], dpArr[x][y - 1]);
     }
   }
 
-  return dp[m][n];
+  return dpArr[mLen][nLen];
 }
 
 export function isReversal(expected: string, spoken: string): boolean {
