@@ -30,6 +30,42 @@ const questionTypes = [
   { label: "Essay", value: "ESSAY" },
 ];
 
+// Validation function
+function validateForm(
+  questionText: string,
+  passageId: string,
+  tags: string,
+  type: string,
+  options: string[],
+  correctAnswer: string,
+) {
+  if (!questionText.trim()) {
+    return "Question text is required";
+  }
+  if (!passageId) {
+    return "Please select a passage";
+  }
+  if (!tags) {
+    return "Please select a tag";
+  }
+  if (!type) {
+    return "Please select a question type";
+  }
+  if (type === "MULTIPLE_CHOICE") {
+    const filledOptions = options.filter(Boolean);
+    if (filledOptions.length < 2) {
+      return "Please provide at least 2 options for multiple choice questions";
+    }
+    if (!correctAnswer) {
+      return "Please select a correct answer";
+    }
+    if (!filledOptions.includes(correctAnswer)) {
+      return "Correct answer must match one of the provided options";
+    }
+  }
+  return "";
+}
+
 export function CreateQuestionForm() {
   const router = useRouter();
   const [questionText, setQuestionText] = useState("");
@@ -44,55 +80,49 @@ export function CreateQuestionForm() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-  const loadPassages = async () => {
-    setIsLoadingPassages(true);
-    try {
-      const result = await getAllPassagesAction(); // result is { success, passages, error }
+    const loadPassages = async () => {
+      setIsLoadingPassages(true);
+      try {
+        const result = await getAllPassagesAction(); // result is { success, passages, error }
 
-      if (result.success && Array.isArray(result.passages)) {
-        const formattedPassages: Passage[] = result.passages.map(
-          (p: PassageApiData) => ({
-            id: p.id,
-            title: p.title,
-          })
-        );
-        setPassages(formattedPassages);
-      } else {
-        console.error("Failed to load passages:", result.error);
+        if (result.success && Array.isArray(result.passages)) {
+          const formattedPassages: Passage[] = result.passages.map(
+            (p: PassageApiData) => ({
+              id: p.id,
+              title: p.title,
+            }),
+          );
+          setPassages(formattedPassages);
+        } else {
+          console.error("Failed to load passages:", result.error);
+        }
+      } catch (err) {
+        console.error("Error loading passages:", err);
+      } finally {
+        setIsLoadingPassages(false);
       }
-    } catch (err) {
-      console.error("Error loading passages:", err);
-    } finally {
-      setIsLoadingPassages(false);
-    }
-  };
+    };
 
-  loadPassages();
-}, []);
-
+    loadPassages();
+  }, []);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
       setError("");
 
-      if (!questionText.trim() || !passageId || !tags || !type) {
-        setError("Please fill in all required fields");
+      // Use validation
+      const validationError = validateForm(
+        questionText,
+        passageId,
+        tags,
+        type,
+        options,
+        correctAnswer,
+      );
+      if (validationError) {
+        setError(validationError);
         return;
-      }
-
-      if (type === "MULTIPLE_CHOICE") {
-        const filledOptions = options.filter(Boolean);
-        if (filledOptions.length < 2) {
-          setError(
-            "Please provide at least 2 options for multiple choice questions",
-          );
-          return;
-        }
-        if (!correctAnswer) {
-          setError("Please select a correct answer");
-          return;
-        }
       }
 
       setIsLoading(true);
