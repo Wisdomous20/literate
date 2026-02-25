@@ -83,10 +83,10 @@ model Assessment {
   dateTaken DateTime       @default(now())
 
   comprehension ComprehensionTest?
-  oralReading   OralReadingSession?
+  oralFluency   OralFluencySession?
 }
 
-model OralReadingSession {
+model OralFluencySession {
   id                  String  @id @default(cuid())
   assessmentId        String? @unique
   audioUrl            String  @default("")
@@ -99,14 +99,14 @@ model OralReadingSession {
   oralFluencyScore    Float?
   classificationLevel String?
 
-  status    OralReadingStatus @default(PENDING)
+  status    OralFluencyStatus @default(PENDING)
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
   deletedAt DateTime?
 
   assessment     Assessment?           @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
-  miscues        OralReadingMiscue[]
-  behaviors      OralReadingBehavior[]
+  miscues        OralFluencyMiscue[]
+  behaviors      OralFluencyBehavior[]
   wordTimestamps WordTimestamp[]
 }
 
@@ -119,10 +119,10 @@ model WordTimestamp {
   confidence Float?
   index      Int
 
-  session OralReadingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  session OralFluencySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
 
-model OralReadingMiscue {
+model OralFluencyMiscue {
   id              String     @id @default(cuid())
   sessionId       String
   miscueType      MiscueType
@@ -133,13 +133,13 @@ model OralReadingMiscue {
   isSelfCorrected Boolean    @default(false)
   createdAt       DateTime   @default(now())
 
-  session OralReadingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  session OralFluencySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
 
-model OralReadingBehavior {
+model OralFluencyBehavior {
   id           String              @id @default(cuid())
   sessionId    String
-  behaviorType ReadingBehaviorType
+  behaviorType OralFluencyBehaviorType
   startIndex   Int?
   endIndex     Int?
   startTime    Float?
@@ -147,7 +147,7 @@ model OralReadingBehavior {
   notes        String?
   createdAt    DateTime            @default(now())
 
-  session OralReadingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  session OralFluencySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
 
 model Session {
@@ -262,7 +262,7 @@ enum Tags {
   Critical
 }
 
-enum OralReadingStatus {
+enum OralFluencyStatus {
   PENDING
   PROCESSING
   COMPLETED
@@ -280,7 +280,7 @@ enum MiscueType {
   REPETITION
 }
 
-enum ReadingBehaviorType {
+enum OralFluencyBehaviorType {
   WORD_BY_WORD_READING
   MONOTONOUS_READING
   DISMISSAL_OF_PUNCTUATION

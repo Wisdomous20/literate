@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createAssessmentService } from "@/service/assessment/createAssessmentService";
 import { submitComprehensionService } from "@/service/comprehension-test/submitComprehensionService";
 
 export const maxDuration = 60; // allow time for OpenAI essay grading
@@ -15,10 +16,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await submitComprehensionService({
+    // 1. Create assessment FIRST
+    const assessmentResult = await createAssessmentService({
       studentId,
       passageId,
-      quizId,
+      type: "COMPREHENSION",
+    });
+
+    if (!assessmentResult.success || !assessmentResult.assessment) {
+      return NextResponse.json(
+        { error: assessmentResult.error || "Failed to create assessment" },
+        { status: 400 }
+      );
+    }
+
+    // 2. Then create comprehension test with assessmentId
+    const result = await submitComprehensionService({
+      assessmentId: assessmentResult.assessment.id,
       answers,
     });
 
@@ -26,7 +40,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    return NextResponse.json(result);
+    return NextResponse.json({
+      ...result,
+      assessmentId: assessmentResult.assessment.id,
+    });
   } catch (error) {
     console.error("Comprehension submit error:", error);
     return NextResponse.json(
