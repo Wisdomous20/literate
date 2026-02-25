@@ -65,13 +65,37 @@ export function CreateClassModal({
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!className.trim() || isLoading) return;
+      if (isLoading) return;
+
+      // Validation
+      const trimmedName = className.trim();
+      if (!trimmedName) {
+        setError("Class name is required.");
+        return;
+      }
+      if (trimmedName.length < 2) {
+        setError("Class name must be at least 2 characters.");
+        return;
+      }
+      if (trimmedName.length > 50) {
+        setError("Class name must be less than 50 characters.");
+        return;
+      }
+      if (!/^[a-zA-Z0-9 _-]+$/.test(trimmedName)) {
+        setError(
+          "Class name can only contain letters, numbers, spaces, hyphens, and underscores.",
+        );
+        return;
+      }
 
       setIsLoading(true);
       setError(null);
 
       try {
-        const result = await onCreateClass({ className, schoolYear });
+        const result = await onCreateClass({
+          className: trimmedName,
+          schoolYear,
+        });
 
         if (result.success) {
           setClassName("");

@@ -51,15 +51,45 @@ export function CreatePassageForm() {
     e.preventDefault();
     setError("");
 
-    if (
-      !title.trim() ||
-      !content.trim() ||
-      !language ||
-      level === "" ||
-      !selectedTag ||
-      !testType
-    ) {
-      setError("Please fill in all required fields");
+    // Validation
+    if (!title.trim()) {
+      setError("Title is required.");
+      return;
+    }
+    if (title.trim().length < 3) {
+      setError("Title must be at least 3 characters.");
+      return;
+    }
+    if (title.trim().length > 100) {
+      setError("Title must be less than 100 characters.");
+      return;
+    }
+    if (!content.trim()) {
+      setError("Content is required.");
+      return;
+    }
+    if (content.trim().length < 20) {
+      setError("Content must be at least 20 characters.");
+      return;
+    }
+    if (wordCount < 5) {
+      setError("Content must have at least 5 words.");
+      return;
+    }
+    if (!language) {
+      setError("Please select a language.");
+      return;
+    }
+    if (level === "") {
+      setError("Please select a level.");
+      return;
+    }
+    if (!selectedTag) {
+      setError("Please select a tag.");
+      return;
+    }
+    if (!testType) {
+      setError("Please select a test type.");
       return;
     }
 
@@ -123,7 +153,6 @@ export function CreatePassageForm() {
       </div>
 
       {/* Word Count (read only) */}
-
       <div className="flex items-center gap-4">
         <label
           htmlFor="wordCount"

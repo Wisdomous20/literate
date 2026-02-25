@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
-import { getQuestionByIdAction } from "@/app/actions/admin/getQuestionById";
+import { getQuestionByIdAction } from "@/app/actions/comprehension-Test/getQuestionById";
 import { UpdateQuestionForm } from "@/components/admin-dash/updateQuestionForm";
 
 interface Question {

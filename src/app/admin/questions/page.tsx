@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { QuestionTable } from "@/components/admin-dash/questionTable";
-import { getAllQuestionsAction } from "@/app/actions/admin/getAllQuestion";
+import { getAllQuestionsAction } from "@/app/actions/comprehension-Test/getAllQuestion";
 import { deleteQuestionAction } from "@/app/actions/admin/deleteQuestion";
 
 interface RawQuestion {
