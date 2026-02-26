@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import {
   ChevronLeft,
   ChevronRight,
@@ -46,6 +47,10 @@ export function StudentTable({
   onDeleteStudent,
   onUpdateStudent,
 }: StudentTableProps) {
+  const params = useParams();
+  const router = useRouter();
+  const classId = params.id as string;
+
   const [activeTab, setActiveTab] = useState<TabType>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -54,14 +59,23 @@ export function StudentTable({
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-  const studentsPerPage = 10; // Updated to 10 students per page
+  const studentsPerPage = 10;
 
-  /* Reset page when tab changes */
   useEffect(() => {
     setCurrentPage(1);
   }, [activeTab]);
 
-  const filteredStudents = students.filter((student) => {
+  // 🔥 TEMP MOCK SECTION — REMOVE LATER WHEN BACKEND READY
+  // Forces first student to appear as Completed
+  const studentsWithMock = students.map((student, index) => ({
+    ...student,
+    lastAssessment:
+      index === 0
+        ? "January 20, 2026" // 👈 mock assessment date
+        : student.lastAssessment,
+  }));
+
+  const filteredStudents = studentsWithMock.filter((student) => {
     if (activeTab === "completed") return student.lastAssessment !== null;
     if (activeTab === "awaiting") return student.lastAssessment === null;
     return true;
@@ -118,11 +132,14 @@ export function StudentTable({
     }
   };
 
+  const handleViewReport = (studentId: string) => {
+    router.push(`/dashboard/class/${classId}/report/${studentId}`);
+  };
+
   return (
     <div className="flex flex-1 flex-col">
-      {/* Tabs and Total Students in one row */}
+      {/* Tabs and Total Students */}
       <div className="mb-4 flex items-center justify-between">
-        {/* Tabs */}
         <div className="flex items-center gap-6">
           {tabs.map((tab) => (
             <button
@@ -139,18 +156,15 @@ export function StudentTable({
             </button>
           ))}
         </div>
-
-        {/* Total Students */}
-        <div>
-          <span className="text-[15px] font-bold text-[#162DB0]">
-            {totalStudents} Total Students
-          </span>
-        </div>
+        {/* 👇 Show total students */}
+        <span className="text-[15px] font-bold text-[#162DB0]">
+          {totalStudents} Total Students
+        </span>
       </div>
 
       {/* Table */}
       <div className="flex-1 overflow-hidden rounded-t-[5px] bg-[#E4F4FF] border border-[rgba(74,74,252,0.08)]">
-        <div className="grid grid-cols-[1fr_1fr_1fr_120px] px-6 py-3 bg-[rgba(74,74,252,0.12)] border-b">
+        <div className="grid grid-cols-[1fr_1fr_1fr_160px] px-6 py-3 bg-[rgba(74,74,252,0.12)] border-b">
           <span className="text-[17px] font-medium text-[#00306E]">Name</span>
           <span className="text-[17px] font-medium text-[#00306E]">
             Grade Level
@@ -170,13 +184,7 @@ export function StudentTable({
             paginatedStudents.map((student) => (
               <div
                 key={student.id}
-                className="
-          grid grid-cols-[1fr_1fr_1fr_120px] items-center px-6 py-4 mb-auto
-          bg-white/10 backdrop-blur-xl rounded-50px
-          shadow-[0_4px_24px_0_rgba(74,74,252,0.10)]
-          hover:bg-white/80 hover:shadow-[0_8px_32px_0_rgba(74,74,252,0.15)]
-          transition-all duration-200
-        "
+                className="grid grid-cols-[1fr_1fr_1fr_160px] items-center px-6 py-4 bg-white/10 backdrop-blur-xl transition-all duration-200"
               >
                 {editingId === student.id ? (
                   <>
@@ -211,10 +219,9 @@ export function StudentTable({
                         )}
                       </button>
                       <button
-                        type="button"
-                        disabled={isUpdating}
+                        type="button" // 1️⃣ Prevent accidental form submission
                         onClick={handleCancelEdit}
-                        aria-label="Cancel edit"
+                        aria-label="Cancel edit" // 2️⃣ Accessible name for screen readers
                       >
                         <X className="h-5 w-5 text-red-600" />
                       </button>
@@ -225,15 +232,26 @@ export function StudentTable({
                     <span>{student.name}</span>
                     <span>{student.gradeLevel}</span>
                     <span>{student.lastAssessment ?? "N/A"}</span>
-                    <div className="flex justify-end gap-3">
+
+                    <div className="flex justify-end gap-3 items-center">
+                      {/* ✅ View Report Button (only for completed) */}
+                      {student.lastAssessment && (
+                        <button
+                          onClick={() => handleViewReport(student.id)}
+                          className="px-3 py-1 text-xs font-semibold bg-[#162DB0] text-white rounded-md hover:opacity-90"
+                        >
+                          View Report
+                        </button>
+                      )}
+
                       <button
                         type="button"
                         onClick={() => handleEdit(student)}
                         aria-label="Edit student"
-                        title="Edit student"
                       >
                         <Edit2 className="h-5 w-5 text-[#162DB0]" />
                       </button>
+
                       <button
                         disabled={isDeleting === student.id}
                         onClick={() => handleDelete(student.id)}
@@ -260,20 +278,16 @@ export function StudentTable({
         </span>
         <div className="flex gap-2">
           <button
-            type="button"
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(1)}
             aria-label="Go to first page"
-            title="Go to first page"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
           <button
-            type="button"
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage(totalPages)}
             aria-label="Go to last page"
-            title="Go to last page"
           >
             <ChevronRight className="h-4 w-4" />
           </button>

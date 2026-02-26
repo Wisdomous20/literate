@@ -5,7 +5,10 @@ import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft, Search, ChevronUp, ChevronDown } from "lucide-react";
 import { ClassListsHeader } from "@/components/class-lists/classListsHeader";
 import { StatCards } from "@/components/class-lists/statCards";
-import { AssessmentTypeFilterDropdown, AssessmentTypeFilter } from "@/components/class-lists/assessmentTypeFilter";
+import {
+  AssessmentTypeFilterDropdown,
+  AssessmentTypeFilter,
+} from "@/components/class-lists/assessmentTypeFilter";
 import { StudentTable } from "@/components/class-lists/studentTable";
 import { ClassInfo } from "@/components/class-lists/classInfo";
 import { CreateStudentModal } from "@/components/class-lists/createStudentModal";
@@ -54,7 +57,8 @@ export default function ClassListsPage() {
   >("nameAsc");
 
   // Track assessment type and stat card collapse
-  const [assessmentType, setAssessmentType] = useState<AssessmentTypeFilter>("ORAL_READING");
+  const [assessmentType, setAssessmentType] =
+    useState<AssessmentTypeFilter>("ORAL_READING");
   const [showStats, setShowStats] = useState(true);
 
   // Remove caching: use local state for loading, error, and data
@@ -232,7 +236,9 @@ export default function ClassListsPage() {
   if (fetchError || !classData) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
-        <div className="text-lg text-red-500">{fetchError || "Class not found"}</div>
+        <div className="text-lg text-red-500">
+          {fetchError || "Class not found"}
+        </div>
         <button
           onClick={() => router.back()}
           className="text-[#31318A] hover:underline"
@@ -278,13 +284,11 @@ export default function ClassListsPage() {
           <button
             className="flex items-center gap-2 mb-2 text-[#00306E] font-semibold focus:outline-none"
             onClick={() => setShowStats((prev) => !prev)}
-            aria-expanded={showStats}
+            aria-expanded={showStats ? "true" : "false"}
             aria-controls="stat-cards-panel"
             type="button"
           >
-            <span>
-              Show {assessmentTypeLabels[assessmentType]} Statistics
-            </span>
+            <span>Show {assessmentTypeLabels[assessmentType]} Statistics</span>
             {showStats ? (
               <ChevronUp className="w-4 h-4" />
             ) : (
@@ -292,12 +296,14 @@ export default function ClassListsPage() {
             )}
           </button>
           {showStats && (
-            <StatCards
-              assessedCount={stats.assessed}
-              independentCount={stats.independent}
-              instructionalCount={stats.instructional}
-              frustratedCount={stats.frustrated}
-            />
+            <div id="stat-cards-panel">
+              <StatCards
+                assessedCount={stats.assessed}
+                independentCount={stats.independent}
+                instructionalCount={stats.instructional}
+                frustratedCount={stats.frustrated}
+              />
+            </div>
           )}
         </div>
 
