@@ -8,14 +8,12 @@ export async function GET(
   try {
     const { id } = await params
 
-    const session = await prisma.oralReadingSession.findUnique({
+    const session = await prisma.oralFluencySession.findUnique({
       where: { id },
       include: {
-        passage: true,
         miscues: { orderBy: { wordIndex: "asc" } },
         behaviors: true,
         wordTimestamps: { orderBy: { index: "asc" } },
-        student: { select: { id: true, name: true } },
         assessment: true,
       },
     })

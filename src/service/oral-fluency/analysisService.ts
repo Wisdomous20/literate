@@ -1,4 +1,4 @@
-import { OralReadingAnalysis } from "@/types/oral-reading";
+import { OralFluencyAnalysis } from "@/types/oral-reading";
 import { transcribeAudio } from "./whisperService";
 import { alignWords } from "./alignmentService";
 import { detectMiscues } from "./miscueDetectionService";
@@ -17,12 +17,12 @@ function classifyReadingLevel(oralFluencyScore: number): "INDEPENDENT" | "INSTRU
   return "FRUSTRATION";
 }
 
-export async function analyzeOralReading(
+export async function analyzeOralFluency(
   audioBuffer: Buffer,
   fileName: string,
   passageText: string,
   language: string
-): Promise<OralReadingAnalysis> {
+): Promise<OralFluencyAnalysis> {
   // 1. Transcribe with Whisper (language-aware)
   const whisperResult = await transcribeAudio(audioBuffer, fileName, language, passageText);
 

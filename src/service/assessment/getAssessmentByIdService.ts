@@ -23,7 +23,7 @@ export async function getAssessmentByIdService(
       where: { id },
       include: {
         passage: true,
-        oralReading: {
+        oralFluency: {
           include: {
             miscues: { orderBy: { wordIndex: "asc" } },
             behaviors: true,
