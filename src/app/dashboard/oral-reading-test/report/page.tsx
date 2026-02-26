@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import ReportHeader from "@/components/reports/oral-reading-test/reading-fluency-report/reportHeader"
 import StudentInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/studentInfoCard"
 import PassageInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/passageInfoCard"
@@ -12,6 +13,19 @@ import type { BehaviorItem } from "@/components/reports/oral-reading-test/readin
 import type { OralFluencyAnalysis, MiscueResult, BehaviorResult } from "@/types/oral-reading"
 
 const STORAGE_KEY = "oral-reading-session"
+const AUDIO_STORAGE_KEY = "oral-reading-audio"
+
+function base64ToBlob(base64: string): Blob {
+  const [meta, data] = base64.split(",")
+  const mimeMatch = meta.match(/:(.*?);/)
+  const mime = mimeMatch ? mimeMatch[1] : "audio/webm"
+  const binary = atob(data)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i)
+  }
+  return new Blob([bytes], { type: mime })
+}
 
 interface SessionState {
   studentName: string
@@ -110,6 +124,22 @@ export default function OralReadingReportPage() {
   const session = loadSession()
   const analysis = session.analysisResult
 
+  // Load recorded audio from sessionStorage
+  const [audioSrc, setAudioSrc] = useState<string | null>(null)
+  useEffect(() => {
+    try {
+      const audioBase64 = sessionStorage.getItem(AUDIO_STORAGE_KEY)
+      if (audioBase64) {
+        const blob = base64ToBlob(audioBase64)
+        const url = URL.createObjectURL(blob)
+        setAudioSrc(url)
+        return () => URL.revokeObjectURL(url)
+      }
+    } catch (err) {
+      console.error("Failed to load audio from sessionStorage:", err)
+    }
+  }, [])
+
   const studentName = session.studentName || "—"
   const gradeLevel = session.gradeLevel ? `Grade ${session.gradeLevel}` : "—"
   const studentClass = session.selectedClassName || "—"
@@ -119,17 +149,15 @@ export default function OralReadingReportPage() {
   const totalWords = session.passageContent
     ? session.passageContent.split(/\s+/).filter(Boolean).length
     : 0
-  const readingTimeSeconds = session.recordedSeconds || 0
-  const readingTimeMinutes = readingTimeSeconds > 0
-    ? (Math.round((readingTimeSeconds / 60) * 10) / 10).toString()
-    : "0"
+  // Use analysis duration (from actual recording) if available, fall back to session timer
+  const readingTimeSeconds = Math.round(analysis?.duration ?? session.recordedSeconds ?? 0)
 
-  // Use analysis WPM if available, otherwise compute from recorded time
-  const wcpm = analysis?.wordsPerMinute
-    ? Math.round(analysis.wordsPerMinute)
-    : readingTimeSeconds > 0
-      ? Math.round((totalWords / readingTimeSeconds) * 60)
-      : 0
+  // WCPM = (totalWords - totalMiscues) / duration * 60
+  const totalMiscues = analysis?.totalMiscues ?? 0
+  const wordsCorrect = Math.max(0, totalWords - totalMiscues)
+  const wcpm = readingTimeSeconds > 0
+    ? Math.round((wordsCorrect / readingTimeSeconds) * 60)
+    : 0
 
   const classification = analysis?.classificationLevel || "—"
   const miscueData = buildMiscueData(analysis)
@@ -149,7 +177,7 @@ export default function OralReadingReportPage() {
           />
           <MetricCards
             wcpm={wcpm}
-            readingTime={readingTimeMinutes}
+            readingTimeSeconds={readingTimeSeconds}
             classificationLevel={classification}
           />
         </div>
@@ -165,7 +193,7 @@ export default function OralReadingReportPage() {
               testType={testType}
               assessmentType="Oral Reading"
             />
-            <AudioPlaybackCard />
+            <AudioPlaybackCard audioSrc={audioSrc} />
           </div>
 
           {/* Center column */}
