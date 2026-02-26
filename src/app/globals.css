@@ -141,3 +141,48 @@ input::-ms-reveal,
 input::-ms-clear {
   display: none;
 }
+
+/* Oral reading test scrollbars — default (inner/passage) */
+.oral-reading-scroll,
+.oral-reading-scroll * {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(102, 102, 255, 0.3) transparent;
+}
+.oral-reading-scroll::-webkit-scrollbar,
+.oral-reading-scroll *::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.oral-reading-scroll::-webkit-scrollbar-track,
+.oral-reading-scroll *::-webkit-scrollbar-track {
+  background: transparent;
+}
+.oral-reading-scroll::-webkit-scrollbar-thumb,
+.oral-reading-scroll *::-webkit-scrollbar-thumb {
+  background: rgba(102, 102, 255, 0.3);
+  border-radius: 10px;
+}
+.oral-reading-scroll::-webkit-scrollbar-thumb:hover,
+.oral-reading-scroll *::-webkit-scrollbar-thumb:hover {
+  background: rgba(102, 102, 255, 0.5);
+}
+
+/* Outer column scroll — deeper purple, browser-default width */
+.scroll-outer {
+  scrollbar-width: auto !important;
+  scrollbar-color: rgba(70, 50, 180, 0.55) rgba(230, 230, 250, 0.3) !important;
+}
+.scroll-outer::-webkit-scrollbar {
+  width: 12px !important;
+}
+.scroll-outer::-webkit-scrollbar-track {
+  background: rgba(230, 230, 250, 0.3);
+}
+.scroll-outer::-webkit-scrollbar-thumb {
+  background: rgba(70, 50, 180, 0.55);
+  border-radius: 7px;
+  border: 2px solid rgba(230, 230, 250, 0.3);
+}
+.scroll-outer::-webkit-scrollbar-thumb:hover {
+  background: rgba(70, 50, 180, 0.75);
+}

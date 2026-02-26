@@ -124,6 +124,15 @@ export default function OralReadingTestPage() {
   const [analysisResult, setAnalysisResult] = useState<OralFluencyAnalysis | null>(null)
   const [sessionId, setSessionId] = useState<string>("")
   const [highlightedTypes, setHighlightedTypes] = useState<Set<string>>(new Set())
+  const [passageExpanded, setPassageExpanded] = useState(false)
+  const audioRef = useRef<HTMLAudioElement>(null)
+
+  const handleJumpToTime = useCallback((timestamp: number) => {
+    const audio = audioRef.current
+    if (!audio) return
+    audio.currentTime = timestamp
+    audio.play().catch(() => {})
+  }, [])
 
   const toggleHighlightType = useCallback((miscueType: string) => {
     setHighlightedTypes((prev) => {
@@ -487,7 +496,7 @@ export default function OralReadingTestPage() {
   const classNames = classes.map(c => c.name)
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
+    <div className="oral-reading-scroll flex h-screen flex-col overflow-hidden">
       <DashboardHeader title="Oral Reading Test" />
 
       {/* Toast notification — fixed upper right */}
@@ -516,8 +525,9 @@ export default function OralReadingTestPage() {
         </div>
       )}
 
-      <main className="flex min-h-0 flex-1 flex-col gap-3 px-4 py-4 md:px-6 lg:px-8">
+      <main className={`flex min-h-0 flex-1 flex-col px-4 py-4 md:px-6 lg:px-8 ${passageExpanded ? "gap-0 py-2" : "gap-3"}`}>
         {/* Nav row */}
+        {!passageExpanded && (
         <div className="flex items-center justify-between">
           <button
             onClick={() => router.back()}
@@ -547,12 +557,13 @@ export default function OralReadingTestPage() {
             <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
           </button>
         </div>
+        )}
 
         {/* Two-column layout: left content + right MiscueAnalysis */}
         <div className="flex min-h-0 flex-1 gap-4">
           {/* Left column: student info, filters, passage, timer */}
-          <div className="flex min-h-0 flex-1 flex-col gap-3">
-            {!isLoadingClasses && (
+          <div className={`flex min-h-0 flex-1 flex-col overflow-y-auto scroll-outer ${passageExpanded ? "gap-0" : "gap-3"}`}>
+            {!passageExpanded && !isLoadingClasses && (
               <StudentInfoBar
                 studentName={studentName}
                 gradeLevel={gradeLevel}
@@ -568,20 +579,26 @@ export default function OralReadingTestPage() {
               />
             )}
 
-            <PassageFilters
-              language={hasPassage ? selectedLanguage : undefined}
-              passageLevel={hasPassage ? selectedLevel : undefined}
-              testType={hasPassage ? selectedTestType : undefined}
-              hasPassage={hasPassage}
-              onOpenPassageModal={() => setIsPassageModalOpen(true)}
+            {!passageExpanded && (
+              <PassageFilters
+                language={hasPassage ? selectedLanguage : undefined}
+                passageLevel={hasPassage ? selectedLevel : undefined}
+                testType={hasPassage ? selectedTestType : undefined}
+                hasPassage={hasPassage}
+                onOpenPassageModal={() => setIsPassageModalOpen(true)}
+              />
+            )}
+
+            <PassageDisplay
+              content={passageContent}
+              miscues={filteredMiscues}
+              onJumpToTime={handleJumpToTime}
+              expanded={passageExpanded}
+              onToggleExpand={() => setPassageExpanded((prev) => !prev)}
             />
 
-            <div className="min-h-0 flex-1">
-              <PassageDisplay content={passageContent} miscues={filteredMiscues} />
-            </div>
-
             {/* Word count under passage display */}
-            {hasPassage && (
+            {!passageExpanded && hasPassage && (
               <div className="mt-2 flex items-center">
                 <span className="text-xs font-semibold text-[#00306E]">
                   {passageContent.split(/\s+/).length} words
@@ -590,7 +607,7 @@ export default function OralReadingTestPage() {
             )}
 
             {/* Passage title above timer */}
-            {hasPassage && (
+            {!passageExpanded && hasPassage && (
               <div className="mb-2 flex items-center justify-center">
                 <span className="text-base font-bold text-[#31318A]">
                   {selectedTitle}
@@ -598,17 +615,21 @@ export default function OralReadingTestPage() {
               </div>
             )}
 
-            <ReadingTimer
-              hasPassage={hasPassage}
-              onStartReading={handleStartReading}
-              hasRecording={hasRecording}
-              recordedSeconds={recordedSeconds}
-              recordedAudioURL={recordedAudioURL}
-              onTryAgain={handleTryAgain}
-              onStartNew={handleStartNew}
-            />
+            {!passageExpanded && (
+              <ReadingTimer
+                hasPassage={hasPassage}
+                onStartReading={handleStartReading}
+                hasRecording={hasRecording}
+                recordedSeconds={recordedSeconds}
+                recordedAudioURL={recordedAudioURL}
+                onTryAgain={handleTryAgain}
+                onStartNew={handleStartNew}
+                audioRef={audioRef}
+              />
+            )}
 
             {/* Countdown Toggle + Readiness Check Button */}
+            {!passageExpanded && (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Timer className="h-4 w-4" style={{ color: "#6666FF" }} />
@@ -656,6 +677,7 @@ export default function OralReadingTestPage() {
 
               <ReadinessCheckButton />
             </div>
+            )}
           </div>
 
           {/* Right column: MiscueAnalysis — responsive width */}

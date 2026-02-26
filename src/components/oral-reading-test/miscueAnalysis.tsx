@@ -86,7 +86,7 @@ export function MiscueAnalysis({
       ) : (
         <>
           {/* Miscue Items List — scrollable if needed on small screens */}
-          <div className="flex flex-1 flex-col overflow-y-auto">
+          <div className="flex flex-1 flex-col">
             {MISCUE_CONFIG.map((item, index) => {
               const isActive = highlightedTypes.has(item.key)
               const count = miscueCounts[item.key] || 0
@@ -113,7 +113,7 @@ export function MiscueAnalysis({
                     {/* Right: label */}
                     <span
                       className="text-sm font-bold"
-                      style={{ color: isActive ? item.textColor : "#31318A" }}
+                      style={{ color: item.textColor }}
                     >
                       {item.label}
                     </span>

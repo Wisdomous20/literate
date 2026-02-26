@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import { Maximize2, Minimize2 } from "lucide-react"
+import { useState, useMemo, useEffect, useRef, useCallback } from "react"
+import { Maximize2, Minimize2, Play, GripHorizontal } from "lucide-react"
 import type { MiscueResult } from "@/types/oral-reading"
 
 const MISCUE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
@@ -18,10 +18,84 @@ const MISCUE_COLORS: Record<string, { bg: string; text: string; border: string }
 interface PassageDisplayProps {
   content: string
   miscues?: MiscueResult[]
+  onJumpToTime?: (timestamp: number) => void
+  expanded?: boolean
+  onToggleExpand?: () => void
 }
 
-export function PassageDisplay({ content, miscues }: PassageDisplayProps) {
-  const [expanded, setExpanded] = useState(false)
+interface PopupState {
+  miscue: MiscueResult
+  x: number
+  y: number
+  flipped: boolean
+}
+
+export function PassageDisplay({ content, miscues, onJumpToTime, expanded, onToggleExpand }: PassageDisplayProps) {
+  const [popup, setPopup] = useState<PopupState | null>(null)
+  const popupRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const outerRef = useRef<HTMLDivElement>(null)
+
+  // Drag-to-resize state
+  const [dragHeight, setDragHeight] = useState<number | null>(null)
+  const isDragging = useRef(false)
+  const dragStartY = useRef(0)
+  const dragStartH = useRef(0)
+
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    isDragging.current = true
+    dragStartY.current = e.clientY
+    dragStartH.current = outerRef.current?.getBoundingClientRect().height ?? 300
+
+    const onMove = (ev: MouseEvent) => {
+      if (!isDragging.current) return
+      const delta = ev.clientY - dragStartY.current
+      setDragHeight(Math.max(120, dragStartH.current + delta))
+    }
+    const onUp = () => {
+      isDragging.current = false
+      document.removeEventListener("mousemove", onMove)
+      document.removeEventListener("mouseup", onUp)
+    }
+    document.addEventListener("mousemove", onMove)
+    document.addEventListener("mouseup", onUp)
+  }, [])
+
+  // Close popup when clicking outside
+  useEffect(() => {
+    if (!popup) return
+    function handleClickOutside(e: MouseEvent) {
+      if (popupRef.current && !popupRef.current.contains(e.target as Node)) {
+        setPopup(null)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [popup])
+
+  // Auto-scroll container so the popup is fully visible
+  useEffect(() => {
+    if (!popup) return
+    // Wait a frame so the popup DOM has rendered and has its final size
+    const raf = requestAnimationFrame(() => {
+      const popupEl = popupRef.current
+      const container = containerRef.current
+      if (!popupEl || !container) return
+      const popupRect = popupEl.getBoundingClientRect()
+      const containerRect = container.getBoundingClientRect()
+
+      // If popup top is above the visible container area, scroll up
+      if (popupRect.top < containerRect.top) {
+        container.scrollBy({ top: popupRect.top - containerRect.top - 16, behavior: "smooth" })
+      }
+      // If popup bottom is below the visible container area, scroll down
+      if (popupRect.bottom > containerRect.bottom) {
+        container.scrollBy({ top: popupRect.bottom - containerRect.bottom + 16, behavior: "smooth" })
+      }
+    })
+    return () => cancelAnimationFrame(raf)
+  }, [popup])
 
   // Build a map from wordIndex → miscue type for O(1) lookup
   const miscueMap = useMemo(() => {
@@ -57,16 +131,37 @@ export function PassageDisplay({ content, miscues }: PassageDisplayProps) {
       const miscue = miscueMap?.get(currentWordIndex)
       if (miscue) {
         const colors = MISCUE_COLORS[miscue.miscueType]
+        const hasTimestamp = miscue.timestamp !== null && miscue.timestamp !== undefined
         return (
           <span
             key={i}
-            title={`${miscue.miscueType.replace(/_/g, " ")}${miscue.spokenWord ? ` — spoken: "${miscue.spokenWord}"` : ""}`}
-            className="relative inline-block cursor-help rounded-sm px-[2px] transition-all"
+            title={`${miscue.miscueType.replace(/_/g, " ")}${miscue.spokenWord ? ` — spoken: "${miscue.spokenWord}"` : ""}${hasTimestamp ? " (click to jump)" : ""}`}
+            className={`relative inline-block rounded-sm px-[2px] transition-all ${hasTimestamp && onJumpToTime ? "cursor-pointer hover:brightness-90" : "cursor-help"}`}
             style={{
               backgroundColor: colors?.bg,
               color: colors?.text,
               borderBottom: `2px solid ${colors?.border}`,
               fontWeight: 600,
+            }}
+            onClick={(e) => {
+              if (!hasTimestamp || !onJumpToTime) return
+              const rect = (e.target as HTMLElement).getBoundingClientRect()
+              const container = containerRef.current
+              if (!container) return
+              const containerRect = container.getBoundingClientRect()
+              const xPos = rect.left - containerRect.left + rect.width / 2 + container.scrollLeft
+              const yAbove = rect.top - containerRect.top + container.scrollTop - 4
+              const yBelow = rect.bottom - containerRect.top + container.scrollTop + 4
+              // Flip below if the word is too close to the top of the visible area
+              // (popup ~90px tall, need that much room above)
+              const spaceAbove = rect.top - containerRect.top
+              const flip = spaceAbove < 95
+              setPopup({
+                miscue,
+                x: xPos,
+                y: flip ? yBelow : yAbove,
+                flipped: flip,
+              })
             }}
           >
             {token}
@@ -77,13 +172,30 @@ export function PassageDisplay({ content, miscues }: PassageDisplayProps) {
     })
   }
 
+  const formatTimestamp = (secs: number) => {
+    const m = Math.floor(secs / 60)
+    const s = Math.floor(secs % 60)
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`
+  }
+
+  // Reset drag height when toggling expand
+  useEffect(() => {
+    if (expanded) setDragHeight(null)
+  }, [expanded])
+
   return (
     <div
+      ref={outerRef}
       className="relative flex flex-col"
-      style={{ height: expanded ? "clamp(300px, 60vh, 600px)" : "100%" }}
+      style={{
+        height: expanded ? "100%" : dragHeight ? `${dragHeight}px` : "100%",
+        flex: dragHeight && !expanded ? "none" : "1 1 0%",
+        minHeight: 120,
+      }}
     >
       <div
-        className="flex-1 overflow-auto p-4 md:p-5"
+        ref={containerRef}
+        className="relative flex-1 overflow-auto p-4 md:p-5"
         style={{
           background: "#EFFDFF",
           border: "1px solid #54A4FF",
@@ -92,9 +204,9 @@ export function PassageDisplay({ content, miscues }: PassageDisplayProps) {
         }}
       >
         {/* Expand / Collapse button */}
-        {content && (
+        {content && onToggleExpand && (
           <button
-            onClick={() => setExpanded((prev) => !prev)}
+            onClick={onToggleExpand}
             className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:opacity-80"
             style={{ background: "rgba(84, 164, 255, 0.15)" }}
             title={expanded ? "Collapse passage" : "Expand passage"}
@@ -118,7 +230,87 @@ export function PassageDisplay({ content, miscues }: PassageDisplayProps) {
             </p>
           </div>
         )}
+
+        {/* Jump-to-word popup */}
+        {popup && popup.miscue.timestamp !== null && (
+          <div
+            ref={popupRef}
+            className={`absolute z-30 flex items-center ${popup.flipped ? "flex-col-reverse" : "flex-col"}`}
+            style={{
+              left: popup.x,
+              top: popup.y,
+              transform: popup.flipped ? "translate(-50%, 0%)" : "translate(-50%, -100%)",
+            }}
+          >
+            {/* Arrow pointer — above or below depending on flip */}
+            {popup.flipped && (
+              <div
+                className="h-0 w-0"
+                style={{
+                  borderLeft: "6px solid transparent",
+                  borderRight: "6px solid transparent",
+                  borderBottom: `6px solid ${MISCUE_COLORS[popup.miscue.miscueType]?.border || "#DAE6FF"}`,
+                }}
+              />
+            )}
+            <div
+              className="rounded-lg border px-3 py-2 shadow-lg"
+              style={{
+                background: "#FFFFFF",
+                borderColor: MISCUE_COLORS[popup.miscue.miscueType]?.border || "#DAE6FF",
+                boxShadow: "0 4px 16px rgba(0, 0, 0, 0.12)",
+              }}
+            >
+              <div className="mb-1.5 text-center">
+                <span
+                  className="text-[10px] font-bold uppercase tracking-wide"
+                  style={{ color: MISCUE_COLORS[popup.miscue.miscueType]?.text }}
+                >
+                  {popup.miscue.miscueType.replace(/_/g, " ")}
+                </span>
+                {popup.miscue.spokenWord && (
+                  <div className="text-[10px] text-[#31318A]/70">
+                    Spoken: &ldquo;{popup.miscue.spokenWord}&rdquo;
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => {
+                  onJumpToTime?.(popup.miscue.timestamp!)
+                  setPopup(null)
+                }}
+                className="flex w-full items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:brightness-110"
+                style={{ background: "#6666FF" }}
+              >
+                <Play className="h-3 w-3" />
+                Jump to Word ({formatTimestamp(popup.miscue.timestamp!)})
+              </button>
+            </div>
+            {/* Arrow pointer — bottom (default, non-flipped) */}
+            {!popup.flipped && (
+              <div
+                className="h-0 w-0"
+                style={{
+                  borderLeft: "6px solid transparent",
+                  borderRight: "6px solid transparent",
+                  borderTop: `6px solid ${MISCUE_COLORS[popup.miscue.miscueType]?.border || "#DAE6FF"}`,
+                }}
+              />
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Drag handle to resize passage height (hidden when expanded) */}
+      {!expanded && (
+        <div
+          onMouseDown={handleDragStart}
+          className="flex h-4 cursor-row-resize items-center justify-center opacity-40 transition-opacity hover:opacity-80"
+          title="Drag to resize"
+        >
+          <GripHorizontal className="h-4 w-4" style={{ color: "#54A4FF" }} />
+        </div>
+      )}
     </div>
   )
 }
