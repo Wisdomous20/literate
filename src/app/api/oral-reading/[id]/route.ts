@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server"
-import { createAssessmentService } from "@/service/assessment/createAssessmentService"
-import { createOralReadingSessionService } from "@/service/oral-reading/createOralReadingSessionService"
+import { NextRequest, NextResponse } from "next/server";
+import { createAssessmentService } from "@/service/assessment/createAssessmentService";
+import { createOralFluencySessionService } from "@/service/oral-fluency/createOralFluencySessionService";
 
 function serializeError(err: unknown): string {
   if (err instanceof Error) {
@@ -21,45 +21,48 @@ export const config = {
 
 export const maxDuration = 60;
 
+// POST /api/oral-reading/[id] — Step 1: Submit fluency audio
+// Creates 1 ORAL_READING assessment, then creates OralFluencySession under it.
+// Returns assessmentId so the client can later submit comprehension answers against the same assessment.
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData()
-    const studentId = formData.get("studentId") as string
-    const passageId = formData.get("passageId") as string
-    const audioFile = formData.get("audio") as File
-    const audioUrl = (formData.get("audioUrl") as string) || ""
+    const formData = await request.formData();
+    const studentId = formData.get("studentId") as string;
+    const passageId = formData.get("passageId") as string;
+    const audioFile = formData.get("audio") as File;
+    const audioUrl = (formData.get("audioUrl") as string) || "";
 
     if (!studentId || !passageId || !audioFile) {
       return NextResponse.json(
         { error: "studentId, passageId, and audio file are required" },
-        { status: 400 }
-      )
+        { status: 400 },
+      );
     }
 
-    // 1. Create assessment FIRST
+    // 1. Create assessment FIRST (type: ORAL_READING covers both fluency + comprehension)
     const assessmentResult = await createAssessmentService({
       studentId,
       passageId,
       type: "ORAL_READING",
-    })
+    });
 
     if (!assessmentResult.success || !assessmentResult.assessment) {
       return NextResponse.json(
         { error: assessmentResult.error || "Failed to create assessment" },
-        { status: 400 }
-      )
+        { status: 400 },
+      );
     }
 
-    // 2. Then create oral reading session with assessmentId
-    const arrayBuffer = await audioFile.arrayBuffer()
-    const audioBuffer = Buffer.from(arrayBuffer)
+    // 2. Create oral fluency session under this assessment
+    const arrayBuffer = await audioFile.arrayBuffer();
+    const audioBuffer = Buffer.from(arrayBuffer);
 
-    const result = await createOralReadingSessionService({
+    const result = await createOralFluencySessionService({
       assessmentId: assessmentResult.assessment.id,
       audioBuffer,
       fileName: audioFile.name || "recording.webm",
       audioUrl,
-    })
+    });
 
     if (!result.success) {
       const statusMap: Record<string, number> = {
@@ -67,13 +70,17 @@ export async function POST(request: NextRequest) {
         NOT_FOUND: 404,
         ANALYSIS_FAILED: 500,
         INTERNAL_ERROR: 500,
-      }
-      const status = result.code ? statusMap[result.code] ?? 500 : 500
+      };
+      const status = result.code ? (statusMap[result.code] ?? 500) : 500;
 
       return NextResponse.json(
-        { error: result.error || "Failed to create session" },
-        { status }
-      )
+        {
+          error: result.error || "Failed to create session",
+          sessionId: result.sessionId,
+          assessmentId: assessmentResult.assessment.id,
+        },
+        { status },
+      );
     }
 
     return NextResponse.json(
@@ -83,14 +90,11 @@ export async function POST(request: NextRequest) {
         status: "COMPLETED",
         analysis: result.analysis,
       },
-      { status: 201 }
-    )
+      { status: 201 },
+    );
   } catch (error) {
     const errorMsg = serializeError(error);
-    console.error("Error creating session:", errorMsg, error);
-    return NextResponse.json(
-      { error: errorMsg },
-      { status: 500 }
-    )
+    console.error("Error creating oral reading session:", errorMsg, error);
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }

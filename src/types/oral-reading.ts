@@ -60,7 +60,7 @@ export interface AlignedWord {
   match: "EXACT" | "MISMATCH" | "OMISSION" | "INSERTION";
 }
 
-export interface OralReadingAnalysis {
+export interface OralFluencyAnalysis {
   transcript: string;
   wordsPerMinute: number;
   accuracy: number;

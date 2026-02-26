@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createAssessmentService } from "@/service/assessment/createAssessmentService"
-import { createOralReadingSessionService } from "@/service/oral-reading/createOralReadingSessionService"
-
+import { createOralFluencySessionService } from "@/service/oral-fluency/createOralFluencySessionService"
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
@@ -35,7 +34,7 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await audioFile.arrayBuffer()
     const audioBuffer = Buffer.from(arrayBuffer)
 
-    const result = await createOralReadingSessionService({
+    const result = await createOralFluencySessionService({
       assessmentId: assessmentResult.assessment.id,
       audioBuffer,
       fileName: audioFile.name || "recording.webm",
