@@ -389,12 +389,11 @@ export function FullScreenPassage({
             <X className="h-6 w-6" style={{ color: "#7A7AFB" }} />
           </button>
 
-          {/* Top-left indicators: Recording + Feature badges */}
+          {/* Top-left indicators: Recording + feature badges */}
           <div
-            className="absolute left-4 top-4 z-10 flex flex-col gap-2 transition-opacity duration-500 md:left-6 md:top-6"
+            className="absolute left-4 top-4 z-10 flex items-center gap-3 transition-opacity duration-500 md:left-6 md:top-6"
             style={{ opacity: showOverlayUI ? 1 : 0 }}
           >
-            {/* Recording indicator */}
             <div className="flex items-center gap-2">
               <span className="relative flex h-3 w-3">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
@@ -402,34 +401,30 @@ export function FullScreenPassage({
               </span>
               <span className="text-xs font-medium text-red-500">Recording</span>
             </div>
-
-            {/* Auto Scroll badge */}
             {autoScrollEnabled && (
               <div
-                className="flex items-center gap-1.5 rounded-full px-2.5 py-1"
+                className="flex items-center gap-1 rounded-full px-2 py-0.5"
                 style={{
-                  background: "rgba(102, 102, 255, 0.10)",
-                  border: "1px solid rgba(102, 102, 255, 0.3)",
+                  background: "rgba(102, 102, 255, 0.08)",
+                  border: "1px solid rgba(102, 102, 255, 0.25)",
                 }}
               >
-                <ArrowDownToLine className="h-3 w-3" style={{ color: "#6666FF" }} />
-                <span className="text-[11px] font-medium" style={{ color: "#6666FF" }}>
+                <ArrowDownToLine className="h-2.5 w-2.5" style={{ color: "#6666FF" }} />
+                <span className="text-[10px] font-medium" style={{ color: "#6666FF" }}>
                   Auto Scroll
                 </span>
               </div>
             )}
-
-            {/* Auto Finish badge */}
             {autoFinishEnabled && (
               <div
-                className="flex items-center gap-1.5 rounded-full px-2.5 py-1"
+                className="flex items-center gap-1 rounded-full px-2 py-0.5"
                 style={{
-                  background: "rgba(34, 197, 94, 0.10)",
-                  border: "1px solid rgba(34, 197, 94, 0.3)",
+                  background: "rgba(34, 197, 94, 0.08)",
+                  border: "1px solid rgba(34, 197, 94, 0.25)",
                 }}
               >
-                <CircleCheckBig className="h-3 w-3" style={{ color: "#16a34a" }} />
-                <span className="text-[11px] font-medium" style={{ color: "#16a34a" }}>
+                <CircleCheckBig className="h-2.5 w-2.5" style={{ color: "#16a34a" }} />
+                <span className="text-[10px] font-medium" style={{ color: "#16a34a" }}>
                   Auto Finish
                 </span>
               </div>
@@ -446,7 +441,7 @@ export function FullScreenPassage({
           />
 
           {/* Passage Content */}
-          <div className="flex flex-1 flex-col overflow-auto px-6 pt-20 md:px-12 md:pt-24 lg:px-16 lg:pt-28">
+          <div className="flex flex-1 flex-col overflow-auto px-6 pt-14 md:px-12 md:pt-16 lg:px-16 lg:pt-20">
             <p
               className="whitespace-pre-wrap text-lg leading-[2.2] md:text-xl md:leading-[2.3] lg:text-[22px] lg:leading-[2.4]"
               style={{

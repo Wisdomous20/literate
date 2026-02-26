@@ -205,6 +205,22 @@ export function PassageDisplay({ content, miscues, onJumpToTime, expanded, onTog
         minHeight: 120,
       }}
     >
+      {/* Expand / Collapse button — fixed above scroll */}
+      {content && onToggleExpand && (
+        <button
+          onClick={onToggleExpand}
+          className="absolute right-4 top-4 z-20 flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:opacity-80 md:right-5 md:top-5"
+          style={{ background: "rgba(84, 164, 255, 0.15)" }}
+          title={expanded ? "Collapse passage" : "Expand passage"}
+        >
+          {expanded ? (
+            <Minimize2 className="h-3.5 w-3.5" style={{ color: "#1A5FB4" }} />
+          ) : (
+            <Maximize2 className="h-3.5 w-3.5" style={{ color: "#1A5FB4" }} />
+          )}
+        </button>
+      )}
+
       <div
         ref={containerRef}
         className="oral-reading-scroll relative flex-1 overflow-auto p-4 md:p-5"
@@ -215,22 +231,6 @@ export function PassageDisplay({ content, miscues, onJumpToTime, expanded, onTog
           borderRadius: "10px",
         }}
       >
-        {/* Expand / Collapse button */}
-        {content && onToggleExpand && (
-          <button
-            onClick={onToggleExpand}
-            className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:opacity-80"
-            style={{ background: "rgba(84, 164, 255, 0.15)" }}
-            title={expanded ? "Collapse passage" : "Expand passage"}
-          >
-            {expanded ? (
-              <Minimize2 className="h-3.5 w-3.5" style={{ color: "#1A5FB4" }} />
-            ) : (
-              <Maximize2 className="h-3.5 w-3.5" style={{ color: "#1A5FB4" }} />
-            )}
-          </button>
-        )}
-
         {content ? (
           <p className="whitespace-pre-wrap text-sm leading-relaxed text-[#00306E] lg:text-base lg:leading-relaxed">
             {hasMiscues ? renderHighlightedContent() : content}
