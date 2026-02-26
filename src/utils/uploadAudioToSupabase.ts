@@ -1,4 +1,4 @@
-import { uploadAudioToSupabase as uploadAudioAction } from "@/app/actions/oral-reading/uploadAudioToSupabase"
+import { uploadAudioToSupabase as uploadAudioAction } from "@/app/actions/oral-fluency/uploadAudioToSupabase"
 
 export async function uploadAudioToSupabase(
   audioBlob: Blob,
@@ -7,7 +7,7 @@ export async function uploadAudioToSupabase(
 ): Promise<string | null> {
   try {
     const timestamp = Date.now()
-    const filePath = `oral-reading/${studentId}-${passageId}-${timestamp}.webm`
+    const filePath = `oral-fluency/${studentId}-${passageId}-${timestamp}.webm`
 
     const formData = new FormData()
     formData.append("file", new File([audioBlob], `${timestamp}.webm`, { type: audioBlob.type || "audio/webm" }))
