@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import { analyzeOralReading } from "./analysisService"
+import { analyzeOralFluency } from "./analysisService"
 import { OralReadingAnalysis } from "@/types/oral-reading"
 
 interface CreateOralReadingInput {

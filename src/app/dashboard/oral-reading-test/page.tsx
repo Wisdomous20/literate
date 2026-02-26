@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect, useRef } from "react"
+import { useState, useCallback, useEffect, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { ChevronLeft, ChevronRight, Timer, Minus, Plus, CheckCircle, XCircle, X } from "lucide-react"
 import { DashboardHeader } from "@/components/auth/dashboard/dashboardHeader"
@@ -14,6 +14,7 @@ import { AddPassageModal } from "@/components/oral-reading-test/addPassageModal"
 import { getClassListBySchoolYear } from "@/app/actions/class/getClassList"
 import { ReadinessCheckButton } from "@/components/oral-reading-test/readinessCheck"
 import { createStudent } from "@/app/actions/student/createStudent"
+import type { OralFluencyAnalysis } from "@/types/oral-reading"
 
 // Helper to get current school year
 function getCurrentSchoolYear(): string {
@@ -51,6 +52,8 @@ interface SessionState {
   countdownSeconds: number
   hasRecording: boolean
   recordedSeconds: number
+  analysisResult?: OralFluencyAnalysis | null
+  sessionId?: string
 }
 
 function loadSession(): Partial<SessionState> {
@@ -118,6 +121,28 @@ export default function OralReadingTestPage() {
   const [selectedClassName, setSelectedClassName] = useState<string>("")
   const [isHydrated, setIsHydrated] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
+  const [analysisResult, setAnalysisResult] = useState<OralFluencyAnalysis | null>(null)
+  const [sessionId, setSessionId] = useState<string>("")
+  const [highlightedTypes, setHighlightedTypes] = useState<Set<string>>(new Set())
+
+  const toggleHighlightType = useCallback((miscueType: string) => {
+    setHighlightedTypes((prev) => {
+      const next = new Set(prev)
+      if (next.has(miscueType)) {
+        next.delete(miscueType)
+      } else {
+        next.add(miscueType)
+      }
+      return next
+    })
+  }, [])
+
+  // Filter miscues for passage display based on highlighted types
+  const filteredMiscues = useMemo(() => {
+    if (!analysisResult?.miscues) return undefined
+    if (highlightedTypes.size === 0) return analysisResult.miscues
+    return analysisResult.miscues.filter((m) => highlightedTypes.has(m.miscueType))
+  }, [analysisResult?.miscues, highlightedTypes])
 
   // Restore session from sessionStorage AFTER hydration (avoids SSR mismatch)
   useEffect(() => {
@@ -137,6 +162,8 @@ export default function OralReadingTestPage() {
     if (loaded.countdownSeconds !== undefined) setCountdownSeconds(loaded.countdownSeconds)
     if (loaded.hasRecording !== undefined) setHasRecording(loaded.hasRecording)
     if (loaded.recordedSeconds !== undefined) setRecordedSeconds(loaded.recordedSeconds)
+    if (loaded.analysisResult) setAnalysisResult(loaded.analysisResult)
+    if (loaded.sessionId) setSessionId(loaded.sessionId)
 
     // Restore audio blob
     try {
@@ -196,6 +223,8 @@ export default function OralReadingTestPage() {
       countdownSeconds,
       hasRecording,
       recordedSeconds,
+      analysisResult,
+      sessionId,
     })
   }, [
     isHydrated,
@@ -213,6 +242,8 @@ export default function OralReadingTestPage() {
     countdownSeconds,
     hasRecording,
     recordedSeconds,
+    analysisResult,
+    sessionId,
   ])
 
   // Fetch classes on mount
@@ -257,6 +288,8 @@ export default function OralReadingTestPage() {
     setHasRecording(false)
     setRecordedSeconds(0)
     setRecordedAudioBlob(null)
+    setAnalysisResult(null)
+    setSessionId("")
     if (recordedAudioURL) {
       URL.revokeObjectURL(recordedAudioURL)
       setRecordedAudioURL(null)
@@ -308,6 +341,8 @@ export default function OralReadingTestPage() {
   const handleTryAgain = useCallback(() => {
     setHasRecording(false)
     setRecordedSeconds(0)
+    setAnalysisResult(null)
+    setSessionId("")
     if (recordedAudioURL) {
       URL.revokeObjectURL(recordedAudioURL)
       setRecordedAudioURL(null)
@@ -336,6 +371,8 @@ export default function OralReadingTestPage() {
     setRecordedAudioBlob(null)
     setCountdownEnabled(true)
     setCountdownSeconds(3)
+    setAnalysisResult(null)
+    setSessionId("")
     // Clear sessionStorage
     sessionStorage.removeItem(STORAGE_KEY)
     sessionStorage.removeItem(AUDIO_STORAGE_KEY)
@@ -408,6 +445,15 @@ export default function OralReadingTestPage() {
       }
 
       console.log("Session created:", result.sessionId)
+
+      // Store analysis result for MiscueAnalysis and report
+      if (result.analysis) {
+        setAnalysisResult(result.analysis as OralFluencyAnalysis)
+      }
+      if (result.sessionId) {
+        setSessionId(result.sessionId)
+      }
+
       setToast({ message: "Reading Fluency Session Successful!", type: "success" })
     } catch (err) {
       console.error("Submit error:", err)
@@ -531,7 +577,7 @@ export default function OralReadingTestPage() {
             />
 
             <div className="min-h-0 flex-1">
-              <PassageDisplay content={passageContent} />
+              <PassageDisplay content={passageContent} miscues={filteredMiscues} />
             </div>
 
             {/* Word count under passage display */}
@@ -614,7 +660,16 @@ export default function OralReadingTestPage() {
 
           {/* Right column: MiscueAnalysis — responsive width */}
           <div className="w-[240px] shrink-0 self-stretch md:w-[270px] lg:w-[300px] xl:w-[320px]">
-            <MiscueAnalysis disabled={!hasRecording} />
+            <MiscueAnalysis
+              disabled={!hasRecording}
+              isAnalyzing={isSubmitting}
+              miscues={analysisResult?.miscues}
+              totalMiscue={analysisResult?.totalMiscues}
+              oralFluencyScore={analysisResult?.oralFluencyScore}
+              classificationLevel={analysisResult?.classificationLevel}
+              highlightedTypes={highlightedTypes}
+              onToggleHighlight={toggleHighlightType}
+            />
           </div>
         </div>
       </main>
