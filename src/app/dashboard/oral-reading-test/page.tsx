@@ -485,6 +485,7 @@ export default function OralReadingTestPage() {
     return (
       <FullScreenPassage
         content={passageContent}
+        passageTitle={selectedTitle}
         onDone={handleFullScreenDone}
         onClose={handleFullScreenClose}
         countdownEnabled={countdownEnabled}
@@ -496,7 +497,7 @@ export default function OralReadingTestPage() {
   const classNames = classes.map(c => c.name)
 
   return (
-    <div className="oral-reading-scroll flex h-screen flex-col overflow-hidden">
+    <div className="flex h-screen flex-col overflow-hidden">
       <DashboardHeader title="Oral Reading Test" />
 
       {/* Toast notification — fixed upper right */}
@@ -562,7 +563,7 @@ export default function OralReadingTestPage() {
         {/* Two-column layout: left content + right MiscueAnalysis */}
         <div className="flex min-h-0 flex-1 gap-4">
           {/* Left column: student info, filters, passage, timer */}
-          <div className={`flex min-h-0 flex-1 flex-col overflow-y-auto scroll-outer ${passageExpanded ? "gap-0" : "gap-3"}`}>
+          <div className={`flex min-h-0 flex-1 flex-col overflow-y-auto ${passageExpanded ? "gap-0" : "gap-3"}`}>
             {!passageExpanded && !isLoadingClasses && (
               <StudentInfoBar
                 studentName={studentName}
@@ -609,7 +610,7 @@ export default function OralReadingTestPage() {
             {/* Passage title above timer */}
             {!passageExpanded && hasPassage && (
               <div className="mb-2 flex items-center justify-center">
-                <span className="text-base font-bold text-[#31318A]">
+                <span className="text-lg font-bold text-[#31318A] md:text-xl">
                   {selectedTitle}
                 </span>
               </div>

@@ -28,6 +28,7 @@ interface PopupState {
   x: number
   y: number
   flipped: boolean
+  hAlign: "center" | "left" | "right"
 }
 
 export function PassageDisplay({ content, miscues, onJumpToTime, expanded, onToggleExpand }: PassageDisplayProps) {
@@ -152,15 +153,26 @@ export function PassageDisplay({ content, miscues, onJumpToTime, expanded, onTog
               const xPos = rect.left - containerRect.left + rect.width / 2 + container.scrollLeft
               const yAbove = rect.top - containerRect.top + container.scrollTop - 4
               const yBelow = rect.bottom - containerRect.top + container.scrollTop + 4
-              // Flip below if the word is too close to the top of the visible area
-              // (popup ~90px tall, need that much room above)
               const spaceAbove = rect.top - containerRect.top
               const flip = spaceAbove < 95
+
+              // Horizontal alignment: popup is ~180px wide
+              const popupHalfWidth = 90
+              const spaceLeft = rect.left - containerRect.left + rect.width / 2
+              const spaceRight = containerRect.right - rect.left - rect.width / 2
+              let hAlign: "center" | "left" | "right" = "center"
+              if (spaceLeft < popupHalfWidth) {
+                hAlign = "left"
+              } else if (spaceRight < popupHalfWidth) {
+                hAlign = "right"
+              }
+
               setPopup({
                 miscue,
                 x: xPos,
                 y: flip ? yBelow : yAbove,
                 flipped: flip,
+                hAlign,
               })
             }}
           >
@@ -195,7 +207,7 @@ export function PassageDisplay({ content, miscues, onJumpToTime, expanded, onTog
     >
       <div
         ref={containerRef}
-        className="relative flex-1 overflow-auto p-4 md:p-5"
+        className="oral-reading-scroll relative flex-1 overflow-auto p-4 md:p-5"
         style={{
           background: "#EFFDFF",
           border: "1px solid #54A4FF",
@@ -232,20 +244,27 @@ export function PassageDisplay({ content, miscues, onJumpToTime, expanded, onTog
         )}
 
         {/* Jump-to-word popup */}
-        {popup && popup.miscue.timestamp !== null && (
+        {popup && popup.miscue.timestamp !== null && (() => {
+          const hTranslate =
+            popup.hAlign === "left" ? "0%" : popup.hAlign === "right" ? "-100%" : "-50%"
+          const vTranslate = popup.flipped ? "0%" : "-100%"
+          const arrowAlign =
+            popup.hAlign === "left" ? "ml-4" : popup.hAlign === "right" ? "mr-4 self-end" : "self-center"
+
+          return (
           <div
             ref={popupRef}
-            className={`absolute z-30 flex items-center ${popup.flipped ? "flex-col-reverse" : "flex-col"}`}
+            className={`absolute z-30 flex ${popup.flipped ? "flex-col-reverse" : "flex-col"}`}
             style={{
               left: popup.x,
               top: popup.y,
-              transform: popup.flipped ? "translate(-50%, 0%)" : "translate(-50%, -100%)",
+              transform: `translate(${hTranslate}, ${vTranslate})`,
             }}
           >
-            {/* Arrow pointer — above or below depending on flip */}
+            {/* Arrow pointer — above (flipped) */}
             {popup.flipped && (
               <div
-                className="h-0 w-0"
+                className={`h-0 w-0 ${arrowAlign}`}
                 style={{
                   borderLeft: "6px solid transparent",
                   borderRight: "6px solid transparent",
@@ -286,10 +305,10 @@ export function PassageDisplay({ content, miscues, onJumpToTime, expanded, onTog
                 Jump to Word ({formatTimestamp(popup.miscue.timestamp!)})
               </button>
             </div>
-            {/* Arrow pointer — bottom (default, non-flipped) */}
+            {/* Arrow pointer — below (default) */}
             {!popup.flipped && (
               <div
-                className="h-0 w-0"
+                className={`h-0 w-0 ${arrowAlign}`}
                 style={{
                   borderLeft: "6px solid transparent",
                   borderRight: "6px solid transparent",
@@ -298,7 +317,8 @@ export function PassageDisplay({ content, miscues, onJumpToTime, expanded, onTog
               />
             )}
           </div>
-        )}
+          )
+        })()}
       </div>
 
       {/* Drag handle to resize passage height (hidden when expanded) */}

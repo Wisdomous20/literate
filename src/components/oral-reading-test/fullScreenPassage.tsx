@@ -366,27 +366,7 @@ export function FullScreenPassage({
       style={{ background: "#E4F4FF" }}
       onMouseMove={handleMouseMove}
     >
-      {/* Toast Notifications */}
-      <div className="fixed top-6 left-1/2 z-[60] flex -translate-x-1/2 flex-col items-center gap-2">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className="animate-in slide-in-from-top-2 fade-in flex items-center gap-2 rounded-full px-4 py-2 shadow-lg backdrop-blur-sm"
-            style={{
-              background: "rgba(102, 102, 255, 0.9)",
-              color: "#FFFFFF",
-              animation: "toast-enter 0.3s ease-out, toast-exit 0.4s ease-in 2.6s forwards",
-            }}
-          >
-            {toast.icon === "scroll" ? (
-              <ArrowDownToLine className="h-4 w-4" />
-            ) : (
-              <CircleCheckBig className="h-4 w-4" />
-            )}
-            <span className="text-sm font-medium">{toast.label}</span>
-          </div>
-        ))}
-      </div>
+      {/* Toast Notifications — removed */}
 
       {/* Passage Card */}
       <div className="flex min-h-0 flex-1 flex-col items-center px-4 pt-4 pb-2 md:px-6 md:pt-6 md:pb-3 lg:px-8 lg:pt-8 lg:pb-4">
@@ -466,12 +446,11 @@ export function FullScreenPassage({
           />
 
           {/* Passage Content */}
-          <div className="flex flex-1 flex-col items-center overflow-auto px-6 pt-14 md:px-12 md:pt-16 lg:px-16 lg:pt-20">
+          <div className="flex flex-1 flex-col overflow-auto px-6 pt-20 md:px-12 md:pt-24 lg:px-16 lg:pt-28">
             <p
-              className="text-center text-lg leading-[2.2] md:text-xl md:leading-[2.3] lg:text-[22px] lg:leading-[2.4]"
+              className="whitespace-pre-wrap text-lg leading-[2.2] md:text-xl md:leading-[2.3] lg:text-[22px] lg:leading-[2.4]"
               style={{
                 color: "#00306E",
-                maxWidth: "min(680px, 90%)",
                 fontFamily: "Georgia, 'Times New Roman', serif",
                 letterSpacing: "0.01em",
                 wordSpacing: "0.05em",
@@ -502,7 +481,7 @@ export function FullScreenPassage({
 
       {/* Bottom Controls — ALWAYS visible */}
       <div className="shrink-0 flex flex-col items-center gap-1 px-4 pb-3 pt-1 md:gap-1.5 md:px-8 md:pb-5 md:pt-2">
-        <span className="text-sm font-medium md:text-base" style={{ color: "#00306E" }}>
+        <span className="text-base font-semibold md:text-lg" style={{ color: "#00306E" }}>
           {passageTitle}
         </span>
 
