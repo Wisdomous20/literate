@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 
-export async function getOralReadingMiscues(sessionId: string) {
-  const miscues = await prisma.oralReadingMiscue.findMany({
+export async function getOralFluencyMiscues(sessionId: string) {
+  const miscues = await prisma.oralFluencyMiscue.findMany({
     where: { sessionId },
     orderBy: { wordIndex: "asc" },
   });

@@ -17,7 +17,7 @@ interface CreateOralReadingResult {
   code?: "VALIDATION_ERROR" | "NOT_FOUND" | "ANALYSIS_FAILED" | "INTERNAL_ERROR"
 }
 
-export async function createOralReadingSessionService(
+export async function createOralFluencySessionService(
   input: CreateOralReadingInput
 ): Promise<CreateOralReadingResult> {
   const { assessmentId, audioBuffer, fileName, audioUrl } = input
@@ -53,7 +53,7 @@ export async function createOralReadingSessionService(
   }
 
   // 2. Create session (linked to existing assessment)
-  const session = await prisma.oralReadingSession.create({
+  const session = await prisma.oralFluencySession.create({
     data: {
       assessmentId: assessment.id,
       audioUrl,
@@ -63,7 +63,7 @@ export async function createOralReadingSessionService(
 
   // 3. Run analysis
   try {
-    const analysis = await analyzeOralReading(
+    const analysis = await analyzeOralFluency(
       audioBuffer,
       fileName,
       assessment.passage.content,
@@ -72,7 +72,7 @@ export async function createOralReadingSessionService(
 
     // 4. Persist results in transaction
     await prisma.$transaction(async (tx) => {
-      await tx.oralReadingSession.update({
+      await tx.oralFluencySession.update({
         where: { id: session.id },
         data: {
         transcript: analysis.transcript,
@@ -103,7 +103,7 @@ export async function createOralReadingSessionService(
       }
 
       if (analysis.miscues.length > 0) {
-        await tx.oralReadingMiscue.createMany({
+        await tx.oralFluencyMiscue.createMany({
           data: analysis.miscues.map((m) => ({
             sessionId: session.id,
             miscueType: m.miscueType,
@@ -117,7 +117,7 @@ export async function createOralReadingSessionService(
       }
 
       if (analysis.behaviors.length > 0) {
-        await tx.oralReadingBehavior.createMany({
+        await tx.oralFluencyBehavior.createMany({
           data: analysis.behaviors.map((b) => ({
             sessionId: session.id,
             behaviorType: b.behaviorType,
@@ -133,7 +133,7 @@ export async function createOralReadingSessionService(
 
     return { success: true, sessionId: session.id, analysis }
   } catch (error) {
-    await prisma.oralReadingSession.update({
+    await prisma.oralFluencySession.update({
       where: { id: session.id },
       data: { status: "FAILED" },
     })
