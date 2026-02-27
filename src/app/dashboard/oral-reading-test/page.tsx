@@ -366,6 +366,9 @@ export default function OralReadingTestPage() {
     // Clear sessionStorage
     sessionStorage.removeItem(STORAGE_KEY)
     sessionStorage.removeItem(AUDIO_STORAGE_KEY)
+    sessionStorage.removeItem("oral-reading-assessmentId")
+    sessionStorage.removeItem("oral-reading-comprehension-state")
+    sessionStorage.removeItem("oral-reading-comprehensionTestId")
   }, [recordedAudioURL])
 
   // Auto-dismiss toast after 4 seconds

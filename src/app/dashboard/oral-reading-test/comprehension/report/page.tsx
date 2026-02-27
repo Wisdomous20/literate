@@ -8,7 +8,24 @@ import StudentInfoCard from "@/components/reports/oral-reading-test/reading-flue
 import PassageInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/passageInfoCard"
 import ComprehensionMetricCards from "@/components/reports/oral-reading-test/comprehension-report/comprehensionMetricCards"
 import ComprehensionBreakdownReport from "@/components/reports/oral-reading-test/comprehension-report/comprehensionBreakdownReport"
-import { getComprehensionReportAction } from "@/app/actions/comprehension-Test/getComprehensionReport"
+import { getAssessmentByIdAction } from "@/app/actions/assessment/getAssessmentById"
+
+const STORAGE_KEY = "oral-reading-session"
+
+interface SessionState {
+  studentName: string
+  gradeLevel: string
+  selectedClassName: string
+}
+
+function loadSession(): Partial<SessionState> {
+  if (typeof window === "undefined") return {}
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch { /* empty */ }
+  return {}
+}
 
 interface ReportData {
   studentName: string
@@ -43,16 +60,28 @@ export default function ComprehensionReportPage() {
           return
         }
 
-        const result = await getComprehensionReportAction(assessmentId)
-        if (!result.success || !("comprehensionTest" in result) || !result.comprehensionTest) {
-          setError(("error" in result && result.error) || "Failed to load report data.")
+        // Use existing assessment action (follows Action → Service → Prisma architecture)
+        let assessment: Record<string, unknown>
+        try {
+          assessment = await getAssessmentByIdAction(assessmentId) as Record<string, unknown>
+        } catch {
+          setError("Failed to load assessment data.")
           setIsLoading(false)
           return
         }
 
-        const test = result.comprehensionTest
-        const student = test.assessment.student
-        const passage = test.assessment.passage
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const test = (assessment as any)?.comprehension
+        if (!test) {
+          setError("Comprehension test not found for this assessment.")
+          setIsLoading(false)
+          return
+        }
+
+        // Get student info from sessionStorage (same pattern as reading fluency report)
+        const session = loadSession()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const passage = (assessment as any)?.passage
 
         // Compute tag breakdown from answers
         const tagBreakdown = { 
@@ -78,13 +107,14 @@ export default function ComprehensionReportPage() {
         const percentage = test.totalItems > 0 ? Math.round((test.score / test.totalItems) * 100) : 0
 
         setReportData({
-          studentName: student.name,
-          gradeLevel: `Grade ${student.level}`,
-          className: student.class.name,
-          passageTitle: passage.title,
-          passageLevel: String(passage.level),
-          testType: passage.testType,
-          totalWords: passage.content.split(/\s+/).filter(Boolean).length,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          studentName: session.studentName || (assessment as any)?.student?.name || "Unknown",
+          gradeLevel: session.gradeLevel || "Unknown",
+          className: session.selectedClassName || "Unknown",
+          passageTitle: passage?.title || "Unknown",
+          passageLevel: String(passage?.level ?? ""),
+          testType: passage?.testType || "Unknown",
+          totalWords: passage?.content?.split(/\s+/).filter(Boolean).length ?? 0,
           score: test.score,
           totalItems: test.totalItems,
           percentage,

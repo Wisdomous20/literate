@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronDown, Clock, Loader2 } from "lucide-react"
 import { DashboardHeader } from "@/components/auth/dashboard/dashboardHeader"
 import { ComprehensionBreakdown } from "@/components/oral-reading-test/comprehensionBreakdown"
 import { getQuizByPassageAction } from "@/app/actions/comprehension-Test/getQuizByPassage"
-import { getComprehensionReportAction } from "@/app/actions/comprehension-Test/getComprehensionReport"
+import { getAssessmentByIdAction } from "@/app/actions/assessment/getAssessmentById"
 
 const OPTION_LABELS = ["A", "B", "C", "D"]
 const COMP_STORAGE_KEY = "oral-reading-comprehension-state"
@@ -35,6 +35,7 @@ interface ComprehensionResult {
 }
 
 interface ComprehensionState {
+  assessmentId: string
   answers: Record<string, string>
   elapsedSeconds: number
   isSubmitted: boolean
@@ -99,49 +100,61 @@ export default function OralReadingComprehensionPage() {
   useEffect(() => {
     async function fetchQuestions() {
       try {
-        // Restore saved comprehension progress
+        const currentAssessmentId = sessionStorage.getItem("oral-reading-assessmentId")
+
+        // Restore saved comprehension progress only if it belongs to the current assessment
         const saved = loadComprehensionState()
-        if (saved) {
+        if (saved && saved.assessmentId === currentAssessmentId) {
           setAnswers(saved.answers)
           setElapsedSeconds(saved.elapsedSeconds)
           if (saved.isSubmitted && saved.comprehensionResult) {
             setIsSubmitted(true)
             setComprehensionResult(saved.comprehensionResult)
           }
+        } else if (saved && saved.assessmentId !== currentAssessmentId) {
+          // Stale state from a different assessment — clear it
+          sessionStorage.removeItem(COMP_STORAGE_KEY)
         }
 
         // If not already submitted from saved state, check DB for existing submission
-        if (!saved?.isSubmitted) {
-          const assessmentId = sessionStorage.getItem("oral-reading-assessmentId")
+        const isRestoredSubmitted = saved?.assessmentId === currentAssessmentId && saved?.isSubmitted
+        if (!isRestoredSubmitted) {
+          const assessmentId = currentAssessmentId
           if (assessmentId) {
-            const existingReport = await getComprehensionReportAction(assessmentId)
-            if (existingReport.success && "comprehensionTest" in existingReport && existingReport.comprehensionTest) {
-              const existing = existingReport.comprehensionTest
-              const tagBreakdown = computeTagBreakdown(existing.answers)
-              const restoredResult = {
-                score: existing.score,
-                totalItems: existing.totalItems,
-                level: existing.level,
-                comprehensionTestId: existing.id,
-                tagBreakdown,
+            try {
+              const assessment = await getAssessmentByIdAction(assessmentId)
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const existing = (assessment as any)?.comprehension
+              if (existing) {
+                const tagBreakdown = computeTagBreakdown(existing.answers)
+                const restoredResult = {
+                  score: existing.score,
+                  totalItems: existing.totalItems,
+                  level: existing.level,
+                  comprehensionTestId: existing.id,
+                  tagBreakdown,
+                }
+                setComprehensionResult(restoredResult)
+                setIsSubmitted(true)
+                // Restore answers from DB
+                const restoredAnswers: Record<string, string> = {}
+                for (const a of existing.answers) {
+                  restoredAnswers[a.questionId] = a.answer
+                }
+                setAnswers(restoredAnswers)
+                if (existing.id) {
+                  sessionStorage.setItem("oral-reading-comprehensionTestId", existing.id)
+                }
+                saveComprehensionState({
+                  assessmentId: assessmentId,
+                  answers: restoredAnswers,
+                  elapsedSeconds: saved?.elapsedSeconds ?? 0,
+                  isSubmitted: true,
+                  comprehensionResult: restoredResult,
+                })
               }
-              setComprehensionResult(restoredResult)
-              setIsSubmitted(true)
-              // Restore answers from DB
-              const restoredAnswers: Record<string, string> = {}
-              for (const a of existing.answers) {
-                restoredAnswers[a.questionId] = a.answer
-              }
-              setAnswers(restoredAnswers)
-              if (existing.id) {
-                sessionStorage.setItem("oral-reading-comprehensionTestId", existing.id)
-              }
-              saveComprehensionState({
-                answers: restoredAnswers,
-                elapsedSeconds: saved?.elapsedSeconds ?? 0,
-                isSubmitted: true,
-                comprehensionResult: restoredResult,
-              })
+            } catch {
+              // Assessment not found or error — continue to load questions
             }
           }
         }
@@ -204,7 +217,9 @@ export default function OralReadingComprehensionPage() {
   // Persist comprehension state to sessionStorage on every change
   useEffect(() => {
     if (isLoading) return
+    const currentAssessmentId = sessionStorage.getItem("oral-reading-assessmentId") || ""
     saveComprehensionState({
+      assessmentId: currentAssessmentId,
       answers,
       elapsedSeconds,
       isSubmitted,
@@ -265,22 +280,27 @@ export default function OralReadingComprehensionPage() {
       }
 
       // Check if a comprehension test already exists for this assessment
-      const existingReport = await getComprehensionReportAction(assessmentId)
-      if (existingReport.success && "comprehensionTest" in existingReport && existingReport.comprehensionTest) {
-        const existing = existingReport.comprehensionTest
-        const tagBreakdown = computeTagBreakdown(existing.answers)
-        setComprehensionResult({
-          score: existing.score,
-          totalItems: existing.totalItems,
-          level: existing.level,
-          comprehensionTestId: existing.id,
-          tagBreakdown,
-        })
-        if (existing.id) {
-          sessionStorage.setItem("oral-reading-comprehensionTestId", existing.id)
+      try {
+        const assessment = await getAssessmentByIdAction(assessmentId)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const existingComp = (assessment as any)?.comprehension
+        if (existingComp) {
+          const tagBreakdown = computeTagBreakdown(existingComp.answers)
+          setComprehensionResult({
+            score: existingComp.score,
+            totalItems: existingComp.totalItems,
+            level: existingComp.level,
+            comprehensionTestId: existingComp.id,
+            tagBreakdown,
+          })
+          if (existingComp.id) {
+            sessionStorage.setItem("oral-reading-comprehensionTestId", existingComp.id)
+          }
+          setIsSubmitted(true)
+          return
         }
-        setIsSubmitted(true)
-        return
+      } catch {
+        // Assessment fetch failed — continue with submission
       }
 
       // Build answers array — { questionId, answer }
@@ -311,11 +331,17 @@ export default function OralReadingComprehensionPage() {
         return
       }
 
-      // Fetch the full report to get tag breakdown
+      // Fetch the full assessment to get tag breakdown
       let tagBreakdown: TagBreakdown | undefined
-      const reportResult = await getComprehensionReportAction(assessmentId)
-      if (reportResult.success && "comprehensionTest" in reportResult && reportResult.comprehensionTest) {
-        tagBreakdown = computeTagBreakdown(reportResult.comprehensionTest.answers)
+      try {
+        const assessment = await getAssessmentByIdAction(assessmentId)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const comp = (assessment as any)?.comprehension
+        if (comp) {
+          tagBreakdown = computeTagBreakdown(comp.answers)
+        }
+      } catch {
+        // Failed to fetch tag breakdown — continue without it
       }
 
       setComprehensionResult({
