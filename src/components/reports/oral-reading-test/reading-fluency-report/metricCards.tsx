@@ -2,7 +2,7 @@ import { FileText, Clock, ClipboardCheck, type LucideIcon } from "lucide-react";
 
 interface MetricCardsProps {
   wcpm: number;
-  readingTime: string;
+  readingTimeSeconds: number;
   classificationLevel: string;
 }
 
@@ -37,7 +37,32 @@ function MetricCard({ icon: Icon, iconColor, title, value, valueColor, subtitle 
   );
 }
 
-export default function MetricCards({ wcpm, readingTime, classificationLevel }: MetricCardsProps) {
+function formatReadingTime(totalSeconds: number): { value: React.ReactNode; subtitle: string } {
+  if (totalSeconds >= 3600) {
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    return {
+      value: mins > 0 ? `${hrs}:${mins.toString().padStart(2, "0")}` : String(hrs),
+      subtitle: mins > 0 ? "Hours & Minutes" : "Hours",
+    };
+  }
+  if (totalSeconds >= 60) {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = Math.round(totalSeconds % 60);
+    return {
+      value: secs > 0 ? `${mins}:${secs.toString().padStart(2, "0")}` : String(mins),
+      subtitle: secs > 0 ? "Minutes & Seconds" : "Minutes",
+    };
+  }
+  return {
+    value: String(Math.round(totalSeconds)),
+    subtitle: "Seconds",
+  };
+}
+
+export default function MetricCards({ wcpm, readingTimeSeconds, classificationLevel }: MetricCardsProps) {
+  const readingTime = formatReadingTime(readingTimeSeconds);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <MetricCard
@@ -52,13 +77,9 @@ export default function MetricCards({ wcpm, readingTime, classificationLevel }: 
         icon={Clock}
         iconColor="text-[#1A6673]"
         title="Reading<br/>Time"
-        value={
-          <>
-            {readingTime} <span className="text-lg">MIN</span>
-          </>
-        }
+        value={readingTime.value}
         valueColor="#1A6673"
-        subtitle="Minutes"
+        subtitle={readingTime.subtitle}
       />
       <MetricCard
         icon={ClipboardCheck}
@@ -66,7 +87,7 @@ export default function MetricCards({ wcpm, readingTime, classificationLevel }: 
         title="Fluency<br/>Classification"
         value={<span className="text-2xl italic">{classificationLevel}</span>}
         valueColor="#CE330C"
-        subtitle="Oral fluency level"
+        subtitle=""
       />
     </div>
   );

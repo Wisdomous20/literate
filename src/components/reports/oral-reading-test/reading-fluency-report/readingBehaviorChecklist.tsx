@@ -50,7 +50,7 @@ export default function BehaviorChecklist({
   };
 
   return (
-    <div className="bg-[#EFFDFF] border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] rounded-2xl p-5 flex flex-col">
+    <div className="bg-[#EFFDFF] border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] rounded-2xl p-5 pb-3 flex flex-col">
       <h3 className="text-base font-bold text-[#003366] mb-0.5">Oral Behavior Checklist</h3>
       <p className="text-sm text-[rgba(40,19,19,0.71)] mb-4" style={{ fontFamily: "var(--font-kanit)" }}>
         Behavior analysis during reading
@@ -86,7 +86,7 @@ export default function BehaviorChecklist({
       </div>
 
       {/* Other Observations */}
-      <div className="mt-4">
+      <div className="mt-2">
         <label className="text-[10px] font-semibold text-[#31318A] block mb-1">
           Other Observations (Ibang Puna)
         </label>
@@ -100,7 +100,7 @@ export default function BehaviorChecklist({
       </div>
 
       {/* Save / Delete buttons */}
-      <div className="flex items-center justify-end gap-2 mt-4">
+      <div className="flex items-center justify-end gap-2 mt-2">
         <button
           type="button"
           className="px-3 py-1 text-[7px] font-bold italic text-[#31318A] bg-[rgba(108,164,239,0.19)] rounded hover:bg-[rgba(108,164,239,0.3)] transition-colors"
