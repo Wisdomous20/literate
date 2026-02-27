@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState } from "react";
 import { ChevronDown, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ClassCard } from "./classCard";
 import { CreateClassModal } from "./createClassModal";
 import { createClass } from "@/app/actions/class/createClass";
-import { getClassListBySchoolYear } from "@/app/actions/class/getClassList";
+import { useQueryClient } from "@tanstack/react-query";
+import { useClassList } from "@/lib/hooks/useClassList";
 
 type ClassCardVariant = "blue" | "yellow" | "cyan";
 
@@ -15,12 +16,6 @@ interface ClassItem {
   name: string;
   studentCount: number;
   variant: ClassCardVariant;
-}
-
-interface RawClass {
-  id: string;
-  name: string;
-  studentCount: number;
 }
 
 // Helper to get current school year
@@ -56,57 +51,26 @@ function getVariant(index: number): ClassCardVariant {
 
 export function ClassInventory() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const schoolYears = getSchoolYears();
   const [selectedYear, setSelectedYear] = useState<string>(schoolYears[0]);
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [fetchResult, setFetchResult] = useState<{
-    success?: boolean;
-    classes?: RawClass[];
-    error?: string;
-  } | null>(null);
-  const [fetchHookError, setFetchHookError] = useState<string | null>(null);
+  const { data: rawClasses, isLoading, error: fetchError } = useClassList(selectedYear);
 
-  const fetchClasses = useCallback(async () => {
-    setIsLoading(true);
-    setFetchHookError(null);
-    try {
-      const result = await getClassListBySchoolYear(selectedYear);
-      setFetchResult(result);
-    } catch (err: unknown) {
-      setFetchResult(null);
-      if (err instanceof Error) {
-        setFetchHookError(err.message);
-      } else {
-        setFetchHookError("Failed to fetch classes");
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [selectedYear]);
+  const error = fetchError?.message ?? null;
 
-  useEffect(() => {
-    fetchClasses();
-  }, [fetchClasses]);
+  const classes: ClassItem[] = (rawClasses ?? []).map(
+    (c: { id: string; name: string; studentCount: number }, index: number) => ({
+      id: c.id,
+      name: c.name,
+      studentCount: c.studentCount,
+      variant: getVariant(index),
+    })
+  );
 
-  const refetch = fetchClasses;
-
-  const classes: ClassItem[] =
-    fetchResult?.success && Array.isArray(fetchResult.classes)
-      ? fetchResult.classes.map((c: RawClass, index: number) => ({
-          id: c.id,
-          name: c.name,
-          studentCount: c.studentCount,
-          variant: getVariant(index),
-        }))
-      : [];
-
-  const error =
-    !isLoading && fetchResult && !fetchResult.success
-      ? fetchResult.error || "Failed to fetch classes"
-      : fetchHookError;
+  const previewClasses = classes.slice(0, 10);
 
   const handleCreateClass = async (data: {
     className: string;
@@ -115,22 +79,19 @@ export function ClassInventory() {
     const result = await createClass(data.className);
 
     if (result.success) {
-      await refetch();
+      await queryClient.invalidateQueries({ queryKey: ["classes", selectedYear] });
     }
 
     return result;
   };
 
+  const handleClassUpdated = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["classes", selectedYear] });
+  };
+
   const handleClassClick = (classId: string) => {
     router.push(`/dashboard/class/${classId}`);
   };
-
-  const handleClassUpdated = useCallback(async () => {
-    await refetch();
-  }, [refetch]);
-
-  // Show only first 10 classes in grid, rest via "View All"
-  const previewClasses = classes.slice(0, 10);
 
   return (
     <div className="space-y-6">
@@ -185,14 +146,14 @@ export function ClassInventory() {
             type="button"
             onClick={() => setIsModalOpen(true)}
             className="
-    flex h-[40px] w-[150px] items-center justify-center gap-2
-    rounded-lg border border-[#7A7AFB]
-    bg-[#2E2E68]
-    px-5 py-2.5
-    text-sm font-medium text-white
-    shadow-[0px_1px_20px_rgba(65,155,180,0.47)]
-    transition-opacity hover:opacity-90
-  "
+              flex h-[40px] w-[150px] items-center justify-center gap-2
+              rounded-lg border border-[#7A7AFB]
+              bg-[#2E2E68]
+              px-5 py-2.5
+              text-sm font-medium text-white
+              shadow-[0px_1px_20px_rgba(65,155,180,0.47)]
+              transition-opacity hover:opacity-90
+            "
           >
             Create Class
           </button>
