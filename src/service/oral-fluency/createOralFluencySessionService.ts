@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { analyzeOralFluency } from "./analysisService"
-import { OralReadingAnalysis } from "@/types/oral-reading"
+import { OralFluencyAnalysis } from "@/types/oral-reading"
 
 interface CreateOralReadingInput {
   assessmentId: string
@@ -12,7 +12,7 @@ interface CreateOralReadingInput {
 interface CreateOralReadingResult {
   success: boolean
   sessionId?: string
-  analysis?: OralReadingAnalysis
+  analysis?: OralFluencyAnalysis
   error?: string
   code?: "VALIDATION_ERROR" | "NOT_FOUND" | "ANALYSIS_FAILED" | "INTERNAL_ERROR"
 }
