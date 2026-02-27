@@ -1,4 +1,4 @@
-import { uploadAudioToSupabase as uploadAudioAction } from "@/app/actions/oral-reading/uploadAudioToSupabase"
+import { uploadAudioToSupabase as uploadAudioAction } from "@/app/actions/oral-fluency/uploadAudioToSupabase"
 
 export async function uploadAudioToSupabase(
   audioBlob: Blob,
