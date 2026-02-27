@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import ReportHeader from "@/components/reports/oral-reading-test/reading-fluency-report/reportHeader"
 import StudentInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/studentInfoCard"
 import PassageInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/passageInfoCard"
@@ -9,8 +10,22 @@ import AudioPlaybackCard from "@/components/reports/oral-reading-test/reading-fl
 import BehaviorChecklist from "@/components/reports/oral-reading-test/reading-fluency-report/readingBehaviorChecklist"
 import type { MiscueData } from "@/components/reports/oral-reading-test/reading-fluency-report/miscueAnalysis"
 import type { BehaviorItem } from "@/components/reports/oral-reading-test/reading-fluency-report/readingBehaviorChecklist"
+import type { OralFluencyAnalysis, MiscueResult, BehaviorResult } from "@/types/oral-reading"
 
 const STORAGE_KEY = "oral-reading-session"
+const AUDIO_STORAGE_KEY = "oral-reading-audio"
+
+function base64ToBlob(base64: string): Blob {
+  const [meta, data] = base64.split(",")
+  const mimeMatch = meta.match(/:(.*?);/)
+  const mime = mimeMatch ? mimeMatch[1] : "audio/webm"
+  const binary = atob(data)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i)
+  }
+  return new Blob([bytes], { type: mime })
+}
 
 interface SessionState {
   studentName: string
@@ -22,6 +37,8 @@ interface SessionState {
   selectedTestType?: string
   selectedTitle?: string
   recordedSeconds: number
+  analysisResult?: OralFluencyAnalysis | null
+  sessionId?: string
 }
 
 function loadSession(): Partial<SessionState> {
@@ -33,42 +50,95 @@ function loadSession(): Partial<SessionState> {
   return {}
 }
 
-// Placeholder mock data — will be replaced with actual analysis results
-const mockMiscueData: MiscueData = {
-  mispronunciation: 0,
-  omission: 0,
-  substitution: 0,
-  transposition: 0,
-  reversal: 0,
-  insertion: 0,
-  repetition: 0,
-  selfCorrection: 0,
-  totalMiscue: 0,
-  oralFluencyScore: "—",
-  classificationLevel: "—",
+function countMiscuesByType(miscues: MiscueResult[]): Record<string, number> {
+  const counts: Record<string, number> = {}
+  for (const m of miscues) {
+    counts[m.miscueType] = (counts[m.miscueType] || 0) + 1
+  }
+  return counts
 }
 
-const mockBehaviors: BehaviorItem[] = [
-  {
-    label: "Does word-by-word reading",
-    description: "(Nagbabasa nang pa-isa isang salita)",
-  },
-  {
-    label: "Lacks expression: reads in a monotonous tone",
-    description: "(Walang damdamin; walang pagbabago ang tono)",
-  },
-  {
-    label: "Disregards Punctuation",
-    description: "(Hindi pinapansin ang mga bantas)",
-  },
-  {
-    label: "Employs little or no method of analysis",
-    description: "(Bahagya o walang paraan ng pagsusuri)",
-  },
-]
+function buildMiscueData(analysis: OralFluencyAnalysis | null | undefined): MiscueData {
+  if (!analysis) {
+    return {
+      mispronunciation: 0,
+      omission: 0,
+      substitution: 0,
+      transposition: 0,
+      reversal: 0,
+      insertion: 0,
+      repetition: 0,
+      selfCorrection: 0,
+      totalMiscue: 0,
+      oralFluencyScore: "—",
+      classificationLevel: "—",
+    }
+  }
+
+  const counts = countMiscuesByType(analysis.miscues)
+
+  return {
+    mispronunciation: counts["MISPRONUNCIATION"] || 0,
+    omission: counts["OMISSION"] || 0,
+    substitution: counts["SUBSTITUTION"] || 0,
+    transposition: counts["TRANSPOSITION"] || 0,
+    reversal: counts["REVERSAL"] || 0,
+    insertion: counts["INSERTION"] || 0,
+    repetition: counts["REPETITION"] || 0,
+    selfCorrection: counts["SELF_CORRECTION"] || 0,
+    totalMiscue: analysis.totalMiscues,
+    oralFluencyScore: `${analysis.oralFluencyScore}%`,
+    classificationLevel: analysis.classificationLevel,
+  }
+}
+
+function buildBehaviorItems(analysis: OralFluencyAnalysis | null | undefined): BehaviorItem[] {
+  const detectedTypes = new Set(
+    (analysis?.behaviors || []).map((b: BehaviorResult) => b.behaviorType)
+  )
+
+  return [
+    {
+      label: "Does word-by-word reading",
+      description: "(Nagbabasa nang pa-isa isang salita)",
+      checked: detectedTypes.has("WORD_BY_WORD_READING"),
+    },
+    {
+      label: "Lacks expression: reads in a monotonous tone",
+      description: "(Walang damdamin; walang pagbabago ang tono)",
+      checked: detectedTypes.has("MONOTONOUS_READING"),
+    },
+    {
+      label: "Disregards Punctuation",
+      description: "(Hindi pinapansin ang mga bantas)",
+      checked: detectedTypes.has("DISMISSAL_OF_PUNCTUATION"),
+    },
+    {
+      label: "Employs little or no method of analysis",
+      description: "(Bahagya o walang paraan ng pagsusuri)",
+    },
+  ]
+}
 
 export default function OralReadingReportPage() {
   const session = loadSession()
+  const analysis = session.analysisResult
+
+  // Load recorded audio from sessionStorage
+  const [audioSrc, setAudioSrc] = useState<string | null>(null)
+  useEffect(() => {
+    try {
+      const audioBase64 = sessionStorage.getItem(AUDIO_STORAGE_KEY)
+      if (audioBase64) {
+        const blob = base64ToBlob(audioBase64)
+        const url = URL.createObjectURL(blob)
+        setAudioSrc(url)
+        return () => URL.revokeObjectURL(url)
+      }
+    } catch (err) {
+      console.error("Failed to load audio from sessionStorage:", err)
+    }
+  }, [])
 
   const studentName = session.studentName || "—"
   const gradeLevel = session.gradeLevel ? `Grade ${session.gradeLevel}` : "—"
@@ -79,15 +149,19 @@ export default function OralReadingReportPage() {
   const totalWords = session.passageContent
     ? session.passageContent.split(/\s+/).filter(Boolean).length
     : 0
-  const readingTimeSeconds = session.recordedSeconds || 0
-  const readingTimeMinutes = readingTimeSeconds > 0
-    ? (Math.round((readingTimeSeconds / 60) * 10) / 10).toString()
-    : "0"
+  // Use analysis duration (from actual recording) if available, fall back to session timer
+  const readingTimeSeconds = Math.round(analysis?.duration ?? session.recordedSeconds ?? 0)
 
+  // WCPM = (totalWords - totalMiscues) / duration * 60
+  const totalMiscues = analysis?.totalMiscues ?? 0
+  const wordsCorrect = Math.max(0, totalWords - totalMiscues)
   const wcpm = readingTimeSeconds > 0
-    ? Math.round((totalWords / readingTimeSeconds) * 60)
+    ? Math.round((wordsCorrect / readingTimeSeconds) * 60)
     : 0
-  const classification = "—"
+
+  const classification = analysis?.classificationLevel || "—"
+  const miscueData = buildMiscueData(analysis)
+  const behaviorItems = buildBehaviorItems(analysis)
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
@@ -103,7 +177,7 @@ export default function OralReadingReportPage() {
           />
           <MetricCards
             wcpm={wcpm}
-            readingTime={readingTimeMinutes}
+            readingTimeSeconds={readingTimeSeconds}
             classificationLevel={classification}
           />
         </div>
@@ -119,14 +193,14 @@ export default function OralReadingReportPage() {
               testType={testType}
               assessmentType="Oral Reading"
             />
-            <AudioPlaybackCard />
+            <AudioPlaybackCard audioSrc={audioSrc} />
           </div>
 
           {/* Center column */}
-          <BehaviorChecklist behaviors={mockBehaviors} />
+          <BehaviorChecklist behaviors={behaviorItems} />
 
           {/* Right column */}
-          <MiscueAnalysisReport miscueData={mockMiscueData} />
+          <MiscueAnalysisReport miscueData={miscueData} />
         </div>
       </main>
     </div>

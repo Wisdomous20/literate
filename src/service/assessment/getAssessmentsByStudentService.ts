@@ -26,7 +26,7 @@ export async function getAssessmentsByStudentService(
         passage: {
           select: { id: true, title: true, language: true, level: true },
         },
-        oralReading: {
+        oralFluency: {
           include: {
             miscues: true,
             behaviors: true,
