@@ -432,6 +432,14 @@ export default function OralReadingTestPage() {
       }
 
       console.log("Session created:", result.sessionId)
+      console.log("Assessment created:", result.assessmentId)
+
+      // Store assessmentId for the comprehension page
+      if (result.assessmentId) {
+        try {
+          sessionStorage.setItem("oral-reading-assessmentId", result.assessmentId)
+        } catch {}
+      }
 
       // Store analysis result for MiscueAnalysis and report
       if (result.analysis) {

@@ -2,62 +2,219 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { ChevronLeft, ChevronDown, Clock } from "lucide-react"
+import { ChevronLeft, ChevronDown, Clock, Loader2 } from "lucide-react"
 import { DashboardHeader } from "@/components/auth/dashboard/dashboardHeader"
 import { ComprehensionBreakdown } from "@/components/oral-reading-test/comprehensionBreakdown"
+import { getQuizByPassageAction } from "@/app/actions/comprehension-Test/getQuizByPassage"
+import { getComprehensionReportAction } from "@/app/actions/comprehension-Test/getComprehensionReport"
 
 const OPTION_LABELS = ["A", "B", "C", "D"]
+const COMP_STORAGE_KEY = "oral-reading-comprehension-state"
 
 interface QuestionData {
   id: string
   questionNumber: number
   questionText: string
   type: "MULTIPLE_CHOICE" | "ESSAY"
+  tags?: string
   options?: string[]
 }
 
-// Mock questions — replace with real API fetch later
-const MOCK_QUESTIONS: QuestionData[] = [
-  {
-    id: "q1",
-    questionNumber: 1,
-    questionText: "What did I do to deserve this?",
-    type: "MULTIPLE_CHOICE",
-    options: ["Nothing", "Shut up", "Ok", "Just deal with it"],
-  },
-  {
-    id: "q2",
-    questionNumber: 2,
-    questionText: "What did I do to deserve this?",
-    type: "MULTIPLE_CHOICE",
-    options: ["Nothing", "Shut up", "Ok", "Just deal with it"],
-  },
-  {
-    id: "q3",
-    questionNumber: 3,
-    questionText: "What did I do to deserve this?",
-    type: "ESSAY",
-  },
-]
+interface TagBreakdown {
+  literal: { correct: number; total: number }
+  inferential: { correct: number; total: number }
+  critical: { correct: number; total: number }
+}
+
+interface ComprehensionResult {
+  score: number
+  totalItems: number
+  level: string
+  comprehensionTestId: string
+  tagBreakdown?: TagBreakdown
+}
+
+interface ComprehensionState {
+  answers: Record<string, string>
+  elapsedSeconds: number
+  isSubmitted: boolean
+  comprehensionResult: ComprehensionResult | null
+}
+
+function loadComprehensionState(): ComprehensionState | null {
+  if (typeof window === "undefined") return null
+  try {
+    const raw = sessionStorage.getItem(COMP_STORAGE_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch { /* empty */ }
+  return null
+}
+
+function saveComprehensionState(state: ComprehensionState) {
+  try {
+    sessionStorage.setItem(COMP_STORAGE_KEY, JSON.stringify(state))
+  } catch { /* empty */ }
+}
+
+function computeTagBreakdown(
+  answers: { isCorrect: boolean | null; question: { tags: string } }[]
+): TagBreakdown {
+  const breakdown: TagBreakdown = {
+    literal: { correct: 0, total: 0 },
+    inferential: { correct: 0, total: 0 },
+    critical: { correct: 0, total: 0 },
+  }
+  for (const a of answers) {
+    const tag = a.question.tags
+    if (tag === "Literal") {
+      breakdown.literal.total++
+      if (a.isCorrect) breakdown.literal.correct++
+    } else if (tag === "Inferential") {
+      breakdown.inferential.total++
+      if (a.isCorrect) breakdown.inferential.correct++
+    } else if (tag === "Critical") {
+      breakdown.critical.total++
+      if (a.isCorrect) breakdown.critical.correct++
+    }
+  }
+  return breakdown
+}
 
 export default function OralReadingComprehensionPage() {
   const router = useRouter()
   const [answers, setAnswers] = useState<Record<string, string>>({})
-  const [questions] = useState<QuestionData[]>(MOCK_QUESTIONS)
+  const [questions, setQuestions] = useState<QuestionData[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [comprehensionResult, setComprehensionResult] = useState<ComprehensionResult | null>(null)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
   const [showScrollButton, setShowScrollButton] = useState(true)
   const contentRef = useRef<HTMLDivElement>(null)
 
-  // Timer — stops when submitted
+  // Fetch questions on mount + restore saved state
   useEffect(() => {
-    if (isSubmitted) return
+    async function fetchQuestions() {
+      try {
+        // Restore saved comprehension progress
+        const saved = loadComprehensionState()
+        if (saved) {
+          setAnswers(saved.answers)
+          setElapsedSeconds(saved.elapsedSeconds)
+          if (saved.isSubmitted && saved.comprehensionResult) {
+            setIsSubmitted(true)
+            setComprehensionResult(saved.comprehensionResult)
+          }
+        }
+
+        // If not already submitted from saved state, check DB for existing submission
+        if (!saved?.isSubmitted) {
+          const assessmentId = sessionStorage.getItem("oral-reading-assessmentId")
+          if (assessmentId) {
+            const existingReport = await getComprehensionReportAction(assessmentId)
+            if (existingReport.success && "comprehensionTest" in existingReport && existingReport.comprehensionTest) {
+              const existing = existingReport.comprehensionTest
+              const tagBreakdown = computeTagBreakdown(existing.answers)
+              const restoredResult = {
+                score: existing.score,
+                totalItems: existing.totalItems,
+                level: existing.level,
+                comprehensionTestId: existing.id,
+                tagBreakdown,
+              }
+              setComprehensionResult(restoredResult)
+              setIsSubmitted(true)
+              // Restore answers from DB
+              const restoredAnswers: Record<string, string> = {}
+              for (const a of existing.answers) {
+                restoredAnswers[a.questionId] = a.answer
+              }
+              setAnswers(restoredAnswers)
+              if (existing.id) {
+                sessionStorage.setItem("oral-reading-comprehensionTestId", existing.id)
+              }
+              saveComprehensionState({
+                answers: restoredAnswers,
+                elapsedSeconds: saved?.elapsedSeconds ?? 0,
+                isSubmitted: true,
+                comprehensionResult: restoredResult,
+              })
+            }
+          }
+        }
+
+        const raw = sessionStorage.getItem("oral-reading-session")
+        if (!raw) {
+          setLoadError("Session not found. Please go back and start again.")
+          setIsLoading(false)
+          return
+        }
+        const session = JSON.parse(raw)
+        const passageId = session.selectedPassage
+        if (!passageId) {
+          setLoadError("No passage selected. Please go back and select a passage.")
+          setIsLoading(false)
+          return
+        }
+
+        const result = await getQuizByPassageAction(passageId)
+        if (!result.success || !("quiz" in result) || !result.quiz) {
+          setLoadError(("error" in result && result.error) || "Failed to load quiz questions.")
+          setIsLoading(false)
+          return
+        }
+
+        const { quiz } = result
+
+        const mapped: QuestionData[] = quiz.questions.map(
+          (q: { id: string; questionText: string; tags: string | null; type: string; options: unknown }, idx: number) => ({
+            id: q.id,
+            questionNumber: idx + 1,
+            questionText: q.questionText,
+            type: q.type as "MULTIPLE_CHOICE" | "ESSAY",
+            tags: q.tags ?? undefined,
+            options: Array.isArray(q.options) ? (q.options as string[]) : undefined,
+          })
+        )
+
+        setQuestions(mapped)
+      } catch (err) {
+        console.error("Failed to fetch questions:", err)
+        setLoadError("Something went wrong while loading questions.")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchQuestions()
+  }, [])
+
+  // Timer — stops when submitted or paused
+  useEffect(() => {
+    if (isSubmitted || isPaused) return
     const interval = setInterval(() => {
       setElapsedSeconds((prev) => prev + 1)
     }, 1000)
     return () => clearInterval(interval)
-  }, [isSubmitted])
+  }, [isSubmitted, isPaused])
+
+  // Persist comprehension state to sessionStorage on every change
+  useEffect(() => {
+    if (isLoading) return
+    saveComprehensionState({
+      answers,
+      elapsedSeconds,
+      isSubmitted,
+      comprehensionResult,
+    })
+  }, [answers, elapsedSeconds, isSubmitted, comprehensionResult, isLoading])
+
+  const togglePause = () => {
+    if (!isSubmitted) setIsPaused((prev) => !prev)
+  }
 
   // Track scroll position to show/hide scroll-down button
   useEffect(() => {
@@ -97,10 +254,90 @@ export default function OralReadingComprehensionPage() {
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
-    // TODO: Submit answers to API
-    console.log("Submitted answers:", answers)
-    setIsSubmitted(true)
-    setIsSubmitting(false)
+    setSubmitError(null)
+
+    try {
+      const assessmentId = sessionStorage.getItem("oral-reading-assessmentId")
+      if (!assessmentId) {
+        setSubmitError("Assessment ID not found. Please go back and record first.")
+        setIsSubmitting(false)
+        return
+      }
+
+      // Check if a comprehension test already exists for this assessment
+      const existingReport = await getComprehensionReportAction(assessmentId)
+      if (existingReport.success && "comprehensionTest" in existingReport && existingReport.comprehensionTest) {
+        const existing = existingReport.comprehensionTest
+        const tagBreakdown = computeTagBreakdown(existing.answers)
+        setComprehensionResult({
+          score: existing.score,
+          totalItems: existing.totalItems,
+          level: existing.level,
+          comprehensionTestId: existing.id,
+          tagBreakdown,
+        })
+        if (existing.id) {
+          sessionStorage.setItem("oral-reading-comprehensionTestId", existing.id)
+        }
+        setIsSubmitted(true)
+        return
+      }
+
+      // Build answers array — { questionId, answer }
+      const formattedAnswers = questions
+        .filter((q) => answers[q.id] !== undefined && answers[q.id] !== "")
+        .map((q) => ({
+          questionId: q.id,
+          answer: answers[q.id],
+        }))
+
+      if (formattedAnswers.length === 0) {
+        setSubmitError("Please answer at least one question before submitting.")
+        setIsSubmitting(false)
+        return
+      }
+
+      const response = await fetch("/api/oral-reading/comprehension", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assessmentId, answers: formattedAnswers }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        setSubmitError(result.error || "Failed to submit comprehension answers.")
+        setIsSubmitting(false)
+        return
+      }
+
+      // Fetch the full report to get tag breakdown
+      let tagBreakdown: TagBreakdown | undefined
+      const reportResult = await getComprehensionReportAction(assessmentId)
+      if (reportResult.success && "comprehensionTest" in reportResult && reportResult.comprehensionTest) {
+        tagBreakdown = computeTagBreakdown(reportResult.comprehensionTest.answers)
+      }
+
+      setComprehensionResult({
+        score: result.score,
+        totalItems: result.totalItems,
+        level: result.level,
+        comprehensionTestId: result.comprehensionTestId,
+        tagBreakdown,
+      })
+
+      // Store comprehensionTestId for the report page
+      if (result.comprehensionTestId) {
+        sessionStorage.setItem("oral-reading-comprehensionTestId", result.comprehensionTestId)
+      }
+
+      setIsSubmitted(true)
+    } catch (err) {
+      console.error("Comprehension submit error:", err)
+      setSubmitError("Something went wrong while submitting.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleGoBack = () => {
@@ -108,6 +345,41 @@ export default function OralReadingComprehensionPage() {
   }
 
   const totalQuestions = questions.length
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-screen overflow-hidden">
+        <DashboardHeader title="Oral Reading Test" />
+        <div className="flex flex-1 items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-[#6666FF]" />
+            <span className="text-[#00306E] font-medium">Loading questions...</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (loadError) {
+    return (
+      <div className="flex flex-col h-screen overflow-hidden">
+        <DashboardHeader title="Oral Reading Test" />
+        <div className="flex flex-1 items-center justify-center">
+          <div className="flex flex-col items-center gap-4 text-center px-4">
+            <p className="text-red-600 font-medium">{loadError}</p>
+            <button
+              onClick={() => router.back()}
+              className="rounded-lg bg-[#6666FF] px-6 py-2 text-sm font-semibold text-white hover:bg-[#5555EE] transition-colors"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
@@ -140,12 +412,23 @@ export default function OralReadingComprehensionPage() {
                   Choose the correct answer
                 </p>
               </div>
-              <div className="w-[234px] bg-[#EFFDFF] border border-[#10AABF] rounded-[20px] shadow-[0px_1px_20px_rgba(65,155,180,0.47)] flex items-center justify-center gap-3 shrink-0">
-                <Clock className="w-6 h-6 text-[#00306E]" />
-                <span className="text-[#00306E] font-bold text-2xl tabular-nums">
+              <button
+                onClick={togglePause}
+                className={`w-[234px] bg-[#EFFDFF] border rounded-[20px] shadow-[0px_1px_20px_rgba(65,155,180,0.47)] flex items-center justify-center gap-3 shrink-0 transition-all cursor-pointer select-none ${
+                  isPaused
+                    ? "border-[#E53E3E] shadow-[0px_1px_20px_rgba(229,62,62,0.47)]"
+                    : "border-[#10AABF]"
+                }`}
+                title={isPaused ? "Click to resume timer" : "Click to pause timer"}
+              >
+                <Clock className={`w-6 h-6 ${isPaused ? "text-[#E53E3E]" : "text-[#00306E]"}`} />
+                <span className={`font-bold text-2xl tabular-nums ${isPaused ? "text-[#E53E3E]" : "text-[#00306E]"}`}>
                   {formattedTime}
                 </span>
-              </div>
+                {isPaused && (
+                  <span className="text-[#E53E3E] text-xs font-semibold">PAUSED</span>
+                )}
+              </button>
             </div>
 
             {/* Scrollable questions */}
@@ -183,16 +466,17 @@ export default function OralReadingComprehensionPage() {
                         onClick={() =>
                           handleSelectOption(question.id, option)
                         }
-                        className={`flex items-center gap-3 w-full text-left py-1 px-2 rounded-lg transition-colors ${
+                        disabled={isSubmitted}
+                        className={`flex items-center gap-3 w-full text-left py-1 px-2 rounded-lg transition-all duration-200 ${
                           isSelected
-                            ? "bg-[#162DB0]/10"
+                            ? "bg-[#162DB0]/10 shadow-[0px_0px_10px_rgba(255,176,32,0.3)]"
                             : "hover:bg-[#162DB0]/5"
-                        }`}
+                        } ${isSubmitted ? "cursor-default" : ""}`}
                       >
                         <div
-                          className={`flex-shrink-0 w-7 h-[26px] rounded-full flex items-center justify-center transition-colors ${
+                          className={`flex-shrink-0 w-7 h-[26px] rounded-full flex items-center justify-center transition-all duration-200 ${
                             isSelected
-                              ? "bg-[#0C1A6D] border-2 border-[#00306E]"
+                              ? "bg-[#0C1A6D] border-2 border-[#00306E] shadow-[0px_0px_8px_rgba(255,176,32,0.5)]"
                               : "bg-[rgba(185,188,207,0.36)]"
                           }`}
                         >
@@ -221,8 +505,9 @@ export default function OralReadingComprehensionPage() {
                     onChange={(e) =>
                       handleEssayChange(question.id, e.target.value)
                     }
+                    disabled={isSubmitted}
                     placeholder="Type your answer here..."
-                    className="w-full min-h-[50px] bg-[rgba(108,164,239,0.09)] rounded-md px-4 py-3 text-[#00306E] text-[15px] placeholder:text-[#00306E]/40 outline-none resize-y"
+                    className="w-full min-h-[50px] bg-[rgba(108,164,239,0.09)] rounded-md px-4 py-3 text-[#00306E] text-[15px] placeholder:text-[#00306E]/40 outline-none resize-y disabled:opacity-60"
                   />
                 </div>
               )}
@@ -231,13 +516,16 @@ export default function OralReadingComprehensionPage() {
         </div>
 
         {/* Submit Button */}
-        <div className="flex justify-center mt-8 mb-8">
+        <div className="flex flex-col items-center mt-8 mb-8 gap-2">
+          {submitError && (
+            <p className="text-red-600 text-sm font-medium">{submitError}</p>
+          )}
           <button
             onClick={handleSubmit}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isSubmitted}
             className="w-[225px] h-[63px] bg-[#2E2E68] border border-[#7A7AFB] rounded-lg shadow-[0px_1px_20px_rgba(65,155,180,0.47)] text-white font-semibold text-xl hover:bg-[#2E2E68]/90 transition-colors disabled:opacity-60"
           >
-            {isSubmitting ? "Submitting..." : "Submit"}
+            {isSubmitting ? "Submitting..." : isSubmitted ? "Submitted" : "Submit"}
           </button>
         </div>
         </div>
@@ -245,7 +533,13 @@ export default function OralReadingComprehensionPage() {
 
           {/* Right column: Comprehension Breakdown — top aligned with timer */}
           <div className="w-[280px] shrink-0 md:w-[300px] lg:w-[320px]">
-            <ComprehensionBreakdown disabled={!isSubmitted} />
+            <ComprehensionBreakdown
+              score={comprehensionResult?.score}
+              totalItems={comprehensionResult?.totalItems}
+              level={comprehensionResult?.level}
+              tagBreakdown={comprehensionResult?.tagBreakdown}
+              disabled={!isSubmitted}
+            />
           </div>
         </div>
       </div>

@@ -11,26 +11,32 @@ interface MetricCardProps {
   title: string
   value: React.ReactNode
   valueColor: string
-  subtitle: string
 }
 
-function MetricCard({ icon: Icon, iconColor, title, value, valueColor, subtitle }: MetricCardProps) {
+function getLevelColor(level: string): string {
+  switch (level.toLowerCase()) {
+    case "frustration":
+      return "#DC2626"
+    case "instructional":
+      return "#2563EB"
+    case "independent":
+      return "#16A34A"
+    default:
+      return "#CE330C"
+  }
+}
+
+function MetricCard({ icon: Icon, iconColor, title, value, valueColor }: MetricCardProps) {
   return (
-    <div className="flex flex-col bg-[#EFFDFF] border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] rounded-2xl p-6 gap-2">
+    <div className="flex flex-1 flex-col justify-center bg-[#EFFDFF] border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] rounded-xl px-4 py-3 gap-1">
       <div className="flex items-center gap-2">
-        <div className="flex items-center justify-center w-12 h-12 bg-[rgba(74,74,252,0.06)] border border-[#DAE6FF] rounded-[10px]">
-          <Icon size={20} className={iconColor} />
+        <div className="flex items-center justify-center w-7 h-7 bg-[rgba(74,74,252,0.06)] border border-[#DAE6FF] rounded-md shrink-0">
+          <Icon size={14} className={iconColor} />
         </div>
-        <h3 className="text-lg font-bold text-[#003366] leading-tight">{title}</h3>
+        <h3 className="text-xs font-bold text-[#003366] leading-tight">{title}</h3>
       </div>
-      <p className="text-[43px] font-bold mt-2" style={{ color: valueColor }}>
+      <p className="text-2xl font-bold pl-9" style={{ color: valueColor }}>
         {value}
-      </p>
-      <p
-        className="text-lg text-[#162DB0]"
-        style={{ fontFamily: "Kanit, sans-serif" }}
-      >
-        {subtitle}
       </p>
     </div>
   )
@@ -41,24 +47,22 @@ export default function ComprehensionMetricCards({
   comprehensionLevel,
 }: ComprehensionMetricCardsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="flex flex-col gap-3 h-full">
       <MetricCard
         icon={FileText}
         iconColor="text-[#1A6673]"
-        title="Percentage Grade"
+        title="Comprehension Rate"
         value={`${percentageGrade}%`}
         valueColor="#1A6673"
-        subtitle="Percentage"
       />
       <MetricCard
         icon={ClipboardCheck}
         iconColor="text-[#CE330C]"
         title="Comprehension Level"
         value={
-          <span className="text-[26px]">{comprehensionLevel}</span>
+          <span className="text-xl">{comprehensionLevel}</span>
         }
-        valueColor="#CE330C"
-        subtitle="Comprehension Level"
+        valueColor={getLevelColor(comprehensionLevel)}
       />
     </div>
   )
