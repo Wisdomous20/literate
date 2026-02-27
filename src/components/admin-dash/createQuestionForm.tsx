@@ -1,28 +1,10 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
-import Link from "next/link";
+
 import { addQuestionAction } from "@/app/actions/admin/addQuestion";
-import { getAllPassagesAction } from "@/app/actions/passage/getAllPassage";
-
-interface Passage {
-  id: string;
-  title: string;
-}
-
-interface PassageApiData {
-  id: string;
-  title: string;
-  content: string;
-  language: string;
-  level: number;
-  tags: string;
-  testType: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
 
 const tagOptions = ["Literal", "Inferential", "Critical"] as const;
 const questionTypes = [
@@ -30,101 +12,57 @@ const questionTypes = [
   { label: "Essay", value: "ESSAY" },
 ];
 
-// Validation function
 function validateForm(
   questionText: string,
-  passageId: string,
   tags: string,
   type: string,
   options: string[],
-  correctAnswer: string,
+  correctAnswer: string
 ) {
-  if (!questionText.trim()) {
-    return "Question text is required";
-  }
-  if (!passageId) {
-    return "Please select a passage";
-  }
-  if (!tags) {
-    return "Please select a tag";
-  }
-  if (!type) {
-    return "Please select a question type";
-  }
+  if (!questionText.trim()) return "Question text is required";
+  if (questionText.trim().length < 5) return "Question must be at least 5 characters";
+  if (!tags) return "Please select a tag";
+  if (!type) return "Please select a question type";
   if (type === "MULTIPLE_CHOICE") {
     const filledOptions = options.filter(Boolean);
-    if (filledOptions.length < 2) {
-      return "Please provide at least 2 options for multiple choice questions";
-    }
-    if (!correctAnswer) {
-      return "Please select a correct answer";
-    }
-    if (!filledOptions.includes(correctAnswer)) {
-      return "Correct answer must match one of the provided options";
-    }
+    if (filledOptions.length < 2) return "Provide at least 2 options";
+    if (!correctAnswer) return "Select a correct answer";
+    if (!filledOptions.includes(correctAnswer)) return "Correct answer must match one of the options";
   }
   return "";
 }
 
-export function CreateQuestionForm() {
+export function CreateQuestionForm({
+  passageId,
+  onSuccess,
+}: {
+  passageId: string;
+  onSuccess?: () => void;
+}) {
   const router = useRouter();
   const [questionText, setQuestionText] = useState("");
-  const [passageId, setPassageId] = useState("");
   const [tags, setTags] = useState("");
   const [type, setType] = useState("");
   const [options, setOptions] = useState<string[]>(["", "", "", ""]);
   const [correctAnswer, setCorrectAnswer] = useState("");
-  const [passages, setPassages] = useState<Passage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingPassages, setIsLoadingPassages] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    const loadPassages = async () => {
-      setIsLoadingPassages(true);
-      try {
-        const result = await getAllPassagesAction(); // result is { success, passages, error }
-
-        if (result.success && Array.isArray(result.passages)) {
-          const formattedPassages: Passage[] = result.passages.map(
-            (p: PassageApiData) => ({
-              id: p.id,
-              title: p.title,
-            }),
-          );
-          setPassages(formattedPassages);
-        } else {
-          console.error("Failed to load passages:", result.error);
-        }
-      } catch (err) {
-        console.error("Error loading passages:", err);
-      } finally {
-        setIsLoadingPassages(false);
-      }
-    };
-
-    loadPassages();
-  }, []);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
       setError("");
-
-      // Use validation
       const validationError = validateForm(
         questionText,
-        passageId,
         tags,
         type,
         options,
-        correctAnswer,
+        correctAnswer
       );
       if (validationError) {
         setError(validationError);
         return;
       }
-
       setIsLoading(true);
       try {
         await addQuestionAction({
@@ -132,21 +70,21 @@ export function CreateQuestionForm() {
           questionText: questionText.trim(),
           tags: tags as "Literal" | "Inferential" | "Critical",
           type: type as "MULTIPLE_CHOICE" | "ESSAY",
-          options:
-            type === "MULTIPLE_CHOICE" ? options.filter(Boolean) : undefined,
+          options: type === "MULTIPLE_CHOICE" ? options.filter(Boolean) : undefined,
           correctAnswer: type === "MULTIPLE_CHOICE" ? correctAnswer : undefined,
         });
-        router.push("/admin/questions");
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.push(`/admin/passages/${passageId}`);
+        }
       } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Failed to create question";
-        setError(errorMessage);
-        console.error("Error creating question:", err);
+        setError("Failed to create question");
       } finally {
         setIsLoading(false);
       }
     },
-    [questionText, passageId, tags, type, options, correctAnswer, router],
+    [questionText, tags, type, options, correctAnswer, passageId, onSuccess, router]
   );
 
   const handleOptionChange = (index: number, value: string) => {
@@ -156,84 +94,46 @@ export function CreateQuestionForm() {
   };
 
   const addOption = () => {
-    if (options.length < 6) {
-      setOptions([...options, ""]);
-    }
+    if (options.length < 6) setOptions([...options, ""]);
   };
 
   const removeOption = (index: number) => {
     if (options.length > 2) {
       const newOptions = options.filter((_, i) => i !== index);
       setOptions(newOptions);
-      if (correctAnswer === options[index]) {
-        setCorrectAnswer("");
-      }
+      if (correctAnswer === options[index]) setCorrectAnswer("");
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form
+      onSubmit={handleSubmit}
+      className="w-full max-w-xl mx-auto bg-white rounded-2xl shadow-lg p-8 space-y-6"
+      style={{ minWidth: 320 }}
+    >
       {error && (
-        <div className="rounded-lg bg-red-100 p-4 text-sm text-red-700">
+        <div className="rounded-lg bg-red-100 p-4 text-sm text-red-700 mb-2">
           {error}
         </div>
       )}
 
-      {/* Passage */}
-      <div className="flex items-center gap-6">
-        <label
-          htmlFor="passage"
-          className="w-[140px] shrink-0 text-base font-semibold text-[#00306E]"
-        >
-          Passage
-        </label>
-
-        <div className="relative flex-1">
-          <select
-            id="passage"
-            value={passageId}
-            onChange={(e) => setPassageId(e.target.value)}
-            className="w-full appearance-none rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none transition-colors focus:border-[#6666FF] shadow-[inset_0px_2px_4px_rgba(0,48,110,0.08)]"
-            disabled={isLoading || isLoadingPassages}
-          >
-            <option value="">
-              {isLoadingPassages ? "Loading passages..." : "Select passage"}
-            </option>
-            {passages.length === 0 && !isLoadingPassages && (
-              <option disabled>No passages available</option>
-            )}
-            {passages.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.title}
-              </option>
-            ))}
-          </select>
-
-          <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#00306E]/50" />
-        </div>
-      </div>
-
       {/* Question Text */}
-      <div className="flex gap-6">
-        <label className="w-[140px] shrink-0 pt-3 text-base font-semibold text-[#00306E]">
-          Question
-        </label>
+      <div>
+        <label className="block mb-2 font-semibold text-[#00306E]">Question</label>
         <textarea
           value={questionText}
           onChange={(e) => setQuestionText(e.target.value)}
           rows={3}
-          className="flex-1 resize-none rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none transition-colors focus:border-[#6666FF] shadow-[inset_0px_2px_4px_rgba(0,48,110,0.08)]"
+          className="w-full rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none shadow focus:border-[#6666FF] transition"
           placeholder="Enter the comprehension question..."
           disabled={isLoading}
         />
       </div>
 
-      {/* Tags (Literal / Inferential / Critical) */}
-      <div className="flex items-center gap-6">
-        <label className="w-[140px] shrink-0 text-base font-semibold text-[#00306E]">
-          Tags
-        </label>
-        <div className="flex flex-1 gap-3">
+      {/* Tags */}
+      <div>
+        <label className="block mb-2 font-semibold text-[#00306E]">Tags</label>
+        <div className="flex gap-3">
           {tagOptions.map((t) => (
             <button
               key={t}
@@ -242,7 +142,7 @@ export function CreateQuestionForm() {
               disabled={isLoading}
               className={`flex-1 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-all ${
                 tags === t
-                  ? "border-[#6666FF] bg-[#6666FF]/10 text-[#6666FF]"
+                  ? "border-[#6666FF] bg-[#6666FF]/10 text-[#6666FF] shadow"
                   : "border-[#E4F4FF] bg-white text-[#00306E]/60 hover:border-[#6666FF]/30"
               }`}
             >
@@ -250,28 +150,22 @@ export function CreateQuestionForm() {
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Tag Description */}
-      {tags && (
-        <div className="ml-[164px] rounded-lg bg-[#E4F4FF]/60 px-4 py-3">
-          <p className="text-xs text-[#00306E]/70">
+        {tags && (
+          <div className="mt-2 rounded-lg bg-[#E4F4FF]/60 px-4 py-3 text-xs text-[#00306E]/70">
             {tags === "Literal" &&
               "Literal questions ask about information directly stated in the passage."}
             {tags === "Inferential" &&
               "Inferential questions require the reader to draw conclusions beyond what is explicitly stated."}
             {tags === "Critical" &&
               "Critical questions require the reader to evaluate, judge, or form opinions about the text."}
-          </p>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
-      {/* Question Type (MULTIPLE_CHOICE / ESSAY) */}
-      <div className="flex items-center gap-6">
-        <label className="w-[140px] shrink-0 text-base font-semibold text-[#00306E]">
-          Type
-        </label>
-        <div className="flex flex-1 gap-3">
+      {/* Question Type */}
+      <div>
+        <label className="block mb-2 font-semibold text-[#00306E]">Type</label>
+        <div className="flex gap-3">
           {questionTypes.map((qt) => (
             <button
               key={qt.value}
@@ -280,7 +174,7 @@ export function CreateQuestionForm() {
               disabled={isLoading}
               className={`flex-1 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-all ${
                 type === qt.value
-                  ? "border-[#6666FF] bg-[#6666FF]/10 text-[#6666FF]"
+                  ? "border-[#6666FF] bg-[#6666FF]/10 text-[#6666FF] shadow"
                   : "border-[#E4F4FF] bg-white text-[#00306E]/60 hover:border-[#6666FF]/30"
               }`}
             >
@@ -293,11 +187,9 @@ export function CreateQuestionForm() {
       {/* Multiple Choice Options */}
       {type === "MULTIPLE_CHOICE" && (
         <>
-          <div className="flex gap-6">
-            <label className="w-[140px] shrink-0 pt-3 text-base font-semibold text-[#00306E]">
-              Options
-            </label>
-            <div className="flex flex-1 flex-col gap-2">
+          <div>
+            <label className="block mb-2 font-semibold text-[#00306E]">Options</label>
+            <div className="flex flex-col gap-2">
               {options.map((opt, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <span className="w-6 text-center text-sm font-semibold text-[#00306E]/50">
@@ -307,11 +199,10 @@ export function CreateQuestionForm() {
                     type="text"
                     value={opt}
                     onChange={(e) => handleOptionChange(i, e.target.value)}
-                    className="flex-1 rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-2.5 text-sm text-[#00306E] outline-none transition-colors focus:border-[#6666FF] shadow-[inset_0px_2px_4px_rgba(0,48,110,0.08)]"
+                    className="flex-1 rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-2.5 text-sm text-[#00306E] outline-none shadow focus:border-[#6666FF] transition"
                     placeholder={`Option ${String.fromCharCode(65 + i)}`}
                     disabled={isLoading}
                   />
-
                   {options.length > 2 && (
                     <button
                       type="button"
@@ -339,22 +230,14 @@ export function CreateQuestionForm() {
               )}
             </div>
           </div>
-
           {/* Correct Answer */}
-          <div className="flex items-center gap-6">
-            <label
-              htmlFor="correctAnswer"
-              className="w-[140px] shrink-0 text-base font-semibold text-[#00306E]"
-            >
-              Correct Answer
-            </label>
-
-            <div className="relative flex-1">
+          <div>
+            <label className="block mb-2 font-semibold text-[#00306E]">Correct Answer</label>
+            <div className="relative">
               <select
-                id="correctAnswer"
                 value={correctAnswer}
                 onChange={(e) => setCorrectAnswer(e.target.value)}
-                className="w-full appearance-none rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none transition-colors focus:border-[#6666FF] shadow-inner-soft"
+                className="w-full appearance-none rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none shadow focus:border-[#6666FF] transition"
                 disabled={isLoading}
               >
                 <option value="">Select correct answer</option>
@@ -364,7 +247,6 @@ export function CreateQuestionForm() {
                   </option>
                 ))}
               </select>
-
               <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#00306E]/50" />
             </div>
           </div>
@@ -372,17 +254,11 @@ export function CreateQuestionForm() {
       )}
 
       {/* Submit */}
-      <div className="flex justify-center gap-4 pt-8">
-        <Link
-          href="/admin/questions"
-          className="rounded-lg px-10 py-3 text-base font-semibold text-[#00306E] transition-all hover:bg-[#E4F4FF]"
-        >
-          Cancel
-        </Link>
+      <div className="flex justify-end pt-4">
         <button
           type="submit"
           disabled={isLoading}
-          className="submit-btn bg-[#2E2E68] rounded-lg px-10 py-3 text-base font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50"
+          className="bg-[#2E2E68] rounded-lg px-10 py-3 text-base font-semibold text-white shadow transition-all hover:opacity-90 disabled:opacity-50"
         >
           {isLoading ? "Creating..." : "Create Question"}
         </button>

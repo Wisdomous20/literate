@@ -116,7 +116,7 @@ export function UpdatePassageForm({
       if (onSuccess) {
         onSuccess();
       } else {
-        router.push("/admin/passages");
+        router.push("/admin");
       }
     } catch (err) {
       const errorMessage =

@@ -3,58 +3,59 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
-import { getPassageByIdAction } from "@/app/actions/passage/getPassageById";
-import { UpdatePassageForm } from "@/components/admin-dash/updatePassageForm";
+import { getQuestionByIdAction } from "@/app/actions/comprehension-Test/getQuestionById";
+import { UpdateQuestionForm } from "@/components/admin-dash/updateQuestionForm";
 
-interface Passage {
+interface Question {
   id: string;
-  title: string;
-  content: string;
-  language: string;
-  level: number;
+  quizId: string;
+  questionText: string;
   tags: string;
-  testType: string;
+  type: string;
+  options?: string[];
+  correctAnswer?: string;
+  passageId?: string; // <-- Add this if you want redirect to passage after update
 }
 
-export default function EditPassagePage() {
+export default function EditQuestionPage() {
   const params = useParams();
   const router = useRouter();
-  const [passage, setPassage] = useState<Passage | null>(null);
+  const [question, setQuestion] = useState<Question | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
   const id = params.id as string;
 
   useEffect(() => {
-    const loadPassage = async () => {
+    const loadQuestion = async () => {
       setIsLoading(true);
       try {
-        const data = await getPassageByIdAction({ id });
+        const data = await getQuestionByIdAction({ id });
         if (data) {
-          setPassage(data as Passage);
+          setQuestion(data as Question);
         }
       } catch (err) {
         const errorMessage =
-          err instanceof Error ? err.message : "Failed to load passage";
+          err instanceof Error ? err.message : "Failed to load question";
         setError(errorMessage);
-        console.error("Error loading passage:", err);
+        console.error("Error loading question:", err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadPassage();
+    loadQuestion();
   }, [id]);
 
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <span className="text-lg text-[#00306E]/60">Loading passage...</span>
+        <span className="text-lg text-[#00306E]/60">Loading question...</span>
       </div>
     );
   }
 
-  if (!passage) {
+  if (!question) {
     return (
       <div className="flex h-full flex-col">
         <header className="flex h-[118px] items-center px-10 border-b border-[#8D8DEC] shadow-[0px_4px_4px_#54A4FF] bg-transparent rounded-tl-[50px]">
@@ -69,7 +70,7 @@ export default function EditPassagePage() {
 
         <main className="flex flex-1 items-center justify-center">
           <div className="rounded-lg bg-red-100 p-6 text-sm text-red-700">
-            {error || "Passage not found"}
+            {error || "Question not found"}
           </div>
         </main>
       </div>
@@ -88,17 +89,14 @@ export default function EditPassagePage() {
             <div className="h-2.5 w-2.5 rounded-sm bg-[#31318A]" />
           </div>
           <h1 className="text-[25px] font-semibold leading-[38px] text-[#31318A]">
-            Edit Passage
+            Edit Question
           </h1>
         </div>
       </header>
 
       <main className="flex-1 overflow-auto">
         <div className="mx-auto max-w-2xl px-8 py-8">
-          <p className="mb-8 text-base text-[#00306E]/70">
-            Update comprehension passage details
-          </p>
-          <UpdatePassageForm passage={passage} />
+          <UpdateQuestionForm question={question} />
         </div>
       </main>
     </div>

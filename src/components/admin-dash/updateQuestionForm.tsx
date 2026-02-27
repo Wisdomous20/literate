@@ -13,6 +13,8 @@ interface Question {
   type: string;
   options?: string[];
   correctAnswer?: string;
+  passageId?: string; // <-- Add this line
+
 }
 
 interface UpdateQuestionFormProps {
@@ -94,22 +96,21 @@ export function UpdateQuestionForm({
 
       setIsLoading(true);
       try {
-        await updateQuestionAction({
-          id: question.id,
-          questionText: questionText.trim(),
-          tags: tags as "Literal" | "Inferential" | "Critical",
-          type: type as "MULTIPLE_CHOICE" | "ESSAY",
-          options:
-            type === "MULTIPLE_CHOICE" ? options.filter(Boolean) : undefined,
-          correctAnswer: type === "MULTIPLE_CHOICE" ? correctAnswer : undefined,
-        });
+  await updateQuestionAction({
+    id: question.id,
+    questionText: questionText.trim(),
+    tags: tags as "Literal" | "Inferential" | "Critical",
+    type: type as "MULTIPLE_CHOICE" | "ESSAY",
+    options: type === "MULTIPLE_CHOICE" ? options.filter(Boolean) : undefined,
+    correctAnswer: type === "MULTIPLE_CHOICE" ? correctAnswer : undefined,
+  });
 
-        if (onSuccess) {
-          onSuccess();
-        } else {
-          router.push("/admin/questions");
-        }
-      } catch (err) {
+  if (onSuccess) {
+    onSuccess();
+  } else {
+    router.push(`/admin/passages/${question.passageId}`); // <-- FIXED REDIRECT
+  }
+} catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Failed to update question";
         setError(errorMessage);
@@ -118,8 +119,7 @@ export function UpdateQuestionForm({
         setIsLoading(false);
       }
     },
-    [questionText, tags, type, options, correctAnswer, question.id, router, onSuccess],
-  );
+    [questionText, tags, type, options, correctAnswer, question.id, question.passageId, router, onSuccess],  );
 
   const handleOptionChange = (index: number, value: string) => {
     const newOptions = [...options];
