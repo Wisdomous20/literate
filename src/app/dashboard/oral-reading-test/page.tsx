@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useCallback, useEffect, useRef } from "react"
+import { useState, useCallback, useEffect, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { ChevronLeft, ChevronRight, Timer, Minus, Plus } from "lucide-react"
+import { ChevronLeft, ChevronRight, Timer, Minus, Plus, CheckCircle, XCircle, X } from "lucide-react"
 import { DashboardHeader } from "@/components/auth/dashboard/dashboardHeader"
 import StudentInfoBar from "@/components/oral-reading-test/studentInfoBar"
 import { PassageFilters } from "@/components/oral-reading-test/passageFilters"
@@ -13,6 +13,8 @@ import { FullScreenPassage } from "@/components/oral-reading-test/fullScreenPass
 import { AddPassageModal } from "@/components/oral-reading-test/addPassageModal"
 import { getClassListBySchoolYear } from "@/app/actions/class/getClassList"
 import { ReadinessCheckButton } from "@/components/oral-reading-test/readinessCheck"
+import { createStudent } from "@/app/actions/student/createStudent"
+import type { OralFluencyAnalysis } from "@/types/oral-reading"
 
 // Helper to get current school year
 function getCurrentSchoolYear(): string {
@@ -50,6 +52,8 @@ interface SessionState {
   countdownSeconds: number
   hasRecording: boolean
   recordedSeconds: number
+  analysisResult?: OralFluencyAnalysis | null
+  sessionId?: string
 }
 
 function loadSession(): Partial<SessionState> {
@@ -116,6 +120,38 @@ export default function OralReadingTestPage() {
   const [selectedStudentId, setSelectedStudentId] = useState<string>("")
   const [selectedClassName, setSelectedClassName] = useState<string>("")
   const [isHydrated, setIsHydrated] = useState(false)
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
+  const [analysisResult, setAnalysisResult] = useState<OralFluencyAnalysis | null>(null)
+  const [sessionId, setSessionId] = useState<string>("")
+  const [highlightedTypes, setHighlightedTypes] = useState<Set<string>>(new Set())
+  const [passageExpanded, setPassageExpanded] = useState(false)
+  const audioRef = useRef<HTMLAudioElement>(null)
+
+  const handleJumpToTime = useCallback((timestamp: number) => {
+    const audio = audioRef.current
+    if (!audio) return
+    audio.currentTime = timestamp
+    audio.play().catch(() => {})
+  }, [])
+
+  const toggleHighlightType = useCallback((miscueType: string) => {
+    setHighlightedTypes((prev) => {
+      const next = new Set(prev)
+      if (next.has(miscueType)) {
+        next.delete(miscueType)
+      } else {
+        next.add(miscueType)
+      }
+      return next
+    })
+  }, [])
+
+  // Filter miscues for passage display based on highlighted types
+  const filteredMiscues = useMemo(() => {
+    if (!analysisResult?.miscues) return undefined
+    if (highlightedTypes.size === 0) return analysisResult.miscues
+    return analysisResult.miscues.filter((m) => highlightedTypes.has(m.miscueType))
+  }, [analysisResult?.miscues, highlightedTypes])
 
   // Restore session from sessionStorage AFTER hydration (avoids SSR mismatch)
   useEffect(() => {
@@ -135,6 +171,8 @@ export default function OralReadingTestPage() {
     if (loaded.countdownSeconds !== undefined) setCountdownSeconds(loaded.countdownSeconds)
     if (loaded.hasRecording !== undefined) setHasRecording(loaded.hasRecording)
     if (loaded.recordedSeconds !== undefined) setRecordedSeconds(loaded.recordedSeconds)
+    if (loaded.analysisResult) setAnalysisResult(loaded.analysisResult)
+    if (loaded.sessionId) setSessionId(loaded.sessionId)
 
     // Restore audio blob
     try {
@@ -194,6 +232,8 @@ export default function OralReadingTestPage() {
       countdownSeconds,
       hasRecording,
       recordedSeconds,
+      analysisResult,
+      sessionId,
     })
   }, [
     isHydrated,
@@ -211,6 +251,8 @@ export default function OralReadingTestPage() {
     countdownSeconds,
     hasRecording,
     recordedSeconds,
+    analysisResult,
+    sessionId,
   ])
 
   // Fetch classes on mount
@@ -255,6 +297,8 @@ export default function OralReadingTestPage() {
     setHasRecording(false)
     setRecordedSeconds(0)
     setRecordedAudioBlob(null)
+    setAnalysisResult(null)
+    setSessionId("")
     if (recordedAudioURL) {
       URL.revokeObjectURL(recordedAudioURL)
       setRecordedAudioURL(null)
@@ -287,11 +331,50 @@ export default function OralReadingTestPage() {
   const handleTryAgain = useCallback(() => {
     setHasRecording(false)
     setRecordedSeconds(0)
+    setAnalysisResult(null)
+    setSessionId("")
     if (recordedAudioURL) {
       URL.revokeObjectURL(recordedAudioURL)
       setRecordedAudioURL(null)
     }
   }, [recordedAudioURL])
+
+  const handleStartNew = useCallback(() => {
+    // Revoke audio URL to free memory
+    if (recordedAudioURL) {
+      URL.revokeObjectURL(recordedAudioURL)
+    }
+    // Reset all state to initial values
+    setStudentName("")
+    setGradeLevel("")
+    setSelectedStudentId("")
+    setSelectedClassName("")
+    setPassageContent("")
+    setSelectedLanguage(undefined)
+    setSelectedLevel(undefined)
+    setSelectedTestType(undefined)
+    setSelectedTitle(undefined)
+    setSelectedPassage(undefined)
+    setHasRecording(false)
+    setRecordedSeconds(0)
+    setRecordedAudioURL(null)
+    setRecordedAudioBlob(null)
+    setCountdownEnabled(true)
+    setCountdownSeconds(3)
+    setAnalysisResult(null)
+    setSessionId("")
+    // Clear sessionStorage
+    sessionStorage.removeItem(STORAGE_KEY)
+    sessionStorage.removeItem(AUDIO_STORAGE_KEY)
+  }, [recordedAudioURL])
+
+  // Auto-dismiss toast after 4 seconds
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 4000)
+      return () => clearTimeout(timer)
+    }
+  }, [toast])
 
   const handleSubmitRecording = useCallback(async () => {
     if (!recordedAudioBlob || !selectedPassage || !selectedStudentId) {
@@ -325,9 +408,9 @@ export default function OralReadingTestPage() {
       formData.append("audioUrl", supabaseAudioUrl)
       formData.append("audio", recordedAudioBlob, "recording.webm")
 
-      console.log("Sending to API:", `/api/fluency-reading/${selectedPassage}`)
+      console.log("Sending to API:", `/api/oral-reading/${selectedPassage}`)
 
-      const response = await fetch(`/api/fluency-reading/${selectedPassage}`, {
+      const response = await fetch(`/api/oral-reading/${selectedPassage}`, {
         method: "POST",
         body: formData,
       })
@@ -349,6 +432,16 @@ export default function OralReadingTestPage() {
       }
 
       console.log("Session created:", result.sessionId)
+
+      // Store analysis result for MiscueAnalysis and report
+      if (result.analysis) {
+        setAnalysisResult(result.analysis as OralFluencyAnalysis)
+      }
+      if (result.sessionId) {
+        setSessionId(result.sessionId)
+      }
+
+      setToast({ message: "Reading Fluency Session Successful!", type: "success" })
     } catch (err) {
       console.error("Submit error:", err)
     } finally {
@@ -369,6 +462,7 @@ export default function OralReadingTestPage() {
     return (
       <FullScreenPassage
         content={passageContent}
+        passageTitle={selectedTitle}
         onDone={handleFullScreenDone}
         onClose={handleFullScreenClose}
         countdownEnabled={countdownEnabled}
@@ -383,8 +477,35 @@ export default function OralReadingTestPage() {
     <div className="flex h-screen flex-col overflow-hidden">
       <DashboardHeader title="Oral Reading Test" />
 
-      <main className="flex min-h-0 flex-1 flex-col gap-3 px-4 py-4 md:px-6 lg:px-8">
+      {/* Toast notification — fixed upper right */}
+      {toast && (
+        <div
+          className={`fixed top-6 right-6 z-50 flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium shadow-lg transition-all duration-300 ${
+            toast.type === "success"
+              ? "bg-green-50 border border-green-200 text-green-800"
+              : "bg-red-50 border border-red-200 text-red-800"
+          }`}
+        >
+          {toast.type === "success" ? (
+            <CheckCircle className="h-4 w-4 flex-shrink-0 text-green-500" />
+          ) : (
+            <XCircle className="h-4 w-4 flex-shrink-0 text-red-500" />
+          )}
+          <span className="flex-1">{toast.message}</span>
+          <button
+            onClick={() => setToast(null)}
+            className={`ml-1 rounded-full p-0.5 transition-colors ${
+              toast.type === "success" ? "hover:bg-green-200" : "hover:bg-red-200"
+            }`}
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
+      <main className={`flex min-h-0 flex-1 flex-col px-4 py-4 md:px-6 lg:px-8 ${passageExpanded ? "gap-0 py-2" : "gap-3"}`}>
         {/* Nav row */}
+        {!passageExpanded && (
         <div className="flex items-center justify-between">
           <button
             onClick={() => router.back()}
@@ -414,12 +535,13 @@ export default function OralReadingTestPage() {
             <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
           </button>
         </div>
+        )}
 
         {/* Two-column layout: left content + right MiscueAnalysis */}
         <div className="flex min-h-0 flex-1 gap-4">
           {/* Left column: student info, filters, passage, timer */}
-          <div className="flex min-h-0 flex-1 flex-col gap-3">
-            {!isLoadingClasses && (
+          <div className={`flex min-h-0 flex-1 flex-col overflow-y-auto ${passageExpanded ? "gap-0" : "gap-3"}`}>
+            {!passageExpanded && !isLoadingClasses && (
               <StudentInfoBar
                 studentName={studentName}
                 gradeLevel={gradeLevel}
@@ -435,20 +557,26 @@ export default function OralReadingTestPage() {
               />
             )}
 
-            <PassageFilters
-              language={hasPassage ? selectedLanguage : undefined}
-              passageLevel={hasPassage ? selectedLevel : undefined}
-              testType={hasPassage ? selectedTestType : undefined}
-              hasPassage={hasPassage}
-              onOpenPassageModal={() => setIsPassageModalOpen(true)}
+            {!passageExpanded && (
+              <PassageFilters
+                language={hasPassage ? selectedLanguage : undefined}
+                passageLevel={hasPassage ? selectedLevel : undefined}
+                testType={hasPassage ? selectedTestType : undefined}
+                hasPassage={hasPassage}
+                onOpenPassageModal={() => setIsPassageModalOpen(true)}
+              />
+            )}
+
+            <PassageDisplay
+              content={passageContent}
+              miscues={filteredMiscues}
+              onJumpToTime={handleJumpToTime}
+              expanded={passageExpanded}
+              onToggleExpand={() => setPassageExpanded((prev) => !prev)}
             />
 
-            <div className="min-h-0 flex-1">
-              <PassageDisplay content={passageContent} />
-            </div>
-
             {/* Word count under passage display */}
-            {hasPassage && (
+            {!passageExpanded && hasPassage && (
               <div className="mt-2 flex items-center">
                 <span className="text-xs font-semibold text-[#00306E]">
                   {passageContent.split(/\s+/).length} words
@@ -457,24 +585,29 @@ export default function OralReadingTestPage() {
             )}
 
             {/* Passage title above timer */}
-            {hasPassage && (
+            {!passageExpanded && hasPassage && (
               <div className="mb-2 flex items-center justify-center">
-                <span className="text-base font-bold text-[#31318A]">
+                <span className="text-lg font-bold text-[#31318A] md:text-xl">
                   {selectedTitle}
                 </span>
               </div>
             )}
 
-            <ReadingTimer
-              hasPassage={hasPassage}
-              onStartReading={handleStartReading}
-              hasRecording={hasRecording}
-              recordedSeconds={recordedSeconds}
-              recordedAudioURL={recordedAudioURL}
-              onTryAgain={handleTryAgain}
-            />
+            {!passageExpanded && (
+              <ReadingTimer
+                hasPassage={hasPassage}
+                onStartReading={handleStartReading}
+                hasRecording={hasRecording}
+                recordedSeconds={recordedSeconds}
+                recordedAudioURL={recordedAudioURL}
+                onTryAgain={handleTryAgain}
+                onStartNew={handleStartNew}
+                audioRef={audioRef}
+              />
+            )}
 
             {/* Countdown Toggle + Readiness Check Button */}
+            {!passageExpanded && (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Timer className="h-4 w-4" style={{ color: "#6666FF" }} />
@@ -522,11 +655,21 @@ export default function OralReadingTestPage() {
 
               <ReadinessCheckButton />
             </div>
+            )}
           </div>
 
           {/* Right column: MiscueAnalysis — responsive width */}
           <div className="w-[240px] shrink-0 self-stretch md:w-[270px] lg:w-[300px] xl:w-[320px]">
-            <MiscueAnalysis />
+            <MiscueAnalysis
+              disabled={!hasRecording}
+              isAnalyzing={isSubmitting}
+              miscues={analysisResult?.miscues}
+              totalMiscue={analysisResult?.totalMiscues}
+              oralFluencyScore={analysisResult?.oralFluencyScore}
+              classificationLevel={analysisResult?.classificationLevel}
+              highlightedTypes={highlightedTypes}
+              onToggleHighlight={toggleHighlightType}
+            />
           </div>
         </div>
       </main>
