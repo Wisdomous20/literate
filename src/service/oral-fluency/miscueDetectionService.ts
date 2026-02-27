@@ -336,6 +336,75 @@ function detectRepetitions(alignedWords: AlignedWord[]): Set<number> {
     }
   }
 
+    let runStart = 0;
+  while (runStart < alignedWords.length) {
+    // Find the start of a consecutive INSERTION run
+    if (alignedWords[runStart].match !== "INSERTION" || !alignedWords[runStart].spoken) {
+      runStart++;
+      continue;
+    }
+
+    // Find the end of the run
+    let runEnd = runStart;
+    while (
+      runEnd + 1 < alignedWords.length &&
+      alignedWords[runEnd + 1].match === "INSERTION" &&
+      alignedWords[runEnd + 1].spoken
+    ) {
+      runEnd++;
+    }
+
+    const runLength = runEnd - runStart + 1;
+
+    // Only consider runs of 2+ words (single-word repetitions are handled by other passes)
+    if (runLength >= 2) {
+      const runSpoken = [];
+      for (let r = runStart; r <= runEnd; r++) {
+        runSpoken.push(normalizeWord(alignedWords[r].spoken!));
+      }
+
+      // Look backward from runStart for a matching sequence of spoken/expected words
+      const searchStart = Math.max(0, runStart - runLength - 5);
+      let foundMatch = false;
+
+      for (let s = searchStart; s < runStart && !foundMatch; s++) {
+        // Try to match the run starting from position s
+        let matchCount = 0;
+        let si = s;
+
+        for (let ri = 0; ri < runSpoken.length && si < runStart; si++) {
+          // Skip OMISSIONs in the search window
+          if (alignedWords[si].match === "OMISSION") continue;
+
+          const candidateWord =
+            alignedWords[si].expected
+              ? normalizeWord(alignedWords[si].expected!)
+              : alignedWords[si].spoken
+                ? normalizeWord(alignedWords[si].spoken!)
+                : null;
+
+          if (candidateWord && isSimilarForRepetition(runSpoken[ri], candidateWord)) {
+            matchCount++;
+            ri++;
+          } else {
+            break;
+          }
+        }
+
+        // If we matched at least half the run (to be lenient with Whisper transcription),
+        // mark the entire run as repetitions
+        if (matchCount >= Math.ceil(runSpoken.length * 0.5) && matchCount >= 2) {
+          for (let r = runStart; r <= runEnd; r++) {
+            indices.add(r);
+          }
+          foundMatch = true;
+        }
+      }
+    }
+
+    runStart = runEnd + 1;
+  }
+
   return indices
 }
 
@@ -350,12 +419,83 @@ export function detectMiscues(
   const selfCorrectedIndices = detectSelfCorrections(alignedWords, repetitionIndices);
   const transposedIndices = detectTranspositions(alignedWords);
 
+  // Build a set of insertion indices that should be suppressed because they
+  // are part of a repeated phrase (adjacent to or between repetition words)
+  const suppressedInsertions = new Set<number>();
+  for (const ri of repetitionIndices) {
+    // Suppress INSERTION neighbours that form a contiguous repeated phrase
+    // Look backward from the repetition index
+    for (let k = ri - 1; k >= Math.max(0, ri - 3); k--) {
+      if (alignedWords[k].match === "INSERTION" && !repetitionIndices.has(k)) {
+        // Check if this insertion's spoken word matches a nearby expected/spoken word
+        // (i.e., it's part of the same phrase repeat)
+        const spoken = alignedWords[k].spoken;
+        if (spoken) {
+          const repSpoken = alignedWords[ri].spoken;
+          const repExpected = alignedWords[ri].expected;
+          // If the insertion is next to a repetition and itself looks like
+          // a repeated word from the neighbourhood, suppress it
+          let isPartOfPhrase = false;
+          for (let m = Math.max(0, k - 4); m < k; m++) {
+            if (
+              alignedWords[m].match !== "OMISSION" &&
+              (isSimilarForRepetition(spoken, alignedWords[m].expected) ||
+                isSimilarForRepetition(spoken, alignedWords[m].spoken))
+            ) {
+              isPartOfPhrase = true;
+              break;
+            }
+          }
+          if (isPartOfPhrase) suppressedInsertions.add(k);
+        }
+      } else {
+        break; // stop once we hit a non-insertion
+      }
+    }
+    // Look forward from the repetition index
+    for (let k = ri + 1; k <= Math.min(alignedWords.length - 1, ri + 3); k++) {
+      if (alignedWords[k].match === "INSERTION" && !repetitionIndices.has(k)) {
+        const spoken = alignedWords[k].spoken;
+        if (spoken) {
+          let isPartOfPhrase = false;
+          for (let m = Math.max(0, k - 4); m < k; m++) {
+            if (
+              alignedWords[m].match !== "OMISSION" &&
+              (isSimilarForRepetition(spoken, alignedWords[m].expected) ||
+                isSimilarForRepetition(spoken, alignedWords[m].spoken))
+            ) {
+              isPartOfPhrase = true;
+              break;
+            }
+          }
+          if (isPartOfPhrase) suppressedInsertions.add(k);
+        }
+      } else {
+        break;
+      }
+    }
+  }
+
   for (let i = 0; i < alignedWords.length; i++) {
     const aligned = alignedWords[i];
 
     // Check repetition FIRST, before anything else — this prevents repetitions
     // from being misclassified as insertions
     if (repetitionIndices.has(i)) {
+      miscues.push({
+        miscueType: "REPETITION",
+        expectedWord: aligned.expected ?? "",
+        spokenWord: aligned.spoken,
+        wordIndex: aligned.expectedIndex ?? aligned.spokenIndex ?? i,
+        timestamp: aligned.timestamp,
+        isSelfCorrected: false,
+      });
+      continue;
+    }
+
+        // Skip insertions that are part of a detected repeated phrase
+    if (suppressedInsertions.has(i)) {
+      // Log as repetition instead of insertion
       miscues.push({
         miscueType: "REPETITION",
         expectedWord: aligned.expected ?? "",
