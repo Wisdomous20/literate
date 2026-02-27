@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { submitComprehensionService } from "@/service/comprehension-test/submitComprehensionService";
+import { createOralReadingService } from "@/service/oral-reading/createOralReadingService";
 
 export const maxDuration = 60;
 
@@ -24,6 +25,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
+    const oralReadingResult = await createOralReadingService(assessmentId);
+
+    
+    if (!oralReadingResult.success) {
+      return NextResponse.json({ error: oralReadingResult.error }, { status: 500 });
+    }
+
     return NextResponse.json({
       success: true,
       assessmentId,
@@ -31,9 +39,11 @@ export async function POST(request: NextRequest) {
       score: result.score,
       totalItems: result.totalItems,
       level: result.level,
+      oralReadingResult: oralReadingResult ?? null,
+
     });
   } catch (error) {
-    console.error("Comprehension submit error:", error);
+    console.error("Comprehension submit & oralReading submnit error:", error);
     return NextResponse.json(
       { error: "Failed to process comprehension submission" },
       { status: 500 }
