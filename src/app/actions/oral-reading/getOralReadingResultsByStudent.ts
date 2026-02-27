@@ -9,5 +9,5 @@ export async function getOralReadingResultsByStudent(studentId: string) {
     throw new Error(result.error || "Failed to fetch oral reading results.");
   }
 
-  return result.oralReadingResult;
+  return result.oralReadingResults;
 }
