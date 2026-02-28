@@ -1,15 +1,22 @@
 "use client"
 
-import { useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   LayoutDashboard,
-  ChevronDown,
+  ChevronLeft,
   FileText,
   ClipboardCheck,
 } from "lucide-react"
+import type { OralFluencyAnalysis } from "@/types/oral-reading"
 
 const STORAGE_KEY = "oral-reading-session"
+
+interface ComprehensionResult {
+  score: number
+  totalItems: number
+  percentage: number
+  level: string
+}
 
 interface SessionState {
   studentName: string
@@ -21,6 +28,9 @@ interface SessionState {
   selectedTestType?: string
   selectedTitle?: string
   recordedSeconds: number
+  analysisResult?: OralFluencyAnalysis | null
+  comprehensionResult?: ComprehensionResult | null
+  oralReadingLevel?: string | null
 }
 
 function loadSession(): Partial<SessionState> {
@@ -32,6 +42,12 @@ function loadSession(): Partial<SessionState> {
     /* empty */
   }
   return {}
+}
+
+/** Format a LevelClassification enum value for display (e.g. "INDEPENDENT" → "Independent") */
+function formatLevel(level: string | undefined | null): string {
+  if (!level) return "—"
+  return level.charAt(0).toUpperCase() + level.slice(1).toLowerCase()
 }
 
 /** Derive a color palette from the reading level classification */
@@ -46,10 +62,10 @@ function getLevelStyle(level: string) {
       }
     case "instructional":
       return {
-        text: "text-[#D4890B]",
-        bg: "bg-[#FFF3D6]",
-        border: "border-[#D4890B]",
-        raw: "#D4890B",
+        text: "text-[#297CEC]",
+        bg: "bg-[#EAF3FF]",
+        border: "border-[#297CEC]",
+        raw: "#297CEC",
       }
     case "frustration":
       return {
@@ -68,33 +84,31 @@ function getLevelStyle(level: string) {
   }
 }
 
-// Mock data — replace with real API / session data later
-const mockFluencyData = {
-  score: "80%",
-  level: "Independent",
-}
-
-const mockComprehensionData = {
-  score: "80%",
-  level: "Independent",
-}
-
-const mockOverallLevel = "Independent"
-
 export default function ReadingLevelReportPage() {
   const router = useRouter()
-  // Session data will be used when replacing mock data with real API results
-  const _session = loadSession()
-  void _session
+  const session = loadSession()
 
-  const fluencyScore = mockFluencyData.score
-  const fluencyLevel = mockFluencyData.level
-  const comprehensionScore = mockComprehensionData.score
-  const comprehensionLevel = mockComprehensionData.level
-  const overallLevel = mockOverallLevel
+  // Fluency data from analysisResult (stored by oral-reading-test page after fluency API call)
+  const analysisResult = session.analysisResult
+  const fluencyScore = analysisResult?.oralFluencyScore != null
+    ? `${analysisResult.oralFluencyScore}%`
+    : "—"
+  const fluencyLevel = formatLevel(analysisResult?.classificationLevel)
 
+  // Comprehension data (stored by comprehension page after POST /api/oral-reading/comprehension)
+  const comprehensionResult = session.comprehensionResult
+  const comprehensionScore = comprehensionResult?.totalItems
+    ? `${Math.round((comprehensionResult.score / comprehensionResult.totalItems) * 100)}%`
+    : "—"
+  const comprehensionLevel = formatLevel(comprehensionResult?.level)
+
+  // Overall oral reading level — computed by backend createOralReadingService,
+  // returned in the comprehension API response and stored in session
+  const overallLevel = formatLevel(session.oralReadingLevel)
+
+  const fluencyStyle = getLevelStyle(fluencyLevel)
+  const comprehensionStyle = getLevelStyle(comprehensionLevel)
   const overallStyle = getLevelStyle(overallLevel)
-  const [isExpanded, setIsExpanded] = useState(true)
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#E4F4FF]">
@@ -109,17 +123,15 @@ export default function ReadingLevelReportPage() {
 
       </div>
 
-      {/* ── Sub-header: Accordion toggle + Actions ────────────────── */}
+      {/* ── Sub-header: Previous button + Actions ────────────────── */}
       <div className="flex items-center justify-between px-8 pt-4 pb-2">
         <button
-          onClick={() => setIsExpanded((prev) => !prev)}
-          className="flex items-center gap-2 text-[#31318A] font-semibold text-lg hover:opacity-80 transition-opacity"
+          onClick={() => router.back()}
+          className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:bg-[#5555EE] md:text-base"
+          style={{ boxShadow: "0 0 20px rgba(102, 102, 255, 0.4), 0 4px 12px rgba(102, 102, 255, 0.3)" }}
         >
-          <ChevronDown
-            size={24}
-            className={`transition-transform duration-300 ${isExpanded ? "rotate-0" : "-rotate-90"}`}
-          />
-          Reading Level Report
+          <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
+          <span>Previous</span>
         </button>
 
         <div className="flex items-center gap-3">
@@ -128,7 +140,7 @@ export default function ReadingLevelReportPage() {
             onClick={() => router.push("/dashboard/oral-reading-test")}
             className="px-5 py-2 bg-[#2E2E68] text-white text-xs font-medium rounded-[10px] border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#2E2E68]/90 transition-colors"
           >
-            Re-Attempt
+            Start New
           </button>
           <button
             type="button"
@@ -139,9 +151,8 @@ export default function ReadingLevelReportPage() {
         </div>
       </div>
 
-      {/* ── Main Content (accordion body) ─────────────────────── */}
-      {isExpanded && (
-        <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth px-8 py-6 md:px-12 lg:px-16 animate-in fade-in slide-in-from-top-2 duration-300">
+      {/* ── Main Content ─────────────────────── */}
+      <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth px-8 py-6 md:px-12 lg:px-16 animate-in fade-in slide-in-from-top-2 duration-300">
         {/* Report Cards Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[1000px] mx-auto">
           {/* ── Oral Fluency Test Report Card ──────────────────── */}
@@ -162,7 +173,7 @@ export default function ReadingLevelReportPage() {
             </p>
 
             {/* Level */}
-            <p className="text-[26px] font-bold text-[#2E2E68] leading-[39px]">
+            <p className="text-[26px] font-bold leading-[39px]" style={{ color: fluencyStyle.raw }}>
               {fluencyLevel}
             </p>
 
@@ -197,7 +208,7 @@ export default function ReadingLevelReportPage() {
             </p>
 
             {/* Level */}
-            <p className="text-[26px] font-bold text-[#2E2E68] leading-[39px]">
+            <p className="text-[26px] font-bold leading-[39px]" style={{ color: comprehensionStyle.raw }}>
               {comprehensionLevel}
             </p>
 
@@ -241,17 +252,10 @@ export default function ReadingLevelReportPage() {
               >
                 {overallLevel}
               </p>
-              <p
-                className="text-[20px] font-normal text-[#162DB0]"
-                style={{ fontFamily: "Kanit, sans-serif" }}
-              >
-                Oral Reading Level
-              </p>
             </div>
           </div>
         </div>
       </main>
-      )}
     </div>
   )
 }
