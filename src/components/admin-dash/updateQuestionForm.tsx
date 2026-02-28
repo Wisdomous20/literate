@@ -13,8 +13,7 @@ interface Question {
   type: string;
   options?: string[];
   correctAnswer?: string;
-  passageId?: string; // <-- Add this line
-
+  passageId?: string;
 }
 
 interface UpdateQuestionFormProps {
@@ -48,7 +47,6 @@ export function UpdateQuestionForm({
   const [error, setError] = useState("");
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Track changes
   useEffect(() => {
     const hasTextChanged = questionText !== question.questionText;
     const hasTagsChanged = tags !== question.tags;
@@ -96,21 +94,23 @@ export function UpdateQuestionForm({
 
       setIsLoading(true);
       try {
-  await updateQuestionAction({
-    id: question.id,
-    questionText: questionText.trim(),
-    tags: tags as "Literal" | "Inferential" | "Critical",
-    type: type as "MULTIPLE_CHOICE" | "ESSAY",
-    options: type === "MULTIPLE_CHOICE" ? options.filter(Boolean) : undefined,
-    correctAnswer: type === "MULTIPLE_CHOICE" ? correctAnswer : undefined,
-  });
+        await updateQuestionAction({
+          id: question.id,
+          questionText: questionText.trim(),
+          tags: tags as "Literal" | "Inferential" | "Critical",
+          type: type as "MULTIPLE_CHOICE" | "ESSAY",
+          options: type === "MULTIPLE_CHOICE" ? options.filter(Boolean) : undefined,
+          correctAnswer: type === "MULTIPLE_CHOICE" ? correctAnswer : undefined,
+        });
 
-  if (onSuccess) {
-    onSuccess();
-  } else {
-    router.push(`/admin/passages/${question.passageId}`); // <-- FIXED REDIRECT
-  }
-} catch (err) {
+        if (onSuccess) {
+  onSuccess();
+} else if (question.passageId) {
+  router.push(`/admin/passages/${question.passageId}`);
+} else {
+  setError("Passage ID not found for this question.");
+}
+      } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Failed to update question";
         setError(errorMessage);
@@ -119,7 +119,8 @@ export function UpdateQuestionForm({
         setIsLoading(false);
       }
     },
-    [questionText, tags, type, options, correctAnswer, question.id, question.passageId, router, onSuccess],  );
+    [questionText, tags, type, options, correctAnswer, question.id, question.passageId, router, onSuccess],
+  );
 
   const handleOptionChange = (index: number, value: string) => {
     const newOptions = [...options];
@@ -144,7 +145,10 @@ export function UpdateQuestionForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form
+      onSubmit={handleSubmit}
+      className="w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-4 sm:p-8 flex flex-col gap-y-6 min-w-0"
+    >
       {error && (
         <div className="rounded-lg bg-red-100 p-4 text-sm text-red-700">
           {error}
@@ -158,26 +162,22 @@ export function UpdateQuestionForm({
       )}
 
       {/* Question Text */}
-      <div className="flex gap-6">
-        <label className="w-[140px] shrink-0 pt-3 text-base font-semibold text-[#00306E]">
-          Question
-        </label>
+      <div>
+        <label className="block mb-2 font-semibold text-[#00306E]">Question</label>
         <textarea
           value={questionText}
           onChange={(e) => setQuestionText(e.target.value)}
           rows={3}
-          className="flex-1 resize-none rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none transition-colors focus:border-[#6666FF] shadow-[inset_0px_2px_4px_rgba(0,48,110,0.08)]"
+          className="w-full resize-none rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none transition-colors focus:border-[#6666FF] shadow"
           placeholder="Enter the comprehension question..."
           disabled={isLoading}
         />
       </div>
 
-      {/* Tags (Literal / Inferential / Critical) */}
-      <div className="flex items-center gap-6">
-        <label className="w-[140px] shrink-0 text-base font-semibold text-[#00306E]">
-          Tags
-        </label>
-        <div className="flex flex-1 gap-3">
+      {/* Tags */}
+      <div>
+        <label className="block mb-2 font-semibold text-[#00306E]">Tags</label>
+        <div className="flex flex-col sm:flex-row gap-3">
           {tagOptions.map((t) => (
             <button
               key={t}
@@ -186,7 +186,7 @@ export function UpdateQuestionForm({
               disabled={isLoading}
               className={`flex-1 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-all ${
                 tags === t
-                  ? "border-[#6666FF] bg-[#6666FF]/10 text-[#6666FF]"
+                  ? "border-[#6666FF] bg-[#6666FF]/10 text-[#6666FF] shadow"
                   : "border-[#E4F4FF] bg-white text-[#00306E]/60 hover:border-[#6666FF]/30"
               }`}
             >
@@ -194,28 +194,22 @@ export function UpdateQuestionForm({
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Tag Description */}
-      {tags && (
-        <div className="ml-[164px] rounded-lg bg-[#E4F4FF]/60 px-4 py-3">
-          <p className="text-xs text-[#00306E]/70">
+        {tags && (
+          <div className="mt-2 rounded-lg bg-[#E4F4FF]/60 px-4 py-3 text-xs text-[#00306E]/70">
             {tags === "Literal" &&
               "Literal questions ask about information directly stated in the passage."}
             {tags === "Inferential" &&
               "Inferential questions require the reader to draw conclusions beyond what is explicitly stated."}
             {tags === "Critical" &&
               "Critical questions require the reader to evaluate, judge, or form opinions about the text."}
-          </p>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
-      {/* Question Type (MULTIPLE_CHOICE / ESSAY) */}
-      <div className="flex items-center gap-6">
-        <label className="w-[140px] shrink-0 text-base font-semibold text-[#00306E]">
-          Type
-        </label>
-        <div className="flex flex-1 gap-3">
+      {/* Question Type */}
+      <div>
+        <label className="block mb-2 font-semibold text-[#00306E]">Type</label>
+        <div className="flex flex-col sm:flex-row gap-3">
           {questionTypes.map((qt) => (
             <button
               key={qt.value}
@@ -224,7 +218,7 @@ export function UpdateQuestionForm({
               disabled={isLoading}
               className={`flex-1 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-all ${
                 type === qt.value
-                  ? "border-[#6666FF] bg-[#6666FF]/10 text-[#6666FF]"
+                  ? "border-[#6666FF] bg-[#6666FF]/10 text-[#6666FF] shadow"
                   : "border-[#E4F4FF] bg-white text-[#00306E]/60 hover:border-[#6666FF]/30"
               }`}
             >
@@ -237,11 +231,9 @@ export function UpdateQuestionForm({
       {/* Multiple Choice Options */}
       {type === "MULTIPLE_CHOICE" && (
         <>
-          <div className="flex gap-6">
-            <label className="w-[140px] shrink-0 pt-3 text-base font-semibold text-[#00306E]">
-              Options
-            </label>
-            <div className="flex flex-1 flex-col gap-2">
+          <div>
+            <label className="block mb-2 font-semibold text-[#00306E]">Options</label>
+            <div className="flex flex-col gap-2">
               {options.map((opt, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <span className="w-6 text-center text-sm font-semibold text-[#00306E]/50">
@@ -251,11 +243,10 @@ export function UpdateQuestionForm({
                     type="text"
                     value={opt}
                     onChange={(e) => handleOptionChange(i, e.target.value)}
-                    className="flex-1 rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-2.5 text-sm text-[#00306E] outline-none transition-colors focus:border-[#6666FF] shadow-[inset_0px_2px_4px_rgba(0,48,110,0.08)]"
+                    className="flex-1 rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-2.5 text-sm text-[#00306E] outline-none transition-colors focus:border-[#6666FF] shadow"
                     placeholder={`Option ${String.fromCharCode(65 + i)}`}
                     disabled={isLoading}
                   />
-
                   {options.length > 2 && (
                     <button
                       type="button"
@@ -285,20 +276,14 @@ export function UpdateQuestionForm({
           </div>
 
           {/* Correct Answer */}
-          <div className="flex items-center gap-6">
-            <label
-              htmlFor="correctAnswer"
-              className="w-[140px] shrink-0 text-base font-semibold text-[#00306E]"
-            >
-              Correct Answer
-            </label>
-
-            <div className="relative flex-1">
+          <div>
+            <label className="block mb-2 font-semibold text-[#00306E]">Correct Answer</label>
+            <div className="relative">
               <select
                 id="correctAnswer"
                 value={correctAnswer}
                 onChange={(e) => setCorrectAnswer(e.target.value)}
-                className="w-full appearance-none rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none transition-colors focus:border-[#6666FF] shadow-[inset_0px_2px_4px_rgba(0,48,110,0.08)]"
+                className="w-full appearance-none rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none transition-colors focus:border-[#6666FF] shadow"
                 disabled={isLoading}
               >
                 <option value="">Select correct answer</option>
@@ -308,7 +293,6 @@ export function UpdateQuestionForm({
                   </option>
                 ))}
               </select>
-
               <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#00306E]/50" />
             </div>
           </div>
@@ -316,17 +300,17 @@ export function UpdateQuestionForm({
       )}
 
       {/* Submit */}
-      <div className="flex justify-center gap-4 pt-8">
+      <div className="flex flex-col sm:flex-row justify-end gap-4 pt-4">
         <Link
-          href="/admin/questions"
-          className="rounded-lg px-10 py-3 text-base font-semibold text-[#00306E] transition-all hover:bg-[#E4F4FF]"
+          href={question.passageId ? `/admin/passages/${question.passageId}` : "/admin/passages"}
+          className="rounded-lg px-10 py-3 text-base font-semibold text-[#00306E] transition-all hover:bg-[#E4F4FF] text-center"
         >
           Cancel
         </Link>
         <button
           type="submit"
           disabled={isLoading || !hasChanges}
-          className="submit-btn bg-[#2E2E68] rounded-lg px-10 py-3 text-base font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="rounded-lg bg-[#2E2E68] px-10 py-3 text-base font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed shadow"
         >
           {isLoading ? "Saving..." : "Save Changes"}
         </button>

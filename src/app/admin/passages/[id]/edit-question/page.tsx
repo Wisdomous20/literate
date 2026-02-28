@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { getQuestionByIdAction } from "@/app/actions/comprehension-Test/getQuestionById";
 import { UpdateQuestionForm } from "@/components/admin-dash/updateQuestionForm";
@@ -14,23 +14,30 @@ interface Question {
   type: string;
   options?: string[];
   correctAnswer?: string;
-  passageId?: string; // <-- Add this if you want redirect to passage after update
+  passageId?: string;
 }
 
 export default function EditQuestionPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const passageId = params.id as string;
+  const questionId = searchParams.get("id");
+
   const [question, setQuestion] = useState<Question | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const id = params.id as string;
-
   useEffect(() => {
+    if (!questionId) {
+      setError("No question ID provided.");
+      setIsLoading(false);
+      return;
+    }
     const loadQuestion = async () => {
       setIsLoading(true);
       try {
-        const data = await getQuestionByIdAction({ id });
+        const data = await getQuestionByIdAction({ id: questionId });
         if (data) {
           setQuestion(data as Question);
         }
@@ -45,7 +52,7 @@ export default function EditQuestionPage() {
     };
 
     loadQuestion();
-  }, [id]);
+  }, [questionId]);
 
   if (isLoading) {
     return (
@@ -96,8 +103,7 @@ export default function EditQuestionPage() {
 
       <main className="flex-1 overflow-auto">
         <div className="mx-auto max-w-2xl px-8 py-8">
-          <UpdateQuestionForm question={question} />
-        </div>
+<UpdateQuestionForm question={{ ...question, passageId }} />        </div>
       </main>
     </div>
   );
