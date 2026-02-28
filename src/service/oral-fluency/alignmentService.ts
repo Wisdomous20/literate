@@ -1,6 +1,6 @@
 import { AlignedWord } from "@/types/oral-reading"
 import { normalizeWord } from "./whisperService"
-import { similarityRatio } from "./miscueDetectionService"
+import { similarityRatio } from "./similarityRatio"
 
 interface SpokenWordEntry {
   word: string
