@@ -371,7 +371,7 @@ export function CreatePassageForm() {
         tags: selectedTag as "Literal" | "Inferential" | "Critical",
         testType: testType as "PRE_TEST" | "POST_TEST",
       });
-      router.push("/admin/passages");
+      router.push("/admin");
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to create passage";

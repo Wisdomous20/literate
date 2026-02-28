@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { ChevronDown } from "lucide-react";
 import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 import { updatePassageAction } from "@/app/actions/admin/updatePassage";
 
 interface Passage {
@@ -27,7 +26,6 @@ const testTypes = [
   { label: "Pre-Test", value: "PRE_TEST" },
   { label: "Post-Test", value: "POST_TEST" },
 ];
-
 const levels = [
   { label: "Kindergarten", value: 0 },
   { label: "Grade 1", value: 1 },
@@ -44,15 +42,11 @@ const levels = [
   { label: "Grade 12", value: 12 },
 ];
 
-export function UpdatePassageForm({
-  passage,
-  onSuccess,
-}: UpdatePassageFormProps) {
-  const router = useRouter();
+export function UpdatePassageForm({ passage, onSuccess }: UpdatePassageFormProps) {
   const [title, setTitle] = useState(passage.title);
   const [content, setContent] = useState(passage.content);
   const [language, setLanguage] = useState(passage.language);
-  const [level, setLevel] = useState<number>(passage.level);
+  const [level, setLevel] = useState<number | "">(passage.level);
   const [selectedTag, setSelectedTag] = useState(passage.tags);
   const [testType, setTestType] = useState(passage.testType);
   const [wordCount, setWordCount] = useState(0);
@@ -60,28 +54,19 @@ export function UpdatePassageForm({
   const [error, setError] = useState("");
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Auto-count words
   useEffect(() => {
     const words = content.trim().split(/\s+/).filter(Boolean).length;
     setWordCount(words);
   }, [content]);
 
-  // Track changes
   useEffect(() => {
-    const hasTextChanged = title !== passage.title;
-    const hasContentChanged = content !== passage.content;
-    const hasLanguageChanged = language !== passage.language;
-    const hasLevelChanged = level !== passage.level;
-    const hasTagsChanged = selectedTag !== passage.tags;
-    const hasTestTypeChanged = testType !== passage.testType;
-
     setHasChanges(
-      hasTextChanged ||
-        hasContentChanged ||
-        hasLanguageChanged ||
-        hasLevelChanged ||
-        hasTagsChanged ||
-        hasTestTypeChanged,
+      title !== passage.title ||
+      content !== passage.content ||
+      language !== passage.language ||
+      level !== passage.level ||
+      selectedTag !== passage.tags ||
+      testType !== passage.testType
     );
   }, [title, content, language, level, selectedTag, testType, passage]);
 
@@ -89,17 +74,17 @@ export function UpdatePassageForm({
     e.preventDefault();
     setError("");
 
-    if (
-      !title.trim() ||
-      !content.trim() ||
-      !language ||
-      level === null ||
-      !selectedTag ||
-      !testType
-    ) {
-      setError("Please fill in all required fields");
-      return;
-    }
+    // Validation
+    if (!title.trim()) return setError("Title is required.");
+    if (title.trim().length < 3) return setError("Title must be at least 3 characters.");
+    if (title.trim().length > 100) return setError("Title must be less than 100 characters.");
+    if (!content.trim()) return setError("Content is required.");
+    if (content.trim().length < 20) return setError("Content must be at least 20 characters.");
+    if (wordCount < 5) return setError("Content must have at least 5 words.");
+    if (!language) return setError("Please select a language.");
+    if (level === "") return setError("Please select a level.");
+    if (!selectedTag) return setError("Please select a tag.");
+    if (!testType) return setError("Please select a test type.");
 
     setIsLoading(true);
     try {
@@ -108,15 +93,12 @@ export function UpdatePassageForm({
         title: title.trim(),
         content: content.trim(),
         language,
-        level,
+        level: Number(level),
         tags: selectedTag as "Literal" | "Inferential" | "Critical",
         testType: testType as "PRE_TEST" | "POST_TEST",
       });
-
       if (onSuccess) {
         onSuccess();
-      } else {
-        router.push("/admin");
       }
     } catch (err) {
       const errorMessage =
@@ -129,7 +111,10 @@ export function UpdatePassageForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form
+      onSubmit={handleSubmit}
+      className="w-full max-w-lg mx-auto bg-white rounded-2xl shadow-lg p-4 sm:p-8 flex flex-col gap-y-4 min-w-0"
+    >
       {error && (
         <div className="rounded-lg bg-red-100 p-4 text-sm text-red-700">
           {error}
@@ -143,116 +128,86 @@ export function UpdatePassageForm({
       )}
 
       {/* Title */}
-      <div className="flex items-center gap-6">
-        <label className="w-[130px] shrink-0 text-base font-semibold text-[#00306E]">
-          Title
-        </label>
+      <div>
+        <label className="block mb-2 font-semibold text-[#00306E]">Title</label>
         <input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="flex-1 rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none transition-colors focus:border-[#6666FF] shadow-[inset_0px_2px_4px_rgba(0,48,110,0.08)]"
+          className="w-full rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none shadow focus:border-[#6666FF] transition"
           placeholder="Enter passage title"
           disabled={isLoading}
         />
       </div>
 
       {/* Content */}
-      <div className="flex gap-6">
-        <label className="w-[130px] shrink-0 pt-3 text-base font-semibold text-[#00306E]">
-          Content
-        </label>
+      <div>
+        <label className="block mb-2 font-semibold text-[#00306E]">Content</label>
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           rows={5}
-          className="flex-1 resize-none rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none transition-colors focus:border-[#6666FF] shadow-[inset_0px_2px_4px_rgba(0,48,110,0.08)]"
+          className="w-full rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none shadow focus:border-[#6666FF] transition"
           placeholder="Enter passage content..."
           disabled={isLoading}
         />
       </div>
 
-      {/* Word Count (read only) */}
-      <div className="flex items-center gap-4">
-        <label
-          htmlFor="wordCount"
-          className="w-[130px] shrink-0 text-base font-semibold text-[#00306E]"
-        >
-          Word Count
-        </label>
-
+      {/* Word Count */}
+      <div>
+        <label className="block mb-2 font-semibold text-[#00306E]">Word Count</label>
         <input
-          id="wordCount"
           type="text"
           value={wordCount}
           readOnly
-          className="flex-1 cursor-not-allowed rounded-lg border-2 border-[#E4F4FF] bg-[#F8FAFC] px-4 py-3 text-base text-[#00306E]/70 outline-none shadow-[inset_0px_2px_4px_rgba(0,48,110,0.08)]"
+          className="w-full cursor-not-allowed rounded-lg border-2 border-[#E4F4FF] bg-[#F8FAFC] px-4 py-3 text-base text-[#00306E]/70 outline-none shadow"
         />
       </div>
 
-      {/* Language */}
-      <div className="flex items-center gap-6">
-        <label
-          htmlFor="language"
-          className="w-[130px] shrink-0 text-base font-semibold text-[#00306E]"
-        >
-          Language
-        </label>
-
-        <div className="relative flex-1">
-          <select
-            id="language"
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-            className="w-full appearance-none rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none transition-colors focus:border-[#6666FF] shadow-[inset_0px_2px_4px_rgba(0,48,110,0.08)]"
-            disabled={isLoading}
-          >
-            <option value="">Select language</option>
-            {languages.map((l) => (
-              <option key={l} value={l}>
-                {l}
-              </option>
-            ))}
-          </select>
-
-          <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#00306E]/50" />
+      {/* Language & Level */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1">
+          <label className="block mb-2 font-semibold text-[#00306E]">Language</label>
+          <div className="relative">
+            <select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              className="w-full appearance-none rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none shadow focus:border-[#6666FF] transition"
+              disabled={isLoading}
+            >
+              <option value="">Select language</option>
+              {languages.map((l) => (
+                <option key={l} value={l}>{l}</option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#00306E]/50" />
+          </div>
         </div>
-      </div>
-
-      {/* Level */}
-      <div className="flex items-center gap-6">
-        <label
-          htmlFor="level"
-          className="w-[130px] shrink-0 text-base font-semibold text-[#00306E]"
-        >
-          Level
-        </label>
-
-        <div className="relative flex-1">
-          <select
-            id="level"
-            value={level}
-            onChange={(e) => setLevel(Number(e.target.value))}
-            className="w-full appearance-none rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none transition-colors focus:border-[#6666FF] shadow-[inset_0px_2px_4px_rgba(0,48,110,0.08)]"
-            disabled={isLoading}
-          >
-            {levels.map((l) => (
-              <option key={l.value} value={l.value}>
-                {l.label}
-              </option>
-            ))}
-          </select>
-
-          <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#00306E]/50" />
+        <div className="flex-1">
+          <label className="block mb-2 font-semibold text-[#00306E]">Level</label>
+          <div className="relative">
+            <select
+              value={level}
+              onChange={(e) =>
+                setLevel(e.target.value === "" ? "" : Number(e.target.value))
+              }
+              className="w-full appearance-none rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none shadow focus:border-[#6666FF] transition"
+              disabled={isLoading}
+            >
+              <option value="">Select level</option>
+              {levels.map((l) => (
+                <option key={l.value} value={l.value}>{l.label}</option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#00306E]/50" />
+          </div>
         </div>
       </div>
 
       {/* Tags */}
-      <div className="flex items-center gap-6">
-        <label className="w-[130px] shrink-0 text-base font-semibold text-[#00306E]">
-          Tags
-        </label>
-        <div className="flex flex-1 gap-3">
+      <div>
+        <label className="block mb-2 font-semibold text-[#00306E]">Tags</label>
+        <div className="flex flex-col sm:flex-row gap-3">
           {tags.map((tag) => (
             <button
               key={tag}
@@ -261,7 +216,7 @@ export function UpdatePassageForm({
               disabled={isLoading}
               className={`flex-1 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-all ${
                 selectedTag === tag
-                  ? "border-[#6666FF] bg-[#6666FF]/10 text-[#6666FF]"
+                  ? "border-[#6666FF] bg-[#6666FF]/10 text-[#6666FF] shadow"
                   : "border-[#E4F4FF] bg-white text-[#00306E]/60 hover:border-[#6666FF]/30"
               }`}
             >
@@ -272,11 +227,9 @@ export function UpdatePassageForm({
       </div>
 
       {/* Test Type */}
-      <div className="flex items-center gap-6">
-        <label className="w-[130px] shrink-0 text-base font-semibold text-[#00306E]">
-          Test Type
-        </label>
-        <div className="flex flex-1 gap-3">
+      <div>
+        <label className="block mb-2 font-semibold text-[#00306E]">Test Type</label>
+        <div className="flex flex-col sm:flex-row gap-3">
           {testTypes.map((t) => (
             <button
               key={t.value}
@@ -285,7 +238,7 @@ export function UpdatePassageForm({
               disabled={isLoading}
               className={`flex-1 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-all ${
                 testType === t.value
-                  ? "border-[#6666FF] bg-[#6666FF]/10 text-[#6666FF]"
+                  ? "border-[#6666FF] bg-[#6666FF]/10 text-[#6666FF] shadow"
                   : "border-[#E4F4FF] bg-white text-[#00306E]/60 hover:border-[#6666FF]/30"
               }`}
             >
@@ -296,10 +249,10 @@ export function UpdatePassageForm({
       </div>
 
       {/* Submit */}
-      <div className="flex justify-center gap-4 pt-8">
+      <div className="flex flex-col sm:flex-row justify-end gap-4 pt-4">
         <Link
           href="/admin/passages"
-          className="rounded-lg px-10 py-3 text-base font-semibold text-[#00306E] transition-all hover:bg-[#E4F4FF]"
+          className="rounded-lg px-10 py-3 text-base font-semibold text-[#00306E] transition-all hover:bg-[#E4F4FF] text-center"
         >
           Cancel
         </Link>
