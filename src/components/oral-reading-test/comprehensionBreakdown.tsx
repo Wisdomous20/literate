@@ -33,6 +33,7 @@ interface ComprehensionBreakdownProps {
 }
 
 function getLevelStyle(level: string): { bg: string; text: string } {
+  if (!level) return { bg: "rgba(230, 230, 250, 0.2)", text: "#2E2EA3" }
   switch (level.toLowerCase()) {
     case "frustration":
       return { bg: "rgba(220, 38, 38, 0.15)", text: "#DC2626" }
@@ -79,28 +80,30 @@ export function ComprehensionBreakdown({
 
           return (
             <div key={item.label}>
-              <div className="flex items-center justify-between py-2">
+              <div
+                className="flex items-center justify-between py-2 px-2 rounded-lg transition-all duration-200 cursor-pointer"
+                style={{
+                  background: isHighlighted ? item.color : "transparent",
+                }}
+                onClick={() => onTagClick && onTagClick(item.key)}
+              >
                 {/* Label */}
                 <span
                   className="text-sm font-bold"
-                  style={{ color: "#31318A" }}
+                  style={{ color: item.textColor }}
                 >
                   {item.label}
                 </span>
-                {/* Color-coded badge at right, clickable */}
-                <button
-                  type="button"
-                  className={`flex h-6 w-7 items-center justify-center rounded-[5px] text-sm font-bold border transition-all ${isHighlighted ? "ring-2 ring-blue-400" : ""}`}
+                {/* Color-coded badge at right */}
+                <div
+                  className="flex h-6 w-7 items-center justify-center rounded-[5px] text-sm font-bold"
                   style={{
-                    background: item.color,
-                    border: "1px solid #DAE6FF",
+                    background: isHighlighted ? "white" : item.color,
                     color: item.textColor,
-                    boxShadow: isHighlighted ? `0 0 0 2px ${item.highlightColor}` : undefined,
                   }}
-                  onClick={() => onTagClick && onTagClick(item.key)}
                 >
                   {displayValue}
-                </button>
+                </div>
               </div>
               {/* Divider */}
               {index < breakdownItems.length - 1 && (

@@ -118,7 +118,7 @@ export default function ComprehensionReportPage() {
           score: test.score,
           totalItems: test.totalItems,
           percentage,
-          level: test.level,
+          level: test.classificationLevel,
           literal: tagBreakdown.literal,
           inferential: tagBreakdown.inferential,
           critical: tagBreakdown.critical,

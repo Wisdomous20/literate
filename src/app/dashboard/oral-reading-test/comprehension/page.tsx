@@ -11,6 +11,12 @@ import { getAssessmentByIdAction } from "@/app/actions/assessment/getAssessmentB
 const OPTION_LABELS = ["A", "B", "C", "D"]
 const COMP_STORAGE_KEY = "oral-reading-comprehension-state"
 
+const TAG_HIGHLIGHT: Record<string, { bg: string; border: string; shadow: string }> = {
+  literal:     { bg: "rgba(160, 200, 255, 0.35)", border: "#2563EB", shadow: "0px 1px 20px rgba(37, 99, 235, 0.3)" },
+  inferential: { bg: "rgba(180, 170, 240, 0.4)",  border: "#4B3BA3", shadow: "0px 1px 20px rgba(75, 59, 163, 0.3)" },
+  critical:    { bg: "rgba(253, 182, 210, 0.44)", border: "#C41048", shadow: "0px 1px 20px rgba(196, 16, 72, 0.3)" },
+}
+
 interface QuestionData {
   id: string
   questionNumber: number
@@ -94,7 +100,12 @@ export default function OralReadingComprehensionPage() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const [showScrollButton, setShowScrollButton] = useState(true)
+  const [highlightedTag, setHighlightedTag] = useState<"literal" | "inferential" | "critical" | null>(null)
   const contentRef = useRef<HTMLDivElement>(null)
+
+  const handleTagClick = (tag: "literal" | "inferential" | "critical") => {
+    setHighlightedTag((prev) => (prev === tag ? null : tag))
+  }
 
   // Fetch questions on mount + restore saved state
   useEffect(() => {
@@ -462,10 +473,18 @@ export default function OralReadingComprehensionPage() {
 
         {/* Questions */}
         <div className="space-y-6">
-          {questions.map((question) => (
+          {questions.map((question) => {
+            const tagKey = question.tags?.toLowerCase() as "literal" | "inferential" | "critical" | undefined
+            const tagHighlight = highlightedTag && tagKey === highlightedTag ? TAG_HIGHLIGHT[tagKey] : null
+            return (
             <div
               key={question.id}
-              className="bg-[#EFFDFF] border border-[#10AABF] rounded-[20px] shadow-[0px_1px_20px_rgba(65,155,180,0.47)] px-8 py-6"
+              className="rounded-[20px] px-8 py-6 transition-all duration-300"
+              style={{
+                background: tagHighlight ? tagHighlight.bg : "#EFFDFF",
+                border: `1px solid ${tagHighlight ? tagHighlight.border : "#10AABF"}`,
+                boxShadow: tagHighlight ? tagHighlight.shadow : "0px 1px 20px rgba(65,155,180,0.47)",
+              }}
             >
               {/* Question Header */}
               <div className="flex items-start gap-3 mb-2">
@@ -538,7 +557,8 @@ export default function OralReadingComprehensionPage() {
                 </div>
               )}
             </div>
-          ))}
+            )
+          })}
         </div>
 
         {/* Submit Button */}
@@ -565,6 +585,8 @@ export default function OralReadingComprehensionPage() {
               level={comprehensionResult?.level}
               tagBreakdown={comprehensionResult?.tagBreakdown}
               disabled={!isSubmitted}
+              highlightedTag={highlightedTag}
+              onTagClick={handleTagClick}
             />
           </div>
         </div>

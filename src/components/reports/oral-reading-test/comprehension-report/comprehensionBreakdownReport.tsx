@@ -25,6 +25,7 @@ interface ComprehensionBreakdownReportProps {
 }
 
 function getLevelStyle(level: string): { bg: string; text: string } {
+  if (!level) return { bg: "rgba(230, 230, 250, 0.2)", text: "#2E2EA3" }
   switch (level.toLowerCase()) {
     case "frustration":
       return { bg: "rgba(220, 38, 38, 0.15)", text: "#DC2626" }
@@ -82,7 +83,7 @@ export default function ComprehensionBreakdownReport({
                 {/* Label */}
                 <span
                   className="text-sm font-bold"
-                  style={{ color: "#31318A" }}
+                  style={{ color: item.textColor }}
                 >
                   {item.label}
                 </span>

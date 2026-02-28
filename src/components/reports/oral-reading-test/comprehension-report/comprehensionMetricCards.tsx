@@ -14,6 +14,7 @@ interface MetricCardProps {
 }
 
 function getLevelColor(level: string): string {
+  if (!level) return "#CE330C"
   switch (level.toLowerCase()) {
     case "frustration":
       return "#DC2626"
