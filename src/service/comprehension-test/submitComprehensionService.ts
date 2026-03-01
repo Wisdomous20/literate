@@ -89,7 +89,7 @@ export async function submitComprehensionService(input: SubmitComprehensionInput
           quizId: quiz.id,
           score,
           totalItems,
-          level,
+          classificationLevel: level,
           answers: {
             create: gradedAnswers.map((a) => ({
               questionId: a.questionId,

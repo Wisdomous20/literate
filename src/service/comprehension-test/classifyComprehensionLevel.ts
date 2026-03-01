@@ -1,5 +1,6 @@
-export default function classifyComprehensionLevel(percentage: number): string {
-  if (percentage >= 80) return "INDEPENDENT";
-  if (percentage >= 59) return "INSTRUCTIONAL";
-  return "FRUSTRATION";
+import { LevelClassification } from "@/generated/prisma/enums";
+export default function classifyComprehensionLevel(percentage: number): LevelClassification {
+  if (percentage >= 80) return LevelClassification.INDEPENDENT;
+  if (percentage >= 59) return LevelClassification.INSTRUCTIONAL;
+  return LevelClassification.FRUSTRATION;
 }

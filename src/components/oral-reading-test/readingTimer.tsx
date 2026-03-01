@@ -11,12 +11,14 @@ interface ReadingTimerProps {
   recordedAudioURL: string | null
   onTryAgain: () => void
   onStartNew: () => void
+  audioRef?: React.RefObject<HTMLAudioElement | null>
 }
 
 const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 2]
 
-function AudioPlayer({ src }: { src: string }) {
-  const audioRef = useRef<HTMLAudioElement>(null)
+function AudioPlayer({ src, externalAudioRef }: { src: string; externalAudioRef?: React.RefObject<HTMLAudioElement | null> }) {
+  const internalRef = useRef<HTMLAudioElement>(null)
+  const audioRef = externalAudioRef || internalRef
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
@@ -30,27 +32,33 @@ function AudioPlayer({ src }: { src: string }) {
     const onLoadedMetadata = () => setDuration(audio.duration)
     const onTimeUpdate = () => setCurrentTime(audio.currentTime)
     const onEnded = () => setIsPlaying(false)
+    const onPlay = () => setIsPlaying(true)
+    const onPause = () => setIsPlaying(false)
 
     audio.addEventListener("loadedmetadata", onLoadedMetadata)
     audio.addEventListener("timeupdate", onTimeUpdate)
     audio.addEventListener("ended", onEnded)
+    audio.addEventListener("play", onPlay)
+    audio.addEventListener("pause", onPause)
 
     return () => {
       audio.removeEventListener("loadedmetadata", onLoadedMetadata)
       audio.removeEventListener("timeupdate", onTimeUpdate)
       audio.removeEventListener("ended", onEnded)
+      audio.removeEventListener("play", onPlay)
+      audio.removeEventListener("pause", onPause)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const togglePlay = () => {
     const audio = audioRef.current
     if (!audio) return
-    if (isPlaying) {
-      audio.pause()
+    if (audio.paused) {
+      audio.play().catch(() => {})
     } else {
-      audio.play()
+      audio.pause()
     }
-    setIsPlaying(!isPlaying)
   }
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -184,6 +192,7 @@ export function ReadingTimer({
   recordedAudioURL,
   onTryAgain,
   onStartNew,
+  audioRef,
 }: ReadingTimerProps) {
   const formatTime = (totalSeconds: number) => {
     const hrs = Math.floor(totalSeconds / 3600)
@@ -198,7 +207,7 @@ export function ReadingTimer({
     <div className="flex flex-col items-center gap-2 py-2">
       {/* Audio Playback (after recording is done, with real audio) */}
       {hasRecording && recordedAudioURL && (
-        <AudioPlayer src={recordedAudioURL} />
+        <AudioPlayer src={recordedAudioURL} externalAudioRef={audioRef} />
       )}
 
       {/* Timer Display (HH:MM:SS) */}

@@ -16,6 +16,11 @@ import { getClassById } from "@/app/actions/class/getClassById";
 import { createStudent } from "@/app/actions/student/createStudent";
 import { deleteStudent } from "@/app/actions/student/deleteStudent";
 import { updateStudent } from "@/app/actions/student/updateStudent";
+import { useStudentList } from "@/lib/hooks/useStudentList";
+import { useQueryClient } from "@tanstack/react-query";
+import { useClassById } from "@/lib/hooks/useClassById";
+
+
 
 interface StudentData {
   id: string;
@@ -49,53 +54,45 @@ export default function ClassListsPage() {
   const params = useParams();
   const router = useRouter();
   const classId = params.id as string;
+  const queryClient = useQueryClient();
 
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOption, setSortOption] = useState<
     "nameAsc" | "nameDesc" | "gradeAsc" | "gradeDesc"
   >("nameAsc");
 
+    const {
+    data: classData,
+    isLoading: classLoading,
+    error: classError,
+  } = useClassById(classId);
+
+
+    const {
+    data: students,
+    isLoading: studentsLoading,
+    error: studentsError,
+    isFetching,
+  } = useStudentList(classData?.name ?? "");
+
+  
   // Track assessment type and stat card collapse
   const [assessmentType, setAssessmentType] =
     useState<AssessmentTypeFilter>("ORAL_READING");
   const [showStats, setShowStats] = useState(true);
 
   // Remove caching: use local state for loading, error, and data
-  const [classData, setClassData] = useState<ClassData | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
 
-  const fetchClassData = useCallback(async () => {
-    if (!classId) return;
-    setLoading(true);
-    setFetchError(null);
-    try {
-      const result = await getClassById(classId);
-      if (result?.success && result.classItem) {
-        setClassData(result.classItem);
-      } else {
-        setClassData(null);
-        setFetchError(result?.error || "Failed to fetch class data");
-      }
-    } catch (err: unknown) {
-      setClassData(null);
-      if (err instanceof Error) {
-        setFetchError(err.message);
-      } else {
-        setFetchError("Failed to fetch class data");
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [classId]);
-
-  useEffect(() => {
-    fetchClassData();
-  }, [fetchClassData]);
+  const loading = classLoading || studentsLoading;
+  const fetchError = classError?.message || studentsError?.message || null;
 
   const refetchClassData = async () => {
-    await fetchClassData();
+    await queryClient.invalidateQueries({ queryKey: ["class", classId] });
+    if (classData?.name) {
+      await queryClient.invalidateQueries({ queryKey: ["students", classData.name] });
+    }
   };
 
   const handleCreateStudent = () => {
@@ -112,26 +109,24 @@ export default function ClassListsPage() {
     const result = await createStudent(data.studentName, level, classData.name);
 
     if (result.success) {
-      await refetchClassData();
+      await queryClient.invalidateQueries({ queryKey: ["students", classData.name] });
       setIsModalOpen(false);
     } else {
       alert(result.error || "Failed to create student");
     }
   };
 
-  const handleDeleteStudent = async (studentId: string) => {
+    const handleDeleteStudent = async (studentId: string) => {
     if (!confirm("Are you sure you want to delete this student?")) return;
-
     const result = await deleteStudent(studentId);
-
     if (result.success) {
-      await refetchClassData();
+      await queryClient.invalidateQueries({ queryKey: ["students", classData?.name] });
     } else {
       alert(result.error || "Failed to delete student");
     }
   };
 
-  const handleUpdateStudent = async (
+    const handleUpdateStudent = async (
     studentId: string,
     name: string,
     gradeLevel: string,
@@ -140,11 +135,14 @@ export default function ClassListsPage() {
     const result = await updateStudent(studentId, name, level);
 
     if (result.success) {
-      await refetchClassData();
+      await queryClient.invalidateQueries({ queryKey: ["students", classData?.name] });
     } else {
       alert(result.error || "Failed to update student");
     }
   };
+
+
+
 
   const handleAssessmentFilterChange = (type: AssessmentTypeFilter) => {
     setAssessmentType(type);

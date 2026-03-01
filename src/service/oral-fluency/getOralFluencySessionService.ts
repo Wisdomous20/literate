@@ -1,15 +1,15 @@
 import { prisma } from "@/lib/prisma";
 
-interface GetOralReadingSessionResult {
+interface GetOralFluencySessionResult {
   success: boolean;
   session?: unknown;
   error?: string;
   code?: "VALIDATION_ERROR" | "NOT_FOUND" | "INTERNAL_ERROR";
 }
 
-export async function getOralReadingSessionService(
+export async function getOralFluencySessionService(
   sessionId: string
-): Promise<GetOralReadingSessionResult> {
+): Promise<GetOralFluencySessionResult> {
   if (!sessionId) {
     return {
       success: false,
@@ -19,7 +19,7 @@ export async function getOralReadingSessionService(
   }
 
   try {
-    const session = await prisma.oralReadingSession.findUnique({
+    const session = await prisma.oralFluencySession.findUnique({
       where: { id: sessionId },
       include: {
         miscues: { orderBy: { wordIndex: "asc" } },
