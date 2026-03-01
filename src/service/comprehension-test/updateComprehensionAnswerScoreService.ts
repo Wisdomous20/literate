@@ -77,7 +77,7 @@ export async function updateComprehensionAnswerService(
     // Update the comprehension test score and level
     await prisma.comprehensionTest.update({
       where: { id: existingAnswer.comprehensionTestId },
-      data: { score: newScore, level: newLevel },
+      data: { score: newScore, classificationLevel: newLevel },
     });
 
     return {

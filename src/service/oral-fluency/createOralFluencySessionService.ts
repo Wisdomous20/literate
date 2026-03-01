@@ -1,25 +1,25 @@
 import { prisma } from "@/lib/prisma"
-import { analyzeOralReading } from "./analysisService"
-import { OralReadingAnalysis } from "@/types/oral-reading"
+import { OralFluencyAnalysis } from "@/types/oral-reading"
+import { analyzeOralFluency } from "./analysisService"
 
-interface CreateOralReadingInput {
+interface CreateOralFluencyInput {
   assessmentId: string
   audioBuffer: Buffer
   fileName: string
   audioUrl: string
 }
 
-interface CreateOralReadingResult {
+interface CreateOralFluencyResult {
   success: boolean
   sessionId?: string
-  analysis?: OralReadingAnalysis
+  analysis?: OralFluencyAnalysis
   error?: string
   code?: "VALIDATION_ERROR" | "NOT_FOUND" | "ANALYSIS_FAILED" | "INTERNAL_ERROR"
 }
 
 export async function createOralFluencySessionService(
-  input: CreateOralReadingInput
-): Promise<CreateOralReadingResult> {
+  input: CreateOralFluencyInput
+): Promise<CreateOralFluencyResult> {
   const { assessmentId, audioBuffer, fileName, audioUrl } = input
 
   if (!assessmentId || !audioBuffer) {
