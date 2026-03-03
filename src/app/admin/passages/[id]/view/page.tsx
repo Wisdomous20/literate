@@ -37,7 +37,6 @@ export default function PassageViewPage() {
 
   return (
     <div className="min-h-screen bg-[#F4FCFD]">
-      {/* Header */}
       <div className="sticky top-0 z-10 bg-[#F4FCFD]/95 backdrop-blur border-b border-[#E4F4FF] px-8 py-4">
         <button
           onClick={() => router.back()}

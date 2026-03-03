@@ -42,7 +42,7 @@ export function CreateQuestionForm({
   onSuccess?: () => void;
 }) {
   const router = useRouter();
-  const queryClient = useQueryClient(); // <-- Add this
+  const queryClient = useQueryClient(); 
   const [questionText, setQuestionText] = useState("");
   const [tags, setTags] = useState("");
   const [type, setType] = useState("");
@@ -77,7 +77,6 @@ export function CreateQuestionForm({
             type === "MULTIPLE_CHOICE" ? options.filter(Boolean) : undefined,
           correctAnswer: type === "MULTIPLE_CHOICE" ? correctAnswer : undefined,
         });
-        // Invalidate questions for this passage (if you have such a query)
         await queryClient.invalidateQueries({ queryKey: ["questions"] });
         if (onSuccess) {
           onSuccess();
@@ -138,7 +137,6 @@ export function CreateQuestionForm({
           </div>
         )}
 
-        {/* Question Text */}
         <div>
           <label className="block mb-2 font-semibold text-[#00306E]">
             Question
@@ -153,7 +151,6 @@ export function CreateQuestionForm({
           />
         </div>
 
-        {/* Tags */}
         <div>
           <label className="block mb-2 font-semibold text-[#00306E]">
             Tags
@@ -187,7 +184,6 @@ export function CreateQuestionForm({
           )}
         </div>
 
-        {/* Question Type */}
         <div>
           <label className="block mb-2 font-semibold text-[#00306E]">
             Type
@@ -211,7 +207,6 @@ export function CreateQuestionForm({
           </div>
         </div>
 
-        {/* Multiple Choice Options */}
         {type === "MULTIPLE_CHOICE" && (
           <>
             <div>
@@ -259,7 +254,6 @@ export function CreateQuestionForm({
                 )}
               </div>
             </div>
-            {/* Correct Answer */}
             <div>
               <label className="block mb-2 font-semibold text-[#00306E]">
                 Correct Answer
@@ -284,7 +278,6 @@ export function CreateQuestionForm({
           </>
         )}
 
-        {/* Submit & Cancel */}
         <div className="flex justify-end pt-4 gap-3">
           <button
             type="button"

@@ -20,12 +20,11 @@ export function AdminSidebar() {
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
-    router.push("/login"); // redirect user to login page after logout
+    router.push("/login"); 
   };
 
   return (
     <aside className="relative flex h-screen w-[323px] min-w-[323px] flex-col bg-[#6666FF] shadow-[16px_18px_5px_3px_rgba(8,70,44,0.09)]">
-      {/* Logo */}
       <div className="flex items-center gap-3 px-8 pt-6 pb-2">
         <div className="flex h-8 w-8 items-center justify-center">
           <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-8 w-8">
@@ -40,13 +39,11 @@ export function AdminSidebar() {
         <span className="text-xl font-bold text-white tracking-[0.02em]">LiteRate</span>
       </div>
 
-      {/* Admin Badge */}
       <div className="px-8 pt-4 pb-4">
         <h2 className="text-lg font-semibold text-white">Admin Panel</h2>
         <p className="text-sm text-white/70">System Management</p>
       </div>
 
-      {/* Menu Section */}
       <div className="flex-1 px-6">
         <p className="mb-3 px-2 text-[11px] font-semibold text-white/90 tracking-[0.25em]">MENU</p>
         <nav className="space-y-1">
@@ -71,10 +68,8 @@ export function AdminSidebar() {
           })}
         </nav>
 
-        {/* Divider */}
         <div className="mx-2 my-5 h-px bg-white/30" />
 
-        {/* General Section */}
         <p className="mb-3 px-2 text-[11px] font-semibold text-white/90 tracking-[0.25em]">GENERAL</p>
         <nav className="space-y-1">
           {generalItems.map((item) => {
@@ -99,10 +94,8 @@ export function AdminSidebar() {
         </nav>
       </div>
 
-      {/* Bottom Divider */}
       <div className="mx-8 h-px bg-white/30" />
 
-      {/* Logout */}
       <div className="p-6">
         <button
           onClick={handleLogout}

@@ -49,7 +49,6 @@ export function CreatePassageForm() {
     e.preventDefault();
     setError("");
 
-    // Validation
     if (!title.trim()) return setError("Title is required.");
     if (title.trim().length < 3)
       return setError("Title must be at least 3 characters.");
@@ -72,7 +71,7 @@ export function CreatePassageForm() {
         level: Number(level),
         testType: testType as "PRE_TEST" | "POST_TEST",
       });
-      await queryClient.invalidateQueries({ queryKey: ["passages"] }); // <-- Invalidate cache
+      await queryClient.invalidateQueries({ queryKey: ["passages"] }); 
       router.push("/admin");
     } catch (err) {
       const errorMessage =
@@ -100,7 +99,6 @@ export function CreatePassageForm() {
         </div>
       )}
 
-      {/* Title */}
       <div>
         <label className="block mb-2 font-semibold text-[#00306E]">Title</label>
         <input
@@ -113,7 +111,6 @@ export function CreatePassageForm() {
         />
       </div>
 
-      {/* Content */}
       <div>
         <label className="block mb-2 font-semibold text-[#00306E]">
           Content
@@ -128,7 +125,6 @@ export function CreatePassageForm() {
         />
       </div>
 
-      {/* Word Count */}
       <div>
         <label className="block mb-2 font-semibold text-[#00306E]">
           Word Count
@@ -141,7 +137,6 @@ export function CreatePassageForm() {
         />
       </div>
 
-      {/* Language & Level */}
       <div className="flex gap-4">
         <div className="flex-1">
           <label className="block mb-2 font-semibold text-[#00306E]">
@@ -189,7 +184,6 @@ export function CreatePassageForm() {
         </div>
       </div>
 
-      {/* Test Type */}
       <div>
         <label className="block mb-2 font-semibold text-[#00306E]">
           Test Type
@@ -213,7 +207,6 @@ export function CreatePassageForm() {
         </div>
       </div>
 
-      {/* Submit & Cancel */}
       <div className="flex justify-end pt-4 gap-3">
         <button
           type="button"

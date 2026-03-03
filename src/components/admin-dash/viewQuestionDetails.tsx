@@ -42,7 +42,6 @@ export function ViewQuestionDetails({
 
   return (
     <div>
-      {/* Question Details */}
       <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-lg p-8 border border-[#E4F4FF]">
         <h2 className="text-xl font-bold mb-4 text-[#2E2E68]">
           Question Details
@@ -82,7 +81,6 @@ export function ViewQuestionDetails({
           </div>
         )}
 
-        {/* Passage Name (plain text) */}
         <div className="mt-4 pt-4 border-t border-[#E4F4FF]">
           <span className="font-semibold text-[#00306E]">Passage:</span>{" "}
           {isLoadingPassage ? (

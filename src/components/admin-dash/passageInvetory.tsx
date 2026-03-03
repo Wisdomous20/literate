@@ -16,7 +16,6 @@ export default function PassageInventory() {
   const menuRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
-  // Close menu on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -49,7 +48,6 @@ export default function PassageInventory() {
 
   return (
     <div className="min-h-screen bg-[#F4FCFD] flex flex-col px-0 py-0">
-      {/* Header row */}
       <div className="flex items-center justify-between px-10 pt-10 pb-6">
         <h1 className="text-2xl font-bold text-[#31318A]">Passage Inventory</h1>
         <Link
@@ -60,7 +58,6 @@ export default function PassageInventory() {
         </Link>
       </div>
 
-      {/* Passage Inventory Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 px-10 pb-10">
         {isLoading ? (
           <div className="col-span-full flex justify-center items-center h-40">
@@ -80,7 +77,6 @@ export default function PassageInventory() {
               key={p.id}
               className="group flex flex-col justify-between rounded-2xl bg-white border border-[#E4F4FF] shadow hover:shadow-lg transition-all p-6 cursor-pointer hover:scale-[1.02] relative"
             >
-              {/* Three vertical dots menu */}
               <div className="absolute right-4 top-4 z-10" ref={menuRef}>
                 <button
                   type="button"

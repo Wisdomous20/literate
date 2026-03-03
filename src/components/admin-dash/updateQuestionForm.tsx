@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { updateQuestionAction } from "@/app/actions/admin/updateQuestion";
-import { useQueryClient } from "@tanstack/react-query"; // <-- Add this
+import { useQueryClient } from "@tanstack/react-query"; 
 
 interface Question {
   id: string;
@@ -33,7 +33,7 @@ export function UpdateQuestionForm({
   onSuccess,
 }: UpdateQuestionFormProps) {
   const router = useRouter();
-  const queryClient = useQueryClient(); // <-- Add this
+  const queryClient = useQueryClient(); 
   const [questionText, setQuestionText] = useState(question.questionText);
   const [tags, setTags] = useState(question.tags);
   const [type, setType] = useState(question.type);
@@ -106,7 +106,6 @@ export function UpdateQuestionForm({
           correctAnswer: type === "MULTIPLE_CHOICE" ? correctAnswer : undefined,
         });
 
-        // Invalidate questions list and this question's cache
         await queryClient.invalidateQueries({ queryKey: ["questions"] });
         await queryClient.invalidateQueries({
           queryKey: ["question", question.id],
@@ -186,7 +185,6 @@ export function UpdateQuestionForm({
         </div>
       )}
 
-      {/* Question Text */}
       <div>
         <label className="block mb-2 font-semibold text-[#00306E]">
           Question
@@ -201,7 +199,6 @@ export function UpdateQuestionForm({
         />
       </div>
 
-      {/* Tags */}
       <div>
         <label className="block mb-2 font-semibold text-[#00306E]">Tags</label>
         <div className="flex flex-col sm:flex-row gap-3">
@@ -233,7 +230,6 @@ export function UpdateQuestionForm({
         )}
       </div>
 
-      {/* Question Type */}
       <div>
         <label className="block mb-2 font-semibold text-[#00306E]">Type</label>
         <div className="flex flex-col sm:flex-row gap-3">
@@ -255,7 +251,6 @@ export function UpdateQuestionForm({
         </div>
       </div>
 
-      {/* Multiple Choice Options */}
       {type === "MULTIPLE_CHOICE" && (
         <>
           <div>
@@ -304,7 +299,6 @@ export function UpdateQuestionForm({
             </div>
           </div>
 
-          {/* Correct Answer */}
           <div>
             <label className="block mb-2 font-semibold text-[#00306E]">
               Correct Answer
@@ -330,7 +324,6 @@ export function UpdateQuestionForm({
         </>
       )}
 
-      {/* Submit */}
       <div className="flex flex-col sm:flex-row justify-end gap-4 pt-4">
         <Link
           href={

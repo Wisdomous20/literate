@@ -24,14 +24,12 @@ export default function PassageQuestionsPage() {
   const queryClient = useQueryClient();
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-  // Fetch passage
   const {
     data: passage,
     isLoading: isLoadingPassage,
     error: errorPassage,
   } = usePassageById(passageId);
 
-  // Fetch all questions, then filter by passageId
   const {
     data: allQuestions = [],
     isLoading: isLoadingQuestions,
@@ -40,6 +38,14 @@ export default function PassageQuestionsPage() {
   const questions = allQuestions.filter(
     (q: any) => q.passageId?.toString() === passageId.toString(),
   );
+
+  // Fix: Map tags to expected union type
+  const allowedTags = ["Literal", "Inferential", "Critical"] as const;
+  type AllowedTag = typeof allowedTags[number];
+  const mappedQuestions = questions.map((q: any) => ({
+    ...q,
+    tags: allowedTags.includes(q.tags) ? q.tags as AllowedTag : "Literal",
+  }));
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this question?")) return;
@@ -199,7 +205,7 @@ export default function PassageQuestionsPage() {
               <p className="text-xs text-[#00306E]/50 mt-0.5">
                 {isLoadingQuestions
                   ? "Loading..."
-                  : `${questions.length} question${questions.length !== 1 ? "s" : ""} found`}
+                  : `${mappedQuestions.length} question${mappedQuestions.length !== 1 ? "s" : ""} found`}
               </p>
             </div>
           </div>
@@ -216,7 +222,7 @@ export default function PassageQuestionsPage() {
                   Loading questions...
                 </span>
               </div>
-            ) : questions.length === 0 ? (
+            ) : mappedQuestions.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-40 gap-3 text-center">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F0F4FF]">
                   <BookOpen className="h-6 w-6 text-[#31318A]/40" />
@@ -243,7 +249,7 @@ export default function PassageQuestionsPage() {
               </div>
             ) : (
               <QuestionTable
-                questions={questions}
+                questions={mappedQuestions}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onView={handleView}

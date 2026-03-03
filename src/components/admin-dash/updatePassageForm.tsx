@@ -76,7 +76,6 @@ export function UpdatePassageForm({
     e.preventDefault();
     setError("");
 
-    // Validation
     if (!title.trim()) return setError("Title is required.");
     if (title.trim().length < 3)
       return setError("Title must be at least 3 characters.");
@@ -100,7 +99,6 @@ export function UpdatePassageForm({
         level: Number(level),
         testType: testType as "PRE_TEST" | "POST_TEST",
       });
-      // Invalidate passage list and this passage's cache
       await queryClient.invalidateQueries({ queryKey: ["passages"] });
       await queryClient.invalidateQueries({
         queryKey: ["passage", passage.id],
@@ -135,7 +133,6 @@ export function UpdatePassageForm({
         </div>
       )}
 
-      {/* Title */}
       <div>
         <label className="block mb-2 font-semibold text-[#00306E]">Title</label>
         <input
@@ -148,7 +145,6 @@ export function UpdatePassageForm({
         />
       </div>
 
-      {/* Content */}
       <div>
         <label className="block mb-2 font-semibold text-[#00306E]">
           Content
@@ -163,7 +159,6 @@ export function UpdatePassageForm({
         />
       </div>
 
-      {/* Word Count */}
       <div>
         <label className="block mb-2 font-semibold text-[#00306E]">
           Word Count
@@ -176,7 +171,6 @@ export function UpdatePassageForm({
         />
       </div>
 
-      {/* Language & Level */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
           <label className="block mb-2 font-semibold text-[#00306E]">
@@ -224,7 +218,6 @@ export function UpdatePassageForm({
         </div>
       </div>
 
-      {/* Test Type */}
       <div>
         <label className="block mb-2 font-semibold text-[#00306E]">
           Test Type
@@ -248,7 +241,6 @@ export function UpdatePassageForm({
         </div>
       </div>
 
-      {/* Submit */}
       <div className="flex flex-col sm:flex-row justify-end gap-4 pt-4">
         <Link
           href="/admin"
