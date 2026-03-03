@@ -127,7 +127,7 @@ export default function OralReadingComprehensionPage() {
             <span>Previous</span>
           </button>
           <button
-            onClick={() => isSubmitted && router.push("/dashboard/oral-reading-test/comprehension/report")}
+            onClick={() => isSubmitted && router.push("/dashboard/oral-reading-test/reading-level-report")}
             className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-300 md:text-base ${
               isSubmitted
                 ? "bg-[#6666FF] text-white shadow-lg hover:bg-[#5555EE] animate-[pulseGlow_2s_ease-in-out_infinite]"
@@ -140,7 +140,7 @@ export default function OralReadingComprehensionPage() {
                 : undefined
             }
           >
-            <span>Final Report</span>
+            <span>Reading Level Report</span>
             <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
           </button>
         </div>
