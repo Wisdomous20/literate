@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
 import { getQuestionByIdAction } from "@/app/actions/comprehension-Test/getQuestionById";
 import { UpdateQuestionForm } from "@/components/admin-dash/updateQuestionForm";
 
@@ -65,16 +64,6 @@ export default function EditQuestionPage() {
   if (!question) {
     return (
       <div className="flex h-full flex-col">
-        <header className="flex h-[118px] items-center px-10 border-b border-[#8D8DEC] shadow-[0px_4px_4px_#54A4FF] bg-transparent rounded-tl-[50px]">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-2 text-[#162DB0] hover:opacity-70 transition-opacity"
-          >
-            <ChevronLeft className="h-5 w-5" />
-            <span>Back</span>
-          </button>
-        </header>
-
         <main className="flex flex-1 items-center justify-center">
           <div className="rounded-lg bg-red-100 p-6 text-sm text-red-700">
             {error || "Question not found"}
@@ -86,24 +75,10 @@ export default function EditQuestionPage() {
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
-      <header className="flex h-[118px] items-center px-10 border-b border-[#8D8DEC] shadow-[0px_4px_4px_#54A4FF] bg-transparent rounded-tl-[50px]">
-        <div className="flex items-center gap-3">
-          <div className="grid grid-cols-2 gap-0.5">
-            <div className="h-2.5 w-2.5 rounded-sm bg-[#31318A]" />
-            <div className="h-2.5 w-2.5 rounded-sm bg-[#31318A]" />
-            <div className="h-2.5 w-2.5 rounded-sm bg-[#31318A]" />
-            <div className="h-2.5 w-2.5 rounded-sm bg-[#31318A]" />
-          </div>
-          <h1 className="text-[25px] font-semibold leading-[38px] text-[#31318A]">
-            Edit Question
-          </h1>
-        </div>
-      </header>
-
       <main className="flex-1 overflow-auto">
         <div className="mx-auto max-w-2xl px-8 py-8">
-<UpdateQuestionForm question={{ ...question, passageId }} />        </div>
+          <UpdateQuestionForm question={{ ...question, passageId }} />
+        </div>
       </main>
     </div>
   );

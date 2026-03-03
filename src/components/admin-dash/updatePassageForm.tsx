@@ -251,7 +251,7 @@ export function UpdatePassageForm({ passage, onSuccess }: UpdatePassageFormProps
       {/* Submit */}
       <div className="flex flex-col sm:flex-row justify-end gap-4 pt-4">
         <Link
-          href="/admin/passages"
+          href="/admin"
           className="rounded-lg px-10 py-3 text-base font-semibold text-[#00306E] transition-all hover:bg-[#E4F4FF] text-center"
         >
           Cancel
