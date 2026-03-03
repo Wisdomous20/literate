@@ -99,17 +99,18 @@ export function UpdateQuestionForm({
           questionText: questionText.trim(),
           tags: tags as "Literal" | "Inferential" | "Critical",
           type: type as "MULTIPLE_CHOICE" | "ESSAY",
-          options: type === "MULTIPLE_CHOICE" ? options.filter(Boolean) : undefined,
+          options:
+            type === "MULTIPLE_CHOICE" ? options.filter(Boolean) : undefined,
           correctAnswer: type === "MULTIPLE_CHOICE" ? correctAnswer : undefined,
         });
 
         if (onSuccess) {
-  onSuccess();
-} else if (question.passageId) {
-  router.push(`/admin/passages/${question.passageId}`);
-} else {
-  setError("Passage ID not found for this question.");
-}
+          onSuccess();
+        } else if (question.passageId) {
+          router.push(`/admin/passages/${question.passageId}`);
+        } else {
+          setError("Passage ID not found for this question.");
+        }
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Failed to update question";
@@ -119,7 +120,17 @@ export function UpdateQuestionForm({
         setIsLoading(false);
       }
     },
-    [questionText, tags, type, options, correctAnswer, question.id, question.passageId, router, onSuccess],
+    [
+      questionText,
+      tags,
+      type,
+      options,
+      correctAnswer,
+      question.id,
+      question.passageId,
+      router,
+      onSuccess,
+    ],
   );
 
   const handleOptionChange = (index: number, value: string) => {
@@ -163,7 +174,9 @@ export function UpdateQuestionForm({
 
       {/* Question Text */}
       <div>
-        <label className="block mb-2 font-semibold text-[#00306E]">Question</label>
+        <label className="block mb-2 font-semibold text-[#00306E]">
+          Question
+        </label>
         <textarea
           value={questionText}
           onChange={(e) => setQuestionText(e.target.value)}
@@ -232,7 +245,9 @@ export function UpdateQuestionForm({
       {type === "MULTIPLE_CHOICE" && (
         <>
           <div>
-            <label className="block mb-2 font-semibold text-[#00306E]">Options</label>
+            <label className="block mb-2 font-semibold text-[#00306E]">
+              Options
+            </label>
             <div className="flex flex-col gap-2">
               {options.map((opt, i) => (
                 <div key={i} className="flex items-center gap-2">
@@ -277,7 +292,9 @@ export function UpdateQuestionForm({
 
           {/* Correct Answer */}
           <div>
-            <label className="block mb-2 font-semibold text-[#00306E]">Correct Answer</label>
+            <label className="block mb-2 font-semibold text-[#00306E]">
+              Correct Answer
+            </label>
             <div className="relative">
               <select
                 id="correctAnswer"
@@ -302,7 +319,11 @@ export function UpdateQuestionForm({
       {/* Submit */}
       <div className="flex flex-col sm:flex-row justify-end gap-4 pt-4">
         <Link
-          href={question.passageId ? `/admin/passages/${question.passageId}` : "/admin/passages"}
+          href={
+            question.passageId
+              ? `/admin/passages/${question.passageId}`
+              : "/admin/passages"
+          }
           className="rounded-lg px-10 py-3 text-base font-semibold text-[#00306E] transition-all hover:bg-[#E4F4FF] text-center"
         >
           Cancel

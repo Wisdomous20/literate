@@ -11,7 +11,6 @@ interface Passage {
   content: string;
   language: string;
   level: number;
-  tags: string;
   testType: string;
 }
 
@@ -21,7 +20,6 @@ interface UpdatePassageFormProps {
 }
 
 const languages = ["Filipino", "English"];
-const tags = ["Literal", "Inferential", "Critical"] as const;
 const testTypes = [
   { label: "Pre-Test", value: "PRE_TEST" },
   { label: "Post-Test", value: "POST_TEST" },
@@ -42,12 +40,14 @@ const levels = [
   { label: "Grade 12", value: 12 },
 ];
 
-export function UpdatePassageForm({ passage, onSuccess }: UpdatePassageFormProps) {
+export function UpdatePassageForm({
+  passage,
+  onSuccess,
+}: UpdatePassageFormProps) {
   const [title, setTitle] = useState(passage.title);
   const [content, setContent] = useState(passage.content);
   const [language, setLanguage] = useState(passage.language);
   const [level, setLevel] = useState<number | "">(passage.level);
-  const [selectedTag, setSelectedTag] = useState(passage.tags);
   const [testType, setTestType] = useState(passage.testType);
   const [wordCount, setWordCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -62,13 +62,12 @@ export function UpdatePassageForm({ passage, onSuccess }: UpdatePassageFormProps
   useEffect(() => {
     setHasChanges(
       title !== passage.title ||
-      content !== passage.content ||
-      language !== passage.language ||
-      level !== passage.level ||
-      selectedTag !== passage.tags ||
-      testType !== passage.testType
+        content !== passage.content ||
+        language !== passage.language ||
+        level !== passage.level ||
+        testType !== passage.testType,
     );
-  }, [title, content, language, level, selectedTag, testType, passage]);
+  }, [title, content, language, level, testType, passage]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,14 +75,16 @@ export function UpdatePassageForm({ passage, onSuccess }: UpdatePassageFormProps
 
     // Validation
     if (!title.trim()) return setError("Title is required.");
-    if (title.trim().length < 3) return setError("Title must be at least 3 characters.");
-    if (title.trim().length > 100) return setError("Title must be less than 100 characters.");
+    if (title.trim().length < 3)
+      return setError("Title must be at least 3 characters.");
+    if (title.trim().length > 100)
+      return setError("Title must be less than 100 characters.");
     if (!content.trim()) return setError("Content is required.");
-    if (content.trim().length < 20) return setError("Content must be at least 20 characters.");
+    if (content.trim().length < 20)
+      return setError("Content must be at least 20 characters.");
     if (wordCount < 5) return setError("Content must have at least 5 words.");
     if (!language) return setError("Please select a language.");
     if (level === "") return setError("Please select a level.");
-    if (!selectedTag) return setError("Please select a tag.");
     if (!testType) return setError("Please select a test type.");
 
     setIsLoading(true);
@@ -94,7 +95,6 @@ export function UpdatePassageForm({ passage, onSuccess }: UpdatePassageFormProps
         content: content.trim(),
         language,
         level: Number(level),
-        tags: selectedTag as "Literal" | "Inferential" | "Critical",
         testType: testType as "PRE_TEST" | "POST_TEST",
       });
       if (onSuccess) {
@@ -142,7 +142,9 @@ export function UpdatePassageForm({ passage, onSuccess }: UpdatePassageFormProps
 
       {/* Content */}
       <div>
-        <label className="block mb-2 font-semibold text-[#00306E]">Content</label>
+        <label className="block mb-2 font-semibold text-[#00306E]">
+          Content
+        </label>
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
@@ -155,7 +157,9 @@ export function UpdatePassageForm({ passage, onSuccess }: UpdatePassageFormProps
 
       {/* Word Count */}
       <div>
-        <label className="block mb-2 font-semibold text-[#00306E]">Word Count</label>
+        <label className="block mb-2 font-semibold text-[#00306E]">
+          Word Count
+        </label>
         <input
           type="text"
           value={wordCount}
@@ -167,7 +171,9 @@ export function UpdatePassageForm({ passage, onSuccess }: UpdatePassageFormProps
       {/* Language & Level */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
-          <label className="block mb-2 font-semibold text-[#00306E]">Language</label>
+          <label className="block mb-2 font-semibold text-[#00306E]">
+            Language
+          </label>
           <div className="relative">
             <select
               value={language}
@@ -177,14 +183,18 @@ export function UpdatePassageForm({ passage, onSuccess }: UpdatePassageFormProps
             >
               <option value="">Select language</option>
               {languages.map((l) => (
-                <option key={l} value={l}>{l}</option>
+                <option key={l} value={l}>
+                  {l}
+                </option>
               ))}
             </select>
             <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#00306E]/50" />
           </div>
         </div>
         <div className="flex-1">
-          <label className="block mb-2 font-semibold text-[#00306E]">Level</label>
+          <label className="block mb-2 font-semibold text-[#00306E]">
+            Level
+          </label>
           <div className="relative">
             <select
               value={level}
@@ -196,7 +206,9 @@ export function UpdatePassageForm({ passage, onSuccess }: UpdatePassageFormProps
             >
               <option value="">Select level</option>
               {levels.map((l) => (
-                <option key={l.value} value={l.value}>{l.label}</option>
+                <option key={l.value} value={l.value}>
+                  {l.label}
+                </option>
               ))}
             </select>
             <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#00306E]/50" />
@@ -204,31 +216,11 @@ export function UpdatePassageForm({ passage, onSuccess }: UpdatePassageFormProps
         </div>
       </div>
 
-      {/* Tags */}
-      <div>
-        <label className="block mb-2 font-semibold text-[#00306E]">Tags</label>
-        <div className="flex flex-col sm:flex-row gap-3">
-          {tags.map((tag) => (
-            <button
-              key={tag}
-              type="button"
-              onClick={() => setSelectedTag(tag)}
-              disabled={isLoading}
-              className={`flex-1 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-all ${
-                selectedTag === tag
-                  ? "border-[#6666FF] bg-[#6666FF]/10 text-[#6666FF] shadow"
-                  : "border-[#E4F4FF] bg-white text-[#00306E]/60 hover:border-[#6666FF]/30"
-              }`}
-            >
-              {tag}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Test Type */}
       <div>
-        <label className="block mb-2 font-semibold text-[#00306E]">Test Type</label>
+        <label className="block mb-2 font-semibold text-[#00306E]">
+          Test Type
+        </label>
         <div className="flex flex-col sm:flex-row gap-3">
           {testTypes.map((t) => (
             <button

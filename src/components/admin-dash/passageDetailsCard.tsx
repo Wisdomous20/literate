@@ -6,7 +6,6 @@ interface Passage {
   content: string;
   language: string;
   level: number;
-  tags: string;
   testType: string;
 }
 
@@ -26,10 +25,6 @@ export function PassageDetailsCard({ passage }: { passage: Passage }) {
               <FileText className="h-3 w-3" />
               {passage.testType === "PRE_TEST" ? "Pre-Test" : "Post-Test"}
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
-              <Tag className="h-3 w-3" />
-              {passage.tags}
-            </span>
             <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
               <BarChart2 className="h-3 w-3" />
               {passage.level === 0 ? "Kindergarten" : `Grade ${passage.level}`}
@@ -46,7 +41,9 @@ export function PassageDetailsCard({ passage }: { passage: Passage }) {
         </div>
       </div>
       <div className="mt-6">
-        <h2 className="text-lg font-semibold text-[#00306E] mb-2">Passage Content</h2>
+        <h2 className="text-lg font-semibold text-[#00306E] mb-2">
+          Passage Content
+        </h2>
         <div className="prose max-w-none text-[#31318A] bg-[#F8FAFF] rounded-lg p-4 border border-[#E4F4FF]">
           {passage.content}
         </div>

@@ -36,7 +36,7 @@ export default function PassageInventory() {
             apiPassages.map((p: any) => ({
               ...p,
               wordCount: p.content?.split(/\s+/).filter(Boolean).length || 0,
-            }))
+            })),
           );
         }
       } catch (err) {
@@ -51,10 +51,7 @@ export default function PassageInventory() {
   // Close menu on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(event.target as Node)
-      ) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setMenuOpenId(null);
       }
     }
@@ -99,11 +96,15 @@ export default function PassageInventory() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 px-10 pb-10">
         {isLoading ? (
           <div className="col-span-full flex justify-center items-center h-40">
-            <span className="text-[#00306E]/60 text-lg">Loading passages...</span>
+            <span className="text-[#00306E]/60 text-lg">
+              Loading passages...
+            </span>
           </div>
         ) : passages.length === 0 ? (
           <div className="col-span-full flex justify-center items-center h-40">
-            <span className="text-[#00306E]/60 text-lg">No passages found.</span>
+            <span className="text-[#00306E]/60 text-lg">
+              No passages found.
+            </span>
           </div>
         ) : (
           passages.map((p) => (
@@ -157,17 +158,19 @@ export default function PassageInventory() {
                     <FileText className="h-5 w-5 text-[#6666FF]" />
                   </div>
                   <div className="flex-1">
-                    <h2 className="text-lg font-bold text-[#31318A] truncate">{p.title}</h2>
-                    <div className="text-xs text-[#00306E]/60">{p.language} • {p.wordCount} words</div>
+                    <h2 className="text-lg font-bold text-[#31318A] truncate">
+                      {p.title}
+                    </h2>
+                    <div className="text-xs text-[#00306E]/60">
+                      {p.language} • {p.wordCount} words
+                    </div>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-2">
                   <span className="rounded-full bg-[#6666FF]/10 text-[#6666FF] px-3 py-1 text-xs font-medium">
                     {p.testType === "PRE_TEST" ? "Pre-Test" : "Post-Test"}
                   </span>
-                  <span className="rounded-full bg-[#E4F4FF] text-[#00306E] px-3 py-1 text-xs font-medium">
-                    {p.tags}
-                  </span>
+                  {/* Removed tags badge */}
                   <span className="rounded-full bg-[#2E8B57]/10 text-[#2E8B57] px-3 py-1 text-xs font-medium">
                     {p.level === 0 ? "Kindergarten" : `Grade ${p.level}`}
                   </span>

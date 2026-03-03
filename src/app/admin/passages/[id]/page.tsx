@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ChevronLeft, FileText, Tag, BarChart2, Globe, BookOpen, Plus, Eye } from "lucide-react";
+import {
+  ChevronLeft,
+  FileText,
+  BarChart2,
+  Globe,
+  BookOpen,
+  Plus,
+  Eye,
+} from "lucide-react";
 import { getPassageByIdAction } from "@/app/actions/passage/getPassageById";
 import { getAllQuestionsAction } from "@/app/actions/comprehension-Test/getAllQuestion";
 import { deleteQuestionAction } from "@/app/actions/admin/deleteQuestion";
@@ -14,7 +22,6 @@ interface Passage {
   content: string;
   language: string;
   level: number;
-  tags: string;
   testType: string;
 }
 
@@ -63,13 +70,15 @@ export default function PassageQuestionsPage() {
       if (Array.isArray(data)) {
         setQuestions(
           data
-            .filter((q: any) => q.passageId?.toString() === passageId.toString())
+            .filter(
+              (q: any) => q.passageId?.toString() === passageId.toString(),
+            )
             .map((q: any) => ({
               ...q,
               tags: q.tags as "Literal" | "Inferential" | "Critical",
               type: q.type as "MULTIPLE_CHOICE" | "ESSAY",
               language: q.language as "Filipino" | "English",
-            }))
+            })),
         );
       }
     } catch (err) {
@@ -84,12 +93,25 @@ export default function PassageQuestionsPage() {
     // eslint-disable-next-line
   }, [passageId]);
 
+  // ...existing code...
+
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this question?")) return;
     setIsDeleting(id);
     try {
       await deleteQuestionAction({ id });
       setQuestions((prev) => prev.filter((q) => q.id !== id));
+      // ADDED: If currently viewing or editing this question, redirect away
+      const url = new URL(window.location.href);
+      const editing =
+        url.pathname.endsWith(`/edit-question`) &&
+        url.searchParams.get("id") === id;
+      const viewing =
+        url.pathname.endsWith(`/view-question`) &&
+        url.searchParams.get("id") === id;
+      if (editing || viewing) {
+        router.push(`/admin/passages/${passageId}`);
+      }
     } catch (err) {
       setError("Failed to delete question");
     } finally {
@@ -98,11 +120,15 @@ export default function PassageQuestionsPage() {
   };
 
   const handleEdit = (question: Question) => {
-    router.push(`/admin/passages/${question.passageId}/edit-question?id=${question.id}`);
+    router.push(
+      `/admin/passages/${question.passageId}/edit-question?id=${question.id}`,
+    );
   };
 
   const handleView = (question: Question) => {
-    router.push(`/admin/questions/view/${question.id}`);
+    router.push(
+      `/admin/passages/${question.passageId}/view-question?id=${question.id}`,
+    );
   };
 
   if (isLoading) {
@@ -110,7 +136,9 @@ export default function PassageQuestionsPage() {
       <div className="flex h-full min-h-screen items-center justify-center bg-[#F4FCFD]">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#31318A] border-t-transparent" />
-          <span className="text-sm text-[#00306E]/60 font-medium">Loading passage...</span>
+          <span className="text-sm text-[#00306E]/60 font-medium">
+            Loading passage...
+          </span>
         </div>
       </div>
     );
@@ -135,11 +163,6 @@ export default function PassageQuestionsPage() {
       color: "bg-violet-100 text-violet-700 border border-violet-200",
     },
     {
-      icon: <Tag className="h-3 w-3" />,
-      label: passage.tags,
-      color: "bg-blue-50 text-blue-700 border border-blue-200",
-    },
-    {
       icon: <BarChart2 className="h-3 w-3" />,
       label: passage.level === 0 ? "Kindergarten" : `Grade ${passage.level}`,
       color: "bg-emerald-50 text-emerald-700 border border-emerald-200",
@@ -161,7 +184,7 @@ export default function PassageQuestionsPage() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-[#F4FCFD]/95 backdrop-blur border-b border-[#E4F4FF] px-8 py-4">
         <button
-          onClick={() => router.back()}
+          onClick={() => router.push("/admin")}
           className="flex items-center gap-1.5 text-sm text-[#162DB0] hover:opacity-70 transition-opacity font-medium"
         >
           <ChevronLeft className="h-4 w-4" />
@@ -183,7 +206,9 @@ export default function PassageQuestionsPage() {
                   Passage
                 </p>
                 <button
-                  onClick={() => router.push(`/admin/passages/${passage.id}/view`)}
+                  onClick={() =>
+                    router.push(`/admin/passages/${passage.id}/view`)
+                  }
                   className="group flex items-center gap-1.5 text-left"
                 >
                   <h2 className="text-lg font-bold text-[#31318A] group-hover:text-[#162DB0] transition-colors truncate max-w-[480px]">
@@ -196,7 +221,9 @@ export default function PassageQuestionsPage() {
 
             {/* Create Question Button */}
             <button
-              onClick={() => router.push(`/admin/passages/${passage.id}/create-question`)}
+              onClick={() =>
+                router.push(`/admin/passages/${passage.id}/create-question`)
+              }
               className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white bg-[#2E2E68] hover:bg-[#31318A] transition-colors shadow-sm shrink-0 ml-4"
             >
               <Plus className="h-4 w-4" />
@@ -224,7 +251,9 @@ export default function PassageQuestionsPage() {
             <div>
               <h3 className="text-base font-bold text-[#31318A]">Questions</h3>
               <p className="text-xs text-[#00306E]/50 mt-0.5">
-                {isLoadingQuestions ? "Loading..." : `${questions.length} question${questions.length !== 1 ? "s" : ""} found`}
+                {isLoadingQuestions
+                  ? "Loading..."
+                  : `${questions.length} question${questions.length !== 1 ? "s" : ""} found`}
               </p>
             </div>
           </div>
@@ -233,7 +262,9 @@ export default function PassageQuestionsPage() {
             {isLoadingQuestions ? (
               <div className="flex flex-col items-center justify-center h-40 gap-3">
                 <div className="h-7 w-7 animate-spin rounded-full border-4 border-[#31318A] border-t-transparent" />
-                <span className="text-sm text-[#00306E]/50">Loading questions...</span>
+                <span className="text-sm text-[#00306E]/50">
+                  Loading questions...
+                </span>
               </div>
             ) : questions.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-40 gap-3 text-center">
@@ -241,11 +272,17 @@ export default function PassageQuestionsPage() {
                   <BookOpen className="h-6 w-6 text-[#31318A]/40" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-[#00306E]/60">No questions yet</p>
+                  <p className="text-sm font-medium text-[#00306E]/60">
+                    No questions yet
+                  </p>
                   <p className="text-xs text-[#00306E]/40 mt-1">
                     Click{" "}
                     <button
-                      onClick={() => router.push(`/admin/passages/${passage.id}/create-question`)}
+                      onClick={() =>
+                        router.push(
+                          `/admin/passages/${passage.id}/create-question`,
+                        )
+                      }
                       className="text-[#162DB0] hover:underline font-medium"
                     >
                       Create Question

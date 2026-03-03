@@ -26,7 +26,7 @@ export default function EditQuestionPage() {
   const [question, setQuestion] = useState<Question | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-
+  // ...existing code...
   useEffect(() => {
     if (!questionId) {
       setError("No question ID provided.");
@@ -44,6 +44,10 @@ export default function EditQuestionPage() {
         const errorMessage =
           err instanceof Error ? err.message : "Failed to load question";
         setError(errorMessage);
+        // Redirect if question not found
+        if (errorMessage === "Question not found.") {
+          router.replace(`/admin/passages/${passageId}`);
+        }
         console.error("Error loading question:", err);
       } finally {
         setIsLoading(false);
@@ -51,12 +55,17 @@ export default function EditQuestionPage() {
     };
 
     loadQuestion();
-  }, [questionId]);
+  }, [questionId, passageId, router]);
 
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <span className="text-lg text-[#00306E]/60">Loading question...</span>
+      <div className="flex h-full flex-col">
+        <main className="flex flex-1 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#31318A] border-t-transparent" />
+          <span className="ml-3 text-sm text-[#00306E]/60 font-medium">
+            Loading question...
+          </span>
+        </main>
       </div>
     );
   }

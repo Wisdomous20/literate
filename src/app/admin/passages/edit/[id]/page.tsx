@@ -5,12 +5,23 @@ import { useParams, useRouter } from "next/navigation";
 import { getPassageByIdAction } from "@/app/actions/passage/getPassageById";
 import { UpdatePassageForm } from "@/components/admin-dash/updatePassageForm";
 
+interface Passage {
+  id: string;
+  title: string;
+  content: string;
+  language: string;
+  level: number;
+  testType: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export default function EditPassagePage() {
   const params = useParams();
   const router = useRouter();
   const passageId = params.id as string;
 
-  const [passage, setPassage] = useState(null);
+  const [passage, setPassage] = useState<Passage | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -20,12 +31,10 @@ export default function EditPassagePage() {
       try {
         const data = await getPassageByIdAction({ id: passageId });
         if (data) {
-          setPassage(data);
+          setPassage(data as Passage);
         }
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to load passage"
-        );
+        setError(err instanceof Error ? err.message : "Failed to load passage");
       } finally {
         setIsLoading(false);
       }
@@ -34,8 +43,7 @@ export default function EditPassagePage() {
   }, [passageId]);
 
   const handleSuccess = () => {
-    // Redirect to passage details after successful update
-    router.push(`/admin/passages/${passageId}`);
+    router.push(`/admin`);
   };
 
   if (isLoading) {
@@ -46,7 +54,5 @@ export default function EditPassagePage() {
     return <div className="text-red-600">Passage not found: {error}</div>;
   }
 
-  return (
-    <UpdatePassageForm passage={passage} onSuccess={handleSuccess} />
-  );
+  return <UpdatePassageForm passage={passage} onSuccess={handleSuccess} />;
 }

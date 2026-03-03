@@ -12,7 +12,6 @@ interface Passage {
   content: string;
   language: string;
   level: number;
-  tags: string;
   testType: string;
 }
 
@@ -45,7 +44,9 @@ export default function PassageViewPage() {
       <div className="flex h-full min-h-screen items-center justify-center bg-[#F4FCFD]">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#31318A] border-t-transparent" />
-          <span className="text-sm text-[#00306E]/60 font-medium">Loading passage...</span>
+          <span className="text-sm text-[#00306E]/60 font-medium">
+            Loading passage...
+          </span>
         </div>
       </div>
     );
