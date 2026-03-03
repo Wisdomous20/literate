@@ -57,7 +57,6 @@ export async function createPassageService(
         content: passage.content,
         language: passage.language,
         level: passage.level, 
-        tags: passage.tags,
         testType: passage.testType,
       },
     };
