@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { createPassageAction } from "@/app/actions/admin/createPassage";
+import { useQueryClient } from "@tanstack/react-query"; 
 
 const languages = ["Filipino", "English"];
 const testTypes = [
@@ -29,6 +30,7 @@ const levels = [
 
 export function CreatePassageForm() {
   const router = useRouter();
+  const queryClient = useQueryClient(); // <-- Add this
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [language, setLanguage] = useState("");
@@ -70,6 +72,7 @@ export function CreatePassageForm() {
         level: Number(level),
         testType: testType as "PRE_TEST" | "POST_TEST",
       });
+      await queryClient.invalidateQueries({ queryKey: ["passages"] }); // <-- Invalidate cache
       router.push("/admin");
     } catch (err) {
       const errorMessage =

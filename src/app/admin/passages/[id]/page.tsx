@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ChevronLeft,
@@ -11,97 +10,44 @@ import {
   Plus,
   Eye,
 } from "lucide-react";
-import { getPassageByIdAction } from "@/app/actions/passage/getPassageById";
-import { getAllQuestionsAction } from "@/app/actions/comprehension-Test/getAllQuestion";
-import { deleteQuestionAction } from "@/app/actions/admin/deleteQuestion";
 import { QuestionTable } from "@/components/admin-dash/questionTable";
-
-interface Passage {
-  id: string;
-  title: string;
-  content: string;
-  language: string;
-  level: number;
-  testType: string;
-}
-
-interface Question {
-  id: string;
-  questionText: string;
-  passageTitle: string;
-  tags: "Literal" | "Inferential" | "Critical";
-  type: "MULTIPLE_CHOICE" | "ESSAY";
-  passageLevel: number;
-  language: "Filipino" | "English";
-  passageId?: string;
-}
+import { usePassageById } from "@/lib/hooks/usePassageById";
+import { useQuestionList } from "@/lib/hooks/useQuestionList";
+import { deleteQuestionAction } from "@/app/actions/admin/deleteQuestion";
+import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 
 export default function PassageQuestionsPage() {
   const params = useParams();
   const router = useRouter();
-  const [passage, setPassage] = useState<Passage | null>(null);
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
-  const [error, setError] = useState("");
+  const passageId = params.id as string;
+  const queryClient = useQueryClient();
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-  const passageId = params.id as string;
+  // Fetch passage
+  const {
+    data: passage,
+    isLoading: isLoadingPassage,
+    error: errorPassage,
+  } = usePassageById(passageId);
 
-  useEffect(() => {
-    const loadPassage = async () => {
-      setIsLoading(true);
-      try {
-        const data = await getPassageByIdAction({ id: passageId });
-        if (data) setPassage(data as Passage);
-      } catch (err) {
-        setError("Failed to load passage");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadPassage();
-  }, [passageId]);
-
-  const fetchQuestions = async () => {
-    setIsLoadingQuestions(true);
-    try {
-      const data = await getAllQuestionsAction();
-      if (Array.isArray(data)) {
-        setQuestions(
-          data
-            .filter(
-              (q: any) => q.passageId?.toString() === passageId.toString(),
-            )
-            .map((q: any) => ({
-              ...q,
-              tags: q.tags as "Literal" | "Inferential" | "Critical",
-              type: q.type as "MULTIPLE_CHOICE" | "ESSAY",
-              language: q.language as "Filipino" | "English",
-            })),
-        );
-      }
-    } catch (err) {
-      setError("Failed to load questions");
-    } finally {
-      setIsLoadingQuestions(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchQuestions();
-    // eslint-disable-next-line
-  }, [passageId]);
-
-  // ...existing code...
+  // Fetch all questions, then filter by passageId
+  const {
+    data: allQuestions = [],
+    isLoading: isLoadingQuestions,
+    error: errorQuestions,
+  } = useQuestionList();
+  const questions = allQuestions.filter(
+    (q: any) => q.passageId?.toString() === passageId.toString(),
+  );
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this question?")) return;
     setIsDeleting(id);
     try {
       await deleteQuestionAction({ id });
-      setQuestions((prev) => prev.filter((q) => q.id !== id));
-      // ADDED: If currently viewing or editing this question, redirect away
+      await queryClient.invalidateQueries({ queryKey: ["questions"] });
+      // Redirect if currently viewing or editing this question
       const url = new URL(window.location.href);
       const editing =
         url.pathname.endsWith(`/edit-question`) &&
@@ -113,25 +59,25 @@ export default function PassageQuestionsPage() {
         router.push(`/admin/passages/${passageId}`);
       }
     } catch (err) {
-      setError("Failed to delete question");
+      // Optionally show error
     } finally {
       setIsDeleting(null);
     }
   };
 
-  const handleEdit = (question: Question) => {
+  const handleEdit = (question: any) => {
     router.push(
       `/admin/passages/${question.passageId}/edit-question?id=${question.id}`,
     );
   };
 
-  const handleView = (question: Question) => {
+  const handleView = (question: any) => {
     router.push(
       `/admin/passages/${question.passageId}/view-question?id=${question.id}`,
     );
   };
 
-  if (isLoading) {
+  if (isLoadingPassage) {
     return (
       <div className="flex h-full min-h-screen items-center justify-center bg-[#F4FCFD]">
         <div className="flex flex-col items-center gap-3">
@@ -148,7 +94,7 @@ export default function PassageQuestionsPage() {
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-screen bg-[#F4FCFD]">
         <div className="rounded-xl bg-red-50 border border-red-200 p-6 text-sm text-red-700 shadow-sm">
-          {error || "Passage not found"}
+          {errorPassage?.message || "Passage not found"}
         </div>
       </div>
     );
@@ -259,7 +205,11 @@ export default function PassageQuestionsPage() {
           </div>
 
           <div className="p-6">
-            {isLoadingQuestions ? (
+            {errorQuestions ? (
+              <div className="rounded-lg bg-red-100 p-4 text-sm text-red-700 mb-4">
+                {errorQuestions.message || "Failed to load questions"}
+              </div>
+            ) : isLoadingQuestions ? (
               <div className="flex flex-col items-center justify-center h-40 gap-3">
                 <div className="h-7 w-7 animate-spin rounded-full border-4 border-[#31318A] border-t-transparent" />
                 <span className="text-sm text-[#00306E]/50">

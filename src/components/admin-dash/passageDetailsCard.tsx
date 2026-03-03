@@ -1,15 +1,20 @@
-import { FileText, Tag, BarChart2, Globe, BookOpen } from "lucide-react";
+import { FileText, BarChart2, Globe, BookOpen } from "lucide-react";
+import { usePassageById } from "@/lib/hooks/usePassageById";
 
-interface Passage {
-  id: string;
-  title: string;
-  content: string;
-  language: string;
-  level: number;
-  testType: string;
-}
+export function PassageDetailsCard({ passageId }: { passageId: string }) {
+  const { data: passage, isLoading, error } = usePassageById(passageId);
 
-export function PassageDetailsCard({ passage }: { passage: Passage }) {
+  if (isLoading) {
+    return <div className="text-center py-8">Loading passage...</div>;
+  }
+  if (error || !passage) {
+    return (
+      <div className="text-center py-8 text-red-500">
+        Failed to load passage.
+      </div>
+    );
+  }
+
   const wordCount = passage.content.trim().split(/\s+/).filter(Boolean).length;
 
   return (

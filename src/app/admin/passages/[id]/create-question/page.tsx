@@ -1,53 +1,16 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import { CreateQuestionForm } from "@/components/admin-dash/createQuestionForm";
 import { ChevronLeft } from "lucide-react";
-import { getPassageByIdAction } from "@/app/actions/passage/getPassageById";
-
-interface Passage {
-  id: string;
-  title: string;
-  content: string;
-  language: string;
-  level: number;
-  tags: string;
-  testType: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { usePassageById } from "@/lib/hooks/usePassageById";
 
 export default function CreateQuestionForPassagePage() {
   const params = useParams();
   const router = useRouter();
   const passageId = params.id as string;
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [passage, setPassage] = useState<Passage | null>(null);
-
-  useEffect(() => {
-    async function fetchPassage() {
-      setIsLoading(true);
-      setError("");
-      try {
-        const data = await getPassageByIdAction({ id: passageId });
-        if (data) {
-          setPassage(data as Passage);
-        } else {
-          setPassage(null);
-          setError("Failed to load passage");
-        }
-      } catch (err: any) {
-        setPassage(null);
-        setError("Failed to load passage");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    fetchPassage();
-  }, [passageId]);
+  const { data: passage, isLoading, error } = usePassageById(passageId);
 
   return (
     <div className="flex h-full flex-col">
@@ -71,7 +34,7 @@ export default function CreateQuestionForPassagePage() {
           {isLoading && <p>Loading passage...</p>}
           {error && (
             <div className="rounded-lg bg-red-100 p-4 text-sm text-red-700">
-              {error}
+              {error.message || "Failed to load passage"}
             </div>
           )}
           {passage && <CreateQuestionForm passageId={passageId} />}

@@ -1,43 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
-import { getPassageByIdAction } from "@/app/actions/passage/getPassageById";
 import { PassageDetailsCard } from "@/components/admin-dash/passageDetailsCard";
-
-interface Passage {
-  id: string;
-  title: string;
-  content: string;
-  language: string;
-  level: number;
-  testType: string;
-}
+import { usePassageById } from "@/lib/hooks/usePassageById";
 
 export default function PassageViewPage() {
   const params = useParams();
   const router = useRouter();
-  const [passage, setPassage] = useState<Passage | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-
   const passageId = params.id as string;
 
-  useEffect(() => {
-    const loadPassage = async () => {
-      setIsLoading(true);
-      try {
-        const data = await getPassageByIdAction({ id: passageId });
-        if (data) setPassage(data as Passage);
-      } catch (err) {
-        setError("Failed to load passage");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadPassage();
-  }, [passageId]);
+  const { data: passage, isLoading, error } = usePassageById(passageId);
 
   if (isLoading) {
     return (
@@ -56,7 +29,7 @@ export default function PassageViewPage() {
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-screen bg-[#F4FCFD]">
         <div className="rounded-xl bg-red-50 border border-red-200 p-6 text-sm text-red-700 shadow-sm">
-          {error || "Passage not found"}
+          {error?.message || "Passage not found"}
         </div>
       </div>
     );
@@ -76,7 +49,7 @@ export default function PassageViewPage() {
       </div>
 
       <div className="px-8 py-8 flex justify-center">
-        <PassageDetailsCard passage={passage} />
+        <PassageDetailsCard passageId={passageId} />
       </div>
     </div>
   );

@@ -1,12 +1,14 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, useParams } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { ViewQuestionDetails } from "@/components/admin-dash/viewQuestionDetails";
 
 export default function ViewQuestionPage() {
   const router = useRouter();
+  const params = useParams();
   const searchParams = useSearchParams();
+  const passageId = params.id as string;
   const questionId = searchParams.get("id");
 
   return (
@@ -18,8 +20,9 @@ export default function ViewQuestionPage() {
         <ChevronLeft className="h-6 w-6" />
         Back
       </button>
-      {questionId && <ViewQuestionDetails questionId={questionId} />}
-      {!questionId && (
+      {questionId ? (
+        <ViewQuestionDetails questionId={questionId} passageId={passageId} />
+      ) : (
         <div className="rounded-lg bg-red-100 p-6 text-sm text-red-700">
           No question ID provided.
         </div>

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { updatePassageAction } from "@/app/actions/admin/updatePassage";
+import { useQueryClient } from "@tanstack/react-query"; // <-- Add this
 
 interface Passage {
   id: string;
@@ -54,6 +55,8 @@ export function UpdatePassageForm({
   const [error, setError] = useState("");
   const [hasChanges, setHasChanges] = useState(false);
 
+  const queryClient = useQueryClient(); // <-- Add this
+
   useEffect(() => {
     const words = content.trim().split(/\s+/).filter(Boolean).length;
     setWordCount(words);
@@ -96,6 +99,11 @@ export function UpdatePassageForm({
         language,
         level: Number(level),
         testType: testType as "PRE_TEST" | "POST_TEST",
+      });
+      // Invalidate passage list and this passage's cache
+      await queryClient.invalidateQueries({ queryKey: ["passages"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["passage", passage.id],
       });
       if (onSuccess) {
         onSuccess();

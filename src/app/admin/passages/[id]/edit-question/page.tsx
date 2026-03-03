@@ -1,61 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { getQuestionByIdAction } from "@/app/actions/comprehension-Test/getQuestionById";
+import { useParams, useSearchParams } from "next/navigation";
 import { UpdateQuestionForm } from "@/components/admin-dash/updateQuestionForm";
-
-interface Question {
-  id: string;
-  quizId: string;
-  questionText: string;
-  tags: string;
-  type: string;
-  options?: string[];
-  correctAnswer?: string;
-  passageId?: string;
-}
+import { useQuestionById } from "@/lib/hooks/useQuestionById";
 
 export default function EditQuestionPage() {
   const params = useParams();
-  const router = useRouter();
+  // const router = useRouter();
   const searchParams = useSearchParams();
   const passageId = params.id as string;
-  const questionId = searchParams.get("id");
+  const questionId = searchParams.get("id") || "";
 
-  const [question, setQuestion] = useState<Question | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-  // ...existing code...
-  useEffect(() => {
-    if (!questionId) {
-      setError("No question ID provided.");
-      setIsLoading(false);
-      return;
-    }
-    const loadQuestion = async () => {
-      setIsLoading(true);
-      try {
-        const data = await getQuestionByIdAction({ id: questionId });
-        if (data) {
-          setQuestion(data as Question);
-        }
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Failed to load question";
-        setError(errorMessage);
-        // Redirect if question not found
-        if (errorMessage === "Question not found.") {
-          router.replace(`/admin/passages/${passageId}`);
-        }
-        console.error("Error loading question:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadQuestion();
-  }, [questionId, passageId, router]);
+  const { data: question, isLoading, error } = useQuestionById(questionId);
 
   if (isLoading) {
     return (
@@ -75,7 +31,7 @@ export default function EditQuestionPage() {
       <div className="flex h-full flex-col">
         <main className="flex flex-1 items-center justify-center">
           <div className="rounded-lg bg-red-100 p-6 text-sm text-red-700">
-            {error || "Question not found"}
+            {error?.message || "Question not found"}
           </div>
         </main>
       </div>

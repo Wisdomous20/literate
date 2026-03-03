@@ -1,52 +1,20 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getAllPassagesAction } from "@/app/actions/passage/getAllPassage";
 import { deletePassageAction } from "@/app/actions/admin/deletePassage";
 import { FileText, MoreVertical } from "lucide-react";
-
-interface Passage {
-  id: string;
-  title: string;
-  language: string;
-  level: number;
-  tags: string;
-  testType: string;
-  content: string;
-  wordCount: number;
-}
+import { usePassageList } from "@/lib/hooks/usePassageList";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function PassageInventory() {
-  const [passages, setPassages] = useState<Passage[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: passages = [], isLoading } = usePassageList();
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const loadPassages = async () => {
-      setIsLoading(true);
-      try {
-        const { success, passages: apiPassages } = await getAllPassagesAction();
-        if (success && Array.isArray(apiPassages)) {
-          setPassages(
-            apiPassages.map((p: any) => ({
-              ...p,
-              wordCount: p.content?.split(/\s+/).filter(Boolean).length || 0,
-            })),
-          );
-        }
-      } catch (err) {
-        // handle error
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadPassages();
-  }, []);
+  const queryClient = useQueryClient();
 
   // Close menu on outside click
   useEffect(() => {
@@ -70,7 +38,7 @@ export default function PassageInventory() {
     setDeletingId(id);
     try {
       await deletePassageAction({ id });
-      setPassages((prev) => prev.filter((p) => p.id !== id));
+      await queryClient.invalidateQueries({ queryKey: ["passages"] });
     } catch {
       alert("Failed to delete passage.");
     } finally {
@@ -162,7 +130,9 @@ export default function PassageInventory() {
                       {p.title}
                     </h2>
                     <div className="text-xs text-[#00306E]/60">
-                      {p.language} • {p.wordCount} words
+                      {p.language} •{" "}
+                      {p.content?.split(/\s+/).filter(Boolean).length || 0}{" "}
+                      words
                     </div>
                   </div>
                 </div>
@@ -170,7 +140,6 @@ export default function PassageInventory() {
                   <span className="rounded-full bg-[#6666FF]/10 text-[#6666FF] px-3 py-1 text-xs font-medium">
                     {p.testType === "PRE_TEST" ? "Pre-Test" : "Post-Test"}
                   </span>
-                  {/* Removed tags badge */}
                   <span className="rounded-full bg-[#2E8B57]/10 text-[#2E8B57] px-3 py-1 text-xs font-medium">
                     {p.level === 0 ? "Kindergarten" : `Grade ${p.level}`}
                   </span>

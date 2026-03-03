@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { updateQuestionAction } from "@/app/actions/admin/updateQuestion";
+import { useQueryClient } from "@tanstack/react-query"; // <-- Add this
 
 interface Question {
   id: string;
@@ -32,6 +33,7 @@ export function UpdateQuestionForm({
   onSuccess,
 }: UpdateQuestionFormProps) {
   const router = useRouter();
+  const queryClient = useQueryClient(); // <-- Add this
   const [questionText, setQuestionText] = useState(question.questionText);
   const [tags, setTags] = useState(question.tags);
   const [type, setType] = useState(question.type);
@@ -104,6 +106,17 @@ export function UpdateQuestionForm({
           correctAnswer: type === "MULTIPLE_CHOICE" ? correctAnswer : undefined,
         });
 
+        // Invalidate questions list and this question's cache
+        await queryClient.invalidateQueries({ queryKey: ["questions"] });
+        await queryClient.invalidateQueries({
+          queryKey: ["question", question.id],
+        });
+        if (question.passageId) {
+          await queryClient.invalidateQueries({
+            queryKey: ["questions", question.passageId],
+          });
+        }
+
         if (onSuccess) {
           onSuccess();
         } else if (question.passageId) {
@@ -130,6 +143,7 @@ export function UpdateQuestionForm({
       question.passageId,
       router,
       onSuccess,
+      queryClient,
     ],
   );
 

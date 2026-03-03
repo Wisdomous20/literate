@@ -1,51 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getQuestionByIdAction } from "@/app/actions/comprehension-Test/getQuestionById";
-import { getPassageByIdAction } from "@/app/actions/passage/getPassageById";
+import { useQuestionById } from "@/lib/hooks/useQuestionById";
+import { usePassageById } from "@/lib/hooks/usePassageById";
 
-export function ViewQuestionDetails({ questionId }: { questionId: string }) {
-  const [question, setQuestion] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [passage, setPassage] = useState<any>(null);
-  const [isLoadingPassage, setIsLoadingPassage] = useState(true);
+export function ViewQuestionDetails({
+  questionId,
+  passageId,
+}: {
+  questionId: string;
+  passageId: string;
+}) {
+  const {
+    data: question,
+    isLoading: isLoadingQuestion,
+    error: errorQuestion,
+  } = useQuestionById(questionId);
 
-  useEffect(() => {
-    if (!questionId) {
-      setError("No question ID provided.");
-      setIsLoading(false);
-      return;
-    }
-    async function fetchQuestion() {
-      setIsLoading(true);
-      setError("");
-      try {
-        const data = await getQuestionByIdAction({ id: questionId });
-        if (data) {
-          setQuestion(data);
-        } else {
-          setError("Question not found");
-        }
-      } catch {
-        setError("Failed to load question");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    fetchQuestion();
-  }, [questionId]);
+  const {
+    data: passage,
+    isLoading: isLoadingPassage,
+    error: errorPassage,
+  } = usePassageById(passageId);
 
-  useEffect(() => {
-    if (question && question.passageId) {
-      setIsLoadingPassage(true);
-      getPassageByIdAction({ id: question.passageId })
-        .then((data) => setPassage(data))
-        .finally(() => setIsLoadingPassage(false));
-    }
-  }, [question]);
-
-  if (isLoading) {
+  if (isLoadingQuestion) {
     return (
       <div className="flex h-full min-h-screen items-center justify-center bg-[#F4FCFD]">
         <span className="text-[#00306E]/60">Loading question...</span>
@@ -57,7 +34,7 @@ export function ViewQuestionDetails({ questionId }: { questionId: string }) {
     return (
       <div className="flex h-full min-h-screen items-center justify-center bg-[#F4FCFD]">
         <div className="rounded-lg bg-red-100 p-6 text-sm text-red-700">
-          {error || "Question not found"}
+          {errorQuestion?.message || "Question not found"}
         </div>
       </div>
     );
@@ -65,23 +42,6 @@ export function ViewQuestionDetails({ questionId }: { questionId: string }) {
 
   return (
     <div>
-      {/* Passage Details */}
-      {isLoadingPassage ? (
-        <div className="mb-4 text-[#00306E]/60">Loading passage details...</div>
-      ) : passage ? (
-        <div className="mb-4 p-4 rounded-lg bg-[#F4FCFD] border border-[#E4F4FF]">
-          <div className="font-bold text-[#2E2E68]">{passage.title}</div>
-          <div className="text-xs text-[#00306E]/70">
-            {passage.language} •{" "}
-            {passage.level === 0 ? "Kindergarten" : `Grade ${passage.level}`}
-          </div>
-          <div className="text-xs text-[#00306E]/50 mt-1">
-            {passage.content?.slice(0, 100)}...
-          </div>
-        </div>
-      ) : (
-        <div className="mb-4 text-red-600">Passage not found.</div>
-      )}
       {/* Question Details */}
       <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-lg p-8 border border-[#E4F4FF]">
         <h2 className="text-xl font-bold mb-4 text-[#2E2E68]">
@@ -121,6 +81,20 @@ export function ViewQuestionDetails({ questionId }: { questionId: string }) {
             Essay question (no options)
           </div>
         )}
+
+        {/* Passage Name (plain text) */}
+        <div className="mt-4 pt-4 border-t border-[#E4F4FF]">
+          <span className="font-semibold text-[#00306E]">Passage:</span>{" "}
+          {isLoadingPassage ? (
+            <span className="text-[#00306E]/60">Loading...</span>
+          ) : passage ? (
+            <span className="text-[#00306E]">{passage.title}</span>
+          ) : (
+            <span className="text-red-600">
+              {errorPassage?.message || "Passage not found."}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

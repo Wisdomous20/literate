@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
-
+import { useQueryClient } from "@tanstack/react-query";
 import { addQuestionAction } from "@/app/actions/admin/addQuestion";
 
 const tagOptions = ["Literal", "Inferential", "Critical"] as const;
@@ -42,6 +42,7 @@ export function CreateQuestionForm({
   onSuccess?: () => void;
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient(); // <-- Add this
   const [questionText, setQuestionText] = useState("");
   const [tags, setTags] = useState("");
   const [type, setType] = useState("");
@@ -76,6 +77,8 @@ export function CreateQuestionForm({
             type === "MULTIPLE_CHOICE" ? options.filter(Boolean) : undefined,
           correctAnswer: type === "MULTIPLE_CHOICE" ? correctAnswer : undefined,
         });
+        // Invalidate questions for this passage (if you have such a query)
+        await queryClient.invalidateQueries({ queryKey: ["questions"] });
         if (onSuccess) {
           onSuccess();
         } else {
@@ -96,6 +99,7 @@ export function CreateQuestionForm({
       passageId,
       onSuccess,
       router,
+      queryClient,
     ],
   );
 
