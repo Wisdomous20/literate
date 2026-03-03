@@ -1,7 +1,7 @@
 "use server";
 
 import { updatePassageService } from "@/service/admin/UpdatePassageService";
-import { Tags, testType } from "@/generated/prisma/enums";
+import {  testType } from "@/generated/prisma/enums";
 
 interface UpdatePassageActionInput {
   id: string;
@@ -9,12 +9,11 @@ interface UpdatePassageActionInput {
   content?: string;
   language?: string;
   level?: number;
-  tags?: Tags;
   testType?: testType;
 }
 
 export async function updatePassageAction(input: UpdatePassageActionInput) {
-  const { id, title, content, language, level, tags, testType } = input;
+  const { id, title, content, language, level,  testType } = input;
 
   // Call the service to update the passage
   const result = await updatePassageService({
@@ -23,7 +22,6 @@ export async function updatePassageAction(input: UpdatePassageActionInput) {
     content,
     language,
     level,
-    tags,
     testType,
   });
 
