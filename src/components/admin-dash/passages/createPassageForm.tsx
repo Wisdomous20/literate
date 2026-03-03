@@ -30,7 +30,7 @@ const levels = [
 
 export function CreatePassageForm() {
   const router = useRouter();
-  const queryClient = useQueryClient(); // <-- Add this
+  const queryClient = useQueryClient(); 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [language, setLanguage] = useState("");

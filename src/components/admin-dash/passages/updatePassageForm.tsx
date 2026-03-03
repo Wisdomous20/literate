@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { updatePassageAction } from "@/app/actions/admin/updatePassage";
-import { useQueryClient } from "@tanstack/react-query"; // <-- Add this
+import { useQueryClient } from "@tanstack/react-query"; 
 
 interface Passage {
   id: string;
@@ -55,7 +55,7 @@ export function UpdatePassageForm({
   const [error, setError] = useState("");
   const [hasChanges, setHasChanges] = useState(false);
 
-  const queryClient = useQueryClient(); // <-- Add this
+  const queryClient = useQueryClient(); 
 
   useEffect(() => {
     const words = content.trim().split(/\s+/).filter(Boolean).length;
