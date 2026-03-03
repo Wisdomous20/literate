@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import { Tags } from "@/generated/prisma/enums";
 import { testType } from "@/generated/prisma/enums";
 
 interface CreatePassageInput {
@@ -7,7 +6,6 @@ interface CreatePassageInput {
   content: string;
   language: string;
   level: number;
-  tags: Tags;
   testType: testType;
 }
 
@@ -19,7 +17,6 @@ interface CreatePassageResult {
     content: string;
     language: string;
     level: number;
-    tags: Tags;
     testType: testType;
   };
   error?: string;
@@ -29,10 +26,10 @@ interface CreatePassageResult {
 export async function createPassageService(
   input: CreatePassageInput
 ): Promise<CreatePassageResult> {
-  const { title, content, language, level, tags, testType } = input;
+  const { title, content, language, level, testType } = input;
 
   // Validate input
-  if (!title || !content || !language || !level || !tags || !testType) {
+  if (!title || !content || !language || !level || !testType) {
     return {
       success: false,
       error: "All fields are required.",
@@ -48,7 +45,6 @@ export async function createPassageService(
         content,
         language,
         level, 
-        tags,
         testType,
       },
     });
