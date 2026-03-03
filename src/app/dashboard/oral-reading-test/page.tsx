@@ -320,33 +320,14 @@ export default function OralReadingTestPage() {
     }
   }, [hasPassage, recordedAudioURL])
 
-  const handleFullScreenDone = useCallback(async (elapsedSeconds: number, audioURL: string | null, audioBlob: Blob | null) => {
+  const handleFullScreenDone = useCallback((elapsedSeconds: number, audioURL: string | null, audioBlob: Blob | null) => {
     isRestoredRef.current = false
     setRecordedSeconds(elapsedSeconds)
     setRecordedAudioURL(audioURL)
     setRecordedAudioBlob(audioBlob)
     setIsFullScreen(false)
     setHasRecording(true)
-
-    // Auto-create student if not selected from suggestions
-    if (!selectedStudentId && studentName.trim() && gradeLevel && selectedClassName) {
-      try {
-        const result = await createStudent(
-          studentName.trim(),
-          parseInt(gradeLevel),
-          selectedClassName
-        )
-        if (result.success && result.student?.id) {
-          setSelectedStudentId(result.student.id)
-          setToast({ message: `Student "${studentName.trim()}" successfully created!`, type: "success" })
-        } else {
-          setToast({ message: result.error || "Failed to create student.", type: "error" })
-        }
-      } catch {
-        setToast({ message: "Failed to create student. Please try again.", type: "error" })
-      }
-    }
-  }, [selectedStudentId, studentName, gradeLevel, selectedClassName])
+  }, [])
 
   const handleFullScreenClose = useCallback(() => {
     setIsFullScreen(false)
@@ -390,6 +371,9 @@ export default function OralReadingTestPage() {
     // Clear sessionStorage
     sessionStorage.removeItem(STORAGE_KEY)
     sessionStorage.removeItem(AUDIO_STORAGE_KEY)
+    sessionStorage.removeItem("oral-reading-assessmentId")
+    sessionStorage.removeItem("oral-reading-comprehension-state")
+    sessionStorage.removeItem("oral-reading-comprehensionTestId")
   }, [recordedAudioURL])
 
   // Auto-dismiss toast after 4 seconds
@@ -421,7 +405,6 @@ export default function OralReadingTestPage() {
 
       if (!supabaseAudioUrl) {
         console.error("Audio upload failed")
-        setToast({ message: "Audio upload failed. Please try again.", type: "error" })
         return
       }
 
@@ -448,17 +431,23 @@ export default function OralReadingTestPage() {
         result = JSON.parse(responseText)
       } catch {
         console.error("Analysis API non-JSON response:", response.status, responseText)
-        setToast({ message: "Session submission failed. Unexpected server response.", type: "error" })
         return
       }
 
       if (!response.ok) {
         console.error("Analysis API error:", response.status, result)
-        setToast({ message: "Session submission failed. Please try again.", type: "error" })
         return
       }
 
       console.log("Session created:", result.sessionId)
+      console.log("Assessment created:", result.assessmentId)
+
+      // Store assessmentId for the comprehension page
+      if (result.assessmentId) {
+        try {
+          sessionStorage.setItem("oral-reading-assessmentId", result.assessmentId)
+        } catch {}
+      }
 
       // Store analysis result for MiscueAnalysis and report
       if (result.analysis) {
@@ -474,7 +463,6 @@ export default function OralReadingTestPage() {
       setToast({ message: "Reading Fluency Session Successful!", type: "success" })
     } catch (err) {
       console.error("Submit error:", err)
-      setToast({ message: "Something went wrong. Please try again.", type: "error" })
     } finally {
       setIsSubmitting(false)
     }

@@ -1,188 +1,169 @@
-import { MoreVertical } from "lucide-react"
-
 interface BreakdownItem {
   label: string
-  badge: string
-  badgeColor: string
-  badgeBg: string
-  value: number | string
-  valueColor: string
+  key: "literal" | "inferential" | "critical"
+  color: string
+  textColor: string
+  highlightColor: string
 }
+
+const breakdownItems: BreakdownItem[] = [
+  { label: "Literal", key: "literal", color: "rgba(160, 200, 255, 0.4)", textColor: "#1A5FB4", highlightColor: "#2563EB" },
+  { label: "Inferential", key: "inferential", color: "rgba(180, 170, 240, 0.4)", textColor: "#4B3BA3", highlightColor: "#4B3BA3" },
+  { label: "Critical", key: "critical", color: "rgba(253, 182, 210, 0.44)", textColor: "#C41048", highlightColor: "#C41048" },
+]
 
 interface ComprehensionBreakdownReportProps {
   score: string
   literal: number | string
   inferential: number | string
   critical: number | string
-  mistakes: number | string
+  mistakes?: number | string
   numberOfItems: number | string
   classificationLevel: string
+  highlightedTag?: "literal" | "inferential" | "critical" | null
+  onTagClick?: (tag: "literal" | "inferential" | "critical") => void
 }
 
-const BREAKDOWN_ITEMS: BreakdownItem[] = [
-  {
-    label: "Literal",
-    badge: "L",
-    badgeColor: "#E51355",
-    badgeBg: "rgba(253, 182, 210, 0.44)",
-    value: 60,
-    valueColor: "#E51355",
-  },
-  {
-    label: "Inferential",
-    badge: "I",
-    badgeColor: "#0D7AE7",
-    badgeBg: "#B8D8FC",
-    value: 60,
-    valueColor: "#0D7AE7",
-  },
-  {
-    label: "Critical",
-    badge: "L",
-    badgeColor: "#1CC777",
-    badgeBg: "#8EE5BC",
-    value: 60,
-    valueColor: "#1CC777",
-  },
-]
+function getLevelStyle(level: string): { bg: string; text: string } {
+  if (!level) return { bg: "rgba(230, 230, 250, 0.2)", text: "#2E2EA3" }
+  switch (level.toLowerCase()) {
+    case "frustration":
+      return { bg: "rgba(220, 38, 38, 0.15)", text: "#DC2626" }
+    case "instructional":
+      return { bg: "rgba(37, 99, 235, 0.15)", text: "#2563EB" }
+    case "independent":
+      return { bg: "rgba(22, 163, 74, 0.15)", text: "#16A34A" }
+    default:
+      return { bg: "rgba(230, 230, 250, 0.2)", text: "#2E2EA3" }
+  }
+}
 
 export default function ComprehensionBreakdownReport({
   score,
   literal,
   inferential,
   critical,
-  mistakes,
   numberOfItems,
   classificationLevel,
+  highlightedTag = null,
+  onTagClick,
 }: ComprehensionBreakdownReportProps) {
-  const items: BreakdownItem[] = [
-    { ...BREAKDOWN_ITEMS[0], value: literal },
-    { ...BREAKDOWN_ITEMS[1], value: inferential },
-    { ...BREAKDOWN_ITEMS[2], value: critical },
-  ]
+  const tagValues: Record<string, number | string> = {
+    literal,
+    inferential,
+    critical,
+  }
+
+  const percentage =
+    typeof numberOfItems === "number" && numberOfItems > 0
+      ? `${Math.round((Number(score.split("/")[0]) / numberOfItems) * 100)}%`
+      : "--"
 
   return (
-    <div className="bg-[#EFFDFF] border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] rounded-2xl p-6">
-      {/* Header row */}
-      <div className="flex items-start justify-between mb-2">
-        <div>
-          <h3 className="text-lg font-bold text-[#003366]">
-            Comprehension Breakdown
-          </h3>
-          <p
-            className="text-lg font-medium"
-            style={{ color: "rgba(40, 19, 19, 0.71)", fontFamily: "Nunito, sans-serif" }}
-          >
-            Total Seats
-          </p>
-        </div>
-        <div className="text-right">
-          <span
-            className="text-[15px] text-[#162DB0]"
-            style={{ fontFamily: "Kanit, sans-serif" }}
-          >
-            Score
-          </span>
-          <p
-            className="text-[23px] font-semibold text-[#2A2AD0]"
-            style={{ fontFamily: "Kanit, sans-serif" }}
-          >
-            {score}
-          </p>
-        </div>
-      </div>
+    <div
+      className="flex flex-col rounded-[20px] px-5 py-4"
+      style={{
+        background: "#EFFDFF",
+        border: "1px solid #54A4FF",
+        boxShadow: "0px 1px 20px rgba(108, 164, 239, 0.37)",
+      }}
+    >
+      {/* Title */}
+      <span className="text-[10px] font-bold uppercase tracking-widest text-[#6666FF] mb-3 block">
+        Comprehension Breakdown
+      </span>
 
-      {/* Breakdown items */}
-      <div className="flex flex-col mt-4">
-        {items.map((item, index) => (
-          <div key={item.label}>
-            <div className="flex items-center justify-between py-3">
-              <div className="flex items-center gap-3">
-                {/* Color badge */}
-                <div
-                  className="flex h-[34px] w-[35px] items-center justify-center rounded-[5px] text-lg font-bold"
-                  style={{
-                    background: item.badgeBg,
-                    border: "1px solid #DAE6FF",
-                    color: item.badgeColor,
-                  }}
-                >
-                  {item.badge}
-                </div>
+      {/* Breakdown Items */}
+      <div className="flex flex-1 flex-col overflow-y-auto">
+        {breakdownItems.map((item, index) => {
+          const isHighlighted = highlightedTag === item.key
+          return (
+            <div key={item.label}>
+              <div className="flex items-center justify-between py-2">
                 {/* Label */}
-                <span className="text-[17px] font-bold text-[#31318A]">
+                <span
+                  className="text-sm font-bold"
+                  style={{ color: item.textColor }}
+                >
                   {item.label}
                 </span>
+                {/* Color-coded badge at right, clickable */}
+                <button
+                  type="button"
+                  className={`flex h-6 w-7 items-center justify-center rounded-[5px] text-sm font-bold border transition-all ${isHighlighted ? "ring-2 ring-blue-400" : ""}`}
+                  style={{
+                    background: item.color,
+                    border: "1px solid #DAE6FF",
+                    color: item.textColor,
+                    boxShadow: isHighlighted ? `0 0 0 2px ${item.highlightColor}` : undefined,
+                  }}
+                  onClick={() => onTagClick && onTagClick(item.key)}
+                >
+                  {tagValues[item.key] ?? "--"}
+                </button>
               </div>
-              {/* Value + menu */}
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <span
-                    className="text-[10px] text-[#162DB0] block"
-                    style={{ fontFamily: "Kanit, sans-serif" }}
-                  >
-                    Words
-                  </span>
-                  <span
-                    className="text-[23px] font-semibold"
-                    style={{ color: item.valueColor, fontFamily: "Kanit, sans-serif" }}
-                  >
-                    {item.value}
-                  </span>
-                </div>
-                <MoreVertical className="h-4 w-4 text-[#00454D]" />
-              </div>
+              {/* Divider */}
+              {index < breakdownItems.length - 1 && (
+                <div
+                  className="h-px"
+                  style={{ background: "rgba(18, 48, 220, 0.25)" }}
+                />
+              )}
             </div>
-            {/* Divider */}
-            {index < items.length - 1 && (
-              <div className="h-px" style={{ background: "rgba(18, 48, 220, 0.25)" }} />
-            )}
-          </div>
-        ))}
+          )
+        })}
       </div>
 
-      {/* Summary rows */}
-      <div className="mt-4 flex flex-col">
-        {/* Mistakes */}
-        <div
-          className="flex items-center justify-between px-4 py-3"
-          style={{ background: "rgba(237, 232, 234, 0.69)" }}
-        >
-          <span className="text-[17px] font-bold text-[#31318A]">Mistakes</span>
-          <span
-            className="text-[22px] font-semibold text-[#2E2EA3]"
-            style={{ fontFamily: "Kanit, sans-serif" }}
+      {/* Bottom Results */}
+      <div className="mt-auto pt-3">
+        <div className="flex flex-col gap-1.5">
+          {/* Score */}
+          <div
+            className="flex items-center justify-between rounded px-3 py-1.5"
+            style={{ background: "rgba(230, 230, 250, 0.5)" }}
           >
-            {mistakes}
-          </span>
-        </div>
+            <span className="text-xs font-bold" style={{ color: "#31318A" }}>
+              Total Score: 
+            </span>
+            <span
+              className="text-[17px] font-semibold"
+              style={{ color: "#2E2EA3", fontFamily: "Kanit, sans-serif" }}
+            >
+              {score}
+            </span>
+          </div>
 
-        {/* Number of Items */}
-        <div
-          className="flex items-center justify-between px-4 py-3"
-          style={{ background: "#EFFAED" }}
-        >
-          <span className="text-[17px] font-bold text-[#31318A]">Number of Items</span>
-          <span
-            className="text-[22px] font-semibold text-[#2E2EA3]"
-            style={{ fontFamily: "Kanit, sans-serif" }}
+          {/* Percentage */}
+          <div
+            className="flex items-center justify-between rounded px-3 py-1.5"
+            style={{ background: "rgba(230, 230, 250, 0.35)" }}
           >
-            {numberOfItems}
-          </span>
-        </div>
+            <span className="text-xs font-bold" style={{ color: "#31318A" }}>
+              Comprehension Rate: 
+            </span>
+            <span
+              className="text-[17px] font-semibold"
+              style={{ color: "#2E2EA3", fontFamily: "Kanit, sans-serif" }}
+            >
+              {percentage}
+            </span>
+          </div>
 
-        {/* Classification Level */}
-        <div
-          className="flex items-center justify-between px-4 py-3"
-          style={{ background: "#DFFDEA" }}
-        >
-          <span className="text-[17px] font-bold text-[#31318A]">Classification Level</span>
-          <span
-            className="text-[22px] font-semibold text-[#2E2EA3]"
-            style={{ fontFamily: "Kanit, sans-serif" }}
+          {/* Level */}
+          <div
+            className="flex items-center justify-between rounded px-3 py-1.5"
+            style={{ background: getLevelStyle(classificationLevel).bg }}
           >
-            {classificationLevel}
-          </span>
+            <span className="text-xs font-bold" style={{ color: "#31318A" }}>
+              Comprehension Level:
+            </span>
+            <span
+              className="text-[17px] font-semibold"
+              style={{ color: getLevelStyle(classificationLevel).text, fontFamily: "Kanit, sans-serif" }}
+            >
+              {classificationLevel}
+            </span>
+          </div>
         </div>
       </div>
     </div>
