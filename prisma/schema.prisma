@@ -74,14 +74,13 @@ model Student {
 }
 
 model Assessment {
-  id        String   @id @default(uuid())
+  id        String         @id @default(uuid())
   studentId String
-  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student   Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
   passageId String
-  passage   Passage  @relation(fields: [passageId], references: [id])
-  dateTaken DateTime @default(now())
+  passage   Passage        @relation(fields: [passageId], references: [id])
+  dateTaken DateTime       @default(now())
   type      AssessmentType
-
 
   oralReadingResult OralReadingResult?
   comprehension     ComprehensionTest?
@@ -89,14 +88,14 @@ model Assessment {
 }
 
 model OralReadingResult {
-  id                 String              @id @default(uuid())
-  assessmentId       String              @unique
-  assessment         Assessment          @relation(fields: [assessmentId], references: [id])
-  fluencyLevel       LevelClassification
-  comprehensionLevel LevelClassification
-  oralReadingLevel   LevelClassification
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  id                  String              @id @default(uuid())
+  assessmentId        String              @unique
+  assessment          Assessment          @relation(fields: [assessmentId], references: [id])
+  fluencyLevel        LevelClassification
+  comprehensionLevel  LevelClassification
+  classificationLevel LevelClassification
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
 }
 
 model OralFluencySession {
@@ -179,7 +178,6 @@ model Passage {
   content     String
   language    String
   level       Int
-  tags        Tags
   testType    testType
   assessments Assessment[]
   quiz        Quiz?
@@ -188,15 +186,15 @@ model Passage {
 }
 
 model ComprehensionTest {
-  id                 String                @id @default(uuid())
-  assessmentId       String                @unique
-  assessment         Assessment            @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
-  quizId             String
-  quiz               Quiz                  @relation(fields: [quizId], references: [id])
-  score              Int
-  totalItems         Int
+  id                  String                @id @default(uuid())
+  assessmentId        String                @unique
+  assessment          Assessment            @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  quizId              String
+  quiz                Quiz                  @relation(fields: [quizId], references: [id])
+  score               Int
+  totalItems          Int
   classificationLevel LevelClassification
-  answers            ComprehensionAnswer[]
+  answers             ComprehensionAnswer[]
 }
 
 model ComprehensionAnswer {

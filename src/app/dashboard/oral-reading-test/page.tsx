@@ -54,6 +54,7 @@ interface SessionState {
   recordedSeconds: number
   analysisResult?: OralFluencyAnalysis | null
   sessionId?: string
+  assessmentId?: string
 }
 
 function loadSession(): Partial<SessionState> {
@@ -123,6 +124,7 @@ export default function OralReadingTestPage() {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
   const [analysisResult, setAnalysisResult] = useState<OralFluencyAnalysis | null>(null)
   const [sessionId, setSessionId] = useState<string>("")
+  const [assessmentId, setAssessmentId] = useState<string>("")
   const [highlightedTypes, setHighlightedTypes] = useState<Set<string>>(new Set())
   const [passageExpanded, setPassageExpanded] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
@@ -173,6 +175,7 @@ export default function OralReadingTestPage() {
     if (loaded.recordedSeconds !== undefined) setRecordedSeconds(loaded.recordedSeconds)
     if (loaded.analysisResult) setAnalysisResult(loaded.analysisResult)
     if (loaded.sessionId) setSessionId(loaded.sessionId)
+    if (loaded.assessmentId) setAssessmentId(loaded.assessmentId)
 
     // Restore audio blob
     try {
@@ -234,6 +237,7 @@ export default function OralReadingTestPage() {
       recordedSeconds,
       analysisResult,
       sessionId,
+      assessmentId,
     })
   }, [
     isHydrated,
@@ -253,6 +257,7 @@ export default function OralReadingTestPage() {
     recordedSeconds,
     analysisResult,
     sessionId,
+    assessmentId,
   ])
 
   // Fetch classes on mount
@@ -450,6 +455,9 @@ export default function OralReadingTestPage() {
       }
       if (result.sessionId) {
         setSessionId(result.sessionId)
+      }
+      if (result.assessmentId) {
+        setAssessmentId(result.assessmentId)
       }
 
       setToast({ message: "Reading Fluency Session Successful!", type: "success" })

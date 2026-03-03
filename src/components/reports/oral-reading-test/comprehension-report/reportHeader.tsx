@@ -32,6 +32,13 @@ export default function ComprehensionReportHeader() {
         <div className="flex items-center gap-3">
           <button
             type="button"
+            onClick={() => router.push("/dashboard/oral-reading-test/reading-level-report")}
+            className="px-5 py-2 bg-[#2E2E68] text-white text-xs font-medium rounded-lg border border-[#7A7AFB] shadow-[0_1px_20px_rgba(65,155,180,0.47)] hover:bg-[#2E2E68]/90 transition-colors"
+          >
+            Reading Level
+          </button>
+          <button
+            type="button"
             className="px-5 py-2 bg-[#297CEC] text-white text-xs font-medium rounded-lg border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#297CEC]/90 transition-colors"
           >
             Export to PDF
