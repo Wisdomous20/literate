@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
-import { PassageDetailsCard } from "@/components/admin-dash/passageDetailsCard";
+import { PassageDetailsCard } from "@/components/admin-dash/passages/passageDetailsCard";
 import { usePassageById } from "@/lib/hooks/usePassageById";
 
 export default function PassageViewPage() {

@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams, useParams } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
-import { ViewQuestionDetails } from "@/components/admin-dash/viewQuestionDetails";
+import { ViewQuestionDetails } from "@/components/admin-dash/questions/viewQuestionDetails";
 
 export default function ViewQuestionPage() {
   const router = useRouter();

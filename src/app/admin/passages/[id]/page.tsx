@@ -10,7 +10,7 @@ import {
   Plus,
   Eye,
 } from "lucide-react";
-import { QuestionTable } from "@/components/admin-dash/questionTable";
+import { QuestionTable } from "@/components/admin-dash/questions/questionTable";
 import { usePassageById } from "@/lib/hooks/usePassageById";
 import { useQuestionList } from "@/lib/hooks/useQuestionList";
 import { deleteQuestionAction } from "@/app/actions/admin/deleteQuestion";

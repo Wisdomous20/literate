@@ -1,6 +1,6 @@
 "use client";
 
-import { CreatePassageForm } from "@/components/admin-dash/createPassageForm";
+import { CreatePassageForm } from "@/components/admin-dash/passages/createPassageForm";
 import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 

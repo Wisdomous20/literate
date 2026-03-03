@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useSearchParams } from "next/navigation";
-import { UpdateQuestionForm } from "@/components/admin-dash/updateQuestionForm";
+import { UpdateQuestionForm } from "@/components/admin-dash/questions/updateQuestionForm";
 import { useQuestionById } from "@/lib/hooks/useQuestionById";
 
 export default function EditQuestionPage() {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { UpdatePassageForm } from "@/components/admin-dash/updatePassageForm";
+import { UpdatePassageForm } from "@/components/admin-dash/passages/updatePassageForm";
 import { usePassageById } from "@/lib/hooks/usePassageById";
 
 export default function EditPassagePage() {

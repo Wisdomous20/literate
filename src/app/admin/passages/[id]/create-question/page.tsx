@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { CreateQuestionForm } from "@/components/admin-dash/createQuestionForm";
+import { CreateQuestionForm } from "@/components/admin-dash/questions/createQuestionForm";
 import { ChevronLeft } from "lucide-react";
 import { usePassageById } from "@/lib/hooks/usePassageById";
 
