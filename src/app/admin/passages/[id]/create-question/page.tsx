@@ -1,11 +1,16 @@
 "use client";
 
-import { CreatePassageForm } from "@/components/admin-dash/passages/createPassageForm";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { CreateQuestionForm } from "@/components/admin-dash/questions/createQuestionForm";
 import { ChevronLeft } from "lucide-react";
+import { usePassageById } from "@/lib/hooks/usePassageById";
 
-export default function CreatePassagePage() {
+export default function CreateQuestionForPassagePage() {
+  const params = useParams();
   const router = useRouter();
+  const passageId = params.id as string;
+
+  const { data: passage, isLoading, error } = usePassageById(passageId);
 
   return (
     <div className="flex h-full flex-col">
@@ -23,10 +28,16 @@ export default function CreatePassagePage() {
           </div>
           <div className="mb-8">
             <p className="text-base text-[#00306E]/70">
-              Create a new graded reading passage for assessments
+              Create a comprehension question for this passage
             </p>
           </div>
-          <CreatePassageForm />
+          {isLoading && <p>Loading passage...</p>}
+          {error && (
+            <div className="rounded-lg bg-red-100 p-4 text-sm text-red-700">
+              {error.message || "Failed to load passage"}
+            </div>
+          )}
+          {passage && <CreateQuestionForm passageId={passageId} />}
         </div>
       </main>
     </div>
