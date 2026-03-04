@@ -13,17 +13,8 @@ function serializeError(err: unknown): string {
   return String(err);
 }
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-
 export const maxDuration = 60;
 
-// POST /api/oral-reading/[id] — Step 1: Submit fluency audio
-// Creates 1 ORAL_READING assessment, then creates OralFluencySession under it.
-// Returns assessmentId so the client can later submit comprehension answers against the same assessment.
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();

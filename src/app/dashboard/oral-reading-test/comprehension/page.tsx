@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { ChevronLeft, ChevronDown, Clock, Loader2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, ChevronDown, Clock, Loader2 } from "lucide-react"
 import { DashboardHeader } from "@/components/auth/dashboard/dashboardHeader"
 import { ComprehensionBreakdown } from "@/components/oral-reading-test/comprehensionBreakdown"
 import { getQuizByPassageAction } from "@/app/actions/comprehension-Test/getQuizByPassage"
@@ -141,7 +141,7 @@ export default function OralReadingComprehensionPage() {
                 const restoredResult = {
                   score: existing.score,
                   totalItems: existing.totalItems,
-                  level: existing.level,
+                  level: existing.classificationLevel ?? existing.level,
                   comprehensionTestId: existing.id,
                   tagBreakdown,
                 }
@@ -163,6 +163,34 @@ export default function OralReadingComprehensionPage() {
                   isSubmitted: true,
                   comprehensionResult: restoredResult,
                 })
+
+                try {
+                  const mainRaw = sessionStorage.getItem("oral-reading-session")
+                  if (mainRaw) {
+                    const mainSession = JSON.parse(mainRaw)
+                    mainSession.comprehensionResult = {
+                      score: restoredResult.score,
+                      totalItems: restoredResult.totalItems,
+                      percentage: restoredResult.totalItems
+                        ? Math.round((restoredResult.score / restoredResult.totalItems) * 100)
+                        : 0,
+                      level: restoredResult.level,
+                    }
+                    
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const fluencyClassification = (assessment as any)?.oralFluency?.classificationLevel
+                    const compClassification = restoredResult.level
+                    if (fluencyClassification && compClassification) {
+                      const ranks: Record<string, number> = { INDEPENDENT: 0, INSTRUCTIONAL: 1, FRUSTRATION: 2 }
+                      const labels = ["INDEPENDENT", "INSTRUCTIONAL", "FRUSTRATION"]
+                      const overall = Math.max(ranks[fluencyClassification] ?? 0, ranks[compClassification] ?? 0)
+                      mainSession.oralReadingLevel = labels[overall]
+                    }
+                    sessionStorage.setItem("oral-reading-session", JSON.stringify(mainSession))
+                  }
+                } catch {
+                  /* failed to update main session — non-critical */
+                }
               }
             } catch {
               // Assessment not found or error — continue to load questions
@@ -297,16 +325,45 @@ export default function OralReadingComprehensionPage() {
         const existingComp = (assessment as any)?.comprehension
         if (existingComp) {
           const tagBreakdown = computeTagBreakdown(existingComp.answers)
+          const existingLevel = existingComp.classificationLevel ?? existingComp.level
           setComprehensionResult({
             score: existingComp.score,
             totalItems: existingComp.totalItems,
-            level: existingComp.level,
+            level: existingLevel,
             comprehensionTestId: existingComp.id,
             tagBreakdown,
           })
           if (existingComp.id) {
             sessionStorage.setItem("oral-reading-comprehensionTestId", existingComp.id)
           }
+
+          // Sync into main session for reading-level-report
+          try {
+            const mainRaw = sessionStorage.getItem("oral-reading-session")
+            if (mainRaw) {
+              const mainSession = JSON.parse(mainRaw)
+              mainSession.comprehensionResult = {
+                score: existingComp.score,
+                totalItems: existingComp.totalItems,
+                percentage: existingComp.totalItems
+                  ? Math.round((existingComp.score / existingComp.totalItems) * 100)
+                  : 0,
+                level: existingLevel,
+              }
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const fluencyClassification = (assessment as any)?.oralFluency?.classificationLevel
+              if (fluencyClassification && existingLevel) {
+                const ranks: Record<string, number> = { INDEPENDENT: 0, INSTRUCTIONAL: 1, FRUSTRATION: 2 }
+                const labels = ["INDEPENDENT", "INSTRUCTIONAL", "FRUSTRATION"]
+                const overall = Math.max(ranks[fluencyClassification] ?? 0, ranks[existingLevel] ?? 0)
+                mainSession.oralReadingLevel = labels[overall]
+              }
+              sessionStorage.setItem("oral-reading-session", JSON.stringify(mainSession))
+            }
+          } catch {
+            /* non-critical */
+          }
+
           setIsSubmitted(true)
           return
         }
@@ -355,17 +412,41 @@ export default function OralReadingComprehensionPage() {
         // Failed to fetch tag breakdown — continue without it
       }
 
-      setComprehensionResult({
+      const comprehensionData = {
         score: result.score,
         totalItems: result.totalItems,
         level: result.level,
         comprehensionTestId: result.comprehensionTestId,
         tagBreakdown,
-      })
+      }
+
+      setComprehensionResult(comprehensionData)
 
       // Store comprehensionTestId for the report page
       if (result.comprehensionTestId) {
         sessionStorage.setItem("oral-reading-comprehensionTestId", result.comprehensionTestId)
+      }
+
+      // Write comprehensionResult and oralReadingLevel back into the main session
+      // so the reading-level-report page can display them
+      try {
+        const mainRaw = sessionStorage.getItem("oral-reading-session")
+        if (mainRaw) {
+          const mainSession = JSON.parse(mainRaw)
+          mainSession.comprehensionResult = {
+            score: comprehensionData.score,
+            totalItems: comprehensionData.totalItems,
+            percentage: comprehensionData.totalItems
+              ? Math.round((comprehensionData.score / comprehensionData.totalItems) * 100)
+              : 0,
+            level: comprehensionData.level,
+          }
+          mainSession.oralReadingLevel =
+            result.oralReadingResult?.oralReadingLevel ?? null
+          sessionStorage.setItem("oral-reading-session", JSON.stringify(mainSession))
+        }
+      } catch {
+        /* failed to update main session — non-critical */
       }
 
       setIsSubmitted(true)
@@ -425,15 +506,26 @@ export default function OralReadingComprehensionPage() {
 
       {/* Two-column layout */}
       <div className="flex flex-1 min-h-0 flex-col gap-4 px-4 py-4 md:px-6 lg:px-8">
-        {/* Previous Button — above both columns */}
-        <button
-          onClick={handleGoBack}
-          className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:bg-[#5555EE] md:text-base self-start"
-          style={{ boxShadow: "0 0 20px rgba(102, 102, 255, 0.4), 0 4px 12px rgba(102, 102, 255, 0.3)" }}
-        >
-          <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
-          <span>Previous</span>
-        </button>
+        {/* Navigation Buttons — above both columns */}
+        <div className="flex items-center justify-between">
+          <button
+            onClick={handleGoBack}
+            className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:bg-[#5555EE] md:text-base"
+            style={{ boxShadow: "0 0 20px rgba(102, 102, 255, 0.4), 0 4px 12px rgba(102, 102, 255, 0.3)" }}
+          >
+            <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
+            <span>Previous</span>
+          </button>
+          <button
+            onClick={() => router.push("/dashboard/oral-reading-test/reading-level-report")}
+            disabled={!isSubmitted}
+            className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:bg-[#5555EE] md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ boxShadow: "0 0 20px rgba(102, 102, 255, 0.4), 0 4px 12px rgba(102, 102, 255, 0.3)" }}
+          >
+            <span>Reading Level</span>
+            <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
+          </button>
+        </div>
 
         {/* Two columns: left (info bar + scrollable questions) | right (breakdown aligned with timer top) */}
         <div className="flex flex-1 min-h-0 gap-4">
