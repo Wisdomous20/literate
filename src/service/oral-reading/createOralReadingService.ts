@@ -28,7 +28,7 @@ export async function createOralReadingService(assessmentId: string): Promise<Or
     return { success: false, error: "Both fluency and comprehension levels are required." };
   }
 
-  const oralReadingLevel = classifyOralReadingLevel(fluencyLevel, comprehensionLevel);
+  const classificationLevel = classifyOralReadingLevel(fluencyLevel, comprehensionLevel);
 
   await prisma.oralReadingResult.upsert({
     where: { assessmentId },
@@ -36,14 +36,14 @@ export async function createOralReadingService(assessmentId: string): Promise<Or
       assessmentId,
       fluencyLevel,
       comprehensionLevel,
-      oralReadingLevel,
+      classificationLevel,
     },
     update: {
       fluencyLevel,
       comprehensionLevel,
-      oralReadingLevel,
+      classificationLevel,
     },
   });
 
-  return { success: true, oralReadingLevel };
+  return { success: true, oralReadingLevel: classificationLevel };
 }
