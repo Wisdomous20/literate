@@ -69,7 +69,11 @@ function loadSession(): Partial<SessionState> {
 function saveSession(state: SessionState) {
   if (typeof window === "undefined") return
   try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+    // Merge with existing session data to preserve fields added by other pages
+    // (e.g. comprehensionResult, oralReadingLevel set by the comprehension page)
+    const existing = sessionStorage.getItem(STORAGE_KEY)
+    const merged = existing ? { ...JSON.parse(existing), ...state } : state
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(merged))
   } catch {}
 }
 
@@ -385,13 +389,46 @@ export default function OralReadingTestPage() {
   }, [toast])
 
   const handleSubmitRecording = useCallback(async () => {
-    if (!recordedAudioBlob || !selectedPassage || !selectedStudentId) {
+    if (!recordedAudioBlob || !selectedPassage) {
       console.log("Submit blocked - missing:", {
         hasBlob: !!recordedAudioBlob,
         selectedPassage,
-        selectedStudentId,
       })
       return
+    }
+
+    // If no existing student selected, auto-create a new student
+    let studentId = selectedStudentId
+    if (!studentId) {
+      if (!studentName.trim() || !gradeLevel || !selectedClassName) {
+        setToast({
+          message: "Please enter a student name, select a grade level, and select a class.",
+          type: "error",
+        })
+        return
+      }
+
+      try {
+        const result = await createStudent(
+          studentName.trim(),
+          Number(gradeLevel),
+          selectedClassName
+        )
+        if (!result.success || !("student" in result) || !result.student) {
+          setToast({
+            message: result.error || "Failed to create student.",
+            type: "error",
+          })
+          return
+        }
+        studentId = result.student.id
+        setSelectedStudentId(studentId)
+        setToast({ message: `Student "${studentName.trim()}" created successfully!`, type: "success" })
+      } catch (err) {
+        console.error("Failed to create student:", err)
+        setToast({ message: "Something went wrong creating the student.", type: "error" })
+        return
+      }
     }
 
     setIsSubmitting(true)
@@ -399,7 +436,7 @@ export default function OralReadingTestPage() {
       const { uploadAudioToSupabase } = await import("@/utils/uploadAudioToSupabase")
       const supabaseAudioUrl = await uploadAudioToSupabase(
         recordedAudioBlob,
-        selectedStudentId,
+        studentId,
         selectedPassage
       )
 
@@ -411,7 +448,7 @@ export default function OralReadingTestPage() {
       console.log("Audio uploaded to:", supabaseAudioUrl)
 
       const formData = new FormData()
-      formData.append("studentId", selectedStudentId)
+      formData.append("studentId", studentId)
       formData.append("passageId", selectedPassage)
       formData.append("audioUrl", supabaseAudioUrl)
       formData.append("audio", recordedAudioBlob, "recording.webm")
@@ -466,16 +503,19 @@ export default function OralReadingTestPage() {
     } finally {
       setIsSubmitting(false)
     }
-  }, [recordedAudioBlob, selectedPassage, selectedStudentId])
+  }, [recordedAudioBlob, selectedPassage, selectedStudentId, studentName, gradeLevel, selectedClassName])
 
   // Auto-submit only for FRESH recordings, not restored ones
+  const canSubmit = hasRecording && recordedAudioBlob && selectedPassage && (
+    selectedStudentId || (studentName.trim() && gradeLevel && selectedClassName)
+  )
   useEffect(() => {
     if (isRestoredRef.current) return
-    if (hasRecording && recordedAudioBlob && selectedPassage && selectedStudentId) {
+    if (canSubmit) {
       console.log("Submitting recording...")
       handleSubmitRecording()
     }
-  }, [hasRecording, recordedAudioBlob, selectedPassage, selectedStudentId, handleSubmitRecording])
+  }, [canSubmit, handleSubmitRecording])
 
   if (isFullScreen) {
     return (

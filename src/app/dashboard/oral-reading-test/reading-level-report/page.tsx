@@ -137,7 +137,15 @@ export default function ReadingLevelReportPage() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => router.push("/dashboard/oral-reading-test")}
+            onClick={() => {
+              // Clear all oral reading session data so the fluency page starts fresh
+              sessionStorage.removeItem(STORAGE_KEY)
+              sessionStorage.removeItem("oral-reading-audio")
+              sessionStorage.removeItem("oral-reading-assessmentId")
+              sessionStorage.removeItem("oral-reading-comprehension-state")
+              sessionStorage.removeItem("oral-reading-comprehensionTestId")
+              router.push("/dashboard/oral-reading-test")
+            }}
             className="px-5 py-2 bg-[#2E2E68] text-white text-xs font-medium rounded-[10px] border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#2E2E68]/90 transition-colors"
           >
             Start New
