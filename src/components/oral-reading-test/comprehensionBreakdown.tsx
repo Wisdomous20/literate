@@ -1,33 +1,59 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { MoreVertical } from "lucide-react"
 
 interface BreakdownItem {
   label: string
-  value: string | number
+  key: "literal" | "inferential" | "critical"
   color: string
   textColor: string
+  highlightColor: string
 }
 
 const breakdownItems: BreakdownItem[] = [
-  { label: "Literal", value: "--", color: "rgba(160, 200, 255, 0.4)", textColor: "#1A5FB4" },
-  { label: "Inferential", value: "--", color: "rgba(180, 170, 240, 0.4)", textColor: "#4B3BA3" },
-  { label: "Critical", value: "--", color: "rgba(253, 182, 210, 0.44)", textColor: "#C41048" },
+  { label: "Literal", key: "literal", color: "rgba(160, 200, 255, 0.4)", textColor: "#1A5FB4", highlightColor: "#2563EB" },
+  { label: "Inferential", key: "inferential", color: "rgba(180, 170, 240, 0.4)", textColor: "#4B3BA3", highlightColor: "#4B3BA3" },
+  { label: "Critical", key: "critical", color: "rgba(253, 182, 210, 0.44)", textColor: "#C41048", highlightColor: "#C41048" },
 ]
+
+interface TagBreakdown {
+  literal: { correct: number; total: number }
+  inferential: { correct: number; total: number }
+  critical: { correct: number; total: number }
+}
 
 interface ComprehensionBreakdownProps {
   score?: number
   totalItems?: number
   level?: string
+  tagBreakdown?: TagBreakdown
   disabled?: boolean
+  highlightedTag?: "literal" | "inferential" | "critical" | null
+  onTagClick?: (tag: "literal" | "inferential" | "critical") => void
+}
+
+function getLevelStyle(level: string): { bg: string; text: string } {
+  if (!level) return { bg: "rgba(230, 230, 250, 0.2)", text: "#2E2EA3" }
+  switch (level.toLowerCase()) {
+    case "frustration":
+      return { bg: "rgba(220, 38, 38, 0.15)", text: "#DC2626" }
+    case "instructional":
+      return { bg: "rgba(37, 99, 235, 0.15)", text: "#2563EB" }
+    case "independent":
+      return { bg: "rgba(22, 163, 74, 0.15)", text: "#16A34A" }
+    default:
+      return { bg: "rgba(230, 230, 250, 0.2)", text: "#2E2EA3" }
+  }
 }
 
 export function ComprehensionBreakdown({
   score = 0,
   totalItems = 0,
   level = "--",
+  tagBreakdown,
   disabled = false,
+  highlightedTag = null,
+  onTagClick,
 }: ComprehensionBreakdownProps) {
   const router = useRouter()
 
@@ -47,41 +73,48 @@ export function ComprehensionBreakdown({
 
       {/* Breakdown Items */}
       <div className="flex flex-1 flex-col overflow-y-auto">
-        {breakdownItems.map((item, index) => (
-          <div key={item.label}>
-            <div className="flex items-center justify-between py-2">
-              <div className="flex items-center gap-2.5">
-                {/* Color-coded badge */}
-                <div
-                  className="flex h-6 w-7 items-center justify-center rounded-[5px] text-sm font-bold"
-                  style={{
-                    background: item.color,
-                    border: "1px solid #DAE6FF",
-                    color: item.textColor,
-                  }}
-                >
-                  {item.value}
-                </div>
+        {breakdownItems.map((item, index) => {
+          const tagData = tagBreakdown?.[item.key]
+          const displayValue = tagData ? `${tagData.correct}/${tagData.total}` : "--"
+          const isHighlighted = highlightedTag === item.key
+
+          return (
+            <div key={item.label}>
+              <div
+                className="flex items-center justify-between py-2 px-2 rounded-lg transition-all duration-200 cursor-pointer"
+                style={{
+                  background: isHighlighted ? item.color : "transparent",
+                }}
+                onClick={() => onTagClick && onTagClick(item.key)}
+              >
                 {/* Label */}
                 <span
                   className="text-sm font-bold"
-                  style={{ color: "#31318A" }}
+                  style={{ color: item.textColor }}
                 >
                   {item.label}
                 </span>
+                {/* Color-coded badge at right */}
+                <div
+                  className="flex h-6 w-7 items-center justify-center rounded-[5px] text-sm font-bold"
+                  style={{
+                    background: isHighlighted ? "white" : item.color,
+                    color: item.textColor,
+                  }}
+                >
+                  {displayValue}
+                </div>
               </div>
-              {/* Three-dot menu */}
-              <MoreVertical className="h-4 w-4 text-[#00454D]" />
+              {/* Divider */}
+              {index < breakdownItems.length - 1 && (
+                <div
+                  className="h-px"
+                  style={{ background: "rgba(18, 48, 220, 0.25)" }}
+                />
+              )}
             </div>
-            {/* Divider */}
-            {index < breakdownItems.length - 1 && (
-              <div
-                className="h-px"
-                style={{ background: "rgba(18, 48, 220, 0.25)" }}
-              />
-            )}
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* Bottom Results */}
@@ -93,7 +126,7 @@ export function ComprehensionBreakdown({
             style={{ background: "rgba(230, 230, 250, 0.5)" }}
           >
             <span className="text-xs font-bold" style={{ color: "#31318A" }}>
-              Score
+              Total Score: 
             </span>
             <span
               className="text-[17px] font-semibold"
@@ -109,7 +142,7 @@ export function ComprehensionBreakdown({
             style={{ background: "rgba(230, 230, 250, 0.35)" }}
           >
             <span className="text-xs font-bold" style={{ color: "#31318A" }}>
-              Percentage
+              Comprehension Rate: 
             </span>
             <span
               className="text-[17px] font-semibold"
@@ -124,14 +157,14 @@ export function ComprehensionBreakdown({
           {/* Level */}
           <div
             className="flex items-center justify-between rounded px-3 py-1.5"
-            style={{ background: "rgba(230, 230, 250, 0.2)" }}
+            style={{ background: getLevelStyle(level).bg }}
           >
             <span className="text-xs font-bold" style={{ color: "#31318A" }}>
-              Comprehension Level
+              Comprehension Level: 
             </span>
             <span
               className="text-[17px] font-semibold"
-              style={{ color: "#2E2EA3", fontFamily: "Kanit, sans-serif" }}
+              style={{ color: getLevelStyle(level).text, fontFamily: "Kanit, sans-serif" }}
             >
               {level}
             </span>

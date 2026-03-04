@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { Tags, testType } from "@/generated/prisma/enums";
+import { testType } from "@/generated/prisma/enums";
 
 interface UpdatePassageInput {
   id: string;
@@ -7,7 +7,6 @@ interface UpdatePassageInput {
   content?: string;
   language?: string;
   level?: number;
-  tags?: Tags;
   testType?: testType;
 }
 
@@ -19,7 +18,6 @@ interface UpdatePassageResult {
     content: string;
     language: string;
     level: number;
-    tags: Tags;
     testType: testType;
   };
   error?: string;
@@ -29,7 +27,7 @@ interface UpdatePassageResult {
 export async function updatePassageService(
   input: UpdatePassageInput
 ): Promise<UpdatePassageResult> {
-  const { id, title, content, language, level, tags, testType } = input;
+  const { id, title, content, language, level,testType } = input;
 
   // Validate input
   if (!id) {
@@ -62,7 +60,6 @@ export async function updatePassageService(
         content,
         language,
         level,
-        tags,
         testType,
       },
     });
@@ -75,7 +72,6 @@ export async function updatePassageService(
         content: updatedPassage.content,
         language: updatedPassage.language,
         level: updatedPassage.level,
-        tags: updatedPassage.tags,
         testType: updatedPassage.testType,
       },
     };

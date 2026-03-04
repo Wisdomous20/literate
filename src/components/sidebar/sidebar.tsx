@@ -12,8 +12,7 @@ import {
   ClipboardList,
   Settings,
   LogOut,
-  ChevronLeft,
-  ChevronRight,
+  ChevronDown,
 } from "lucide-react"
 
 const menuItems = [
@@ -72,16 +71,16 @@ export function Sidebar() {
         boxShadow: "4px 0 20px rgba(102, 102, 255, 0.3)",
       }}
     >
-      {/* Collapse Toggle Button */}
+      {/* Collapse Toggle Button — Accordion style */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-8 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-white text-[#6666FF] shadow-md transition-colors hover:bg-gray-100"
+        className="absolute -right-3 top-8 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-white text-[#6666FF] shadow-md transition-transform hover:bg-gray-100"
       >
-        {collapsed ? (
-          <ChevronRight className="h-4 w-4" />
-        ) : (
-          <ChevronLeft className="h-4 w-4" />
-        )}
+        <ChevronDown
+          className={`h-4 w-4 transition-transform duration-300 ${
+            collapsed ? "-rotate-90" : "rotate-90"
+          }`}
+        />
       </button>
 
       {/* Logo */}
