@@ -1,8 +1,13 @@
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function proxy(request: NextRequest) {
-  const token = await getToken({ req: request });
+export async function middleware(request: NextRequest) {
+  const token = await getToken({ 
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET, 
+  });
+
+  console.log("Middleware token:", token); 
   const { pathname } = request.nextUrl;
 
   const isAdminRoute = pathname.startsWith("/admin");
