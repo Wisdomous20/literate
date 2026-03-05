@@ -8,7 +8,7 @@ import StudentInfoBar from "@/components/oral-reading-test/studentInfoBar"
 import { PassageFilters } from "@/components/oral-reading-test/passageFilters"
 import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay"
 import { ReadingTimer } from "@/components/oral-reading-test/readingTimer"
-import { MiscueAnalysis } from "@/components/oral-reading-test/miscueAnalysis"
+import { MiscueAnalysis } from "@/components/reading-fluency-test/miscueAnalysis"
 import { FullScreenPassage } from "@/components/oral-reading-test/fullScreenPassage"
 import { AddPassageModal } from "@/components/oral-reading-test/addPassageModal"
 import { getClassListBySchoolYear } from "@/app/actions/class/getClassList"
@@ -385,7 +385,7 @@ export default function ReadingFluencyTestPage() {
       formData.append("audioUrl", supabaseAudioUrl)
       formData.append("audio", recordedAudioBlob, "recording.webm")
 
-      const response = await fetch(`/api/oral-reading/${selectedPassage}`, {
+      const response = await fetch(`/api/fluency-reading/${selectedPassage}`, {
         method: "POST",
         body: formData,
       })
@@ -504,9 +504,7 @@ export default function ReadingFluencyTestPage() {
         </div>
         )}
 
-        {/* Two-column layout: left content + right MiscueAnalysis */}
         <div className="flex min-h-0 flex-1 gap-4">
-          {/* Left column: student info, filters, passage, timer */}
           <div className={`flex min-h-0 flex-1 flex-col overflow-y-auto ${passageExpanded ? "gap-0" : "gap-3"}`}>
             {!passageExpanded && !isLoadingClasses && (
               <StudentInfoBar
@@ -542,7 +540,6 @@ export default function ReadingFluencyTestPage() {
               onToggleExpand={() => setPassageExpanded((prev) => !prev)}
             />
 
-            {/* Word count under passage display */}
             {!passageExpanded && hasPassage && (
               <div className="mt-2 flex items-center">
                 <span className="text-xs font-semibold text-[#00306E]">
@@ -551,7 +548,6 @@ export default function ReadingFluencyTestPage() {
               </div>
             )}
 
-            {/* Passage title above timer */}
             {!passageExpanded && hasPassage && (
               <div className="mb-2 flex items-center justify-center">
                 <span className="text-lg font-bold text-[#31318A] md:text-xl">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import ReportHeader from "@/components/reports/oral-reading-test/reading-fluency-report/reportHeader";
+import ReportHeader from "@/components/reading-fluency-test/report/reportHeader";
 import StudentInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/studentInfoCard";
 import PassageInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/passageInfoCard";
 import MetricCards from "@/components/reports/oral-reading-test/reading-fluency-report/metricCards";

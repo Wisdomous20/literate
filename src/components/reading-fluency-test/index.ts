@@ -1,8 +1,0 @@
-export { default as StudentInfoBar } from "./studentInforBar"
-export { PassageFilters } from "@/components/oral-reading-test/passageFilters"
-export { PassageDisplay } from "@/components/oral-reading-test/passageDisplay"
-export { ReadingTimer } from "@/components/oral-reading-test/readingTimer"
-export { MiscueAnalysis } from "@/components/oral-reading-test/miscueAnalysis"
-export { FullScreenPassage } from "@/components/oral-reading-test/fullScreenPassage"
-export { AddPassageModal } from "@/components/oral-reading-test/addPassageModal"
-export { ReadinessCheckButton } from "@/components/oral-reading-test/readinessCheck"
