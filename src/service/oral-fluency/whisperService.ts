@@ -87,7 +87,7 @@ export async function transcribeAudio(
   language: string,
   passageText?: string
 ): Promise<WhisperTranscriptResponse> {
-  const file = new File([audioBuffer], fileName, { type: "audio/wav" });
+  const file = new File([new Uint8Array(audioBuffer)], fileName, { type: "audio/wav" });
   const whisperLang = getWhisperLanguageCode(language);
 
 
