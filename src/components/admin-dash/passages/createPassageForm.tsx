@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { createPassageAction } from "@/app/actions/admin/createPassage";
-import { useQueryClient } from "@tanstack/react-query"; 
+import { useQueryClient } from "@tanstack/react-query";
 
 const languages = ["Filipino", "English"];
 const testTypes = [
@@ -30,7 +30,7 @@ const levels = [
 
 export function CreatePassageForm() {
   const router = useRouter();
-  const queryClient = useQueryClient(); 
+  const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [language, setLanguage] = useState("");
@@ -71,7 +71,7 @@ export function CreatePassageForm() {
         level: Number(level),
         testType: testType as "PRE_TEST" | "POST_TEST",
       });
-      await queryClient.invalidateQueries({ queryKey: ["passages"] }); 
+      await queryClient.invalidateQueries({ queryKey: ["passages"] });
       router.push("/admin");
     } catch (err) {
       const errorMessage =
@@ -90,8 +90,7 @@ export function CreatePassageForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="w-full max-w-xl mx-auto bg-white rounded-2xl shadow-lg p-8 space-y-6"
-      style={{ minWidth: 320 }}
+      className="mx-auto w-full max-w-xl min-w-[320px] space-y-6 rounded-2xl bg-white p-8 shadow-lg"
     >
       {error && (
         <div className="rounded-lg bg-red-100 p-4 text-sm text-red-700 mb-2">
@@ -126,24 +125,34 @@ export function CreatePassageForm() {
       </div>
 
       <div>
-        <label className="block mb-2 font-semibold text-[#00306E]">
+        <label
+          htmlFor="wordCount"
+          className="block mb-2 font-semibold text-[#00306E]"
+        >
           Word Count
         </label>
         <input
-          type="text"
+          id="wordCount"
+          type="number"
           value={wordCount}
           readOnly
-          className="w-full cursor-not-allowed rounded-lg border-2 border-[#E4F4FF] bg-[#F8FAFC] px-4 py-3 text-base text-[#00306E]/70 outline-none shadow"
+          aria-readonly="true"
+          title="Word count"
+          className="w-full rounded-lg border-2 border-[#E4F4FF] bg-[#F8FAFC] px-4 py-3 text-base text-[#00306E]/70 outline-none shadow"
         />
       </div>
 
       <div className="flex gap-4">
         <div className="flex-1">
-          <label className="block mb-2 font-semibold text-[#00306E]">
+          <label
+            htmlFor="language"
+            className="block mb-2 font-semibold text-[#00306E]"
+          >
             Language
           </label>
           <div className="relative">
             <select
+              id="language"
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
               className="w-full appearance-none rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none shadow focus:border-[#6666FF] transition"
@@ -160,11 +169,15 @@ export function CreatePassageForm() {
           </div>
         </div>
         <div className="flex-1">
-          <label className="block mb-2 font-semibold text-[#00306E]">
+          <label
+            htmlFor="level"
+            className="block mb-2 font-semibold text-[#00306E]"
+          >
             Level
           </label>
           <div className="relative">
             <select
+              id="level"
               value={level}
               onChange={(e) =>
                 setLevel(e.target.value === "" ? "" : Number(e.target.value))

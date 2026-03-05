@@ -17,6 +17,34 @@ import { deleteQuestionAction } from "@/app/actions/admin/deleteQuestion";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+type AllowedTag = "Literal" | "Inferential" | "Critical";
+
+interface RawQuestion {
+  id: string;
+  questionText: string;
+  passageTitle: string;
+  tags: string;
+  type: "MULTIPLE_CHOICE" | "ESSAY";
+  passageLevel: number;
+  language: "Filipino" | "English";
+  passageId?: string | number | null;
+}
+
+interface MappedQuestion {
+  id: string;
+  questionText: string;
+  passageTitle: string;
+  tags: AllowedTag;
+  type: "MULTIPLE_CHOICE" | "ESSAY";
+  passageLevel: number;
+  language: "Filipino" | "English";
+  passageId?: string | number | null;
+}
+
+function isAllowedTag(tag: string): tag is AllowedTag {
+  return tag === "Literal" || tag === "Inferential" || tag === "Critical";
+}
+
 export default function PassageQuestionsPage() {
   const params = useParams();
   const router = useRouter();
@@ -35,16 +63,14 @@ export default function PassageQuestionsPage() {
     isLoading: isLoadingQuestions,
     error: errorQuestions,
   } = useQuestionList();
-  const questions = allQuestions.filter(
-    (q: any) => q.passageId?.toString() === passageId.toString(),
+
+  const questions = (allQuestions as RawQuestion[]).filter(
+    (q) => q.passageId?.toString() === passageId.toString(),
   );
 
-  // Fix: Map tags to expected union type
-  const allowedTags = ["Literal", "Inferential", "Critical"] as const;
-  type AllowedTag = typeof allowedTags[number];
-  const mappedQuestions = questions.map((q: any) => ({
+  const mappedQuestions: MappedQuestion[] = questions.map((q) => ({
     ...q,
-    tags: allowedTags.includes(q.tags) ? q.tags as AllowedTag : "Literal",
+    tags: isAllowedTag(q.tags) ? q.tags : "Literal",
   }));
 
   const handleDelete = async (id: string) => {
@@ -64,20 +90,20 @@ export default function PassageQuestionsPage() {
       if (editing || viewing) {
         router.push(`/admin/passages/${passageId}`);
       }
-    } catch (err) {
+    } catch {
       // Optionally show error
     } finally {
       setIsDeleting(null);
     }
   };
 
-  const handleEdit = (question: any) => {
+  const handleEdit = (question: MappedQuestion) => {
     router.push(
       `/admin/passages/${question.passageId}/edit-question?id=${question.id}`,
     );
   };
 
-  const handleView = (question: any) => {
+  const handleView = (question: MappedQuestion) => {
     router.push(
       `/admin/passages/${question.passageId}/view-question?id=${question.id}`,
     );
@@ -148,7 +174,7 @@ export default function PassageQuestionsPage() {
         {/* Passage Info Card */}
         <div className="rounded-2xl bg-white border border-[#E4F4FF] shadow-sm overflow-hidden">
           {/* Card Header Row: Title + Create Button */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-[#E4F4FF] bg-gradient-to-r from-[#F0F4FF] to-white">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[#E4F4FF] bg-linear-to-r from-[#F0F4FF] to-white">
             <div className="flex items-center gap-3 min-w-0">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#31318A]/10">
                 <FileText className="h-4 w-4 text-[#31318A]" />
@@ -158,12 +184,10 @@ export default function PassageQuestionsPage() {
                   Passage
                 </p>
                 <button
-                  onClick={() =>
-                    router.push(`/admin/passages/${passage.id}/view`)
-                  }
+                  onClick={() => router.push(`/admin/passages/${passage.id}/view`)}
                   className="group flex items-center gap-1.5 text-left"
                 >
-                  <h2 className="text-lg font-bold text-[#31318A] group-hover:text-[#162DB0] transition-colors truncate max-w-[480px]">
+                  <h2 className="text-lg font-bold text-[#31318A] group-hover:text-[#162DB0] transition-colors truncate max-w-120">
                     {passage.title}
                   </h2>
                   <Eye className="h-4 w-4 text-[#162DB0] opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
@@ -235,9 +259,7 @@ export default function PassageQuestionsPage() {
                     Click{" "}
                     <button
                       onClick={() =>
-                        router.push(
-                          `/admin/passages/${passage.id}/create-question`,
-                        )
+                        router.push(`/admin/passages/${passage.id}/create-question`)
                       }
                       className="text-[#162DB0] hover:underline font-medium"
                     >

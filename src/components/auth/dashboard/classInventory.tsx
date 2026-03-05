@@ -98,7 +98,7 @@ export function ClassInventory() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <h2 className="text-[20px] font-semibold leading-[30px] text-[#00306E]">
+          <h2 className="text-[20px] font-semibold leading-7.5 text-[#00306E]">
             Class Inventory
           </h2>
           <button
@@ -146,7 +146,7 @@ export function ClassInventory() {
             type="button"
             onClick={() => setIsModalOpen(true)}
             className="
-              flex h-[40px] w-[150px] items-center justify-center gap-2
+              flex h-10 w-37.5 items-center justify-center gap-2
               rounded-lg border border-[#7A7AFB]
               bg-[#2E2E68]
               px-5 py-2.5

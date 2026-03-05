@@ -6,7 +6,6 @@ import { useQuestionById } from "@/lib/hooks/useQuestionById";
 
 export default function EditQuestionPage() {
   const params = useParams();
-  // const router = useRouter();
   const searchParams = useSearchParams();
   const passageId = params.id as string;
   const questionId = searchParams.get("id") || "";

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { updatePassageAction } from "@/app/actions/admin/updatePassage";
-import { useQueryClient } from "@tanstack/react-query"; 
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Passage {
   id: string;
@@ -55,7 +55,7 @@ export function UpdatePassageForm({
   const [error, setError] = useState("");
   const [hasChanges, setHasChanges] = useState(false);
 
-  const queryClient = useQueryClient(); 
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const words = content.trim().split(/\s+/).filter(Boolean).length;
@@ -160,24 +160,34 @@ export function UpdatePassageForm({
       </div>
 
       <div>
-        <label className="block mb-2 font-semibold text-[#00306E]">
+        <label
+          htmlFor="wordCount"
+          className="block mb-2 font-semibold text-[#00306E]"
+        >
           Word Count
         </label>
         <input
-          type="text"
+          id="wordCount"
+          type="number"
           value={wordCount}
           readOnly
-          className="w-full cursor-not-allowed rounded-lg border-2 border-[#E4F4FF] bg-[#F8FAFC] px-4 py-3 text-base text-[#00306E]/70 outline-none shadow"
+          aria-readonly="true"
+          title="Word count"
+          className="w-full rounded-lg border-2 border-[#E4F4FF] bg-[#F8FAFC] px-4 py-3 text-base text-[#00306E]/70 outline-none shadow"
         />
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
-          <label className="block mb-2 font-semibold text-[#00306E]">
+          <label
+            htmlFor="language"
+            className="block mb-2 font-semibold text-[#00306E]"
+          >
             Language
           </label>
           <div className="relative">
             <select
+              id="language"
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
               className="w-full appearance-none rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none shadow focus:border-[#6666FF] transition"
@@ -194,11 +204,15 @@ export function UpdatePassageForm({
           </div>
         </div>
         <div className="flex-1">
-          <label className="block mb-2 font-semibold text-[#00306E]">
+          <label
+            htmlFor="level"
+            className="block mb-2 font-semibold text-[#00306E]"
+          >
             Level
           </label>
           <div className="relative">
             <select
+              id="level"
               value={level}
               onChange={(e) =>
                 setLevel(e.target.value === "" ? "" : Number(e.target.value))

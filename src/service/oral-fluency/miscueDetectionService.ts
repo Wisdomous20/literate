@@ -30,8 +30,6 @@ export function detectMiscues(
         // (i.e., it's part of the same phrase repeat)
         const spoken = alignedWords[k].spoken;
         if (spoken) {
-          const repSpoken = alignedWords[ri].spoken;
-          const repExpected = alignedWords[ri].expected;
           // If the insertion is next to a repetition and itself looks like
           // a repeated word from the neighbourhood, suppress it
           let isPartOfPhrase = false;

@@ -18,9 +18,9 @@ export default function CreateQuestionForPassagePage() {
         <div className="mx-auto max-w-2xl px-8 py-8">
           <div className="flex items-center mb-8">
             <button
+              type="button"
               onClick={() => router.back()}
-              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[#F0F4FF] hover:bg-[#E4F4FF] text-[#162DB0] font-bold text-lg shadow transition-all"
-              style={{ marginLeft: 0 }}
+              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[#F0F4FF] hover:bg-[#E4F4FF] text-[#162DB0] font-bold text-lg shadow transition-all ml-0"
             >
               <ChevronLeft className="h-6 w-6" />
               Back

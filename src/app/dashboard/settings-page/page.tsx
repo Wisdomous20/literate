@@ -15,41 +15,39 @@ interface ToggleRowProps {
 function ToggleRow({ icon, label, description, enabled, onToggle }: ToggleRowProps) {
   return (
     <div
-      className="flex items-center justify-between rounded-xl px-5 py-4 transition-all duration-200"
-      style={{
-        background: enabled ? "rgba(102, 102, 255, 0.06)" : "#FFFFFF",
-        border: `1px solid ${enabled ? "rgba(102, 102, 255, 0.2)" : "rgba(0, 48, 110, 0.08)"}`,
-      }}
+      className={`flex items-center justify-between rounded-xl border px-5 py-4 transition-all duration-200 ${
+        enabled
+          ? "border-[rgba(102,102,255,0.2)] bg-[rgba(102,102,255,0.06)]"
+          : "border-[rgba(0,48,110,0.08)] bg-white"
+      }`}
     >
       <div className="flex items-center gap-4">
         <div
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors duration-200"
-          style={{
-            background: enabled ? "rgba(102, 102, 255, 0.12)" : "rgba(0, 48, 110, 0.05)",
-          }}
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors duration-200 ${
+            enabled ? "bg-[rgba(102,102,255,0.12)]" : "bg-[rgba(0,48,110,0.05)]"
+          }`}
         >
           {icon}
         </div>
         <div>
-          <p className="text-sm font-semibold" style={{ color: "#00306E" }}>
-            {label}
-          </p>
-          <p className="mt-0.5 text-xs leading-relaxed" style={{ color: "#6B7DB3" }}>
-            {description}
-          </p>
+          <p className="text-sm font-semibold text-[#00306E]">{label}</p>
+          <p className="mt-0.5 text-xs leading-relaxed text-[#6B7DB3]">{description}</p>
         </div>
       </div>
 
       <button
+        type="button"
         onClick={onToggle}
-        className="relative ml-4 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200"
-        style={{ background: enabled ? "#6666FF" : "#C4C4FF" }}
+        aria-label={enabled ? `Disable ${label}` : `Enable ${label}`}
+        title={enabled ? `Disable ${label}` : `Enable ${label}`}
+        className={`relative ml-4 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 ${
+          enabled ? "bg-[#6666FF]" : "bg-[#C4C4FF]"
+        }`}
       >
         <span
-          className="inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200"
-          style={{
-            transform: enabled ? "translateX(24px)" : "translateX(4px)",
-          }}
+          className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
+            enabled ? "translate-x-6" : "translate-x-1"
+          }`}
         />
       </button>
     </div>
@@ -59,18 +57,8 @@ function ToggleRow({ icon, label, description, enabled, onToggle }: ToggleRowPro
 function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
   return (
     <div className="mb-4 flex items-center gap-3">
-      <div
-        className="flex h-8 w-8 items-center justify-center rounded-lg"
-        style={{ background: "#6666FF" }}
-      >
-        {icon}
-      </div>
-      <h3
-        className="text-xs font-bold tracking-[0.15em]"
-        style={{ color: "#31318A" }}
-      >
-        {title}
-      </h3>
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#6666FF]">{icon}</div>
+      <h3 className="text-xs font-bold tracking-[0.15em] text-[#31318A]">{title}</h3>
     </div>
   )
 }
@@ -88,18 +76,14 @@ export default function SettingsPage() {
       <DashboardHeader title="Settings" />
 
       <main className="flex-1 overflow-auto px-8 py-8">
-        <div className="mx-auto max-w-[720px]">
-          {/* Page Header */}
+        <div className="mx-auto max-w-180">
           <div className="mb-10">
-            <h2 className="text-2xl font-bold" style={{ color: "#0C1A6D" }}>
-              Test Configurations
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed" style={{ color: "#6B7DB3" }}>
+            <h2 className="text-2xl font-bold text-[#0C1A6D]">Test Configurations</h2>
+            <p className="mt-2 text-sm leading-relaxed text-[#6B7DB3]">
               Manage how reading assessments behave during testing sessions.
             </p>
           </div>
 
-          {/* Oral Reading Test Section */}
           <section className="mb-10">
             <SectionHeader
               icon={<FileText className="h-4 w-4 text-white" />}
@@ -109,8 +93,7 @@ export default function SettingsPage() {
               <ToggleRow
                 icon={
                   <ScrollText
-                    className="h-5 w-5"
-                    style={{ color: autoScrollEnabled ? "#6666FF" : "#6B7DB3" }}
+                    className={`h-5 w-5 ${autoScrollEnabled ? "text-[#6666FF]" : "text-[#6B7DB3]"}`}
                   />
                 }
                 label="Auto-Scroll Passage"
@@ -122,8 +105,7 @@ export default function SettingsPage() {
               <ToggleRow
                 icon={
                   <CheckCircle
-                    className="h-5 w-5"
-                    style={{ color: autoFinishEnabled ? "#6666FF" : "#6B7DB3" }}
+                    className={`h-5 w-5 ${autoFinishEnabled ? "text-[#6666FF]" : "text-[#6B7DB3]"}`}
                   />
                 }
                 label="Auto-Finish Reading"
@@ -134,7 +116,6 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          {/* Reading Fluency Test Section */}
           <section className="mb-10">
             <SectionHeader
               icon={<BookOpen className="h-4 w-4 text-white" />}
@@ -144,8 +125,7 @@ export default function SettingsPage() {
               <ToggleRow
                 icon={
                   <ScrollText
-                    className="h-5 w-5"
-                    style={{ color: autoScrollEnabled ? "#6666FF" : "#6B7DB3" }}
+                    className={`h-5 w-5 ${autoScrollEnabled ? "text-[#6666FF]" : "text-[#6B7DB3]"}`}
                   />
                 }
                 label="Auto-Scroll Passage"
@@ -157,8 +137,7 @@ export default function SettingsPage() {
               <ToggleRow
                 icon={
                   <CheckCircle
-                    className="h-5 w-5"
-                    style={{ color: autoFinishEnabled ? "#6666FF" : "#6B7DB3" }}
+                    className={`h-5 w-5 ${autoFinishEnabled ? "text-[#6666FF]" : "text-[#6B7DB3]"}`}
                   />
                 }
                 label="Auto-Finish Reading"
@@ -169,32 +148,15 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          {/* Info Note */}
-          <div
-            className="flex items-start gap-3 rounded-xl px-5 py-4"
-            style={{
-              background: "rgba(102, 102, 255, 0.04)",
-              border: "1px dashed rgba(102, 102, 255, 0.2)",
-            }}
-          >
-            <Info
-              className="mt-0.5 h-4 w-4 shrink-0"
-              style={{ color: "#6666FF" }}
-            />
-            <p className="text-xs leading-relaxed" style={{ color: "#6B7DB3" }}>
-              <span className="font-semibold" style={{ color: "#31318A" }}>
-                Note:
-              </span>{" "}
+          <div className="flex items-start gap-3 rounded-xl border border-dashed border-[rgba(102,102,255,0.2)] bg-[rgba(102,102,255,0.04)] px-5 py-4">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#6666FF]" />
+            <p className="text-xs leading-relaxed text-[#6B7DB3]">
+              <span className="font-semibold text-[#31318A]">Note:</span>{" "}
               Auto-Scroll and Auto-Finish rely on the Web Speech API for real-time
               speech detection. These features work best on{" "}
-              <span className="font-medium" style={{ color: "#31318A" }}>
-                Chrome
-              </span>{" "}
-              and{" "}
-              <span className="font-medium" style={{ color: "#31318A" }}>
-                Edge
-              </span>{" "}
-              browsers. Settings apply to all reading tests in the current session.
+              <span className="font-medium text-[#31318A]">Chrome</span> and{" "}
+              <span className="font-medium text-[#31318A]">Edge</span> browsers.
+              Settings apply to all reading tests in the current session.
             </p>
           </div>
         </div>

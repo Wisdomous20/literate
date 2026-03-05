@@ -42,7 +42,7 @@ export function CreateQuestionForm({
   onSuccess?: () => void;
 }) {
   const router = useRouter();
-  const queryClient = useQueryClient(); 
+  const queryClient = useQueryClient();
   const [questionText, setQuestionText] = useState("");
   const [tags, setTags] = useState("");
   const [type, setType] = useState("");
@@ -83,7 +83,7 @@ export function CreateQuestionForm({
         } else {
           router.push(`/admin/passages/${passageId}`);
         }
-      } catch (err) {
+      } catch {
         setError("Failed to create question");
       } finally {
         setIsLoading(false);
@@ -128,8 +128,7 @@ export function CreateQuestionForm({
     <div className="w-full max-w-xl mx-auto">
       <form
         onSubmit={handleSubmit}
-        className="bg-white rounded-2xl shadow-lg p-8 space-y-6"
-        style={{ minWidth: 320 }}
+        className="space-y-6 rounded-2xl bg-white p-8 shadow-lg min-w-[320px]"
       >
         {error && (
           <div className="rounded-lg bg-red-100 p-4 text-sm text-red-700 mb-2">
@@ -255,11 +254,16 @@ export function CreateQuestionForm({
               </div>
             </div>
             <div>
-              <label className="block mb-2 font-semibold text-[#00306E]">
+              <label
+                htmlFor="correctAnswer"
+                className="block mb-2 font-semibold text-[#00306E]"
+              >
                 Correct Answer
               </label>
               <div className="relative">
                 <select
+                  id="correctAnswer"
+                  name="correctAnswer"
                   value={correctAnswer}
                   onChange={(e) => setCorrectAnswer(e.target.value)}
                   className="w-full appearance-none rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none shadow focus:border-[#6666FF] transition"

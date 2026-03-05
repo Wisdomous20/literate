@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { updateQuestionAction } from "@/app/actions/admin/updateQuestion";
-import { useQueryClient } from "@tanstack/react-query"; 
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Question {
   id: string;
@@ -33,7 +33,7 @@ export function UpdateQuestionForm({
   onSuccess,
 }: UpdateQuestionFormProps) {
   const router = useRouter();
-  const queryClient = useQueryClient(); 
+  const queryClient = useQueryClient();
   const [questionText, setQuestionText] = useState(question.questionText);
   const [tags, setTags] = useState(question.tags);
   const [type, setType] = useState(question.type);
@@ -300,12 +300,16 @@ export function UpdateQuestionForm({
           </div>
 
           <div>
-            <label className="block mb-2 font-semibold text-[#00306E]">
+            <label
+              htmlFor="correctAnswer"
+              className="block mb-2 font-semibold text-[#00306E]"
+            >
               Correct Answer
             </label>
             <div className="relative">
               <select
                 id="correctAnswer"
+                name="correctAnswer"
                 value={correctAnswer}
                 onChange={(e) => setCorrectAnswer(e.target.value)}
                 className="w-full appearance-none rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none transition-colors focus:border-[#6666FF] shadow"

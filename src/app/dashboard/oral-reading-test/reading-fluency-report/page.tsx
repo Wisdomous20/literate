@@ -1,64 +1,70 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import ReportHeader from "@/components/reports/oral-reading-test/reading-fluency-report/reportHeader"
-import StudentInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/studentInfoCard"
-import PassageInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/passageInfoCard"
-import MetricCards from "@/components/reports/oral-reading-test/reading-fluency-report/metricCards"
-import MiscueAnalysisReport from "@/components/reports/oral-reading-test/reading-fluency-report/miscueAnalysis"
-import AudioPlaybackCard from "@/components/reports/oral-reading-test/reading-fluency-report/audioPlaybackCard"
-import BehaviorChecklist from "@/components/reports/oral-reading-test/reading-fluency-report/readingBehaviorChecklist"
-import type { MiscueData } from "@/components/reports/oral-reading-test/reading-fluency-report/miscueAnalysis"
-import type { BehaviorItem } from "@/components/reports/oral-reading-test/reading-fluency-report/readingBehaviorChecklist"
-import type { OralFluencyAnalysis, MiscueResult, BehaviorResult } from "@/types/oral-reading"
+import { useState, useEffect } from "react";
+import ReportHeader from "@/components/reports/oral-reading-test/reading-fluency-report/reportHeader";
+import StudentInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/studentInfoCard";
+import PassageInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/passageInfoCard";
+import MetricCards from "@/components/reports/oral-reading-test/reading-fluency-report/metricCards";
+import MiscueAnalysisReport from "@/components/reports/oral-reading-test/reading-fluency-report/miscueAnalysis";
+import AudioPlaybackCard from "@/components/reports/oral-reading-test/reading-fluency-report/audioPlaybackCard";
+import BehaviorChecklist from "@/components/reports/oral-reading-test/reading-fluency-report/readingBehaviorChecklist";
+import type { MiscueData } from "@/components/reports/oral-reading-test/reading-fluency-report/miscueAnalysis";
+import type { BehaviorItem } from "@/components/reports/oral-reading-test/reading-fluency-report/readingBehaviorChecklist";
+import type {
+  OralFluencyAnalysis,
+  MiscueResult,
+  BehaviorResult,
+} from "@/types/oral-reading";
 
-const STORAGE_KEY = "oral-reading-session"
-const AUDIO_STORAGE_KEY = "oral-reading-audio"
+const STORAGE_KEY = "oral-reading-session";
+const AUDIO_STORAGE_KEY = "oral-reading-audio";
 
 function base64ToBlob(base64: string): Blob {
-  const [meta, data] = base64.split(",")
-  const mimeMatch = meta.match(/:(.*?);/)
-  const mime = mimeMatch ? mimeMatch[1] : "audio/webm"
-  const binary = atob(data)
-  const bytes = new Uint8Array(binary.length)
+  const [meta, data] = base64.split(",");
+  const mimeMatch = meta.match(/:(.*?);/);
+  const mime = mimeMatch ? mimeMatch[1] : "audio/webm";
+  const binary = atob(data);
+  const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i)
+    bytes[i] = binary.charCodeAt(i);
   }
-  return new Blob([bytes], { type: mime })
+  return new Blob([bytes], { type: mime });
 }
 
 interface SessionState {
-  studentName: string
-  gradeLevel: string
-  selectedClassName: string
-  passageContent: string
-  selectedLanguage?: string
-  selectedLevel?: string
-  selectedTestType?: string
-  selectedTitle?: string
-  recordedSeconds: number
-  analysisResult?: OralFluencyAnalysis | null
-  sessionId?: string
+  studentName: string;
+  gradeLevel: string;
+  selectedClassName: string;
+  passageContent: string;
+  selectedLanguage?: string;
+  selectedLevel?: string;
+  selectedTestType?: string;
+  selectedTitle?: string;
+  recordedSeconds: number;
+  analysisResult?: OralFluencyAnalysis | null;
+  sessionId?: string;
 }
 
 function loadSession(): Partial<SessionState> {
-  if (typeof window === "undefined") return {}
+  if (typeof window === "undefined") return {};
   try {
-    const raw = sessionStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw)
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
   } catch {}
-  return {}
+  return {};
 }
 
 function countMiscuesByType(miscues: MiscueResult[]): Record<string, number> {
-  const counts: Record<string, number> = {}
+  const counts: Record<string, number> = {};
   for (const m of miscues) {
-    counts[m.miscueType] = (counts[m.miscueType] || 0) + 1
+    counts[m.miscueType] = (counts[m.miscueType] || 0) + 1;
   }
-  return counts
+  return counts;
 }
 
-function buildMiscueData(analysis: OralFluencyAnalysis | null | undefined): MiscueData {
+function buildMiscueData(
+  analysis: OralFluencyAnalysis | null | undefined,
+): MiscueData {
   if (!analysis) {
     return {
       mispronunciation: 0,
@@ -72,10 +78,10 @@ function buildMiscueData(analysis: OralFluencyAnalysis | null | undefined): Misc
       totalMiscue: 0,
       oralFluencyScore: "—",
       classificationLevel: "—",
-    }
+    };
   }
 
-  const counts = countMiscuesByType(analysis.miscues)
+  const counts = countMiscuesByType(analysis.miscues);
 
   return {
     mispronunciation: counts["MISPRONUNCIATION"] || 0,
@@ -89,13 +95,15 @@ function buildMiscueData(analysis: OralFluencyAnalysis | null | undefined): Misc
     totalMiscue: analysis.totalMiscues,
     oralFluencyScore: `${analysis.oralFluencyScore}%`,
     classificationLevel: analysis.classificationLevel,
-  }
+  };
 }
 
-function buildBehaviorItems(analysis: OralFluencyAnalysis | null | undefined): BehaviorItem[] {
+function buildBehaviorItems(
+  analysis: OralFluencyAnalysis | null | undefined,
+): BehaviorItem[] {
   const detectedTypes = new Set(
-    (analysis?.behaviors || []).map((b: BehaviorResult) => b.behaviorType)
-  )
+    (analysis?.behaviors || []).map((b: BehaviorResult) => b.behaviorType),
+  );
 
   return [
     {
@@ -117,57 +125,64 @@ function buildBehaviorItems(analysis: OralFluencyAnalysis | null | undefined): B
       label: "Employs little or no method of analysis",
       description: "(Bahagya o walang paraan ng pagsusuri)",
     },
-  ]
+  ];
 }
 
 export default function OralReadingReportPage() {
-  const session = loadSession()
-  const analysis = session.analysisResult
+  const session = loadSession();
+  const analysis = session.analysisResult;
 
-  // Load recorded audio from sessionStorage
-  const [audioSrc, setAudioSrc] = useState<string | null>(null)
-  useEffect(() => {
+  // Load recorded audio from sessionStorage (no setState inside effect body)
+  const [audioSrc] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
     try {
-      const audioBase64 = sessionStorage.getItem(AUDIO_STORAGE_KEY)
-      if (audioBase64) {
-        const blob = base64ToBlob(audioBase64)
-        const url = URL.createObjectURL(blob)
-        setAudioSrc(url)
-        return () => URL.revokeObjectURL(url)
-      }
+      const audioBase64 = sessionStorage.getItem(AUDIO_STORAGE_KEY);
+      if (!audioBase64) return null;
+      const blob = base64ToBlob(audioBase64);
+      return URL.createObjectURL(blob);
     } catch (err) {
-      console.error("Failed to load audio from sessionStorage:", err)
+      console.error("Failed to load audio from sessionStorage:", err);
+      return null;
     }
-  }, [])
+  });
 
-  const studentName = session.studentName || "—"
-  const gradeLevel = session.gradeLevel ? `Grade ${session.gradeLevel}` : "—"
-  const studentClass = session.selectedClassName || "—"
-  const passageTitle = session.selectedTitle || "—"
-  const passageLevel = session.selectedLevel || "—"
-  const testType = session.selectedTestType || "—"
+  useEffect(() => {
+    return () => {
+      if (audioSrc) URL.revokeObjectURL(audioSrc);
+    };
+  }, [audioSrc]);
+
+  const studentName = session.studentName || "—";
+  const gradeLevel = session.gradeLevel ? `Grade ${session.gradeLevel}` : "—";
+  const studentClass = session.selectedClassName || "—";
+  const passageTitle = session.selectedTitle || "—";
+  const passageLevel = session.selectedLevel || "—";
+  const testType = session.selectedTestType || "—";
   const totalWords = session.passageContent
     ? session.passageContent.split(/\s+/).filter(Boolean).length
-    : 0
+    : 0;
   // Use analysis duration (from actual recording) if available, fall back to session timer
-  const readingTimeSeconds = Math.round(analysis?.duration ?? session.recordedSeconds ?? 0)
+  const readingTimeSeconds = Math.round(
+    analysis?.duration ?? session.recordedSeconds ?? 0,
+  );
 
   // WCPM = (totalWords - totalMiscues) / duration * 60
-  const totalMiscues = analysis?.totalMiscues ?? 0
-  const wordsCorrect = Math.max(0, totalWords - totalMiscues)
-  const wcpm = readingTimeSeconds > 0
-    ? Math.round((wordsCorrect / readingTimeSeconds) * 60)
-    : 0
+  const totalMiscues = analysis?.totalMiscues ?? 0;
+  const wordsCorrect = Math.max(0, totalWords - totalMiscues);
+  const wcpm =
+    readingTimeSeconds > 0
+      ? Math.round((wordsCorrect / readingTimeSeconds) * 60)
+      : 0;
 
-  const classification = analysis?.classificationLevel || "—"
-  const miscueData = buildMiscueData(analysis)
-  const behaviorItems = buildBehaviorItems(analysis)
+  const classification = analysis?.classificationLevel || "—";
+  const miscueData = buildMiscueData(analysis);
+  const behaviorItems = buildBehaviorItems(analysis);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <ReportHeader />
 
-      <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth max-w-[1200px] mx-auto px-6 py-6 md:px-8 lg:px-12 space-y-6 w-full">
+      <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth max-w-300 mx-auto px-6 py-6 md:px-8 lg:px-12 space-y-6 w-full">
         {/* Top row: Student Info + Metric Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
           <StudentInfoCard
@@ -204,5 +219,5 @@ export default function OralReadingReportPage() {
         </div>
       </main>
     </div>
-  )
+  );
 }

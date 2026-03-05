@@ -60,7 +60,7 @@ export function AssessmentTypeFilterDropdown({
       <button
         type="button"
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-[#00306E] transition-colors hover:bg-[#d9efff] bg-[#E4F4FF] border border-[#54A4FF] min-w-[220px]"
+        className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-[#00306E] transition-colors hover:bg-[#d9efff] bg-[#E4F4FF] border border-[#54A4FF] min-w-55"
       >
         <span className="flex-1 text-left">{selectedLabel}</span>
         <ChevronDown
@@ -69,7 +69,7 @@ export function AssessmentTypeFilterDropdown({
       </button>
 
       {isDropdownOpen && (
-        <div className="absolute right-0 top-full z-50 mt-2 min-w-[220px] overflow-hidden rounded-lg border border-[#54A4FF] bg-white py-1 shadow-[0px_4px_20px_rgba(0,48,110,0.15)]">
+        <div className="absolute right-0 top-full z-50 mt-2 min-w-55 overflow-hidden rounded-lg border border-[#54A4FF] bg-white py-1 shadow-[0px_4px_20px_rgba(0,48,110,0.15)]">
           {assessmentTypeOptions.map((option) => (
             <button
               key={option.value}

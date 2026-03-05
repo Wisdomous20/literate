@@ -44,9 +44,11 @@ export default function ReportHeader() {
         </button>
 
         <button
-          onClick={() => router.push("/dashboard/oral-reading-test/comprehension")}
-          className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-300 md:text-base bg-[#6666FF] text-white shadow-lg hover:bg-[#5555EE] animate-[pulseGlow_2s_ease-in-out_infinite]"
-          style={{ boxShadow: "0 0 20px rgba(102, 102, 255, 0.4), 0 4px 12px rgba(102, 102, 255, 0.3)" }}
+          type="button"
+          onClick={() =>
+            router.push("/dashboard/oral-reading-test/comprehension")
+          }
+          className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)] transition-all duration-300 hover:bg-[#5555EE] md:text-base animate-[pulseGlow_2s_ease-in-out_infinite]"
         >
           <span>Continue to Comprehension</span>
           <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />

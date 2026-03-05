@@ -1,6 +1,6 @@
 export function BrandPanel() {
   return (
-    <div className="hidden lg:flex flex-col items-center justify-center bg-[#7a7afb] rounded-3xl p-12 min-h-[500px]">
+    <div className="hidden lg:flex flex-col items-center justify-center bg-[#7a7afb] rounded-3xl p-12 min-h-125">
       {/* LiteRate Logo */}
       <div className="flex flex-col items-center gap-6">
         <div className="relative">

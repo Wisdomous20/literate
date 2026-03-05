@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft, Search, ChevronUp, ChevronDown } from "lucide-react";
 import { ClassListsHeader } from "@/components/class-lists/classListsHeader";
 import { StatCards } from "@/components/class-lists/statCards";
-import { AssessmentTypeFilterDropdown, AssessmentTypeFilter } from "@/components/class-lists/assessmentTypeFilter";
+import {
+  AssessmentTypeFilterDropdown,
+  AssessmentTypeFilter,
+} from "@/components/class-lists/assessmentTypeFilter";
 import { StudentTable } from "@/components/class-lists/studentTable";
 import { ClassInfo } from "@/components/class-lists/classInfo";
 import { CreateStudentModal } from "@/components/class-lists/createStudentModal";
-import { getClassById } from "@/app/actions/class/getClassById";
 import { createStudent } from "@/app/actions/student/createStudent";
 import { deleteStudent } from "@/app/actions/student/deleteStudent";
 import { updateStudent } from "@/app/actions/student/updateStudent";
@@ -17,24 +19,12 @@ import { useStudentList } from "@/lib/hooks/useStudentList";
 import { useQueryClient } from "@tanstack/react-query";
 import { useClassById } from "@/lib/hooks/useClassById";
 
-
-
 interface StudentData {
   id: string;
   name: string;
   level?: number;
   classId: string;
   deletedAt?: Date | null;
-}
-
-interface ClassData {
-  id: string;
-  name: string;
-  userId: string;
-  schoolYear: string;
-  archived: boolean;
-  createdAt: Date;
-  students: StudentData[];
 }
 
 function levelToGradeLevel(level?: number): string {
@@ -53,43 +43,29 @@ export default function ClassListsPage() {
   const classId = params.id as string;
   const queryClient = useQueryClient();
 
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOption, setSortOption] = useState<
     "nameAsc" | "nameDesc" | "gradeAsc" | "gradeDesc"
   >("nameAsc");
 
-    const {
+  const {
     data: classData,
     isLoading: classLoading,
     error: classError,
   } = useClassById(classId);
 
+  const { isLoading: studentsLoading, error: studentsError } = useStudentList(
+    classData?.name ?? "",
+  );
 
-    const {
-    data: students,
-    isLoading: studentsLoading,
-    error: studentsError,
-    isFetching,
-  } = useStudentList(classData?.name ?? "");
-
-  
   // Track assessment type and stat card collapse
-  const [assessmentType, setAssessmentType] = useState<AssessmentTypeFilter>("ORAL_READING");
+  const [assessmentType, setAssessmentType] =
+    useState<AssessmentTypeFilter>("ORAL_READING");
   const [showStats, setShowStats] = useState(true);
-
-  // Remove caching: use local state for loading, error, and data
 
   const loading = classLoading || studentsLoading;
   const fetchError = classError?.message || studentsError?.message || null;
-
-  const refetchClassData = async () => {
-    await queryClient.invalidateQueries({ queryKey: ["class", classId] });
-    if (classData?.name) {
-      await queryClient.invalidateQueries({ queryKey: ["students", classData.name] });
-    }
-  };
 
   const handleCreateStudent = () => {
     setIsModalOpen(true);
@@ -105,24 +81,28 @@ export default function ClassListsPage() {
     const result = await createStudent(data.studentName, level, classData.name);
 
     if (result.success) {
-      await queryClient.invalidateQueries({ queryKey: ["students", classData.name] });
+      await queryClient.invalidateQueries({
+        queryKey: ["students", classData.name],
+      });
       setIsModalOpen(false);
     } else {
       alert(result.error || "Failed to create student");
     }
   };
 
-    const handleDeleteStudent = async (studentId: string) => {
+  const handleDeleteStudent = async (studentId: string) => {
     if (!confirm("Are you sure you want to delete this student?")) return;
     const result = await deleteStudent(studentId);
     if (result.success) {
-      await queryClient.invalidateQueries({ queryKey: ["students", classData?.name] });
+      await queryClient.invalidateQueries({
+        queryKey: ["students", classData?.name],
+      });
     } else {
       alert(result.error || "Failed to delete student");
     }
   };
 
-    const handleUpdateStudent = async (
+  const handleUpdateStudent = async (
     studentId: string,
     name: string,
     gradeLevel: string,
@@ -131,14 +111,13 @@ export default function ClassListsPage() {
     const result = await updateStudent(studentId, name, level);
 
     if (result.success) {
-      await queryClient.invalidateQueries({ queryKey: ["students", classData?.name] });
+      await queryClient.invalidateQueries({
+        queryKey: ["students", classData?.name],
+      });
     } else {
       alert(result.error || "Failed to update student");
     }
   };
-
-
-
 
   const handleAssessmentFilterChange = (type: AssessmentTypeFilter) => {
     setAssessmentType(type);
@@ -230,7 +209,9 @@ export default function ClassListsPage() {
   if (fetchError || !classData) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
-        <div className="text-lg text-red-500">{fetchError || "Class not found"}</div>
+        <div className="text-lg text-red-500">
+          {fetchError || "Class not found"}
+        </div>
         <button
           onClick={() => router.back()}
           className="text-[#31318A] hover:underline"
@@ -249,14 +230,12 @@ export default function ClassListsPage() {
       <ClassListsHeader onCreateStudent={handleCreateStudent} />
 
       <main className="flex flex-1 flex-col gap-5 px-8 py-6">
-        {/* Optional: Subtle updating indicator */}
         {loading && (
           <div className="absolute top-2 right-2 text-xs text-blue-500 z-50">
             Updating...
           </div>
         )}
 
-        {/* Previous + Assessment Filter */}
         <div className="flex items-center justify-between">
           <button
             onClick={() => router.back()}
@@ -271,35 +250,45 @@ export default function ClassListsPage() {
           />
         </div>
 
-        {/* Collapsible StatCards for all assessment types */}
         <div>
-          <button
-            className="flex items-center gap-2 mb-2 text-[#00306E] font-semibold focus:outline-none"
-            onClick={() => setShowStats((prev) => !prev)}
-            aria-expanded={showStats}
-            aria-controls="stat-cards-panel"
-            type="button"
-          >
-            <span>
-              Show {assessmentTypeLabels[assessmentType]} Statistics
-            </span>
-            {showStats ? (
+          {showStats ? (
+            <button
+              className="flex items-center gap-2 mb-2 text-[#00306E] font-semibold focus:outline-none"
+              onClick={() => setShowStats(false)}
+              aria-expanded="true"
+              aria-controls="stat-cards-panel"
+              type="button"
+            >
+              <span>
+                Show {assessmentTypeLabels[assessmentType]} Statistics
+              </span>
               <ChevronUp className="w-4 h-4" />
-            ) : (
+            </button>
+          ) : (
+            <button
+              className="flex items-center gap-2 mb-2 text-[#00306E] font-semibold focus:outline-none"
+              onClick={() => setShowStats(true)}
+              aria-expanded="false"
+              aria-controls="stat-cards-panel"
+              type="button"
+            >
+              <span>
+                Show {assessmentTypeLabels[assessmentType]} Statistics
+              </span>
               <ChevronDown className="w-4 h-4" />
-            )}
-          </button>
-          {showStats && (
+            </button>
+          )}
+
+          <div id="stat-cards-panel" hidden={!showStats}>
             <StatCards
               assessedCount={stats.assessed}
               independentCount={stats.independent}
               instructionalCount={stats.instructional}
               frustratedCount={stats.frustrated}
             />
-          )}
+          </div>
         </div>
 
-        {/* Class Info + Search + Sort */}
         <div className="flex items-center justify-between">
           <ClassInfo
             className={classData.name}
@@ -307,8 +296,7 @@ export default function ClassListsPage() {
           />
 
           <div className="flex items-center gap-4">
-            {/* Search */}
-            <div className="flex items-center gap-3 rounded-full px-4 py-2 bg-[#F4FCFD] border border-[rgba(84,164,255,0.38)] w-[350px]">
+            <div className="flex items-center gap-3 rounded-full px-4 py-2 bg-[#F4FCFD] border border-[rgba(84,164,255,0.38)] w-87.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E4F4FF]">
                 <Search className="h-4 w-4 text-[#162DB0]" />
               </div>
