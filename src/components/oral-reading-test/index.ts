@@ -1,5 +1,4 @@
-export { StudentInfoBar } from "./studentInfoBar"
-export { PassageFilters } from "./passageFilters"
+export { default as StudentInfoBar } from "./studentInfoBar"
 export { PassageDisplay } from "./passageDisplay"
 export { ReadingTimer } from "./readingTimer"
 export { MiscueAnalysis } from "./miscueAnalysis"

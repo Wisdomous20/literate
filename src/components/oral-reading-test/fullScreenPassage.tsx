@@ -44,16 +44,14 @@ export function FullScreenPassage({
   const secondsRef = useRef(0)
   const processedResultsRef = useRef(0)
 
-  // Toast notifications state
-  const [toasts, setToasts] = useState<{ id: string; label: string; icon: "scroll" | "finish" }[]>([])
-  const toastsShownRef = useRef(false)
-
   // Refs for settings so speech callback always has latest values
   const autoScrollRef = useRef(autoScrollEnabled)
   const autoFinishRef = useRef(autoFinishEnabled)
+
   useEffect(() => {
     autoScrollRef.current = autoScrollEnabled
   }, [autoScrollEnabled])
+
   useEffect(() => {
     autoFinishRef.current = autoFinishEnabled
   }, [autoFinishEnabled])
@@ -62,29 +60,6 @@ export function FullScreenPassage({
   useEffect(() => {
     secondsRef.current = seconds
   }, [seconds])
-
-  // Show toast notifications once after countdown ends
-  useEffect(() => {
-    if (!isCountingDown && !toastsShownRef.current) {
-      toastsShownRef.current = true
-      const newToasts: { id: string; label: string; icon: "scroll" | "finish" }[] = []
-      if (autoScrollEnabled) {
-        newToasts.push({ id: "scroll", label: "Auto Scroll Activated", icon: "scroll" })
-      }
-      if (autoFinishEnabled) {
-        newToasts.push({ id: "finish", label: "Auto Finish Enabled", icon: "finish" })
-      }
-      if (newToasts.length > 0) {
-        setTimeout(() => {
-          setToasts(newToasts)
-          // Auto-dismiss toasts after 3 seconds
-          setTimeout(() => {
-            setToasts([])
-          }, 3000)
-        }, 0)
-      }
-    }
-  }, [isCountingDown, autoScrollEnabled, autoFinishEnabled])
 
   // Split into words and whitespace tokens
   const tokens = content.split(/(\s+)/).filter(Boolean)
@@ -150,7 +125,7 @@ export function FullScreenPassage({
   }, [onDone, stopEverything])
 
   // Start speech recognition for passive auto-scroll + auto-finish
-  const startSpeechRecognition = useCallback((sharedStream: MediaStream) => {
+  const startSpeechRecognition = useCallback(() => {
     if (!autoScrollRef.current && !autoFinishRef.current) return
 
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition
@@ -169,11 +144,8 @@ export function FullScreenPassage({
     processedResultsRef.current = 0
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      // Process all results from where we last left off
       for (let r = processedResultsRef.current; r < event.results.length; r++) {
         const result = event.results[r]
-        // Only process final results to avoid duplicate processing of interim
-        // But also process interim for the very latest result for responsiveness
         if (!result.isFinal && r < event.results.length - 1) continue
 
         const transcript = result[0].transcript.trim()
@@ -184,7 +156,6 @@ export function FullScreenPassage({
           if (!normalizedSpoken) continue
 
           const currentTrackPos = wordTrackIndexRef.current
-          // Wide search window to handle skips and mispronunciations
           const searchEnd = Math.min(currentTrackPos + 30, totalTrackable)
 
           for (let i = currentTrackPos; i < searchEnd; i++) {
@@ -194,7 +165,6 @@ export function FullScreenPassage({
             if (passageWord && normalizedSpoken === passageWord) {
               wordTrackIndexRef.current = i + 1
 
-              // Auto-scroll
               if (autoScrollRef.current) {
                 anchorRefs.current[tokenIdx]?.scrollIntoView({
                   behavior: "smooth",
@@ -202,7 +172,6 @@ export function FullScreenPassage({
                 })
               }
 
-              // Auto-finish when last word is reached
               if (autoFinishRef.current && i + 1 >= totalTrackable) {
                 console.log("Auto-finish triggered: last word detected")
                 setTimeout(() => {
@@ -216,7 +185,6 @@ export function FullScreenPassage({
           }
         }
 
-        // Update processed count only for final results
         if (result.isFinal) {
           processedResultsRef.current = r + 1
         }
@@ -231,7 +199,6 @@ export function FullScreenPassage({
 
     recognition.onend = () => {
       if (hasStartedRef.current && recognitionRef.current && !doneCalledRef.current) {
-        // Reset processed count on restart since results array resets
         processedResultsRef.current = 0
         try {
           recognition.start()
@@ -280,9 +247,8 @@ export function FullScreenPassage({
       console.error("Microphone access denied")
     }
 
-    // Start speech recognition (uses browser's built-in mic access)
     if (stream) {
-      startSpeechRecognition(stream)
+      startSpeechRecognition()
     }
 
     intervalRef.current = setInterval(() => {
@@ -334,24 +300,15 @@ export function FullScreenPassage({
   // Countdown overlay
   if (isCountingDown) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "#E4F4FF" }}>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#E4F4FF]">
         <div className="flex flex-col items-center gap-6">
-          <p className="text-lg font-semibold" style={{ color: "#31318A" }}>
-            Get Ready...
-          </p>
-          <div
-            className="flex h-32 w-32 items-center justify-center rounded-full text-6xl font-bold"
-            style={{
-              background: "rgba(102, 102, 255, 0.12)",
-              border: "3px solid #6666FF",
-              color: "#6666FF",
-            }}
-          >
+          <p className="text-lg font-semibold text-[#31318A]">Get Ready...</p>
+          <div className="flex h-32 w-32 items-center justify-center rounded-full border-[3px] border-[#6666FF] bg-[rgba(102,102,255,0.12)] text-6xl font-bold text-[#6666FF]">
             <span key={countdown} className="animate-pulse">
               {countdown}
             </span>
           </div>
-          <p className="text-sm font-medium" style={{ color: "#00306E" }}>
+          <p className="text-sm font-medium text-[#00306E]">
             Recording will start automatically
           </p>
         </div>
@@ -362,59 +319,30 @@ export function FullScreenPassage({
   // Fullscreen passage view
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col"
-      style={{ background: "#E4F4FF" }}
+      className="fixed inset-0 z-50 flex flex-col bg-[#E4F4FF]"
       onMouseMove={handleMouseMove}
     >
-      {/* Toast Notifications */}
-      <div className="fixed top-6 left-1/2 z-[60] flex -translate-x-1/2 flex-col items-center gap-2">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className="animate-in slide-in-from-top-2 fade-in flex items-center gap-2 rounded-full px-4 py-2 shadow-lg backdrop-blur-sm"
-            style={{
-              background: "rgba(102, 102, 255, 0.9)",
-              color: "#FFFFFF",
-              animation: "toast-enter 0.3s ease-out, toast-exit 0.4s ease-in 2.6s forwards",
-            }}
-          >
-            {toast.icon === "scroll" ? (
-              <ArrowDownToLine className="h-4 w-4" />
-            ) : (
-              <CircleCheckBig className="h-4 w-4" />
-            )}
-            <span className="text-sm font-medium">{toast.label}</span>
-          </div>
-        ))}
-      </div>
-
       {/* Passage Card */}
-      <div className="flex min-h-0 flex-1 flex-col items-center px-4 pt-4 pb-2 md:px-6 md:pt-6 md:pb-3 lg:px-8 lg:pt-8 lg:pb-4">
-        <div
-          className="relative flex w-full max-w-[1368px] flex-1 flex-col overflow-hidden"
-          style={{
-            background: "#EFFDFF",
-            border: "1px solid rgba(74, 74, 252, 0.44)",
-            boxShadow: "0px 1px 20px rgba(108, 164, 239, 0.37)",
-            borderRadius: "25px",
-          }}
-        >
+      <div className="flex min-h-0 flex-1 flex-col items-center px-4 pb-2 pt-4 md:px-6 md:pb-3 md:pt-6 lg:px-8 lg:pb-4 lg:pt-8">
+        <div className="relative flex w-full max-w-342 flex-1 flex-col overflow-hidden rounded-[25px] border border-[rgba(74,74,252,0.44)] bg-[#EFFDFF] shadow-[0px_1px_20px_rgba(108,164,239,0.37)]">
           {/* Close Button */}
           <button
+            type="button"
             onClick={handleClose}
-            className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full transition-opacity duration-500 hover:opacity-70 md:right-6 md:top-5"
-            style={{ opacity: showOverlayUI ? 1 : 0, pointerEvents: showOverlayUI ? "auto" : "none" }}
+            className={`absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full transition-opacity duration-500 hover:opacity-70 md:right-6 md:top-5 ${
+              showOverlayUI ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+            }`}
             title="Exit fullscreen"
           >
-            <X className="h-6 w-6" style={{ color: "#7A7AFB" }} />
+            <X className="h-6 w-6 text-[#7A7AFB]" />
           </button>
 
-          {/* Top-left indicators: Recording + Feature badges */}
+          {/* Top-left indicators: Recording + feature badges */}
           <div
-            className="absolute left-4 top-4 z-10 flex flex-col gap-2 transition-opacity duration-500 md:left-6 md:top-6"
-            style={{ opacity: showOverlayUI ? 1 : 0 }}
+            className={`absolute left-4 top-4 z-10 flex items-center gap-3 transition-opacity duration-500 md:left-6 md:top-6 ${
+              showOverlayUI ? "opacity-100" : "opacity-0"
+            }`}
           >
-            {/* Recording indicator */}
             <div className="flex items-center gap-2">
               <span className="relative flex h-3 w-3">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
@@ -423,33 +351,19 @@ export function FullScreenPassage({
               <span className="text-xs font-medium text-red-500">Recording</span>
             </div>
 
-            {/* Auto Scroll badge */}
             {autoScrollEnabled && (
-              <div
-                className="flex items-center gap-1.5 rounded-full px-2.5 py-1"
-                style={{
-                  background: "rgba(102, 102, 255, 0.10)",
-                  border: "1px solid rgba(102, 102, 255, 0.3)",
-                }}
-              >
-                <ArrowDownToLine className="h-3 w-3" style={{ color: "#6666FF" }} />
-                <span className="text-[11px] font-medium" style={{ color: "#6666FF" }}>
+              <div className="flex items-center gap-1 rounded-full border border-[rgba(102,102,255,0.25)] bg-[rgba(102,102,255,0.08)] px-2 py-0.5">
+                <ArrowDownToLine className="h-2.5 w-2.5 text-[#6666FF]" />
+                <span className="text-[10px] font-medium text-[#6666FF]">
                   Auto Scroll
                 </span>
               </div>
             )}
 
-            {/* Auto Finish badge */}
             {autoFinishEnabled && (
-              <div
-                className="flex items-center gap-1.5 rounded-full px-2.5 py-1"
-                style={{
-                  background: "rgba(34, 197, 94, 0.10)",
-                  border: "1px solid rgba(34, 197, 94, 0.3)",
-                }}
-              >
-                <CircleCheckBig className="h-3 w-3" style={{ color: "#16a34a" }} />
-                <span className="text-[11px] font-medium" style={{ color: "#16a34a" }}>
+              <div className="flex items-center gap-1 rounded-full border border-[rgba(34,197,94,0.25)] bg-[rgba(34,197,94,0.08)] px-2 py-0.5">
+                <CircleCheckBig className="h-2.5 w-2.5 text-[#16a34a]" />
+                <span className="text-[10px] font-medium text-[#16a34a]">
                   Auto Finish
                 </span>
               </div>
@@ -457,26 +371,11 @@ export function FullScreenPassage({
           </div>
 
           {/* Top fade edge */}
-          <div
-            className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-12 md:h-16"
-            style={{
-              background: "linear-gradient(to bottom, #EFFDFF 0%, transparent 100%)",
-              borderRadius: "25px 25px 0 0",
-            }}
-          />
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-1 h-12 rounded-t-[25px] bg-[linear-gradient(to_bottom,#EFFDFF_0%,transparent_100%)] md:h-16" />
 
           {/* Passage Content */}
-          <div className="flex flex-1 flex-col items-center overflow-auto px-6 pt-14 md:px-12 md:pt-16 lg:px-16 lg:pt-20">
-            <p
-              className="text-center text-lg leading-[2.2] md:text-xl md:leading-[2.3] lg:text-[22px] lg:leading-[2.4]"
-              style={{
-                color: "#00306E",
-                maxWidth: "min(680px, 90%)",
-                fontFamily: "Georgia, 'Times New Roman', serif",
-                letterSpacing: "0.01em",
-                wordSpacing: "0.05em",
-              }}
-            >
+          <div className="flex flex-1 flex-col overflow-auto px-6 pt-14 md:px-12 md:pt-16 lg:px-16 lg:pt-20">
+            <p className="whitespace-pre-wrap font-[Georgia,'Times_New_Roman',serif] text-lg leading-[2.2] tracking-[0.01em] text-[#00306E] [word-spacing:0.05em] md:text-xl md:leading-[2.3] lg:text-[22px] lg:leading-[2.4]">
               {tokenMeta.map((token, i) => (
                 <span
                   key={i}
@@ -486,68 +385,32 @@ export function FullScreenPassage({
                 </span>
               ))}
             </p>
-            <div className="w-full shrink-0 h-16 md:h-20" />
+            <div className="h-16 w-full shrink-0 md:h-20" />
           </div>
 
           {/* Bottom fade edge */}
-          <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-12 md:h-16"
-            style={{
-              background: "linear-gradient(to top, #EFFDFF 0%, transparent 100%)",
-              borderRadius: "0 0 25px 25px",
-            }}
-          />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-1 h-12 rounded-b-[25px] bg-[linear-gradient(to_top,#EFFDFF_0%,transparent_100%)] md:h-16" />
         </div>
       </div>
 
-      {/* Bottom Controls — ALWAYS visible */}
-      <div className="shrink-0 flex flex-col items-center gap-1 px-4 pb-3 pt-1 md:gap-1.5 md:px-8 md:pb-5 md:pt-2">
-        <span className="text-sm font-medium md:text-base" style={{ color: "#00306E" }}>
+      {/* Bottom Controls */}
+      <div className="flex shrink-0 flex-col items-center gap-1 px-4 pb-3 pt-1 md:gap-1.5 md:px-8 md:pb-5 md:pt-2">
+        <span className="text-base font-semibold text-[#00306E] md:text-lg">
           {passageTitle}
         </span>
 
-        <span
-          className="text-base font-medium tabular-nums md:text-lg"
-          style={{ color: "#00306E" }}
-        >
+        <span className="text-base font-medium tabular-nums text-[#00306E] md:text-lg">
           {formatTime(seconds)}
         </span>
 
         <button
+          type="button"
           onClick={finishReading}
-          className="rounded-lg px-10 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:brightness-110 md:px-12 md:py-3 md:text-[15px]"
-          style={{
-            background: "#6666FF",
-            boxShadow: "0px 1px 20px rgba(102, 102, 255, 0.4)",
-          }}
+          className="rounded-lg bg-[#6666FF] px-10 py-2.5 text-sm font-semibold text-white shadow-[0px_1px_20px_rgba(102,102,255,0.4)] transition-all duration-200 hover:brightness-110 md:px-12 md:py-3 md:text-[15px]"
         >
           Done
         </button>
       </div>
-
-      {/* Toast animation keyframes */}
-      <style jsx>{`
-        @keyframes toast-enter {
-          from {
-            opacity: 0;
-            transform: translateY(-8px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @keyframes toast-exit {
-          from {
-            opacity: 1;
-            transform: translateY(0);
-          }
-          to {
-            opacity: 0;
-            transform: translateY(-8px);
-          }
-        }
-      `}</style>
     </div>
   )
 }

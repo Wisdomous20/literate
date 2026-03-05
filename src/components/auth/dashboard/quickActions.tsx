@@ -23,7 +23,7 @@ const actions = [
 
 export function QuickActions() {
   return (
-    <div className="flex h-full flex-col rounded-[20px] bg-white p-6 shadow-[0px_0px_20px_1px_rgba(84,164,255,0.35)]">
+    <div className="flex h-full flex-col rounded-4xl bg-white p-6 shadow-[0px_0px_20px_1px_rgba(84,164,255,0.35)]">
       <div className="mb-4">
         <h3 className="text-[18px] font-semibold text-[#00306E]">
           Quick Actions

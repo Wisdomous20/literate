@@ -8,6 +8,7 @@ interface Question {
   type: string;
   passageLevel: number;
   language: string;
+  passageId?: string; 
 }
 
 interface GetAllQuestionsResult {
@@ -19,7 +20,6 @@ interface GetAllQuestionsResult {
 
 export async function getAllQuestionsService(): Promise<GetAllQuestionsResult> {
   try {
-    // Fetch all questions with their related passage info
     const questions = await prisma.question.findMany({
       include: {
         quiz: {
@@ -30,7 +30,6 @@ export async function getAllQuestionsService(): Promise<GetAllQuestionsResult> {
       },
     });
 
-    // Map questions to the desired format
     const formattedQuestions: Question[] = questions.map((q) => ({
       id: q.id,
       questionText: q.questionText,
@@ -39,6 +38,7 @@ export async function getAllQuestionsService(): Promise<GetAllQuestionsResult> {
       type: q.type,
       passageLevel: q.quiz?.passage?.level || 0,
       language: q.quiz?.passage?.language || "English",
+      passageId: q.quiz?.passage?.id, // 
     }));
 
     return {

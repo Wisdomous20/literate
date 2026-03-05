@@ -1,16 +1,30 @@
-import { AdminSidebar } from "@/components/admin-dash/adminSidebar";
+"use client";
 
-export default function SuperAdminLayout({
+import { signOut } from "next-auth/react";
+
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: "/login" });
+  };
+
   return (
-    <div className="flex min-h-screen bg-[#6666FF]">
-      <AdminSidebar />
-      <main className="flex-1 overflow-auto bg-[#E4F4FF] rounded-l-[50px]">
-        {children}
-      </main>
+    <div className="min-h-screen bg-[#F4FCFD] flex flex-col">
+      {/* Header */}
+      <header className="w-full h-[70px] flex items-center px-10 border-b border-[#8D8DEC] bg-white shadow justify-between">
+        <h1 className="text-xl font-bold text-[#31318A]">Admin Dashboard</h1>
+        <button
+          onClick={handleLogout}
+          className="ml-auto rounded-lg bg-[#2E2E68] px-5 py-2 text-white font-semibold hover:bg-[#1a1a40] transition"
+        >
+          Logout
+        </button>
+      </header>
+      {/* Main Content */}
+      <main className="flex-1">{children}</main>
     </div>
   );
 }

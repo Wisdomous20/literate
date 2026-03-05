@@ -8,32 +8,45 @@ interface SubmitAnswer {
 }
 
 interface SubmitComprehensionInput {
-  studentId: string;
-  passageId: string;
-  quizId: string;
+  assessmentId: string;
   answers: SubmitAnswer[];
 }
 
 export async function submitComprehensionService(input: SubmitComprehensionInput) {
-  const { studentId, passageId, quizId, answers } = input;
+  const { assessmentId, answers } = input;
 
   try {
-    // Fetch all questions with correct answers for grading
-    const questions = await prisma.question.findMany({
-      where: { quizId },
-      select: { id: true, type: true, correctAnswer: true, questionText: true },
+    // Get assessment with passage and its quiz + questions
+    const assessment = await prisma.assessment.findUnique({
+      where: { id: assessmentId },
+      include: {
+        passage: {
+          include: {
+            quiz: {
+              include: {
+                questions: true,
+              },
+            },
+          },
+        },
+      },
     });
 
-   const passage = await prisma.passage.findUnique({
-      where: { id: passageId },
-      select: { content: true },
-    });
+    if (!assessment) {
+      return { success: false, error: "Assessment not found." };
+    }
 
+    const passage = assessment.passage;
     if (!passage) {
       return { success: false, error: "Passage not found." };
     }
 
-  
+    const quiz = passage.quiz;
+    if (!quiz) {
+      return { success: false, error: "Quiz not found for this passage." };
+    }
+
+    const questions = quiz.questions;
     const questionMap = new Map(questions.map((q) => [q.id, q]));
 
     // Grade each answer
@@ -51,7 +64,7 @@ export async function submitComprehensionService(input: SubmitComprehensionInput
           return { ...a, isCorrect };
         }
 
-        // Essay questions — grade with OpenAI (1 or 0)
+        // Essay questions — grade with OpenAI
         const essayResult = await gradeEssayAnswer({
           questionText: question.questionText,
           correctAnswer: question.correctAnswer,
@@ -68,23 +81,15 @@ export async function submitComprehensionService(input: SubmitComprehensionInput
     const percentage = totalItems > 0 ? (score / totalItems) * 100 : 0;
     const level = classifyComprehensionLevel(percentage);
 
-    // Create assessment + comprehension test + answers in a transaction
+    // Create ComprehensionTest + ComprehensionAnswers
     const result = await prisma.$transaction(async (tx) => {
-      const assessment = await tx.assessment.create({
-        data: {
-          studentId,
-          passageId,
-          type: "COMPREHENSION",
-        },
-      });
-
       const comprehensionTest = await tx.comprehensionTest.create({
         data: {
-          assessmentId: assessment.id,
-          quizId,
+          assessmentId,
+          quizId: quiz.id,
           score,
           totalItems,
-          level,
+          classificationLevel: level,
           answers: {
             create: gradedAnswers.map((a) => ({
               questionId: a.questionId,
@@ -98,12 +103,12 @@ export async function submitComprehensionService(input: SubmitComprehensionInput
         },
       });
 
-      return { assessment, comprehensionTest };
+      return { comprehensionTest };
     });
 
     return {
       success: true,
-      assessmentId: result.assessment.id,
+      assessmentId,
       comprehensionTestId: result.comprehensionTest.id,
       score,
       totalItems,

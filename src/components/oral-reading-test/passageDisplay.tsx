@@ -1,31 +1,451 @@
-"use client"
+"use client";
+
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { Maximize2, Minimize2, Play, GripHorizontal } from "lucide-react";
+import type { MiscueResult } from "@/types/oral-reading";
+
+type MiscueColor = {
+  bg: string;
+  text: string;
+  border: string;
+  bgClass: string;
+  textClass: string;
+  borderBottomClass: string;
+  popupBorderClass: string;
+  arrowTopClass: string;
+  arrowBottomClass: string;
+};
+
+const MISCUE_COLORS: Record<string, MiscueColor> = {
+  MISPRONUNCIATION: {
+    bg: "rgba(253, 182, 210, 0.44)",
+    text: "#C41048",
+    border: "#C41048",
+    bgClass: "bg-[rgba(253,182,210,0.44)]",
+    textClass: "text-[#C41048]",
+    borderBottomClass: "border-b-2 border-b-[#C41048]",
+    popupBorderClass: "border-[#C41048]",
+    arrowTopClass: "border-t-[#C41048]",
+    arrowBottomClass: "border-b-[#C41048]",
+  },
+  OMISSION: {
+    bg: "rgba(180, 170, 240, 0.4)",
+    text: "#4B3BA3",
+    border: "#4B3BA3",
+    bgClass: "bg-[rgba(180,170,240,0.4)]",
+    textClass: "text-[#4B3BA3]",
+    borderBottomClass: "border-b-2 border-b-[#4B3BA3]",
+    popupBorderClass: "border-[#4B3BA3]",
+    arrowTopClass: "border-t-[#4B3BA3]",
+    arrowBottomClass: "border-b-[#4B3BA3]",
+  },
+  SUBSTITUTION: {
+    bg: "rgba(160, 200, 255, 0.4)",
+    text: "#1A5FB4",
+    border: "#1A5FB4",
+    bgClass: "bg-[rgba(160,200,255,0.4)]",
+    textClass: "text-[#1A5FB4]",
+    borderBottomClass: "border-b-2 border-b-[#1A5FB4]",
+    popupBorderClass: "border-[#1A5FB4]",
+    arrowTopClass: "border-t-[#1A5FB4]",
+    arrowBottomClass: "border-b-[#1A5FB4]",
+  },
+  TRANSPOSITION: {
+    bg: "rgba(220, 120, 220, 0.4)",
+    text: "#8B008B",
+    border: "#8B008B",
+    bgClass: "bg-[rgba(220,120,220,0.4)]",
+    textClass: "text-[#8B008B]",
+    borderBottomClass: "border-b-2 border-b-[#8B008B]",
+    popupBorderClass: "border-[#8B008B]",
+    arrowTopClass: "border-t-[#8B008B]",
+    arrowBottomClass: "border-b-[#8B008B]",
+  },
+  REVERSAL: {
+    bg: "rgba(200, 165, 130, 0.35)",
+    text: "#6E4023",
+    border: "#6E4023",
+    bgClass: "bg-[rgba(200,165,130,0.35)]",
+    textClass: "text-[#6E4023]",
+    borderBottomClass: "border-b-2 border-b-[#6E4023]",
+    popupBorderClass: "border-[#6E4023]",
+    arrowTopClass: "border-t-[#6E4023]",
+    arrowBottomClass: "border-b-[#6E4023]",
+  },
+  INSERTION: {
+    bg: "rgba(140, 220, 160, 0.4)",
+    text: "#1E7A35",
+    border: "#1E7A35",
+    bgClass: "bg-[rgba(140,220,160,0.4)]",
+    textClass: "text-[#1E7A35]",
+    borderBottomClass: "border-b-2 border-b-[#1E7A35]",
+    popupBorderClass: "border-[#1E7A35]",
+    arrowTopClass: "border-t-[#1E7A35]",
+    arrowBottomClass: "border-b-[#1E7A35]",
+  },
+  REPETITION: {
+    bg: "rgba(255, 200, 140, 0.45)",
+    text: "#B85C00",
+    border: "#B85C00",
+    bgClass: "bg-[rgba(255,200,140,0.45)]",
+    textClass: "text-[#B85C00]",
+    borderBottomClass: "border-b-2 border-b-[#B85C00]",
+    popupBorderClass: "border-[#B85C00]",
+    arrowTopClass: "border-t-[#B85C00]",
+    arrowBottomClass: "border-b-[#B85C00]",
+  },
+  SELF_CORRECTION: {
+    bg: "rgba(250, 230, 140, 0.45)",
+    text: "#8A6D00",
+    border: "#8A6D00",
+    bgClass: "bg-[rgba(250,230,140,0.45)]",
+    textClass: "text-[#8A6D00]",
+    borderBottomClass: "border-b-2 border-b-[#8A6D00]",
+    popupBorderClass: "border-[#8A6D00]",
+    arrowTopClass: "border-t-[#8A6D00]",
+    arrowBottomClass: "border-b-[#8A6D00]",
+  },
+};
+
+const FALLBACK_COLOR: MiscueColor = {
+  bg: "rgba(218, 230, 255, 0.4)",
+  text: "#31318A",
+  border: "#DAE6FF",
+  bgClass: "bg-[rgba(218,230,255,0.4)]",
+  textClass: "text-[#31318A]",
+  borderBottomClass: "border-b-2 border-b-[#DAE6FF]",
+  popupBorderClass: "border-[#DAE6FF]",
+  arrowTopClass: "border-t-[#DAE6FF]",
+  arrowBottomClass: "border-b-[#DAE6FF]",
+};
 
 interface PassageDisplayProps {
-  content: string
+  content: string;
+  miscues?: MiscueResult[];
+  onJumpToTime?: (timestamp: number) => void;
+  expanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
-export function PassageDisplay({ content }: PassageDisplayProps) {
+interface PopupState {
+  miscue: MiscueResult;
+  x: number;
+  y: number;
+  flipped: boolean;
+  hAlign: "center" | "left" | "right";
+}
+
+export function PassageDisplay({
+  content,
+  miscues,
+  onJumpToTime,
+  expanded,
+  onToggleExpand,
+}: PassageDisplayProps) {
+  const [popup, setPopup] = useState<PopupState | null>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const outerRef = useRef<HTMLDivElement>(null);
+
+  // Drag-to-resize state
+  const [dragHeight, setDragHeight] = useState<number | null>(null);
+  const isDragging = useRef(false);
+  const dragStartY = useRef(0);
+  const dragStartH = useRef(0);
+
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isDragging.current = true;
+    dragStartY.current = e.clientY;
+    dragStartH.current =
+      outerRef.current?.getBoundingClientRect().height ?? 300;
+
+    const onMove = (ev: MouseEvent) => {
+      if (!isDragging.current) return;
+      const delta = ev.clientY - dragStartY.current;
+      setDragHeight(Math.max(120, dragStartH.current + delta));
+    };
+    const onUp = () => {
+      isDragging.current = false;
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }, []);
+
+  // Keep dynamic height without using JSX inline styles
+  useEffect(() => {
+    const outer = outerRef.current;
+    if (!outer) return;
+    if (expanded) {
+      outer.style.height = "100%";
+      return;
+    }
+    outer.style.height = dragHeight ? `${dragHeight}px` : "100%";
+  }, [dragHeight, expanded]);
+
+  // Position popup without JSX inline styles
+  useEffect(() => {
+    const el = popupRef.current;
+    if (!el || !popup) return;
+    const hTranslate =
+      popup.hAlign === "left"
+        ? "0%"
+        : popup.hAlign === "right"
+          ? "-100%"
+          : "-50%";
+    const vTranslate = popup.flipped ? "0%" : "-100%";
+    el.style.left = `${popup.x}px`;
+    el.style.top = `${popup.y}px`;
+    el.style.transform = `translate(${hTranslate}, ${vTranslate})`;
+  }, [popup]);
+
+  // Close popup when clicking outside
+  useEffect(() => {
+    if (!popup) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (popupRef.current && !popupRef.current.contains(e.target as Node)) {
+        setPopup(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [popup]);
+
+  // Auto-scroll container so the popup is fully visible
+  useEffect(() => {
+    if (!popup) return;
+    const raf = requestAnimationFrame(() => {
+      const popupEl = popupRef.current;
+      const container = containerRef.current;
+      if (!popupEl || !container) return;
+      const popupRect = popupEl.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+
+      if (popupRect.top < containerRect.top) {
+        container.scrollBy({
+          top: popupRect.top - containerRect.top - 16,
+          behavior: "smooth",
+        });
+      }
+      if (popupRect.bottom > containerRect.bottom) {
+        container.scrollBy({
+          top: popupRect.bottom - containerRect.bottom + 16,
+          behavior: "smooth",
+        });
+      }
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [popup]);
+
+  // Build a map from wordIndex → miscue type for O(1) lookup
+  const miscueMap = useMemo(() => {
+    if (!miscues || miscues.length === 0) return null;
+    const map = new Map<number, MiscueResult>();
+    for (const m of miscues) {
+      if (!map.has(m.wordIndex)) {
+        map.set(m.wordIndex, m);
+      }
+    }
+    return map;
+  }, [miscues]);
+
+  const hasMiscues = miscueMap !== null && miscueMap.size > 0;
+
+  const words = useMemo(() => {
+    if (!content) return [];
+    return content.split(/(\s+)/).filter(Boolean);
+  }, [content]);
+
+  const renderHighlightedContent = () => {
+    let wordIndex = 0;
+    return words.map((token, i) => {
+      const isSpace = /^\s+$/.test(token);
+      if (isSpace) {
+        return <span key={i}>{token}</span>;
+      }
+      const currentWordIndex = wordIndex;
+      wordIndex++;
+
+      const miscue = miscueMap?.get(currentWordIndex);
+      if (miscue) {
+        const colors = MISCUE_COLORS[miscue.miscueType] || FALLBACK_COLOR;
+        const hasTimestamp =
+          miscue.timestamp !== null && miscue.timestamp !== undefined;
+        return (
+          <span
+            key={i}
+            title={`${miscue.miscueType.replace(/_/g, " ")}${miscue.spokenWord ? ` — spoken: "${miscue.spokenWord}"` : ""}${hasTimestamp ? " (click to jump)" : ""}`}
+            className={`relative inline-block rounded-sm px-0.5 font-semibold transition-all ${colors.bgClass} ${colors.textClass} ${colors.borderBottomClass} ${
+              hasTimestamp && onJumpToTime
+                ? "cursor-pointer hover:brightness-90"
+                : "cursor-help"
+            }`}
+            onClick={(e) => {
+              if (!hasTimestamp || !onJumpToTime) return;
+              const rect = (e.target as HTMLElement).getBoundingClientRect();
+              const container = containerRef.current;
+              if (!container) return;
+              const containerRect = container.getBoundingClientRect();
+              const xPos =
+                rect.left -
+                containerRect.left +
+                rect.width / 2 +
+                container.scrollLeft;
+              const yAbove =
+                rect.top - containerRect.top + container.scrollTop - 4;
+              const yBelow =
+                rect.bottom - containerRect.top + container.scrollTop + 4;
+              const spaceAbove = rect.top - containerRect.top;
+              const flip = spaceAbove < 95;
+
+              const popupHalfWidth = 90;
+              const spaceLeft = rect.left - containerRect.left + rect.width / 2;
+              const spaceRight =
+                containerRect.right - rect.left - rect.width / 2;
+              let hAlign: "center" | "left" | "right" = "center";
+              if (spaceLeft < popupHalfWidth) {
+                hAlign = "left";
+              } else if (spaceRight < popupHalfWidth) {
+                hAlign = "right";
+              }
+
+              setPopup({
+                miscue,
+                x: xPos,
+                y: flip ? yBelow : yAbove,
+                flipped: flip,
+                hAlign,
+              });
+            }}
+          >
+            {token}
+          </span>
+        );
+      }
+      return <span key={i}>{token}</span>;
+    });
+  };
+
+  const formatTimestamp = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  };
+
+  // Reset drag height when toggling expand
+  useEffect(() => {
+    if (expanded) setDragHeight(null);
+  }, [expanded]);
+
   return (
     <div
-      className="h-full overflow-auto p-4 md:p-5"
-      style={{
-        background: "#EFFDFF",
-        border: "1px solid #54A4FF",
-        boxShadow: "0px 1px 20px rgba(108, 164, 239, 0.37)",
-        borderRadius: "10px",
-      }}
+      ref={outerRef}
+      className={`relative flex min-h-30 flex-col ${dragHeight && !expanded ? "flex-none" : "flex-1"}`}
     >
-      {content ? (
-        <p className="whitespace-pre-wrap text-sm leading-relaxed text-[#00306E] lg:text-base lg:leading-relaxed">
-          {content}
-        </p>
-      ) : (
-        <div className="flex h-full items-center justify-center">
-          <p className="text-center text-sm text-[#00306E]/40">
-            Click Add Passage button and select reading passages to start oral reading test
+      {content && onToggleExpand && (
+        <button
+          type="button"
+          onClick={onToggleExpand}
+          className="absolute right-4 top-4 z-20 flex h-7 w-7 items-center justify-center rounded-md bg-[rgba(84,164,255,0.15)] transition-colors hover:opacity-80 md:right-5 md:top-5"
+          title={expanded ? "Collapse passage" : "Expand passage"}
+        >
+          {expanded ? (
+            <Minimize2 className="h-3.5 w-3.5 text-[#1A5FB4]" />
+          ) : (
+            <Maximize2 className="h-3.5 w-3.5 text-[#1A5FB4]" />
+          )}
+        </button>
+      )}
+
+      <div
+        ref={containerRef}
+        className="oral-reading-scroll relative flex-1 overflow-auto rounded-[10px] border border-[#54A4FF] bg-[#EFFDFF] p-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)] md:p-5"
+      >
+        {content ? (
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-[#00306E] lg:text-base lg:leading-relaxed">
+            {hasMiscues ? renderHighlightedContent() : content}
           </p>
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <p className="text-center text-sm text-[#00306E]/40">
+              Click Add Passage button and select reading passages to start oral
+              reading test
+            </p>
+          </div>
+        )}
+
+        {popup &&
+          popup.miscue.timestamp !== null &&
+          (() => {
+            const colors =
+              MISCUE_COLORS[popup.miscue.miscueType] || FALLBACK_COLOR;
+            const arrowAlign =
+              popup.hAlign === "left"
+                ? "ml-4"
+                : popup.hAlign === "right"
+                  ? "mr-4 self-end"
+                  : "self-center";
+
+            return (
+              <div
+                ref={popupRef}
+                className={`absolute z-30 flex ${popup.flipped ? "flex-col-reverse" : "flex-col"}`}
+              >
+                {popup.flipped && (
+                  <div
+                    className={`h-0 w-0 border-l-[6px] border-r-[6px] border-l-transparent border-r-transparent ${arrowAlign} ${colors.arrowBottomClass} border-b-[6px]`}
+                  />
+                )}
+
+                <div
+                  className={`rounded-lg border bg-white px-3 py-2 shadow-[0_4px_16px_rgba(0,0,0,0.12)] ${colors.popupBorderClass}`}
+                >
+                  <div className="mb-1.5 text-center">
+                    <span
+                      className={`text-[10px] font-bold uppercase tracking-wide ${colors.textClass}`}
+                    >
+                      {popup.miscue.miscueType.replace(/_/g, " ")}
+                    </span>
+                    {popup.miscue.spokenWord && (
+                      <div className="text-[10px] text-[#31318A]/70">
+                        Spoken: &ldquo;{popup.miscue.spokenWord}&rdquo;
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onJumpToTime?.(popup.miscue.timestamp!);
+                      setPopup(null);
+                    }}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-md bg-[#6666FF] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:brightness-110"
+                  >
+                    <Play className="h-3 w-3" />
+                    Jump to Word ({formatTimestamp(popup.miscue.timestamp!)})
+                  </button>
+                </div>
+
+                {!popup.flipped && (
+                  <div
+                    className={`h-0 w-0 border-l-[6px] border-r-[6px] border-l-transparent border-r-transparent ${arrowAlign} ${colors.arrowTopClass} border-t-[6px]`}
+                  />
+                )}
+              </div>
+            );
+          })()}
+      </div>
+
+      {!expanded && (
+        <div
+          onMouseDown={handleDragStart}
+          className="flex h-4 cursor-row-resize items-center justify-center opacity-40 transition-opacity hover:opacity-80"
+          title="Drag to resize"
+        >
+          <GripHorizontal className="h-4 w-4 text-[#54A4FF]" />
         </div>
       )}
     </div>
-  )
+  );
 }

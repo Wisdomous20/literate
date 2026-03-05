@@ -2,7 +2,7 @@ import { FileText, Clock, ClipboardCheck, type LucideIcon } from "lucide-react";
 
 interface MetricCardsProps {
   wcpm: number;
-  readingTime: string;
+  readingTimeSeconds: number;
   classificationLevel: string;
 }
 
@@ -11,62 +11,92 @@ interface MetricCardProps {
   iconColor: string;
   title: string;
   value: React.ReactNode;
-  valueColor: string;
+  valueColorClass: string;
   subtitle: string;
 }
 
-function MetricCard({ icon: Icon, iconColor, title, value, valueColor, subtitle }: MetricCardProps) {
+function MetricCard({
+  icon: Icon,
+  iconColor,
+  title,
+  value,
+  valueColorClass,
+  subtitle,
+}: MetricCardProps) {
   return (
-    <div className="flex flex-col items-center justify-center bg-[#EFFDFF] border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] rounded-2xl p-6 gap-2">
+    <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-[#54A4FF] bg-[#EFFDFF] p-6 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
       <div className="flex items-center gap-2">
-        <div className="flex items-center justify-center w-10 h-10 bg-[rgba(74,74,252,0.06)] border border-[#DAE6FF] rounded-lg">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#DAE6FF] bg-[rgba(74,74,252,0.06)]">
           <Icon size={18} className={iconColor} />
         </div>
         <h3
-          className="text-base font-bold text-[#003366] leading-tight"
+          className="text-base font-bold leading-tight text-[#003366]"
           dangerouslySetInnerHTML={{ __html: title }}
         />
       </div>
-      <p className={`text-4xl font-bold mt-2`} style={{ color: valueColor }}>
-        {value}
-      </p>
-      <p className="text-base text-[#162DB0]" style={{ fontFamily: "var(--font-kanit)" }}>
-        {subtitle}
-      </p>
+      <p className={`mt-2 text-4xl font-bold ${valueColorClass}`}>{value}</p>
+      <p className="font-kanit text-base text-[#162DB0]">{subtitle}</p>
     </div>
   );
 }
 
-export default function MetricCards({ wcpm, readingTime, classificationLevel }: MetricCardsProps) {
+function formatReadingTime(
+  totalSeconds: number,
+): { value: React.ReactNode; subtitle: string } {
+  if (totalSeconds >= 3600) {
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    return {
+      value: mins > 0 ? `${hrs}:${mins.toString().padStart(2, "0")}` : String(hrs),
+      subtitle: mins > 0 ? "Hours & Minutes" : "Hours",
+    };
+  }
+  if (totalSeconds >= 60) {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = Math.round(totalSeconds % 60);
+    return {
+      value: secs > 0 ? `${mins}:${secs.toString().padStart(2, "0")}` : String(mins),
+      subtitle: secs > 0 ? "Minutes & Seconds" : "Minutes",
+    };
+  }
+  return {
+    value: String(Math.round(totalSeconds)),
+    subtitle: "Seconds",
+  };
+}
+
+export default function MetricCards({
+  wcpm,
+  readingTimeSeconds,
+  classificationLevel,
+}: MetricCardsProps) {
+  const readingTime = formatReadingTime(readingTimeSeconds);
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
       <MetricCard
         icon={FileText}
         iconColor="text-[#162DB0]"
         title="Reading Rate<br/>(WCPM)"
         value={wcpm}
-        valueColor="#162DB0"
+        valueColorClass="text-[#162DB0]"
         subtitle="Words Correct Per Minute"
       />
       <MetricCard
         icon={Clock}
         iconColor="text-[#1A6673]"
         title="Reading<br/>Time"
-        value={
-          <>
-            {readingTime} <span className="text-lg">MIN</span>
-          </>
-        }
-        valueColor="#1A6673"
-        subtitle="Minutes"
+        value={readingTime.value}
+        valueColorClass="text-[#1A6673]"
+        subtitle={readingTime.subtitle}
       />
       <MetricCard
         icon={ClipboardCheck}
         iconColor="text-[#CE330C]"
         title="Fluency<br/>Classification"
         value={<span className="text-2xl italic">{classificationLevel}</span>}
-        valueColor="#CE330C"
-        subtitle="Oral fluency level"
+        valueColorClass="text-[#CE330C]"
+        subtitle=""
       />
     </div>
   );

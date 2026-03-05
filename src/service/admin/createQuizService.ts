@@ -26,7 +26,7 @@ interface CreateQuizResult {
 }
 
 export async function createQuizService(
-  input: CreateQuizInput
+  input: CreateQuizInput,
 ): Promise<CreateQuizResult> {
   const { passageId, totalScore, totalNumber, questions } = input;
 
@@ -63,7 +63,7 @@ export async function createQuizService(
     };
   }
 
-    for (const q of questions) {
+  for (const q of questions) {
     if (!q.questionText || !q.tags || !q.type) {
       return {
         success: false,
@@ -76,7 +76,8 @@ export async function createQuizService(
       if (!q.options || q.options.length < 2 || !q.correctAnswer) {
         return {
           success: false,
-          error: "Multiple choice questions require at least 2 options and a correctAnswer",
+          error:
+            "Multiple choice questions require at least 2 options and a correctAnswer",
           code: "VALIDATION_ERROR",
         };
       }
@@ -96,7 +97,8 @@ export async function createQuizService(
             tags: q.tags,
             type: q.type,
             options: q.type === "MULTIPLE_CHOICE" ? q.options : undefined,
-            correctAnswer: q.type === "MULTIPLE_CHOICE" || undefined,
+            correctAnswer:
+              q.type === "MULTIPLE_CHOICE" ? q.correctAnswer : undefined,
           })),
         },
       },

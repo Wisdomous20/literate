@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, ChevronLeft } from "lucide-react";
+import { LayoutDashboard, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function ReportHeader() {
@@ -8,7 +8,7 @@ export default function ReportHeader() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Top bar */}
+      {/* Top bar with Export & Delete buttons */}
       <div className="flex items-center justify-between px-8 py-5 border-b border-[#8D8DEC] shadow-[0_4px_4px_#54A4FF]">
         <div className="flex items-center gap-3">
           <LayoutDashboard size={24} className="text-[#00306E]" />
@@ -16,17 +16,6 @@ export default function ReportHeader() {
             Oral Fluency Test Report
           </h1>
         </div>
-      </div>
-
-      {/* Previous + Action buttons */}
-      <div className="flex items-center justify-between px-8 pt-2">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-1 text-[#31318A] font-semibold text-lg hover:opacity-80 transition-opacity"
-        >
-          <ChevronLeft size={24} />
-          Previous
-        </button>
 
         <div className="flex items-center gap-3">
           <button
@@ -42,6 +31,28 @@ export default function ReportHeader() {
             Delete
           </button>
         </div>
+      </div>
+
+      {/* Previous + Continue to Comprehension */}
+      <div className="flex items-center justify-between px-8 pt-2">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-1 text-[#31318A] font-semibold text-lg hover:opacity-80 transition-opacity"
+        >
+          <ChevronLeft size={24} />
+          Previous
+        </button>
+
+        <button
+          type="button"
+          onClick={() =>
+            router.push("/dashboard/oral-reading-test/comprehension")
+          }
+          className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)] transition-all duration-300 hover:bg-[#5555EE] md:text-base animate-[pulseGlow_2s_ease-in-out_infinite]"
+        >
+          <span>Continue to Comprehension</span>
+          <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
+        </button>
       </div>
     </div>
   );

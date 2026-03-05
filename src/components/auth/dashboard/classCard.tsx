@@ -122,13 +122,13 @@ export function ClassCard({
           onKeyDown={handleCardKeyDown}
           tabIndex={0}
           className={cn(
-            "group relative flex w-full min-h-[127px] flex-col justify-between rounded-[15px] border border-[#5D5DFB] bg-[rgba(255,254,254,0.09)] p-4 text-left shadow-[0px_0px_20px_1px_rgba(84,164,255,0.65)] transition-all hover:scale-[1.02] cursor-pointer",
+            "group relative flex w-full min-h-31.75 flex-col justify-between rounded-[15px] border border-[#5D5DFB] bg-[rgba(255,254,254,0.09)] p-4 text-left shadow-[0px_0px_20px_1px_rgba(84,164,255,0.65)] transition-all hover:scale-[1.02] cursor-pointer",
           )}
         >
           <div className="flex items-start justify-between">
             <div
               className={cn(
-                "flex h-[25px] w-[27px] items-center justify-center rounded-[3px]",
+                "flex h-6.25 w-6.75 items-center justify-center rounded-[3px]",
                 styles.iconBg,
               )}
             >
@@ -137,7 +137,7 @@ export function ClassCard({
 
             <span
               className={cn(
-                "rounded-[3px] px-2 py-0.5 text-[8px] font-semibold leading-[12px] mr-8",
+                "rounded-[3px] px-2 py-0.5 text-[8px] font-semibold leading-3 mr-8",
                 styles.badgeBg,
                 styles.badgeText,
               )}
@@ -147,7 +147,7 @@ export function ClassCard({
           </div>
 
           <div className="flex items-center justify-between pt-6">
-            <span className="text-[15px] font-semibold leading-[22px] text-[#00306E]">
+            <span className="text-[15px] font-semibold leading-5.5 text-[#00306E]">
               {name}
             </span>
             <ChevronRight className="h-5 w-5 text-[#00306E] transition-transform group-hover:translate-x-1" />

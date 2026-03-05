@@ -141,3 +141,18 @@ input::-ms-reveal,
 input::-ms-clear {
   display: none;
 }
+
+.oral-reading-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.oral-reading-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.oral-reading-scroll::-webkit-scrollbar-thumb {
+  background: rgba(102, 102, 255, 0.3);
+  border-radius: 10px;
+}
+.oral-reading-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(102, 102, 255, 0.5);
+}
