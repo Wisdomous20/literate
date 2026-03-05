@@ -85,7 +85,7 @@ export function CreateStudentModal({
   if (typeof window === "undefined" || !isOpen) return null;
 
   const modalContent = (
-    <div className="fixed inset-0 flex items-center justify-center z-[99999]">
+    <div className="fixed inset-0 flex items-center justify-center z-99999">
       {/* Backdrop with blur - covers entire viewport */}
       <div
         ref={backdropRef}
@@ -101,7 +101,7 @@ export function CreateStudentModal({
         aria-modal="true"
         aria-labelledby="create-student-title"
       >
-        <div className="w-[500px] bg-white p-8 rounded-[30px] shadow-[0px_10px_60px_rgba(0,48,110,0.25)]">
+        <div className="w-125 bg-white p-8 rounded-[30px] shadow-[0px_10px_60px_rgba(0,48,110,0.25)]">
           {/* Close Button */}
           <button
             type="button"
@@ -132,7 +132,7 @@ export function CreateStudentModal({
             <div className="flex items-center gap-6">
               <label
                 htmlFor="studentName"
-                className="w-[120px] shrink-0 text-base font-semibold text-[#00306E]"
+                className="w-30 shrink-0 text-base font-semibold text-[#00306E]"
               >
                 Student Name
               </label>
@@ -150,7 +150,7 @@ export function CreateStudentModal({
             <div className="flex items-center gap-6">
               <label
                 htmlFor="gradeLevel"
-                className="w-[120px] shrink-0 text-base font-semibold text-[#00306E]"
+                className="w-30 shrink-0 text-base font-semibold text-[#00306E]"
               >
                 Grade Level
               </label>

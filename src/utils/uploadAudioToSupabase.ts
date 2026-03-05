@@ -7,10 +7,16 @@ export async function uploadAudioToSupabase(
 ): Promise<string | null> {
   try {
     const timestamp = Date.now()
-    const filePath = `oral-reading/${studentId}-${passageId}-${timestamp}.webm`
+
+    // Detect format from blob type
+    const isWav = audioBlob.type === "audio/wav" || audioBlob.type === "audio/wave"
+    const ext = isWav ? "wav" : "webm"
+    const contentType = isWav ? "audio/wav" : "audio/webm"
+
+    const filePath = `oral-fluency/${studentId}-${passageId}-${timestamp}.${ext}`
 
     const formData = new FormData()
-    formData.append("file", new File([audioBlob], `${timestamp}.webm`, { type: audioBlob.type || "audio/webm" }))
+    formData.append("file", new File([audioBlob], `${timestamp}.${ext}`, { type: contentType }))
     formData.append("filePath", filePath)
 
     const result = await uploadAudioAction(formData)

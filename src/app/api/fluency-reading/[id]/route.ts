@@ -34,10 +34,10 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await audioFile.arrayBuffer()
     const audioBuffer = Buffer.from(arrayBuffer)
 
-    const result = await createOralFluencySessionService({
+   const result = await createOralFluencySessionService({
       assessmentId: assessmentResult.assessment.id,
       audioBuffer,
-      fileName: audioFile.name || "recording.webm",
+      fileName: audioFile.name || "recording.wav",
       audioUrl,
     })
 

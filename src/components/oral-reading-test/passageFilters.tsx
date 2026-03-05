@@ -20,15 +20,7 @@ function FilterLabel({
   value?: string
 }) {
   return (
-    <div
-      className="flex flex-1 items-center gap-2 rounded-[10px] px-3 py-2 text-sm font-medium"
-      style={{
-        background: "#D5E7FE",
-        border: "1px solid #54A4FF",
-        boxShadow: "0px 1px 20px rgba(108, 164, 239, 0.37)",
-        color: "#00306E",
-      }}
-    >
+    <div className="flex flex-1 items-center gap-2 rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE] px-3 py-2 text-sm font-medium text-[#00306E] shadow-[0px_1px_20px_rgba(108,164,239,0.37)]">
       <Icon className="h-4 w-4 shrink-0 text-[#5D5DFB]" />
       <span className="text-left">{value || label}</span>
     </div>
@@ -47,17 +39,13 @@ export function PassageFilters({
       <FilterLabel icon={Globe} label="Language (English / Filipino)" value={language} />
       <FilterLabel icon={BarChart3} label="Passage Level" value={passageLevel} />
       <FilterLabel icon={ClipboardList} label="Test Type" value={testType} />
-      <button
-        onClick={onOpenPassageModal}
-        className="shrink-0 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors hover:opacity-90 md:px-6 md:text-[15px]"
-        style={{
-          background: "#2E2E68",
-          border: "1px solid #7A7AFB",
-          boxShadow: "0px 1px 20px rgba(65, 155, 180, 0.47)",
-        }}
-      >
-        {hasPassage ? "Change Passage" : "Add Passage"}
-      </button>
+     <button
+  type="button"
+  onClick={onOpenPassageModal}
+  className="shrink-0 rounded-lg border border-[#7A7AFB] bg-[#2E2E68] px-4 py-2 text-sm font-semibold text-white shadow-[0px_1px_20px_rgba(65,155,180,0.47)] transition-colors hover:opacity-90 md:px-6 md:text-[15px]"
+>
+  {hasPassage ? "Change Passage" : "Add Passage"}
+</button>
     </div>
   )
 }

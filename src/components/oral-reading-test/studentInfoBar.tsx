@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { ChevronDown, Plus, Search, X, CheckCircle, XCircle } from "lucide-react"
 import { createClass } from "@/app/actions/class/createClass"
 import {
@@ -53,12 +53,14 @@ export default function StudentInfoBar({
   useEffect(() => {
     setSelectedClass(selectedClassName ?? "")
   }, [selectedClassName])
+
   const [isClassDropdownOpen, setIsClassDropdownOpen] = useState(false)
   const [isGradeDropdownOpen, setIsGradeDropdownOpen] = useState(false)
   const [isStudentInputFocused, setIsStudentInputFocused] = useState(false)
   const [selectedStudentId, setSelectedStudentId] = useState("")
   const [isCreatingClass, setIsCreatingClass] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
+
   const studentInputRef = useRef<HTMLInputElement>(null)
   const studentDropdownRef = useRef<HTMLDivElement>(null)
   const gradeDropdownRef = useRef<HTMLDivElement>(null)
@@ -67,7 +69,7 @@ export default function StudentInfoBar({
   const classButtonRef = useRef<HTMLButtonElement>(null)
   const fetchedClassesRef = useRef<string>("")
 
-  // Fetch students from ALL classes — skip if classes haven't changed
+  // Fetch students from ALL classes - skip if classes haven't changed
   const fetchAllStudents = useCallback(async () => {
     if (classes.length === 0) {
       setAllStudents([])
@@ -94,10 +96,9 @@ export default function StudentInfoBar({
             }))
           }
           return []
-        })
+        }),
       )
-      const all = results.flat()
-      setAllStudents(all)
+      setAllStudents(results.flat())
     } catch (error) {
       console.error("Failed to fetch students:", error)
       setAllStudents([])
@@ -115,7 +116,6 @@ export default function StudentInfoBar({
     function handleClickOutside(e: MouseEvent) {
       const target = e.target as Node
 
-      // Close student suggestions
       if (
         studentDropdownRef.current &&
         !studentDropdownRef.current.contains(target) &&
@@ -125,7 +125,6 @@ export default function StudentInfoBar({
         setIsStudentInputFocused(false)
       }
 
-      // Close grade dropdown
       if (
         isGradeDropdownOpen &&
         gradeDropdownRef.current &&
@@ -136,7 +135,6 @@ export default function StudentInfoBar({
         setIsGradeDropdownOpen(false)
       }
 
-      // Close class dropdown
       if (
         isClassDropdownOpen &&
         classDropdownRef.current &&
@@ -147,11 +145,11 @@ export default function StudentInfoBar({
         setIsClassDropdownOpen(false)
       }
     }
+
     document.addEventListener("mousedown", handleClickOutside)
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [isGradeDropdownOpen, isClassDropdownOpen])
 
-  // Clear auto-filled student when filters change
   const clearAutoFill = () => {
     if (selectedStudentId) {
       onStudentNameChange("")
@@ -172,7 +170,6 @@ export default function StudentInfoBar({
     clearAutoFill()
   }
 
-
   const handleStudentSelect = (student: StudentOption) => {
     setSelectedStudentId(student.id)
     onStudentNameChange(student.name)
@@ -190,7 +187,6 @@ export default function StudentInfoBar({
     }
   }
 
-  // Auto-dismiss toast after 4 seconds
   useEffect(() => {
     if (toast) {
       const timer = setTimeout(() => setToast(null), 4000)
@@ -226,22 +222,11 @@ export default function StudentInfoBar({
   const searchQuery = studentName.trim().toLowerCase()
   const hasSearchQuery = searchQuery.length >= 1
 
-  // Filter students based on filters and search
   const displayStudents = allStudents.filter((s) => {
-    // Apply class filter if set
     if (selectedClass && s.className !== selectedClass) return false
-    // Apply grade filter if set
     if (gradeLevel && String(s.level) !== gradeLevel) return false
-
-    // If no filters and no search query → show nothing
     if (!hasFilters && !hasSearchQuery) return false
-
-    // If search query is typed, further narrow by name match (starts with)
-    if (hasSearchQuery) {
-      return s.name.toLowerCase().startsWith(searchQuery)
-    }
-
-    // Filters are set but no search query → show all under filter
+    if (hasSearchQuery) return s.name.toLowerCase().startsWith(searchQuery)
     return true
   })
 
@@ -252,23 +237,25 @@ export default function StudentInfoBar({
 
   return (
     <>
-      {/* Toast notification — fixed upper right */}
       {toast && (
         <div
-          className={`fixed top-6 right-6 z-50 flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium shadow-lg animate-in slide-in-from-right duration-300 ${
+          className={`fixed right-6 top-6 z-50 flex animate-in slide-in-from-right items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium shadow-lg duration-300 ${
             toast.type === "success"
-              ? "bg-green-50 border border-green-200 text-green-800"
-              : "bg-red-50 border border-red-200 text-red-800"
+              ? "border border-green-200 bg-green-50 text-green-800"
+              : "border border-red-200 bg-red-50 text-red-800"
           }`}
         >
           {toast.type === "success" ? (
-            <CheckCircle className="h-4 w-4 flex-shrink-0 text-green-500" />
+            <CheckCircle className="h-4 w-4 shrink-0 text-green-500" />
           ) : (
-            <XCircle className="h-4 w-4 flex-shrink-0 text-red-500" />
+            <XCircle className="h-4 w-4 shrink-0 text-red-500" />
           )}
           <span className="flex-1">{toast.message}</span>
           <button
+            type="button"
             onClick={() => setToast(null)}
+            aria-label="Close notification"
+            title="Close notification"
             className={`ml-1 rounded-full p-0.5 transition-colors ${
               toast.type === "success" ? "hover:bg-green-200" : "hover:bg-red-200"
             }`}
@@ -279,17 +266,11 @@ export default function StudentInfoBar({
       )}
 
       <div className="grid grid-cols-[1fr_160px_180px] items-start gap-3">
-        {/* 1) Student Name — primary search input */}
-        <div
-          className="relative rounded-lg px-3 py-2"
-          style={{ background: "rgba(108, 164, 239, 0.09)" }}
-        >
-            <label
-              className="text-[10px] font-bold uppercase tracking-widest mb-0.5 block"
-              style={{ color: "#0C1A6D" }}
-            >
-              STUDENT NAME
-            </label>
+        <div className="relative rounded-lg bg-[rgba(108,164,239,0.09)] px-3 py-2">
+          <label className="mb-0.5 block text-[10px] font-bold uppercase tracking-widest text-[#0C1A6D]">
+            STUDENT NAME
+          </label>
+
           <div className="relative">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#6666FF]" />
             <input
@@ -299,28 +280,19 @@ export default function StudentInfoBar({
               onChange={(e) => handleStudentNameInput(e.target.value)}
               onFocus={() => setIsStudentInputFocused(true)}
               placeholder="Search or type student name"
-              className="w-full rounded-lg py-1.5 pl-8 pr-3 text-sm text-[#00306E] outline-none placeholder:text-[#00306E]/40"
-              style={{
-                background: "#EFFDFF",
-                border: "1px solid #54A4FF",
-                boxShadow: "0px 1px 10px rgba(108, 164, 239, 0.25)",
-              }}
+              className="w-full rounded-lg border border-[#54A4FF] bg-[#EFFDFF] py-1.5 pl-8 pr-3 text-sm text-[#00306E] shadow-[0px_1px_10px_rgba(108,164,239,0.25)] outline-none placeholder:text-[#00306E]/40"
             />
           </div>
 
-          {/* Student search suggestions */}
           {showSuggestions && (
             <div
               ref={studentDropdownRef}
-              className="absolute left-3 right-3 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-lg bg-white py-1"
-              style={{
-                border: "1px solid #54A4FF",
-                boxShadow: "0px 4px 12px rgba(84, 164, 255, 0.2)",
-              }}
+              className="absolute left-3 right-3 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-lg border border-[#54A4FF] bg-white py-1 shadow-[0px_4px_12px_rgba(84,164,255,0.2)]"
             >
               {displayStudents.map((s) => (
                 <button
                   key={s.id}
+                  type="button"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => handleStudentSelect(s)}
                   className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm text-[#00306E] hover:bg-[#E4F4FF]"
@@ -335,7 +307,6 @@ export default function StudentInfoBar({
           )}
         </div>
 
-        {/* 2) Grade Level — chip/tag filter */}
         <div className="flex flex-col gap-1 pt-2">
           <span className="text-[10px] font-bold uppercase tracking-widest text-[#6666FF]">
             Grade Level
@@ -343,20 +314,21 @@ export default function StudentInfoBar({
           <div className="relative" ref={gradeDropdownRef}>
             <button
               ref={gradeButtonRef}
+              type="button"
               onClick={() => {
                 setIsGradeDropdownOpen(!isGradeDropdownOpen)
                 setIsClassDropdownOpen(false)
               }}
               className={`flex w-full items-center justify-between gap-2 rounded-full border px-4 py-1.5 text-xs font-medium transition-all ${
-                  gradeLevel
-                    ? "border-[#6666FF] bg-[#6666FF] text-white shadow-sm"
-                    : "border-dashed border-[#6666FF]/60 bg-transparent text-[#00306E] hover:border-[#6666FF] hover:bg-[#EEEEFF]"
-                }`}
-              >
+                gradeLevel
+                  ? "border-[#6666FF] bg-[#6666FF] text-white shadow-sm"
+                  : "border-dashed border-[#6666FF]/60 bg-transparent text-[#00306E] hover:border-[#6666FF] hover:bg-[#EEEEFF]"
+              }`}
+            >
               <span className="truncate">{gradeLevel ? `Grade ${gradeLevel}` : "Select"}</span>
               {gradeLevel ? (
                 <X
-                  className="h-3 w-3 flex-shrink-0 cursor-pointer hover:opacity-70"
+                  className="h-3 w-3 shrink-0 cursor-pointer hover:opacity-70"
                   onClick={(e) => {
                     e.stopPropagation()
                     onGradeLevelChange("")
@@ -364,24 +336,19 @@ export default function StudentInfoBar({
                   }}
                 />
               ) : (
-                <ChevronDown className="h-3 w-3 flex-shrink-0" />
+                <ChevronDown className="h-3 w-3 shrink-0" />
               )}
             </button>
 
             {isGradeDropdownOpen && (
-              <div
-                className="absolute left-0 top-full z-10 mt-1.5 w-36 max-h-48 overflow-y-auto rounded-lg bg-white py-1"
-                  style={{
-                    border: "1px solid #6666FF",
-                    boxShadow: "0px 4px 12px rgba(102, 102, 255, 0.2)",
-                  }}
-                >
+              <div className="absolute left-0 top-full z-10 mt-1.5 max-h-48 w-36 overflow-y-auto rounded-lg border border-[#6666FF] bg-white py-1 shadow-[0px_4px_12px_rgba(102,102,255,0.2)]">
                 {Array.from({ length: 10 }, (_, i) => {
                   const grade = String(i + 1)
                   const isActive = gradeLevel === grade
                   return (
                     <button
                       key={grade}
+                      type="button"
                       onClick={() => {
                         if (isActive) {
                           onGradeLevelChange("")
@@ -405,7 +372,6 @@ export default function StudentInfoBar({
           </div>
         </div>
 
-        {/* 3) Class — chip/tag filter */}
         <div className="flex flex-col gap-1 pt-2">
           <span className="text-[10px] font-bold uppercase tracking-widest text-[#6666FF]">
             Class
@@ -413,6 +379,7 @@ export default function StudentInfoBar({
           <div className="relative" ref={classDropdownRef}>
             <button
               ref={classButtonRef}
+              type="button"
               onClick={() => {
                 setIsClassDropdownOpen(!isClassDropdownOpen)
                 setIsGradeDropdownOpen(false)
@@ -426,7 +393,7 @@ export default function StudentInfoBar({
               <span className="truncate">{selectedClass || "Select"}</span>
               {selectedClass ? (
                 <X
-                  className="h-3 w-3 flex-shrink-0 cursor-pointer hover:opacity-70"
+                  className="h-3 w-3 shrink-0 cursor-pointer hover:opacity-70"
                   onClick={(e) => {
                     e.stopPropagation()
                     setSelectedClass("")
@@ -440,25 +407,22 @@ export default function StudentInfoBar({
             </button>
 
             {isClassDropdownOpen && (
-              <div
-                className="absolute right-0 top-full z-10 mt-1.5 w-44 max-h-48 overflow-y-auto rounded-lg bg-white py-1"
-                style={{
-                  border: "1px solid #6666FF",
-                  boxShadow: "0px 4px 12px rgba(102, 102, 255, 0.2)",
-                }}
-              >
+              <div className="absolute right-0 top-full z-10 mt-1.5 max-h-48 w-44 overflow-y-auto rounded-lg border border-[#6666FF] bg-white py-1 shadow-[0px_4px_12px_rgba(102,102,255,0.2)]">
                 <button
+                  type="button"
                   onClick={() => handleClassChange("create-new")}
                   className="flex w-full items-center gap-1.5 border-b border-[#EEEEFF] px-3 py-1.5 text-left text-sm font-semibold text-[#6666FF] hover:bg-[#EEEEFF]"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   Create New Class
                 </button>
+
                 {classes.map((cls, idx) => {
                   const isActive = selectedClass === cls
                   return (
                     <button
                       key={`${cls}-${idx}`}
+                      type="button"
                       onClick={() => {
                         if (isActive) {
                           setSelectedClass("")
@@ -484,12 +448,12 @@ export default function StudentInfoBar({
         </div>
       </div>
 
-      {/* Create Class Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create New Class</DialogTitle>
           </DialogHeader>
+
           <input
             placeholder="Enter class name"
             value={newClassName}
@@ -498,13 +462,9 @@ export default function StudentInfoBar({
               if (e.key === "Enter") handleCreateClass()
             }}
             autoFocus
-            className="w-full rounded-lg px-3 py-2 text-sm text-[#00306E] outline-none placeholder:text-[#00306E]/40"
-            style={{
-              background: "#EFFDFF",
-              border: "1px solid #54A4FF",
-              boxShadow: "0px 1px 10px rgba(108, 164, 239, 0.25)",
-            }}
+            className="w-full rounded-lg border border-[#54A4FF] bg-[#EFFDFF] px-3 py-2 text-sm text-[#00306E] shadow-[0px_1px_10px_rgba(108,164,239,0.25)] outline-none placeholder:text-[#00306E]/40"
           />
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancel

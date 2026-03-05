@@ -12,7 +12,6 @@ interface GetPassageByIdResult {
     content: string;
     language: string;
     level: number;
-    tags: string;
     testType: string;
     createdAt: Date;
     updatedAt: Date;
@@ -45,7 +44,6 @@ export async function getPassageByIdService(
         content: true,
         language: true,
         level: true,
-        tags: true,
         testType: true,
         createdAt: true,
         updatedAt: true,

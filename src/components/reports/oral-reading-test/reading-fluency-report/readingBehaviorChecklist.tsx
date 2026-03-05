@@ -37,7 +37,7 @@ export default function BehaviorChecklist({
   otherObservations = "",
 }: BehaviorChecklistProps) {
   const [checkedItems, setCheckedItems] = useState<boolean[]>(
-    behaviors.map((b) => b.checked ?? false)
+    behaviors.map((b) => b.checked ?? false),
   );
   const [observations, setObservations] = useState(otherObservations);
 
@@ -51,8 +51,10 @@ export default function BehaviorChecklist({
 
   return (
     <div className="bg-[#EFFDFF] border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] rounded-2xl p-5 pb-3 flex flex-col">
-      <h3 className="text-base font-bold text-[#003366] mb-0.5">Oral Behavior Checklist</h3>
-      <p className="text-sm text-[rgba(40,19,19,0.71)] mb-4" style={{ fontFamily: "var(--font-kanit)" }}>
+      <h3 className="text-base font-bold text-[#003366] mb-0.5">
+        Oral Behavior Checklist
+      </h3>
+      <p className="mb-4 font-kanit text-sm text-[rgba(40,19,19,0.71)]">
         Behavior analysis during reading
       </p>
 
@@ -71,13 +73,23 @@ export default function BehaviorChecklist({
               >
                 {checkedItems[i] && (
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M3 8l3 3 7-7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path
+                      d="M3 8l3 3 7-7"
+                      stroke="white"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 )}
               </div>
               <div className="flex flex-col">
-                <span className="text-xs font-semibold text-[#31318A]">{item.label}</span>
-                <span className="text-[10px] text-[#31318A]">{item.description}</span>
+                <span className="text-xs font-semibold text-[#31318A]">
+                  {item.label}
+                </span>
+                <span className="text-[10px] text-[#31318A]">
+                  {item.description}
+                </span>
               </div>
             </button>
             <div className="border-b border-[rgba(18,48,220,0.25)]" />

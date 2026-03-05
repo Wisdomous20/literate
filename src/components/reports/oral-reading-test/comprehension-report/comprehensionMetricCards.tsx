@@ -10,27 +10,40 @@ interface MetricCardProps {
   iconColor: string
   title: string
   value: React.ReactNode
-  valueColor: string
-  subtitle: string
+  valueColorClass: string
 }
 
-function MetricCard({ icon: Icon, iconColor, title, value, valueColor, subtitle }: MetricCardProps) {
+function getLevelColorClass(level: string): string {
+  if (!level) return "text-[#CE330C]"
+  switch (level.toLowerCase()) {
+    case "frustration":
+      return "text-[#DC2626]"
+    case "instructional":
+      return "text-[#2563EB]"
+    case "independent":
+      return "text-[#16A34A]"
+    default:
+      return "text-[#CE330C]"
+  }
+}
+
+function MetricCard({
+  icon: Icon,
+  iconColor,
+  title,
+  value,
+  valueColorClass,
+}: MetricCardProps) {
   return (
-    <div className="flex flex-col bg-[#EFFDFF] border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] rounded-2xl p-6 gap-2">
+    <div className="flex flex-1 flex-col justify-center gap-1 rounded-xl border border-[#54A4FF] bg-[#EFFDFF] px-4 py-3 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
       <div className="flex items-center gap-2">
-        <div className="flex items-center justify-center w-12 h-12 bg-[rgba(74,74,252,0.06)] border border-[#DAE6FF] rounded-[10px]">
-          <Icon size={20} className={iconColor} />
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[#DAE6FF] bg-[rgba(74,74,252,0.06)]">
+          <Icon size={14} className={iconColor} />
         </div>
-        <h3 className="text-lg font-bold text-[#003366] leading-tight">{title}</h3>
+        <h3 className="text-xs font-bold leading-tight text-[#003366]">{title}</h3>
       </div>
-      <p className="text-[43px] font-bold mt-2" style={{ color: valueColor }}>
+      <p className={`pl-9 text-2xl font-bold ${valueColorClass}`}>
         {value}
-      </p>
-      <p
-        className="text-lg text-[#162DB0]"
-        style={{ fontFamily: "Kanit, sans-serif" }}
-      >
-        {subtitle}
       </p>
     </div>
   )
@@ -41,24 +54,20 @@ export default function ComprehensionMetricCards({
   comprehensionLevel,
 }: ComprehensionMetricCardsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="flex h-full flex-col gap-3">
       <MetricCard
         icon={FileText}
         iconColor="text-[#1A6673]"
-        title="Percentage Grade"
+        title="Comprehension Rate"
         value={`${percentageGrade}%`}
-        valueColor="#1A6673"
-        subtitle="Percentage"
+        valueColorClass="text-[#1A6673]"
       />
       <MetricCard
         icon={ClipboardCheck}
         iconColor="text-[#CE330C]"
         title="Comprehension Level"
-        value={
-          <span className="text-[26px]">{comprehensionLevel}</span>
-        }
-        valueColor="#CE330C"
-        subtitle="Comprehension Level"
+        value={<span className="text-xl">{comprehensionLevel}</span>}
+        valueColorClass={getLevelColorClass(comprehensionLevel)}
       />
     </div>
   )

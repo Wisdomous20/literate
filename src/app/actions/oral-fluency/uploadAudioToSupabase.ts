@@ -27,7 +27,7 @@ export async function uploadAudioToSupabase(
     const { data, error } = await supabase.storage
       .from("audio-recordings")
       .upload(filePath, buffer, {
-        contentType: file.type || "audio/webm",
+        contentType: file.type || "audio/wav",
         upsert: false,
       })
 

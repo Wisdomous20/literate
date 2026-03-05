@@ -77,7 +77,12 @@ export default function AllClassesPage({
           </div>
           {/* School Year Dropdown and Create Class Button */}
           <div className="flex items-center gap-3">
+            <label htmlFor="schoolYear" className="sr-only">
+              Select school year
+            </label>
             <select
+              id="schoolYear"
+              name="schoolYear"
               className="rounded-lg border border-[#54a4ff] bg-[#f4fcfd] px-3 py-2 text-[#00306E] focus:outline-none"
               value={selectedYear}
               onChange={(e) => onYearChange(e.target.value)}
