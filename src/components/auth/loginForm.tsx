@@ -61,16 +61,18 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const [loginSuccess, setLoginSuccess] = useState(false);
 
-    useEffect(() => {
-    if (session?.user?.role) {
+
+  useEffect(() => {
+    if (loginSuccess && session?.user?.role) {
       if (session.user.role === "ADMIN") {
         router.push("/admin");
       } else {
         router.push("/dashboard");
       }
     }
-  }, [session, router]);
+  }, [session, loginSuccess, router]);
 
   // Validation function
   const validateForm = () => {
@@ -95,33 +97,36 @@ export function LoginForm() {
     return true;
   };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    if (!validateForm()) return;
 
-    setIsLoading(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError(null);
+  if (!validateForm()) return;
 
-    try {
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
+  setIsLoading(true);
 
-      if (result?.error) {
-        setError("Invalid email or password");
-        setIsLoading(false); 
-        return;
-      }
-      // ✅ Don't manually getSession() — useEffect above handles redirect
-      // isLoading stays true until redirect happens (which is fine UX)
-    } catch (err) {
-      console.error("Login error:", err);
-      setError("An unexpected error occurred. Please try again.");
+  try {
+    const result = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
+
+    if (result?.error) {
+      setError("Invalid email or password");
       setIsLoading(false);
+      return;
     }
-  };
+
+    if (result?.ok) {
+      setLoginSuccess(true); 
+    }
+  } catch (err) {
+    console.error("Login error:", err);
+    setError("An unexpected error occurred. Please try again.");
+    setIsLoading(false);
+  }
+};
 
 
   return (
