@@ -13,7 +13,7 @@ export default function PassageInventory() {
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const router = useRouter();
-  const menuRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -22,11 +22,10 @@ export default function PassageInventory() {
         setMenuOpenId(null);
       }
     }
-    if (menuOpenId) {
-      document.addEventListener("mousedown", handleClickOutside);
-    } else {
-      document.removeEventListener("mousedown", handleClickOutside);
-    }
+
+    if (!menuOpenId) return;
+
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -35,6 +34,7 @@ export default function PassageInventory() {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this passage?")) return;
     setDeletingId(id);
+
     try {
       await deletePassageAction({ id });
       await queryClient.invalidateQueries({ queryKey: ["passages"] });
@@ -61,15 +61,11 @@ export default function PassageInventory() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 px-10 pb-10">
         {isLoading ? (
           <div className="col-span-full flex justify-center items-center h-40">
-            <span className="text-[#00306E]/60 text-lg">
-              Loading passages...
-            </span>
+            <span className="text-[#00306E]/60 text-lg">Loading passages...</span>
           </div>
         ) : passages.length === 0 ? (
           <div className="col-span-full flex justify-center items-center h-40">
-            <span className="text-[#00306E]/60 text-lg">
-              No passages found.
-            </span>
+            <span className="text-[#00306E]/60 text-lg">No passages found.</span>
           </div>
         ) : (
           passages.map((p) => (
@@ -77,19 +73,28 @@ export default function PassageInventory() {
               key={p.id}
               className="group flex flex-col justify-between rounded-2xl bg-white border border-[#E4F4FF] shadow hover:shadow-lg transition-all p-6 cursor-pointer hover:scale-[1.02] relative"
             >
-              <div className="absolute right-4 top-4 z-10" ref={menuRef}>
+              <div
+                className="absolute right-4 top-4 z-10"
+                ref={menuOpenId === p.id ? menuRef : null}
+              >
                 <button
                   type="button"
                   className="p-1"
-                  onClick={() =>
-                    setMenuOpenId(menuOpenId === p.id ? null : p.id)
-                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuOpenId(menuOpenId === p.id ? null : p.id);
+                  }}
                   aria-label="More options"
                 >
                   <MoreVertical className="w-5 h-5 text-[#2E2E68]" />
                 </button>
+
                 {menuOpenId === p.id && (
-                  <div className="absolute right-0 mt-2 w-32 rounded-lg bg-white border shadow-lg flex flex-col z-20">
+                  <div
+                    className="absolute right-0 mt-2 w-32 rounded-lg bg-white border shadow-lg flex flex-col z-20"
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <button
                       type="button"
                       className="px-4 py-2 text-left hover:bg-[#E4F4FF] text-[#00306E]"
@@ -111,7 +116,6 @@ export default function PassageInventory() {
                   </div>
                 )}
               </div>
-              {/* End menu */}
 
               <Link
                 href={`/admin/passages/${p.id}`}
@@ -126,8 +130,7 @@ export default function PassageInventory() {
                       {p.title}
                     </h2>
                     <div className="text-xs text-[#00306E]/60">
-                      {p.language} •{" "}
-                      {p.content?.split(/\s+/).filter(Boolean).length || 0}{" "}
+                      {p.language} • {p.content?.split(/\s+/).filter(Boolean).length || 0}{" "}
                       words
                     </div>
                   </div>

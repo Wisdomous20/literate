@@ -116,7 +116,7 @@ export function CreateClassModal({
   if (typeof window === "undefined" || !isOpen) return null;
 
   const modalContent = (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center">
+    <div className="fixed inset-0 z-99999 flex items-center justify-center">
       {/* Backdrop */}
       <div
         ref={backdropRef}
@@ -129,7 +129,7 @@ export function CreateClassModal({
         ref={modalRef}
         className="relative animate-in fade-in zoom-in-95 duration-300"
       >
-        <div className="w-[500px] rounded-[30px] bg-white p-8 shadow-[0px_10px_60px_rgba(0,48,110,0.25)]">
+        <div className="w-125 rounded-[30px] bg-white p-8 shadow-[0px_10px_60px_rgba(0,48,110,0.25)]">
           {/* Close button */}
           <button
             type="button"
@@ -164,7 +164,7 @@ export function CreateClassModal({
             <div className="flex items-center gap-6">
               <label
                 htmlFor="className"
-                className="w-[120px] shrink-0 text-base font-semibold text-[#00306E]"
+                className="w-30 shrink-0 text-base font-semibold text-[#00306E]"
               >
                 Class Name
               </label>
@@ -182,7 +182,7 @@ export function CreateClassModal({
             <div className="flex items-center gap-6">
               <label
                 htmlFor="schoolYear"
-                className="w-[120px] shrink-0 text-base font-semibold text-[#00306E]"
+                className="w-30 shrink-0 text-base font-semibold text-[#00306E]"
               >
                 School Year
               </label>

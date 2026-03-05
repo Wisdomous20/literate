@@ -66,7 +66,7 @@ export function SignupForm() {
         // Optionally redirect after successful registration
         // router.push("/auth/login")
       }
-    } catch (err) {
+    } catch {
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);

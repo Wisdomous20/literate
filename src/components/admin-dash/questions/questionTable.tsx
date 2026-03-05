@@ -42,17 +42,38 @@ export function QuestionTable({
 
   return (
     <div>
-      <div className="flex flex-wrap gap-4 mb-4">
+      <div className="mb-4 flex flex-wrap gap-4">
+        <label htmlFor="questionSearch" className="sr-only">
+          Search questions
+        </label>
         <input
+          id="questionSearch"
+          name="questionSearch"
           type="text"
           placeholder="Search question..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="rounded-lg border border-[#E4F4FF] px-4 py-2 text-sm"
         />
+
+        <label htmlFor="tagFilter" className="sr-only">
+          Filter by tag
+        </label>
         <select
+          id="tagFilter"
+          name="tagFilter"
           value={tagFilter}
-          onChange={(e) => setTagFilter(e.target.value as any)}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (
+              value === "all" ||
+              value === "Literal" ||
+              value === "Inferential" ||
+              value === "Critical"
+            ) {
+              setTagFilter(value);
+            }
+          }}
           className="rounded-lg border border-[#E4F4FF] px-4 py-2 text-sm"
         >
           <option value="all">All Tags</option>
@@ -61,6 +82,7 @@ export function QuestionTable({
           <option value="Critical">Critical</option>
         </select>
       </div>
+
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead>

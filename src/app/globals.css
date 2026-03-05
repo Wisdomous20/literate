@@ -142,11 +142,6 @@ input::-ms-clear {
   display: none;
 }
 
-/* Oral reading test scrollbars — thin purple (apply on specific elements only) */
-.oral-reading-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(102, 102, 255, 0.3) transparent;
-}
 .oral-reading-scroll::-webkit-scrollbar {
   width: 6px;
   height: 6px;

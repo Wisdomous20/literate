@@ -132,20 +132,25 @@ export default function OralReadingReportPage() {
   const session = loadSession();
   const analysis = session.analysisResult;
 
-  const [audioSrc, setAudioSrc] = useState<string | null>(null);
-  useEffect(() => {
+  // Load recorded audio from sessionStorage (no setState inside effect body)
+  const [audioSrc] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
     try {
       const audioBase64 = sessionStorage.getItem(AUDIO_STORAGE_KEY);
-      if (audioBase64) {
-        const blob = base64ToBlob(audioBase64);
-        const url = URL.createObjectURL(blob);
-        setAudioSrc(url);
-        return () => URL.revokeObjectURL(url);
-      }
+      if (!audioBase64) return null;
+      const blob = base64ToBlob(audioBase64);
+      return URL.createObjectURL(blob);
     } catch (err) {
       console.error("Failed to load audio from sessionStorage:", err);
+      return null;
     }
-  }, []);
+  });
+
+  useEffect(() => {
+    return () => {
+      if (audioSrc) URL.revokeObjectURL(audioSrc);
+    };
+  }, [audioSrc]);
 
   const studentName = session.studentName || "—";
   const gradeLevel = session.gradeLevel ? `Grade ${session.gradeLevel}` : "—";
@@ -175,7 +180,7 @@ export default function OralReadingReportPage() {
     <div className="flex h-screen flex-col overflow-hidden">
       <ReportHeader />
 
-      <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth max-w-[1200px] mx-auto px-6 py-6 md:px-8 lg:px-12 space-y-6 w-full">
+      <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth max-w-300 mx-auto px-6 py-6 md:px-8 lg:px-12 space-y-6 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
           <StudentInfoCard
             studentName={studentName}
