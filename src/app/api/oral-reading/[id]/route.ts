@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     const result = await createOralFluencySessionService({
       assessmentId: assessmentResult.assessment.id,
       audioBuffer,
-      fileName: audioFile.name || "recording.webm",
+      fileName: audioFile.name || "recording.wav",
       audioUrl,
     });
 

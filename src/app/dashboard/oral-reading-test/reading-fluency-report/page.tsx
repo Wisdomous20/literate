@@ -22,7 +22,7 @@ const AUDIO_STORAGE_KEY = "oral-reading-audio";
 function base64ToBlob(base64: string): Blob {
   const [meta, data] = base64.split(",");
   const mimeMatch = meta.match(/:(.*?);/);
-  const mime = mimeMatch ? mimeMatch[1] : "audio/webm";
+  const mime = mimeMatch ? mimeMatch[1] : "audio/wa";
   const binary = atob(data);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {

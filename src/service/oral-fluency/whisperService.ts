@@ -87,9 +87,10 @@ export async function transcribeAudio(
   language: string,
   passageText?: string
 ): Promise<WhisperTranscriptResponse> {
-  const audioBytes = Uint8Array.from(audioBuffer);
-  const file = new File([audioBytes], fileName, { type: "audio/webm" });
+  const file = new File([audioBuffer], fileName, { type: "audio/wav" });
   const whisperLang = getWhisperLanguageCode(language);
+
+
   // Build a spelling guide prompt from the passage to steer Whisper
   const prompt = passageText ? buildSpellingGuidePrompt(passageText) : undefined;
 
@@ -99,6 +100,7 @@ export async function transcribeAudio(
     response_format: "verbose_json",
     timestamp_granularities: ["word", "segment"],
     language: whisperLang,
+    temperature: 0, // deterministic output
     ...(prompt && { prompt }),
   });
 
