@@ -28,7 +28,7 @@ const menuItems = [
   },
   {
     label: "Reading Fluency Test",
-    href: "/dashboard/reading-fluency",
+    href: "/dashboard/reading-fluency-test",
     icon: BookOpen,
   },
   {
