@@ -24,7 +24,7 @@ import { getClassListBySchoolYear } from "@/app/actions/class/getClassList";
 import { ReadinessCheckButton } from "@/components/oral-reading-test/readinessCheck";
 import { createStudent } from "@/app/actions/student/createStudent";
 import type { OralFluencyAnalysis } from "@/types/oral-reading";
-
+import { convertToWav } from "@/utils/convertToWav"
 // Helper to get current school year
 function getCurrentSchoolYear(): string {
   const now = new Date();
@@ -437,10 +437,10 @@ export default function OralReadingTestPage() {
       console.log("Submit blocked - missing:", {
         hasBlob: !!recordedAudioBlob,
         selectedPassage,
+        selectedStudentId,
       });
       return;
     }
-
     // If no existing student selected, auto-create a new student
     let studentId = selectedStudentId;
     if (!studentId) {
@@ -484,10 +484,11 @@ export default function OralReadingTestPage() {
 
     setIsSubmitting(true);
     try {
-      const { uploadAudioToSupabase } =
-        await import("@/utils/uploadAudioToSupabase");
+      const { uploadAudioToSupabase } = await import("@/utils/uploadAudioToSupabase")
+      const wavBlob = await convertToWav(recordedAudioBlob)
+
       const supabaseAudioUrl = await uploadAudioToSupabase(
-        recordedAudioBlob,
+        wavBlob,
         studentId,
         selectedPassage,
       );
@@ -499,11 +500,11 @@ export default function OralReadingTestPage() {
 
       console.log("Audio uploaded to:", supabaseAudioUrl);
 
-      const formData = new FormData();
-      formData.append("studentId", studentId);
-      formData.append("passageId", selectedPassage);
-      formData.append("audioUrl", supabaseAudioUrl);
-      formData.append("audio", recordedAudioBlob, "recording.webm");
+      const formData = new FormData()
+      formData.append("studentId", studentId)
+      formData.append("passageId", selectedPassage)
+      formData.append("audioUrl", supabaseAudioUrl)
+      formData.append("audio", wavBlob, "recording.wav")
 
       console.log("Sending to API:", `/api/oral-reading/${selectedPassage}`);
 
