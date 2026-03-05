@@ -9,10 +9,6 @@ import {
   AssessmentTypeFilterDropdown,
   AssessmentTypeFilter,
 } from "@/components/class-lists/assessmentTypeFilter";
-import {
-  AssessmentTypeFilterDropdown,
-  AssessmentTypeFilter,
-} from "@/components/class-lists/assessmentTypeFilter";
 import { StudentTable } from "@/components/class-lists/studentTable";
 import { ClassInfo } from "@/components/class-lists/classInfo";
 import { CreateStudentModal } from "@/components/class-lists/createStudentModal";
@@ -64,8 +60,7 @@ export default function ClassListsPage() {
   );
 
   // Track assessment type and stat card collapse
-  const [assessmentType, setAssessmentType] =
-    useState<AssessmentTypeFilter>("ORAL_READING");
+ 
   const [assessmentType, setAssessmentType] =
     useState<AssessmentTypeFilter>("ORAL_READING");
   const [showStats, setShowStats] = useState(true);
