@@ -3,10 +3,11 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signIn, getSession } from "next-auth/react";
+import { useSession, signIn } from "next-auth/react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { useEffect } from "react";
 
 // SVG icons for show/hide password
 const EyeIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -52,6 +53,7 @@ const EyeOffIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 export function LoginForm() {
+  const { data: session } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -59,6 +61,16 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+
+    useEffect(() => {
+    if (session?.user?.role) {
+      if (session.user.role === "ADMIN") {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
+    }
+  }, [session, router]);
 
   // Validation function
   const validateForm = () => {
@@ -83,14 +95,10 @@ export function LoginForm() {
     return true;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
-    // Validate before submitting
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsLoading(true);
 
@@ -102,36 +110,19 @@ export function LoginForm() {
       });
 
       if (result?.error) {
-        setError(result.error || "Invalid email or password");
-        setIsLoading(false);
+        setError("Invalid email or password");
+        setIsLoading(false); 
         return;
       }
-
-      if (result?.ok) {
-        // Get updated session
-        const session = await getSession();
-
-        if (!session?.user?.role) {
-          setError("Unable to determine user role. Please try again.");
-          setIsLoading(false);
-          return;
-        }
-
-        // Redirect based on role
-        if (session.user.role === "ADMIN") {
-          router.push("/admin");
-        } else {
-          router.push("/dashboard");
-        }
-
-        router.refresh();
-      }
+      // ✅ Don't manually getSession() — useEffect above handles redirect
+      // isLoading stays true until redirect happens (which is fine UX)
     } catch (err) {
       console.error("Login error:", err);
       setError("An unexpected error occurred. Please try again.");
       setIsLoading(false);
     }
   };
+
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
