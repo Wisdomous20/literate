@@ -1,6 +1,5 @@
 import { NextAuthOptions, User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "./prisma";
 import { loginUser } from "@/service/auth/login";
 import { userType } from "@/generated/prisma/enums";
@@ -8,7 +7,6 @@ import { userType } from "@/generated/prisma/enums";
 
 export const authOptions: NextAuthOptions = {
   debug: true,
-  adapter: PrismaAdapter(prisma),
   session: {
     strategy: "jwt",
   },
@@ -41,7 +39,6 @@ export const authOptions: NextAuthOptions = {
           throw new Error(result.error || "Invalid credentials");
         }
 
-        // Fetch the user's role from the database
         const user = await prisma.user.findUnique({
           where: { id: result.user.id },
           select: { role: true },
@@ -52,7 +49,6 @@ export const authOptions: NextAuthOptions = {
         }
 
         const role = user.role as userType;
-
 
         return {
           id: result.user.id,
