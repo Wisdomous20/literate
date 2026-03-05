@@ -3,6 +3,7 @@ import { transcribeAudio } from "./whisperService";
 import { alignWords } from "./alignmentService";
 import { detectMiscues } from "./miscueDetectionService";
 import { detectBehaviors } from "./behaviorDetectionService";
+import { postCorrectTranscription } from "@/utils/posCorrectTranscription";
 
 
 function computeOralFluencyScore(totalWords: number, totalMiscues: number): number {
@@ -48,11 +49,17 @@ export async function analyzeOralFluency(
     end: w.end,
   }));
 
+  const correctedWords = postCorrectTranscription(
+    spokenWords.map((w) => ({ word: w.word, start: w.start, end: w.end })),
+    normalizedPassageWords
+  );
+
   // 3. Align passage ↔ spoken words
   const alignedWords = alignWords(
     normalizedPassageWords,
-    spokenWords.map(w => ({ word: w.word, start: w.start, end: w.end }))
+    correctedWords.map((w) => ({ word: w.word, start: w.start, end: w.end }))
   );
+  
   // 4. Detect miscues (language-aware for edit distance)
   const miscues = detectMiscues(alignedWords, language);
 
