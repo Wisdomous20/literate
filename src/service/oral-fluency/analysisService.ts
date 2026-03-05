@@ -17,6 +17,15 @@ function classifyReadingLevel(oralFluencyScore: number): "INDEPENDENT" | "INSTRU
   return "FRUSTRATION";
 }
 
+function normalizeWord(word: string): string {
+  return word
+    .toLowerCase()
+    .replace(/[.,!?;:'""\u2018\u2019\u201C\u201D\u2014\u2013\-()[\]{}]/g, "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // strip diacritics
+    .trim()
+}
+
 export async function analyzeOralFluency(
   audioBuffer: Buffer,
   fileName: string,
@@ -28,16 +37,22 @@ export async function analyzeOralFluency(
 
   //add layer to normalize passage words and transcribed words for better comparison (e.g. ignore punctuation, case, etc.)
   // 2. Tokenize passage
+
   const passageWords = passageText.split(/\s+/).filter((w) => w.length > 0);
+  const normalizedPassageWords = passageWords.map(normalizeWord);
+
   const spokenWords = whisperResult.words.map((w) => ({
-    word: w.word,
+    word: normalizeWord(w.word),
+    originalWord: w.word,
     start: w.start,
     end: w.end,
   }));
 
   // 3. Align passage ↔ spoken words
-  const alignedWords = alignWords(passageWords, spokenWords);
-
+  const alignedWords = alignWords(
+    normalizedPassageWords,
+    spokenWords.map(w => ({ word: w.word, start: w.start, end: w.end }))
+  );
   // 4. Detect miscues (language-aware for edit distance)
   const miscues = detectMiscues(alignedWords, language);
 
