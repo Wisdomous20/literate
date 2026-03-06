@@ -33,7 +33,7 @@ const menuItems = [
   },
   {
     label: "Reading Comprehension Test",
-    href: "/dashboard/reading-comprehension",
+    href: "/dashboard/reading-comprehension-test",
     icon: ClipboardList,
   },
 ];
