@@ -16,15 +16,25 @@ export async function submitComprehensionService(input: SubmitComprehensionInput
   const { assessmentId, answers } = input;
 
   try {
-    // Get assessment with passage and its quiz + questions
+    // Only fetch what we need — use select to reduce data transfer
     const assessment = await prisma.assessment.findUnique({
       where: { id: assessmentId },
-      include: {
+      select: {
+        id: true,
         passage: {
-          include: {
+          select: {
+            content: true,
             quiz: {
-              include: {
-                questions: true,
+              select: {
+                id: true,
+                questions: {
+                  select: {
+                    id: true,
+                    type: true,
+                    questionText: true,
+                    correctAnswer: true,
+                  },
+                },
               },
             },
           },
@@ -49,32 +59,41 @@ export async function submitComprehensionService(input: SubmitComprehensionInput
     const questions = quiz.questions;
     const questionMap = new Map(questions.map((q) => [q.id, q]));
 
-    // Grade each answer
-    const gradedAnswers = await Promise.all(
-      answers.map(async (a) => {
-        const question = questionMap.get(a.questionId);
-        if (!question) {
-          return { ...a, isCorrect: false };
-        }
+    // Separate MC and essay answers — grade MC synchronously, essay in parallel
+    const mcResults: { questionId: string; answer: string; isCorrect: boolean }[] = [];
+    const essayPromises: Promise<{ questionId: string; answer: string; isCorrect: boolean }>[] = [];
 
-        if (question.type === "MULTIPLE_CHOICE") {
-          const isCorrect =
-            question.correctAnswer?.trim().toLowerCase() ===
-            a.answer.trim().toLowerCase();
-          return { ...a, isCorrect };
-        }
+    for (const a of answers) {
+      const question = questionMap.get(a.questionId);
+      if (!question) {
+        mcResults.push({ ...a, isCorrect: false });
+        continue;
+      }
 
-        // Essay questions — grade with OpenAI
-        const essayResult = await gradeEssayAnswer({
-          questionText: question.questionText,
-          correctAnswer: question.correctAnswer,
-          studentAnswer: a.answer,
-          passageContent: passage.content,
-        });
+      if (question.type === "MULTIPLE_CHOICE") {
+        const isCorrect =
+          question.correctAnswer?.trim().toLowerCase() ===
+          a.answer.trim().toLowerCase();
+        mcResults.push({ ...a, isCorrect });
+      } else {
+        // Fire off all essay grading calls concurrently
+        essayPromises.push(
+          gradeEssayAnswer({
+            questionText: question.questionText,
+            correctAnswer: question.correctAnswer,
+            passageContent: passage.content,
+            studentAnswer: a.answer,
+          }).then((essayResult) => ({
+            ...a,
+            isCorrect: essayResult.isCorrect,
+          }))
+        );
+      }
+    }
 
-        return { ...a, isCorrect: essayResult.isCorrect };
-      })
-    );
+    // All essay grades run in TRUE parallel (not sequential)
+    const essayResults = await Promise.all(essayPromises);
+    const gradedAnswers = [...mcResults, ...essayResults];
 
     const totalItems = questions.length;
     const score = gradedAnswers.filter((a) => a.isCorrect === true).length;
@@ -82,39 +101,35 @@ export async function submitComprehensionService(input: SubmitComprehensionInput
     const level = classifyComprehensionLevel(percentage);
 
     // Create ComprehensionTest + ComprehensionAnswers
-    const result = await prisma.$transaction(async (tx) => {
-      const comprehensionTest = await tx.comprehensionTest.create({
-        data: {
-          assessmentId,
-          quizId: quiz.id,
-          score,
-          totalItems,
-          classificationLevel: level,
-          answers: {
-            create: gradedAnswers.map((a) => ({
-              questionId: a.questionId,
-              answer: a.answer,
-              isCorrect: a.isCorrect,
-            })),
-          },
+    const comprehensionTest = await prisma.comprehensionTest.create({
+      data: {
+        assessmentId,
+        quizId: quiz.id,
+        score,
+        totalItems,
+        classificationLevel: level,
+        answers: {
+          create: gradedAnswers.map((a) => ({
+            questionId: a.questionId,
+            answer: a.answer,
+            isCorrect: a.isCorrect,
+          })),
         },
-        include: {
-          answers: { include: { question: true } },
-        },
-      });
-
-      return { comprehensionTest };
+      },
+      include: {
+        answers: { include: { question: true } },
+      },
     });
 
     return {
       success: true,
       assessmentId,
-      comprehensionTestId: result.comprehensionTest.id,
+      comprehensionTestId: comprehensionTest.id,
       score,
       totalItems,
       percentage: Math.round(percentage),
       level,
-      answers: result.comprehensionTest.answers,
+      answers: comprehensionTest.answers,
     };
   } catch (error) {
     console.error("Error submitting comprehension test:", error);

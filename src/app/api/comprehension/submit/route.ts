@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAssessmentService } from "@/service/assessment/createAssessmentService";
 import { submitComprehensionService } from "@/service/comprehension-test/submitComprehensionService";
 
-export const maxDuration = 60; // allow time for OpenAI essay grading
+export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. Create assessment FIRST
+    // 1. Create assessment
     const assessmentResult = await createAssessmentService({
       studentId,
       passageId,
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Then create comprehension test with assessmentId
+    // 2. Submit comprehension test (now internally optimized)
     const result = await submitComprehensionService({
       assessmentId: assessmentResult.assessment.id,
       answers,
