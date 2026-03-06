@@ -127,6 +127,7 @@ export default function OralReadingTestPage() {
   const [gradeLevel, setGradeLevel] = useState("");
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [isLoadingClasses, setIsLoadingClasses] = useState(true);
+  const [classLoadError, setClassLoadError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [selectedClassName, setSelectedClassName] = useState<string>("");
@@ -293,19 +294,27 @@ export default function OralReadingTestPage() {
   useEffect(() => {
     async function fetchClasses() {
       setIsLoadingClasses(true);
-      const schoolYear = getCurrentSchoolYear();
-      const result = await getClassListBySchoolYear(schoolYear);
+      setClassLoadError(false);
+      try {
+        const schoolYear = getCurrentSchoolYear();
+        const result = await getClassListBySchoolYear(schoolYear);
 
-      if (result.success && result.classes) {
-        const mappedClasses: ClassItem[] = result.classes.map((c) => ({
-          id: c.id,
-          name: c.name,
-        }));
-        setClasses(mappedClasses);
-      } else {
+        if (result.success && result.classes) {
+          const mappedClasses: ClassItem[] = result.classes.map((c) => ({
+            id: c.id,
+            name: c.name,
+          }));
+          setClasses(mappedClasses);
+        } else {
+          setClassLoadError(true);
+          setClasses([]);
+        }
+      } catch {
+        setClassLoadError(true);
         setClasses([]);
+      } finally {
+        setIsLoadingClasses(false);
       }
-      setIsLoadingClasses(false);
     }
 
     fetchClasses();
@@ -635,7 +644,52 @@ export default function OralReadingTestPage() {
               passageExpanded ? "gap-0" : "gap-3"
             }`}
           >
-            {!passageExpanded && !isLoadingClasses && (
+            {!passageExpanded && isLoadingClasses && (
+              <div className="grid grid-cols-[1fr_160px_180px] items-start gap-3">
+                {/* Student Name skeleton */}
+                <div className="rounded-lg bg-[rgba(108,164,239,0.09)] px-3 py-2">
+                  <div className="mb-1.5 h-2.5 w-20 animate-pulse rounded bg-[#C4C4FF]/60" />
+                  <div className="h-7 w-full animate-pulse rounded-md bg-[#C4C4FF]/40" />
+                </div>
+                {/* Grade Level skeleton */}
+                <div className="rounded-lg bg-[rgba(108,164,239,0.09)] px-3 py-2">
+                  <div className="mb-1.5 h-2.5 w-16 animate-pulse rounded bg-[#C4C4FF]/60" />
+                  <div className="h-7 w-full animate-pulse rounded-md bg-[#C4C4FF]/40" />
+                </div>
+                {/* Class skeleton */}
+                <div className="rounded-lg bg-[rgba(108,164,239,0.09)] px-3 py-2">
+                  <div className="mb-1.5 h-2.5 w-12 animate-pulse rounded bg-[#C4C4FF]/60" />
+                  <div className="h-7 w-full animate-pulse rounded-md bg-[#C4C4FF]/40" />
+                </div>
+              </div>
+            )}
+
+            {!passageExpanded && classLoadError && !isLoadingClasses && (
+              <div className="flex h-[72px] w-full items-center justify-between rounded-2xl border border-red-200 bg-red-50 px-4">
+                <span className="text-sm font-medium text-red-700">Failed to load classes.</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setClassLoadError(false);
+                    setIsLoadingClasses(true);
+                    const schoolYear = getCurrentSchoolYear();
+                    getClassListBySchoolYear(schoolYear).then((result) => {
+                      if (result.success && result.classes) {
+                        setClasses(result.classes.map((c) => ({ id: c.id, name: c.name })));
+                      } else {
+                        setClassLoadError(true);
+                      }
+                    }).catch(() => setClassLoadError(true))
+                      .finally(() => setIsLoadingClasses(false));
+                  }}
+                  className="rounded-lg bg-red-600 px-3 py-1 text-xs font-semibold text-white hover:bg-red-700 transition-colors"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {!passageExpanded && !isLoadingClasses && !classLoadError && (
               <StudentInfoBar
                 studentName={studentName}
                 gradeLevel={gradeLevel}

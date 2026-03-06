@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import ReportHeader from "@/components/reports/oral-reading-test/reading-fluency-report/reportHeader";
 import StudentInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/studentInfoCard";
 import PassageInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/passageInfoCard";
@@ -129,6 +131,15 @@ function buildBehaviorItems(
 }
 
 export default function OralReadingReportPage() {
+  const router = useRouter();
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- Intentional mount-time hydration flag for SSR */
+    setIsHydrated(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, []);
+
   const session = loadSession();
   const analysis = session.analysisResult;
 
@@ -151,6 +162,42 @@ export default function OralReadingReportPage() {
       if (audioSrc) URL.revokeObjectURL(audioSrc);
     };
   }, [audioSrc]);
+
+  // Loading state — wait for client hydration before reading from sessionStorage
+  if (!isHydrated) {
+    return (
+      <div className="flex flex-col h-screen overflow-hidden">
+        <ReportHeader />
+        <div className="flex flex-1 items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-[#6666FF]" />
+            <span className="text-[#00306E] font-medium">Loading report...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state — no session or analysis data found
+  if (!analysis) {
+    return (
+      <div className="flex flex-col h-screen overflow-hidden">
+        <ReportHeader />
+        <div className="flex flex-1 items-center justify-center">
+          <div className="flex flex-col items-center gap-4 text-center px-4">
+            <p className="text-[#00306E] font-semibold text-lg">No report data found.</p>
+            <p className="text-[#00306E]/60 text-sm">Please complete an oral reading session first.</p>
+            <button
+              onClick={() => router.back()}
+              className="rounded-lg bg-[#6666FF] px-6 py-2 text-sm font-semibold text-white hover:bg-[#5555EE] transition-colors"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const studentName = session.studentName || "—";
   const gradeLevel = session.gradeLevel ? `Grade ${session.gradeLevel}` : "—";
