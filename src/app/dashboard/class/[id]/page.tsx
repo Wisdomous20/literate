@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft, Search, ChevronUp, ChevronDown } from "lucide-react";
 import { ClassListsHeader } from "@/components/class-lists/classListsHeader";
@@ -15,6 +15,7 @@ import { CreateStudentModal } from "@/components/class-lists/createStudentModal"
 import { createStudent } from "@/app/actions/student/createStudent";
 import { deleteStudent } from "@/app/actions/student/deleteStudent";
 import { updateStudent } from "@/app/actions/student/updateStudent";
+import { getAssessmentsByStudent } from "@/app/actions/assessment/getAssessment";
 import { useStudentList } from "@/lib/hooks/useStudentList";
 import { useQueryClient } from "@tanstack/react-query";
 import { useClassById } from "@/lib/hooks/useClassById";
@@ -26,6 +27,13 @@ interface StudentData {
   classId: string;
   deletedAt?: Date | null;
 }
+
+const assessmentTypeLabels: Record<AssessmentTypeFilter, string> = {
+  ALL: "All Students",
+  ORAL_READING: "Oral Reading Test",
+  COMPREHENSION: "Reading Comprehension Test",
+  READING_FLUENCY: "Reading Fluency Test",
+};
 
 function levelToGradeLevel(level?: number): string {
   if (!level) return "Grade 1";
@@ -55,15 +63,46 @@ export default function ClassListsPage() {
     error: classError,
   } = useClassById(classId);
 
-  const { isLoading: studentsLoading, error: studentsError } = useStudentList(
-    classData?.name ?? "",
-  );
+  const {
+    data: students = [],
+    isLoading: studentsLoading,
+    error: studentsError,
+  } = useStudentList(classData?.name ?? "");
 
-  // Track assessment type and stat card collapse
- 
   const [assessmentType, setAssessmentType] =
-    useState<AssessmentTypeFilter>("ORAL_READING");
+    useState<AssessmentTypeFilter>("ALL");
   const [showStats, setShowStats] = useState(true);
+
+  // Store all assessments for all students
+  const [studentAssessments, setStudentAssessments] = useState<
+    Record<string, any[]>
+  >({});
+
+  useEffect(() => {
+    if (!students || students.length === 0) {
+      Promise.resolve().then(() => setStudentAssessments({}));
+      return;
+    }
+    let cancelled = false;
+    async function fetchAllAssessments() {
+      const result: Record<string, any[]> = {};
+      await Promise.all(
+        students.map(async (student: StudentData) => {
+          try {
+            const assessments = await getAssessmentsByStudent(student.id);
+            result[student.id] = assessments || [];
+          } catch {
+            result[student.id] = [];
+          }
+        }),
+      );
+      if (!cancelled) setStudentAssessments(result);
+    }
+    fetchAllAssessments();
+    return () => {
+      cancelled = true;
+    };
+  }, [students]);
 
   const loading = classLoading || studentsLoading;
   const fetchError = classError?.message || studentsError?.message || null;
@@ -95,7 +134,11 @@ export default function ClassListsPage() {
     if (!confirm("Are you sure you want to delete this student?")) return;
     const result = await deleteStudent(studentId);
     if (result.success) {
+      // Invalidate and force refetch to update the UI right away
       await queryClient.invalidateQueries({
+        queryKey: ["students", classData?.name],
+      });
+      await queryClient.refetchQueries({
         queryKey: ["students", classData?.name],
       });
     } else {
@@ -122,81 +165,82 @@ export default function ClassListsPage() {
 
   const handleAssessmentFilterChange = (type: AssessmentTypeFilter) => {
     setAssessmentType(type);
-    setShowStats(true); // Optionally always open stats when switching type
+    setShowStats(true);
   };
 
+  // Transform students for table based on filter
   const transformStudentsForTable = (students: StudentData[]) => {
-    const transformed = students
-      .map((student) => ({
-        id: student.id,
-        name: student.name,
-        gradeLevel: levelToGradeLevel(student.level),
-        lastAssessment: null as string | null,
-      }))
-      .filter((student) =>
-        student.name.toLowerCase().includes(searchQuery.toLowerCase()),
-      );
-
-    // Apply sorting based on the selected sort option
-    if (sortOption === "nameAsc") {
-      return transformed.sort((a, b) => a.name.localeCompare(b.name));
-    } else if (sortOption === "nameDesc") {
-      return transformed.sort((a, b) => b.name.localeCompare(a.name));
-    } else if (sortOption === "gradeAsc") {
-      return transformed.sort((a, b) =>
-        a.gradeLevel.localeCompare(b.gradeLevel),
-      );
-    } else if (sortOption === "gradeDesc") {
-      return transformed.sort((a, b) =>
-        b.gradeLevel.localeCompare(a.gradeLevel),
-      );
+    if (assessmentType === "ALL") {
+      return students
+        .map((student) => {
+          const assessments = studentAssessments[student.id] || [];
+          // Find latest assessment of any type
+          const latest = assessments.sort(
+            (a, b) =>
+              new Date(b.dateTaken).getTime() - new Date(a.dateTaken).getTime(),
+          )[0];
+          return {
+            id: student.id,
+            name: student.name || "No Name",
+            gradeLevel: levelToGradeLevel(student.level),
+            lastAssessment: latest
+              ? new Date(latest.dateTaken).toLocaleDateString()
+              : null,
+            assessmentType: latest ? latest.type : "Awaiting Assessment",
+          };
+        })
+        .filter((student) =>
+          student.name.toLowerCase().includes(searchQuery.toLowerCase()),
+        );
+    } else {
+      // Filter by selected type, only show students with at least one assessment of that type
+      return students
+        .map((student) => {
+          const assessments = (studentAssessments[student.id] || []).filter(
+            (a) => a.type === assessmentType,
+          );
+          if (assessments.length === 0) return null;
+          const latest = assessments.sort(
+            (a, b) =>
+              new Date(b.dateTaken).getTime() - new Date(a.dateTaken).getTime(),
+          )[0];
+          return {
+            id: student.id,
+            name: student.name || "No Name",
+            gradeLevel: levelToGradeLevel(student.level),
+            lastAssessment: latest
+              ? new Date(latest.dateTaken).toLocaleDateString()
+              : null,
+            assessmentType: latest.type,
+          };
+        })
+        .filter(Boolean)
+        .filter((student) =>
+          (student as any).name
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()),
+        );
     }
-
-    return transformed;
   };
 
-  // Dummy stats for each assessment type (replace with real logic as needed)
-  const calculateStats = (type: AssessmentTypeFilter) => {
-    if (type === "ORAL_READING") {
-      return {
-        assessed: 10,
-        independent: 5,
-        instructional: 3,
-        frustrated: 2,
-      };
-    }
-    if (type === "COMPREHENSION") {
-      return {
-        assessed: 8,
-        independent: 4,
-        instructional: 2,
-        frustrated: 2,
-      };
-    }
-    if (type === "ORAL_READING_TEST") {
-      return {
-        assessed: 12,
-        independent: 6,
-        instructional: 4,
-        frustrated: 2,
-      };
-    }
+  const calculateStats = () => {
+    // You can update this to show stats for the current filter if needed
     return {
-      assessed: 0,
+      assessed:
+        assessmentType === "ALL"
+          ? students.filter((s) => (studentAssessments[s.id] || []).length > 0)
+              .length
+          : students.filter((s) =>
+              (studentAssessments[s.id] || []).some(
+                (a) => a.type === assessmentType,
+              ),
+            ).length,
       independent: 0,
       instructional: 0,
       frustrated: 0,
     };
   };
 
-  // For label display
-  const assessmentTypeLabels: Record<AssessmentTypeFilter, string> = {
-    ORAL_READING: "Oral Reading Test",
-    COMPREHENSION: "Reading Comprehension Test",
-    ORAL_READING_TEST: "Reading Fluency Test",
-  };
-
-  // Skeleton loading state
   if (loading && !classData) {
     return (
       <div className="flex flex-col gap-4 p-8">
@@ -223,8 +267,8 @@ export default function ClassListsPage() {
     );
   }
 
-  const stats = calculateStats(assessmentType);
-  const tableStudents = transformStudentsForTable(classData.students);
+  const stats = calculateStats();
+  const tableStudents = transformStudentsForTable(students);
 
   return (
     <div className="flex min-h-screen flex-col overflow-y-auto">
@@ -336,12 +380,15 @@ export default function ClassListsPage() {
           </div>
         </div>
 
-        <StudentTable
-          students={tableStudents}
-          totalStudents={tableStudents.length}
-          onDeleteStudent={handleDeleteStudent}
-          onUpdateStudent={handleUpdateStudent}
-        />
+        <div className="max-h-[60vh] overflow-y-auto">
+          <StudentTable
+            students={tableStudents as any}
+            totalStudents={tableStudents.length}
+            studentAssessments={studentAssessments}
+            onDeleteStudent={handleDeleteStudent}
+            onUpdateStudent={handleUpdateStudent}
+          />
+        </div>
       </main>
 
       <CreateStudentModal
@@ -352,4 +399,3 @@ export default function ClassListsPage() {
     </div>
   );
 }
-

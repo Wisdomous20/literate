@@ -7,6 +7,7 @@ interface AssessmentRecord {
   assessmentType: string;
   testType: string;
   assessmentDate: string;
+  schoolYear?: string;
 }
 
 interface AssessmentReportProps {
@@ -17,12 +18,12 @@ interface AssessmentReportProps {
   assessmentType: string;
   onSchoolYearChange: (v: string) => void;
   onTestTypeChange: (v: string) => void;
-  onAssessmentTypeChange: (v: string) => void;
   assessments: AssessmentRecord[];
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
   onBack: () => void;
+  schoolYearOptions: string[];
 }
 
 export function AssessmentReport({
@@ -33,15 +34,30 @@ export function AssessmentReport({
   assessmentType,
   onSchoolYearChange,
   onTestTypeChange,
-  onAssessmentTypeChange,
   assessments,
   currentPage,
   totalPages,
   onPageChange,
   onBack,
+  schoolYearOptions,
 }: AssessmentReportProps) {
   const params = useParams();
   const router = useRouter();
+
+  // Always include the current school year in the dropdown
+  const getSchoolYearOptions = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const currentSY =
+      now.getMonth() + 1 >= 6
+        ? `${year}-${year + 1}`
+        : `${year - 1}-${year}`;
+    const options = schoolYearOptions.includes(currentSY)
+      ? schoolYearOptions
+      : [currentSY, ...schoolYearOptions];
+    // Remove duplicates just in case
+    return Array.from(new Set(options));
+  };
 
   const getPageNumbers = () => {
     const pages: (number | string)[] = [];
@@ -58,6 +74,10 @@ export function AssessmentReport({
     }
     return pages;
   };
+
+  // Debug log for troubleshooting
+  // Remove or comment out in production
+  // console.log("Assessments for report:", assessments);
 
   return (
     <div className="flex min-h-screen flex-col overflow-y-auto">
@@ -86,16 +106,18 @@ export function AssessmentReport({
                 onChange={(e) => onSchoolYearChange(e.target.value)}
                 className="text-sm font-medium text-[#00306E] bg-transparent outline-none text-center cursor-pointer"
               >
-                <option value="">Select Year</option>
-                <option value="2025-2026">2025-2026</option>
-                <option value="2026-2027">2026-2027</option>
+                {getSchoolYearOptions().map((sy) => (
+                  <option key={sy} value={sy}>
+                    {sy}
+                  </option>
+                ))}
               </select>
             </div>
 
             {/* Test Type Filter */}
             <div className="flex flex-col items-center rounded-lg border-2 border-[#162DB0] px-4 py-1.5 bg-white">
               <span className="text-xs font-semibold text-[#162DB0]">
-                Test Type: {testType}
+                Test Type
               </span>
               <select
                 aria-label="Select Test Type"
@@ -103,30 +125,20 @@ export function AssessmentReport({
                 onChange={(e) => onTestTypeChange(e.target.value)}
                 className="text-sm font-medium text-[#00306E] bg-transparent outline-none text-center cursor-pointer"
               >
+                <option value="">All</option>
                 <option value="Pre-Test">Pre-Test</option>
                 <option value="Post-Test">Post-Test</option>
               </select>
             </div>
 
-            {/* Assessment Type Filter */}
+            {/* Assessment Type (static) */}
             <div className="flex flex-col items-center rounded-lg border-2 border-[#162DB0] px-4 py-1.5 bg-white">
               <span className="text-xs font-semibold text-[#162DB0]">
                 Assessment Type
               </span>
-              <select
-                aria-label="Select Assessment Type"
-                value={assessmentType}
-                onChange={(e) => onAssessmentTypeChange(e.target.value)}
-                className="text-sm font-medium text-[#00306E] bg-transparent outline-none text-center cursor-pointer"
-              >
-                <option value="Oral Reading Test">Oral Reading Test</option>
-                <option value="Reading Fluency Test">
-                  Reading Fluency Test
-                </option>
-                <option value="Reading Comprehension Test">
-                  Reading Comprehension Test
-                </option>
-              </select>
+              <span className="text-sm font-medium text-[#00306E]">
+                {assessmentType}
+              </span>
             </div>
           </div>
         </div>
@@ -137,7 +149,9 @@ export function AssessmentReport({
             <User className="h-5 w-5 text-gray-500" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-[#00306E]">{studentName}</h2>
+            <h2 className="text-lg font-bold text-[#00306E]">
+              {studentName || "No Name"}
+            </h2>
             <span className="text-sm text-[#162DB0] font-medium">
               {studentGrade}
             </span>

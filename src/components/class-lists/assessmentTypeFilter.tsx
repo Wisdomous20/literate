@@ -4,25 +4,27 @@ import { useState, useRef, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 
 export type AssessmentTypeFilter =
+  | "ALL"
   | "ORAL_READING"
   | "COMPREHENSION"
-  | "ORAL_READING_TEST";
+  | "READING_FLUENCY";
 
 interface AssessmentTypeFilterProps {
   onFilterChange?: (filter: AssessmentTypeFilter) => void;
 }
 
 const assessmentTypeOptions = [
+  { value: "ALL" as const, label: "All Students" },
   { value: "ORAL_READING" as const, label: "Oral Reading Test" },
   { value: "COMPREHENSION" as const, label: "Reading Comprehension Test" },
-  { value: "ORAL_READING_TEST" as const, label: "Reading Fluency Test" },
+  { value: "READING_FLUENCY" as const, label: "Reading Fluency Test" },
 ];
 
 export function AssessmentTypeFilterDropdown({
   onFilterChange,
 }: AssessmentTypeFilterProps) {
   const [selectedFilter, setSelectedFilter] =
-    useState<AssessmentTypeFilter>("ORAL_READING");
+    useState<AssessmentTypeFilter>("ALL");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -53,7 +55,7 @@ export function AssessmentTypeFilterDropdown({
 
   const selectedLabel =
     assessmentTypeOptions.find((opt) => opt.value === selectedFilter)?.label ||
-    "Oral Reading Test";
+    "All Students";
 
   return (
     <div ref={dropdownRef} className="relative">
