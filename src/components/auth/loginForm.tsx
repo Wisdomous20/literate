@@ -3,10 +3,11 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signIn, getSession } from "next-auth/react";
+import { useSession, signIn } from "next-auth/react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { useEffect } from "react";
 
 // SVG icons for show/hide password
 const EyeIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -52,6 +53,7 @@ const EyeOffIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 export function LoginForm() {
+  const { data: session } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -59,6 +61,18 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const [loginSuccess, setLoginSuccess] = useState(false);
+
+
+  useEffect(() => {
+    if (loginSuccess && session?.user?.role) {
+      if (session.user.role === "ADMIN") {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
+    }
+  }, [session, loginSuccess, router]);
 
   // Validation function
   const validateForm = () => {
@@ -83,55 +97,37 @@ export function LoginForm() {
     return true;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
 
-    // Validate before submitting
-    if (!validateForm()) {
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError(null);
+  if (!validateForm()) return;
+
+  setIsLoading(true);
+
+  try {
+    const result = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
+
+    if (result?.error) {
+      setError("Invalid email or password");
+      setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
-
-    try {
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        setError(result.error || "Invalid email or password");
-        setIsLoading(false);
-        return;
-      }
-
-      if (result?.ok) {
-        // Get updated session
-        const session = await getSession();
-
-        if (!session?.user?.role) {
-          setError("Unable to determine user role. Please try again.");
-          setIsLoading(false);
-          return;
-        }
-
-        // Redirect based on role
-        if (session.user.role === "ADMIN") {
-          router.push("/admin");
-        } else {
-          router.push("/dashboard");
-        }
-
-        router.refresh();
-      }
-    } catch (err) {
-      console.error("Login error:", err);
-      setError("An unexpected error occurred. Please try again.");
-      setIsLoading(false);
+    if (result?.ok) {
+      setLoginSuccess(true); 
     }
-  };
+  } catch (err) {
+    console.error("Login error:", err);
+    setError("An unexpected error occurred. Please try again.");
+    setIsLoading(false);
+  }
+};
+
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
