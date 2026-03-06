@@ -9,7 +9,7 @@ import {
   Clock,
   Loader2,
 } from "lucide-react";
-import { DashboardHeader } from "@/components/auth/dashboard/dashboardHeader";
+import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import { ComprehensionBreakdown } from "@/components/oral-reading-test/comprehensionBreakdown";
 import { getQuizByPassageAction } from "@/app/actions/comprehension-Test/getQuizByPassage";
 import { getAssessmentByIdAction } from "@/app/actions/assessment/getAssessmentById";

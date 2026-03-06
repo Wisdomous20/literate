@@ -1,6 +1,6 @@
 "use client"
 
-import { DashboardHeader } from "@/components/auth/dashboard/dashboardHeader"
+import { DashboardHeader } from "@/components/dashboard/dashboardHeader"
 import { useSettings } from "@/context/settingsContext"
 import { ScrollText, CheckCircle, FileText, BookOpen, Info } from "lucide-react"
 

@@ -12,7 +12,7 @@ import {
   XCircle,
   X,
 } from "lucide-react";
-import { DashboardHeader } from "@/components/auth/dashboard/dashboardHeader";
+import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import StudentInfoBar from "@/components/oral-reading-test/studentInfoBar";
 import { PassageFilters } from "@/components/oral-reading-test/passageFilters";
 import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay";

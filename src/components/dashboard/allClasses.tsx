@@ -3,8 +3,8 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, ArrowLeft, ChevronDown } from "lucide-react";
-import { ClassCard } from "@/components/auth/dashboard/classCard";
-import { DashboardHeader } from "@/components/auth/dashboard/dashboardHeader";
+import { ClassCard } from "@/components/dashboard/classCard";
+import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 
 type ClassCardVariant = "blue" | "yellow" | "cyan";
 
