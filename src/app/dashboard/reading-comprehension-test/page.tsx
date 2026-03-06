@@ -420,7 +420,7 @@ export default function ReadingComprehensionTestPage() {
             <button
               type="button"
               onClick={() => router.back()}
-              className="flex items-center gap-1 text-sm font-semibold text-[#00306E] transition-colors hover:text-[#6666FF] md:text-base lg:text-lg"
+              className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)] transition-all duration-300 hover:bg-[#5555EE] md:text-base"
             >
               <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
               <span>Previous</span>
@@ -433,8 +433,8 @@ export default function ReadingComprehensionTestPage() {
             <button
               type="button"
               onClick={handleProceedToComprehension}
-              aria-label="Proceed to comprehension"
-              title="Proceed to comprehension"
+              aria-label="Continue to comprehension"
+              title="Continue to comprehension"
               className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-300 md:text-base ${
                 canProceed
                   ? "animate-[pulseGlow_2s_ease-in-out_infinite] bg-[#6666FF] text-white shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)] hover:bg-[#5555EE]"
@@ -442,7 +442,7 @@ export default function ReadingComprehensionTestPage() {
               }`}
               disabled={!canProceed}
             >
-              <span>Proceed to Comprehension</span>
+              <span>Continue to Comprehension</span>
               <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
             </button>
           </div>
@@ -512,9 +512,9 @@ export default function ReadingComprehensionTestPage() {
                 <button
                   type="button"
                   onClick={handleStartNew}
-                  className="rounded-lg border border-[#DC2626]/30 bg-[rgba(220,38,38,0.06)] px-6 py-2 text-sm font-semibold text-[#DC2626] transition-colors hover:bg-[rgba(220,38,38,0.12)]"
+                  className="rounded-lg border border-[#6666FF]/30 bg-[rgba(102,102,255,0.06)] px-6 py-2 text-sm font-semibold text-[#6666FF] transition-colors hover:bg-[rgba(102,102,255,0.12)]"
                 >
-                  Start New Test
+                  Start New
                 </button>
               </div>
             )}

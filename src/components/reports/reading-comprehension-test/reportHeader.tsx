@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, ChevronLeft } from "lucide-react";
+import { LayoutDashboard, ChevronLeft, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function ReadingComprehensionReportHeader() {
@@ -38,6 +38,19 @@ export default function ReadingComprehensionReportHeader() {
         >
           <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
           <span>Previous</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            sessionStorage.removeItem("reading-comprehension-session");
+            sessionStorage.removeItem("reading-comprehension-comp-state");
+            sessionStorage.removeItem("reading-comprehension-assessmentId");
+            router.push("/dashboard/reading-comprehension-test");
+          }}
+          className="flex items-center gap-1.5 rounded-lg border border-[#6666FF]/30 bg-[rgba(102,102,255,0.06)] px-4 py-2 text-sm font-semibold text-[#6666FF] transition-colors hover:bg-[rgba(102,102,255,0.12)] md:text-base"
+        >
+          <RotateCcw className="h-4 w-4 md:h-5 md:w-5" />
+          <span>Start New</span>
         </button>
       </div>
     </div>

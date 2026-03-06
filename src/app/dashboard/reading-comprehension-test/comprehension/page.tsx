@@ -493,6 +493,7 @@ export default function ReadingComprehensionQuestionsPage() {
               disabled={!isSubmitted}
               highlightedTag={highlightedTag}
               onTagClick={handleTagClick}
+              showReportButton={false}
             />
           </div>
         </div>
