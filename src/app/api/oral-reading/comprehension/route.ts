@@ -16,18 +16,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await submitComprehensionService({
-      assessmentId,
-      answers,
-    });
+    // Run both services in parallel — they both only need assessmentId
+    const [result, oralReadingResult] = await Promise.all([
+      submitComprehensionService({ assessmentId, answers }),
+      createOralReadingService(assessmentId),
+    ]);
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    const oralReadingResult = await createOralReadingService(assessmentId);
-
-    
     if (!oralReadingResult.success) {
       return NextResponse.json({ error: oralReadingResult.error }, { status: 500 });
     }
@@ -40,10 +38,9 @@ export async function POST(request: NextRequest) {
       totalItems: result.totalItems,
       level: result.level,
       oralReadingResult: oralReadingResult ?? null,
-
     });
   } catch (error) {
-    console.error("Comprehension submit & oralReading submnit error:", error);
+    console.error("Comprehension submit & oralReading submit error:", error);
     return NextResponse.json(
       { error: "Failed to process comprehension submission" },
       { status: 500 }
