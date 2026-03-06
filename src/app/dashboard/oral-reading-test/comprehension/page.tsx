@@ -12,7 +12,7 @@ import {
 import { DashboardHeader } from "@/components/auth/dashboard/dashboardHeader";
 import { ComprehensionBreakdown } from "@/components/oral-reading-test/comprehensionBreakdown";
 import { getQuizByPassageAction } from "@/app/actions/comprehension-Test/getQuizByPassage";
-import { getAssessmentByIdAction } from "@/app/actions/assessment/getAssessmentById";
+import { getAssessmentComprehension } from "@/app/actions/assessment/getAssessmentComprehension";
 
 const OPTION_LABELS = ["A", "B", "C", "D"];
 const COMP_STORAGE_KEY = "oral-reading-comprehension-state";
@@ -112,6 +112,68 @@ function computeTagBreakdown(
   return breakdown;
 }
 
+function buildResultFromAssessment(assessment: {
+  comprehension: {
+    id: string;
+    score: number;
+    totalItems: number;
+    classificationLevel: string | null;
+    answers: { questionId: string; answer: string; isCorrect: boolean | null; question: { tags: string } }[];
+  };
+}): { result: ComprehensionResult; restoredAnswers: Record<string, string> } {
+  const comp = assessment.comprehension;
+  const tagBreakdown = computeTagBreakdown(comp.answers);
+  const result: ComprehensionResult = {
+    score: comp.score,
+    totalItems: comp.totalItems,
+    level: comp.classificationLevel ?? "",
+    comprehensionTestId: comp.id,
+    tagBreakdown,
+  };
+  const restoredAnswers: Record<string, string> = {};
+  for (const a of comp.answers) {
+    restoredAnswers[a.questionId] = a.answer;
+  }
+  return { result, restoredAnswers };
+}
+
+/** Sync comprehension + fluency into the main oral-reading-session for the report page */
+function syncMainSession(
+  compResult: ComprehensionResult,
+  fluencyClassification?: string | null,
+) {
+  try {
+    const mainRaw = sessionStorage.getItem("oral-reading-session");
+    if (!mainRaw) return;
+    const mainSession = JSON.parse(mainRaw);
+    mainSession.comprehensionResult = {
+      score: compResult.score,
+      totalItems: compResult.totalItems,
+      percentage: compResult.totalItems
+        ? Math.round((compResult.score / compResult.totalItems) * 100)
+        : 0,
+      level: compResult.level,
+    };
+    if (fluencyClassification && compResult.level) {
+      const ranks: Record<string, number> = {
+        INDEPENDENT: 0,
+        INSTRUCTIONAL: 1,
+        FRUSTRATION: 2,
+      };
+      const labels = ["INDEPENDENT", "INSTRUCTIONAL", "FRUSTRATION"];
+      const overall = Math.max(
+        ranks[fluencyClassification] ?? 0,
+        ranks[compResult.level] ?? 0,
+      );
+      mainSession.oralReadingLevel = labels[overall];
+    }
+    sessionStorage.setItem("oral-reading-session", JSON.stringify(mainSession));
+  } catch {
+    /* non-critical */
+  }
+}
+
+
 export default function OralReadingComprehensionPage() {
   const router = useRouter();
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -137,11 +199,11 @@ export default function OralReadingComprehensionPage() {
 
   // Fetch questions on mount + restore saved state
   useEffect(() => {
-    async function fetchQuestions() {
+
+        async function fetchQuestions() {
       try {
-        const currentAssessmentId = sessionStorage.getItem(
-          "oral-reading-assessmentId",
-        );
+        const currentAssessmentId = sessionStorage.getItem("oral-reading-assessmentId");
+        const raw = sessionStorage.getItem("oral-reading-session");
 
         // Restore saved comprehension progress only if it belongs to the current assessment
         const saved = loadComprehensionState();
@@ -160,100 +222,41 @@ export default function OralReadingComprehensionPage() {
         // If not already submitted from saved state, check DB for existing submission
         const isRestoredSubmitted =
           saved?.assessmentId === currentAssessmentId && saved?.isSubmitted;
-        if (!isRestoredSubmitted) {
-          const assessmentId = currentAssessmentId;
-          if (assessmentId) {
-            try {
-              const assessment = await getAssessmentByIdAction(assessmentId);
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const existing = (assessment as any)?.comprehension;
-              if (existing) {
-                const tagBreakdown = computeTagBreakdown(existing.answers);
-                const restoredResult = {
-                  score: existing.score,
-                  totalItems: existing.totalItems,
-                  level: existing.classificationLevel ?? existing.level,
-                  comprehensionTestId: existing.id,
-                  tagBreakdown,
-                };
-                setComprehensionResult(restoredResult);
-                setIsSubmitted(true);
-                // Restore answers from DB
-                const restoredAnswers: Record<string, string> = {};
-                for (const a of existing.answers) {
-                  restoredAnswers[a.questionId] = a.answer;
-                }
-                setAnswers(restoredAnswers);
-                if (existing.id) {
-                  sessionStorage.setItem(
-                    "oral-reading-comprehensionTestId",
-                    existing.id,
-                  );
-                }
-                saveComprehensionState({
-                  assessmentId: assessmentId,
-                  answers: restoredAnswers,
-                  elapsedSeconds: saved?.elapsedSeconds ?? 0,
-                  isSubmitted: true,
-                  comprehensionResult: restoredResult,
-                });
+        if (!isRestoredSubmitted && currentAssessmentId) {
+          try {
+            const res = await getAssessmentComprehension(currentAssessmentId);
+            if (res.success && "assessment" in res && res.assessment?.comprehension) {
+              const { result: restoredResult, restoredAnswers } =
+                buildResultFromAssessment(res.assessment as Parameters<typeof buildResultFromAssessment>[0]);
 
-                try {
-                  const mainRaw = sessionStorage.getItem(
-                    "oral-reading-session",
-                  );
-                  if (mainRaw) {
-                    const mainSession = JSON.parse(mainRaw);
-                    mainSession.comprehensionResult = {
-                      score: restoredResult.score,
-                      totalItems: restoredResult.totalItems,
-                      percentage: restoredResult.totalItems
-                        ? Math.round(
-                            (restoredResult.score / restoredResult.totalItems) *
-                              100,
-                          )
-                        : 0,
-                      level: restoredResult.level,
-                    };
+              setComprehensionResult(restoredResult);
+              setIsSubmitted(true);
+              setAnswers(restoredAnswers);
 
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const fluencyClassification = (assessment as any)
-                      ?.oralFluency?.classificationLevel;
-                    const compClassification = restoredResult.level;
-                    if (fluencyClassification && compClassification) {
-                      const ranks: Record<string, number> = {
-                        INDEPENDENT: 0,
-                        INSTRUCTIONAL: 1,
-                        FRUSTRATION: 2,
-                      };
-                      const labels = [
-                        "INDEPENDENT",
-                        "INSTRUCTIONAL",
-                        "FRUSTRATION",
-                      ];
-                      const overall = Math.max(
-                        ranks[fluencyClassification] ?? 0,
-                        ranks[compClassification] ?? 0,
-                      );
-                      mainSession.oralReadingLevel = labels[overall];
-                    }
-                    sessionStorage.setItem(
-                      "oral-reading-session",
-                      JSON.stringify(mainSession),
-                    );
-                  }
-                } catch {
-                  /* failed to update main session — non-critical */
-                }
+              if (restoredResult.comprehensionTestId) {
+                sessionStorage.setItem(
+                  "oral-reading-comprehensionTestId",
+                  restoredResult.comprehensionTestId,
+                );
               }
-            } catch {
-              // Assessment not found or error — continue to load questions
+              saveComprehensionState({
+                assessmentId: currentAssessmentId,
+                answers: restoredAnswers,
+                elapsedSeconds: saved?.elapsedSeconds ?? 0,
+                isSubmitted: true,
+                comprehensionResult: restoredResult,
+              });
+
+              const fluencyClassification =
+                res.assessment?.oralFluency?.classificationLevel;
+              syncMainSession(restoredResult, fluencyClassification);
             }
+          } catch {
+            // Assessment not found or error — continue to load questions
           }
         }
-
-        const raw = sessionStorage.getItem("oral-reading-session");
-        if (!raw) {
+        
+         if (!raw) {
           setLoadError("Session not found. Please go back and start again.");
           setIsLoading(false);
           return;
@@ -390,66 +393,22 @@ export default function OralReadingComprehensionPage() {
 
       // Check if a comprehension test already exists for this assessment
       try {
-        const assessment = await getAssessmentByIdAction(assessmentId);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const existingComp = (assessment as any)?.comprehension;
-        if (existingComp) {
-          const tagBreakdown = computeTagBreakdown(existingComp.answers);
-          const existingLevel =
-            existingComp.classificationLevel ?? existingComp.level;
-          setComprehensionResult({
-            score: existingComp.score,
-            totalItems: existingComp.totalItems,
-            level: existingLevel,
-            comprehensionTestId: existingComp.id,
-            tagBreakdown,
-          });
-          if (existingComp.id) {
+        const res = await getAssessmentComprehension(assessmentId);
+        if (res.success && "assessment" in res && res.assessment?.comprehension) {
+          const { result: existingResult, restoredAnswers: _ } =
+            buildResultFromAssessment(res.assessment as Parameters<typeof buildResultFromAssessment>[0]);
+
+          setComprehensionResult(existingResult);
+          if (existingResult.comprehensionTestId) {
             sessionStorage.setItem(
               "oral-reading-comprehensionTestId",
-              existingComp.id,
+              existingResult.comprehensionTestId,
             );
           }
 
-          // Sync into main session for reading-level-report
-          try {
-            const mainRaw = sessionStorage.getItem("oral-reading-session");
-            if (mainRaw) {
-              const mainSession = JSON.parse(mainRaw);
-              mainSession.comprehensionResult = {
-                score: existingComp.score,
-                totalItems: existingComp.totalItems,
-                percentage: existingComp.totalItems
-                  ? Math.round(
-                      (existingComp.score / existingComp.totalItems) * 100,
-                    )
-                  : 0,
-                level: existingLevel,
-              };
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const fluencyClassification = (assessment as any)?.oralFluency
-                ?.classificationLevel;
-              if (fluencyClassification && existingLevel) {
-                const ranks: Record<string, number> = {
-                  INDEPENDENT: 0,
-                  INSTRUCTIONAL: 1,
-                  FRUSTRATION: 2,
-                };
-                const labels = ["INDEPENDENT", "INSTRUCTIONAL", "FRUSTRATION"];
-                const overall = Math.max(
-                  ranks[fluencyClassification] ?? 0,
-                  ranks[existingLevel] ?? 0,
-                );
-                mainSession.oralReadingLevel = labels[overall];
-              }
-              sessionStorage.setItem(
-                "oral-reading-session",
-                JSON.stringify(mainSession),
-              );
-            }
-          } catch {
-            /* non-critical */
-          }
+          const fluencyClassification =
+            res.assessment?.oralFluency?.classificationLevel;
+          syncMainSession(existingResult, fluencyClassification);
 
           setIsSubmitted(true);
           return;
@@ -492,12 +451,14 @@ export default function OralReadingComprehensionPage() {
 
       // Fetch the full assessment to get tag breakdown
       let tagBreakdown: TagBreakdown | undefined;
+      let fluencyClassification: string | null | undefined;
       try {
-        const assessment = await getAssessmentByIdAction(assessmentId);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const comp = (assessment as any)?.comprehension;
-        if (comp) {
-          tagBreakdown = computeTagBreakdown(comp.answers);
+        const res = await getAssessmentComprehension(assessmentId);
+        if (res.success && "assessment" in res && res.assessment?.comprehension) {
+          tagBreakdown = computeTagBreakdown(
+            res.assessment.comprehension.answers as Parameters<typeof computeTagBreakdown>[0],
+          );
+          fluencyClassification = res.assessment?.oralFluency?.classificationLevel;
         }
       } catch {
         // Failed to fetch tag breakdown — continue without it
