@@ -1,10 +1,11 @@
+// src/app/dashboard/class/[id]/report/[studentId]/page.tsx
 "use client";
 
 import { useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { AssessmentReport } from "@/components/assessment/assessmentReport";
 import { useAssessmentsByStudent } from "@/lib/hooks/useStudentAssessments";
-import type { AssessmentData, AssessmentTableRow } from "@/types/assessment";
+import type { AssessmentData } from "@/types/assessment";
 
 const assessmentTypeLabels: Record<string, string> = {
   ORAL_READING: "Oral Reading Test",
@@ -35,15 +36,13 @@ export default function AssessmentReportPage() {
   const { data: allAssessments = [], isLoading } =
     useAssessmentsByStudent(studentId);
 
-  // Derive student info from the first assessment's student relation
   const firstAssessment = allAssessments[0] as AssessmentData | undefined;
   const studentName = firstAssessment?.student?.name || "";
   const studentGrade = firstAssessment?.student?.level
     ? `Grade ${firstAssessment.student.level}`
     : "";
 
-  // Filter and map assessments
-  const assessments: AssessmentTableRow[] = assessmentTypeParam
+  const assessments = assessmentTypeParam
     ? allAssessments
         .filter((a) => a.type === assessmentTypeParam)
         .sort(
@@ -68,7 +67,10 @@ export default function AssessmentReportPage() {
     Math.ceil(assessments.length / recordsPerPage),
   );
 
-  const handleRowClick = (assessment: AssessmentTableRow) => {
+  const handleRowClick = (assessment: {
+    id: string;
+    type: string;
+  }) => {
     if (assessment.type === "ORAL_READING") {
       router.push(
         `/dashboard/class/${classId}/report/${studentId}/summary?id=${assessment.id}`,

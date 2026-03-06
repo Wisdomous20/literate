@@ -1,3 +1,4 @@
+// src/components/assessment/assessmentReport.tsx
 "use client";
 
 import React from "react";
@@ -9,7 +10,8 @@ type Assessment = {
   testType: string;
   assessmentDate: string;
   schoolYear: string;
-  // Add any other fields you need for navigation
+  id: string;
+  type: string;
 };
 
 interface AssessmentReportProps {
@@ -22,8 +24,7 @@ interface AssessmentReportProps {
   totalPages: number;
   onPageChange: (page: number) => void;
   onRowClick: (assessment: Assessment) => void;
-    onBack: () => void; // <-- Add this line
-
+  onBack: () => void;
 }
 
 const recordsPerPage = 7;
@@ -42,23 +43,23 @@ export function AssessmentReport({
 }: AssessmentReportProps) {
   const paginatedAssessments = assessments.slice(
     (currentPage - 1) * recordsPerPage,
-    currentPage * recordsPerPage
+    currentPage * recordsPerPage,
   );
 
   return (
     <div>
-     <AssessmentHeader title="Assessment Report" />
-<button
-  onClick={onBack}
-  className="flex items-center gap-2 text-lg font-semibold text-[#31318A] hover:opacity-80 mb-2 px-8 pt-6"
->
-  ← Previous
-</button>
+      <AssessmentHeader title="Assessment Report" />
+      <button
+        onClick={onBack}
+        className="mb-2 flex items-center gap-2 px-8 pt-6 text-lg font-semibold text-[#31318A] hover:opacity-80"
+      >
+        ← Previous
+      </button>
       <div className="flex flex-col gap-2 px-8 pt-6">
         <div className="flex items-center gap-4">
           <div>
             <h2 className="text-lg font-bold text-[#00306E]">{studentName}</h2>
-            <span className="text-sm text-[#162DB0] font-medium">
+            <span className="text-sm font-medium text-[#162DB0]">
               {studentGrade}
             </span>
           </div>
@@ -74,19 +75,19 @@ export function AssessmentReport({
       </div>
 
       <main className="flex flex-1 flex-col gap-5 px-8 py-4">
-        <div className="flex-1 overflow-hidden rounded-[10px] bg-[#E4F4FF] border border-[rgba(74,74,252,0.08)] mt-4">
+        <div className="mt-4 flex-1 overflow-hidden rounded-[10px] border border-[rgba(74,74,252,0.08)] bg-[#E4F4FF]">
           {/* Table Header */}
-          <div className="grid grid-cols-4 px-6 py-3 bg-[rgba(74,74,252,0.12)] border-b">
-            <span className="text-[15px] font-semibold text-[#00306E] text-center">
+          <div className="grid grid-cols-4 border-b bg-[rgba(74,74,252,0.12)] px-6 py-3">
+            <span className="text-center text-[15px] font-semibold text-[#00306E]">
               Attempt
             </span>
-            <span className="text-[15px] font-semibold text-[#00306E] text-center">
+            <span className="text-center text-[15px] font-semibold text-[#00306E]">
               Assessment Type
             </span>
-            <span className="text-[15px] font-semibold text-[#00306E] text-center">
+            <span className="text-center text-[15px] font-semibold text-[#00306E]">
               Test Type
             </span>
-            <span className="text-[15px] font-semibold text-[#00306E] text-center">
+            <span className="text-center text-[15px] font-semibold text-[#00306E]">
               Assessment Date
             </span>
           </div>
@@ -104,10 +105,15 @@ export function AssessmentReport({
               paginatedAssessments.map((record, index) => (
                 <div
                   key={`${record.attempt}-${index}`}
-                  className="grid grid-cols-4 items-center px-6 py-4 bg-white/10 hover:bg-[#d0e8ff] transition-all duration-200 cursor-pointer"
+                  className="grid cursor-pointer grid-cols-4 items-center bg-white/10 px-6 py-4 transition-all duration-200 hover:bg-[#d0e8ff]"
                   onClick={() => onRowClick(record)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") onRowClick(record);
+                  }}
+                  role="button"
+                  tabIndex={0}
                 >
-                  <span className="text-center text-[#00306E] font-medium">
+                  <span className="text-center font-medium text-[#00306E]">
                     {record.attempt}
                   </span>
                   <span className="text-center text-[#00306E]">
@@ -135,7 +141,7 @@ export function AssessmentReport({
                 type="button"
                 disabled={currentPage === 1}
                 onClick={() => onPageChange(1)}
-                className="flex h-8 w-8 items-center justify-center rounded border border-[#162DB0]/30 text-[#162DB0] disabled:opacity-30 hover:bg-[#E4F4FF]"
+                className="flex h-8 w-8 items-center justify-center rounded border border-[#162DB0]/30 text-[#162DB0] hover:bg-[#E4F4FF] disabled:opacity-30"
                 aria-label="Go to first page"
                 title="Go to first page"
               >
@@ -145,7 +151,7 @@ export function AssessmentReport({
                 type="button"
                 disabled={currentPage === 1}
                 onClick={() => onPageChange(currentPage - 1)}
-                className="flex h-8 w-8 items-center justify-center rounded border border-[#162DB0]/30 text-[#162DB0] disabled:opacity-30 hover:bg-[#E4F4FF]"
+                className="flex h-8 w-8 items-center justify-center rounded border border-[#162DB0]/30 text-[#162DB0] hover:bg-[#E4F4FF] disabled:opacity-30"
                 aria-label="Go to previous page"
                 title="Go to previous page"
               >
@@ -155,7 +161,7 @@ export function AssessmentReport({
                 type="button"
                 disabled={currentPage === totalPages}
                 onClick={() => onPageChange(currentPage + 1)}
-                className="flex h-8 w-8 items-center justify-center rounded border border-[#162DB0]/30 text-[#162DB0] disabled:opacity-30 hover:bg-[#E4F4FF]"
+                className="flex h-8 w-8 items-center justify-center rounded border border-[#162DB0]/30 text-[#162DB0] hover:bg-[#E4F4FF] disabled:opacity-30"
                 aria-label="Go to next page"
                 title="Go to next page"
               >
@@ -165,7 +171,7 @@ export function AssessmentReport({
                 type="button"
                 disabled={currentPage === totalPages}
                 onClick={() => onPageChange(totalPages)}
-                className="flex h-8 w-8 items-center justify-center rounded border border-[#162DB0]/30 text-[#162DB0] disabled:opacity-30 hover:bg-[#E4F4FF]"
+                className="flex h-8 w-8 items-center justify-center rounded border border-[#162DB0]/30 text-[#162DB0] hover:bg-[#E4F4FF] disabled:opacity-30"
                 aria-label="Go to last page"
                 title="Go to last page"
               >

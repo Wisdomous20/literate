@@ -1,3 +1,4 @@
+// src/app/dashboard/class/[id]/report/[studentId]/reading-fluency-report/page.tsx
 "use client";
 
 import { useMemo } from "react";
@@ -16,6 +17,12 @@ import type {
   OralFluencyMiscue,
   OralFluencyBehaviorData,
 } from "@/types/assessment";
+
+const assessmentTypeLabels: Record<string, string> = {
+  ORAL_READING: "Oral Reading Test",
+  COMPREHENSION: "Reading Comprehension Test",
+  READING_FLUENCY: "Reading Fluency Test",
+};
 
 function formatTestType(testType?: string): string {
   if (testType === "POST_TEST") return "Post-Test";
@@ -85,7 +92,7 @@ export default function ReadingFluencyReportPage() {
     selfCorrection: miscues.filter((m) => m.miscueType === "SELF_CORRECTION")
       .length,
     totalMiscue: assessment.oralFluency?.totalMiscues ?? miscues.length,
-    oralFluencyScore: `${assessment.oralFluency?.oralFluencyScore ?? 0}%`,
+    oralFluencyScore: `${Math.round(assessment.oralFluency?.oralFluencyScore ?? 0)}%`,
     classificationLevel: assessment.oralFluency?.classificationLevel ?? "",
   };
 
@@ -102,13 +109,17 @@ export default function ReadingFluencyReportPage() {
     assessment.oralFluency?.behaviors || [],
   );
 
+  // Derive assessment type label from the actual assessment type
+  const assessmentTypeLabel =
+    assessmentTypeLabels[assessment.type] || assessment.type;
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
       <ReportHeader />
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_2fr]">
         <StudentInfoCard studentName={studentName} gradeLevel={gradeLevel} />
         <MetricCards
-          wcpm={assessment.oralFluency?.wordsPerMinute ?? 0}
+          wcpm={Math.round(assessment.oralFluency?.wordsPerMinute ?? 0)}
           readingTimeSeconds={assessment.oralFluency?.duration ?? 0}
           classificationLevel={
             assessment.oralFluency?.classificationLevel ?? ""
@@ -122,7 +133,7 @@ export default function ReadingFluencyReportPage() {
             passageLevel={passage?.level ? `Grade ${passage.level}` : ""}
             numberOfWords={numberOfWords}
             testType={formatTestType(passage?.testType)}
-            assessmentType="Oral Reading Test"
+            assessmentType={assessmentTypeLabel}
           />
           <AudioPlaybackCard audioSrc={assessment.oralFluency?.audioUrl} />
         </div>

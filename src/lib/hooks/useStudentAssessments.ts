@@ -1,3 +1,4 @@
+// src/lib/hooks/useStudentAssessments.ts
 "use client";
 
 import { useQuery, useQueries } from "@tanstack/react-query";
@@ -14,7 +15,8 @@ export function useAssessmentsByStudent(studentId: string) {
       const result = await getAssessmentsByStudent(studentId);
       return (result || []) as AssessmentData[];
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0, // Always refetch in background so newly submitted data (e.g. comprehension) appears immediately
+    refetchOnWindowFocus: true,
     enabled: !!studentId,
   });
 }
@@ -32,6 +34,7 @@ export function useStudentAssessments(studentIds: string[]) {
         return (result || []) as AssessmentData[];
       },
       staleTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: true,
       enabled: !!id,
     })),
   });

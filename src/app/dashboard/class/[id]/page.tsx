@@ -1,3 +1,4 @@
+// src/app/dashboard/class/[id]/page.tsx
 "use client";
 
 import { useState, useMemo } from "react";
@@ -46,6 +47,22 @@ function gradeLevelToNumber(gradeLevel: string): number {
   return match ? parseInt(match[0], 10) : 1;
 }
 
+/** Get the classification level from a single assessment based on its type */
+function getAssessmentClassification(
+  assessment: AssessmentData,
+): string | null {
+  switch (assessment.type) {
+    case "ORAL_READING":
+      return assessment.oralReadingResult?.classificationLevel || null;
+    case "READING_FLUENCY":
+      return assessment.oralFluency?.classificationLevel || null;
+    case "COMPREHENSION":
+      return assessment.comprehension?.classificationLevel || null;
+    default:
+      return null;
+  }
+}
+
 export default function ClassListsPage() {
   const params = useParams();
   const router = useRouter();
@@ -74,13 +91,11 @@ export default function ClassListsPage() {
     useState<AssessmentTypeFilter>("ALL");
   const [showStats, setShowStats] = useState(true);
 
-  // Stable student IDs for the assessments hook
   const studentIds = useMemo(
     () => students.map((s: StudentData) => s.id),
     [students],
   );
 
-  // TanStack-cached assessments for all students
   const { data: studentAssessments, isLoading: assessmentsLoading } =
     useStudentAssessments(studentIds);
 
@@ -201,23 +216,36 @@ export default function ClassListsPage() {
     }
   };
 
+  /** Compute real statistics from assessment data */
   const calculateStats = () => {
-    return {
-      assessed:
+    let assessed = 0;
+    let independent = 0;
+    let instructional = 0;
+    let frustrated = 0;
+
+    for (const student of students as StudentData[]) {
+      const allStudentAssessments = studentAssessments[student.id] || [];
+      const relevantAssessments =
         assessmentType === "ALL"
-          ? students.filter(
-              (s: StudentData) =>
-                (studentAssessments[s.id] || []).length > 0,
-            ).length
-          : students.filter((s: StudentData) =>
-              (studentAssessments[s.id] || []).some(
-                (a) => a.type === assessmentType,
-              ),
-            ).length,
-      independent: 0,
-      instructional: 0,
-      frustrated: 0,
-    };
+          ? allStudentAssessments
+          : allStudentAssessments.filter((a) => a.type === assessmentType);
+
+      if (relevantAssessments.length === 0) continue;
+      assessed++;
+
+      // Latest assessment determines the classification
+      const latest = [...relevantAssessments].sort(
+        (a, b) =>
+          new Date(b.dateTaken).getTime() - new Date(a.dateTaken).getTime(),
+      )[0];
+
+      const level = getAssessmentClassification(latest);
+      if (level === "INDEPENDENT") independent++;
+      else if (level === "INSTRUCTIONAL") instructional++;
+      else if (level === "FRUSTRATION") frustrated++;
+    }
+
+    return { assessed, independent, instructional, frustrated };
   };
 
   if (loading && !classData) {
@@ -274,33 +302,34 @@ export default function ClassListsPage() {
           />
         </div>
 
-        <div>
-          <button
-            className="mb-2 flex items-center gap-2 font-semibold text-[#00306E] focus:outline-none"
-            onClick={() => setShowStats(!showStats)}
-            aria-expanded={showStats}
-            aria-controls="stat-cards-panel"
-            type="button"
-          >
-            <span>
-              Show {assessmentTypeLabels[assessmentType]} Statistics
-            </span>
-            {showStats ? (
-              <ChevronUp className="h-4 w-4" />
-            ) : (
-              <ChevronDown className="h-4 w-4" />
-            )}
-          </button>
-
-          <div id="stat-cards-panel" hidden={!showStats}>
-            <StatCards
-              assessedCount={stats.assessed}
-              independentCount={stats.independent}
-              instructionalCount={stats.instructional}
-              frustratedCount={stats.frustrated}
-            />
+               {assessmentType !== "ALL" && (
+          <div>
+            <button
+              type="button"
+              className="mb-2 flex items-center gap-2 font-semibold text-[#00306E] focus:outline-none"
+              onClick={() => setShowStats((prev) => !prev)}
+              aria-expanded={showStats}
+              aria-controls="stat-cards-panel"
+            >
+              <span>
+                Show {assessmentTypeLabels[assessmentType]} Statistics
+              </span>
+              {showStats ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </button>
+            <div id="stat-cards-panel" hidden={!showStats}>
+              <StatCards
+                assessedCount={stats.assessed}
+                independentCount={stats.independent}
+                instructionalCount={stats.instructional}
+                frustratedCount={stats.frustrated}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="flex items-center justify-between">
           <ClassInfo

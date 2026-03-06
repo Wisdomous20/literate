@@ -1,3 +1,4 @@
+// src/app/dashboard/class/[id]/report/[studentId]/comprehension-report/page.tsx
 "use client";
 
 import { useMemo } from "react";
@@ -9,6 +10,12 @@ import ComprehensionMetricCards from "@/components/reports/oral-reading-test/com
 import ComprehensionBreakdownReport from "@/components/reports/oral-reading-test/comprehension-report/comprehensionBreakdownReport";
 import { useAssessmentsByStudent } from "@/lib/hooks/useStudentAssessments";
 import type { AssessmentData, ComprehensionAnswer } from "@/types/assessment";
+
+const assessmentTypeLabels: Record<string, string> = {
+  ORAL_READING: "Oral Reading Test",
+  COMPREHENSION: "Reading Comprehension Test",
+  READING_FLUENCY: "Reading Fluency Test",
+};
 
 function formatTestType(testType?: string): string {
   if (testType === "POST_TEST") return "Post-Test";
@@ -61,6 +68,10 @@ export default function ReadingComprehensionReportPage() {
   const percentageGrade =
     totalItems > 0 ? Math.round((totalCorrect / totalItems) * 100) : 0;
 
+  // Derive assessment type label from actual data
+  const assessmentTypeLabel =
+    assessmentTypeLabels[assessment.type] || assessment.type;
+
   return (
     <div className="min-h-screen bg-[#f0f4ff] p-4 sm:p-6 lg:p-8">
       <ComprehensionReportHeader />
@@ -82,7 +93,7 @@ export default function ReadingComprehensionReportPage() {
             passageLevel={passage?.level ? `Grade ${passage.level}` : ""}
             numberOfWords={numberOfWords}
             testType={formatTestType(passage?.testType)}
-            assessmentType="Oral Reading Test"
+            assessmentType={assessmentTypeLabel}
           />
         </div>
         <div className="min-w-0">
