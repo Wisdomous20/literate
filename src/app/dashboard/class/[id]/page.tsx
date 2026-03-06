@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft, Search, ChevronUp, ChevronDown } from "lucide-react";
 import { ClassListsHeader } from "@/components/class-lists/classListsHeader";
 import { StatCards } from "@/components/class-lists/statCards";
 import {
   AssessmentTypeFilterDropdown,
-  AssessmentTypeFilter,
+  type AssessmentTypeFilter,
 } from "@/components/class-lists/assessmentTypeFilter";
 import { StudentTable } from "@/components/class-lists/studentTable";
 import { ClassInfo } from "@/components/class-lists/classInfo";
@@ -15,10 +15,11 @@ import { CreateStudentModal } from "@/components/class-lists/createStudentModal"
 import { createStudent } from "@/app/actions/student/createStudent";
 import { deleteStudent } from "@/app/actions/student/deleteStudent";
 import { updateStudent } from "@/app/actions/student/updateStudent";
-import { getAssessmentsByStudent } from "@/app/actions/assessment/getAssessment";
 import { useStudentList } from "@/lib/hooks/useStudentList";
 import { useQueryClient } from "@tanstack/react-query";
 import { useClassById } from "@/lib/hooks/useClassById";
+import { useStudentAssessments } from "@/lib/hooks/useStudentAssessments";
+import type { AssessmentData, StudentTableItem } from "@/types/assessment";
 
 interface StudentData {
   id: string;
@@ -73,38 +74,17 @@ export default function ClassListsPage() {
     useState<AssessmentTypeFilter>("ALL");
   const [showStats, setShowStats] = useState(true);
 
-  // Store all assessments for all students
-  const [studentAssessments, setStudentAssessments] = useState<
-    Record<string, any[]>
-  >({});
+  // Stable student IDs for the assessments hook
+  const studentIds = useMemo(
+    () => students.map((s: StudentData) => s.id),
+    [students],
+  );
 
-  useEffect(() => {
-    if (!students || students.length === 0) {
-      Promise.resolve().then(() => setStudentAssessments({}));
-      return;
-    }
-    let cancelled = false;
-    async function fetchAllAssessments() {
-      const result: Record<string, any[]> = {};
-      await Promise.all(
-        students.map(async (student: StudentData) => {
-          try {
-            const assessments = await getAssessmentsByStudent(student.id);
-            result[student.id] = assessments || [];
-          } catch {
-            result[student.id] = [];
-          }
-        }),
-      );
-      if (!cancelled) setStudentAssessments(result);
-    }
-    fetchAllAssessments();
-    return () => {
-      cancelled = true;
-    };
-  }, [students]);
+  // TanStack-cached assessments for all students
+  const { data: studentAssessments, isLoading: assessmentsLoading } =
+    useStudentAssessments(studentIds);
 
-  const loading = classLoading || studentsLoading;
+  const loading = classLoading || studentsLoading || assessmentsLoading;
   const fetchError = classError?.message || studentsError?.message || null;
 
   const handleCreateStudent = () => {
@@ -134,12 +114,11 @@ export default function ClassListsPage() {
     if (!confirm("Are you sure you want to delete this student?")) return;
     const result = await deleteStudent(studentId);
     if (result.success) {
-      // Invalidate and force refetch to update the UI right away
       await queryClient.invalidateQueries({
         queryKey: ["students", classData?.name],
       });
-      await queryClient.refetchQueries({
-        queryKey: ["students", classData?.name],
+      await queryClient.invalidateQueries({
+        queryKey: ["assessments", studentId],
       });
     } else {
       alert(result.error || "Failed to delete student");
@@ -168,17 +147,18 @@ export default function ClassListsPage() {
     setShowStats(true);
   };
 
-  // Transform students for table based on filter
-  const transformStudentsForTable = (students: StudentData[]) => {
+  const transformStudentsForTable = (
+    studentList: StudentData[],
+  ): StudentTableItem[] => {
     if (assessmentType === "ALL") {
-      return students
+      return studentList
         .map((student) => {
-          const assessments = studentAssessments[student.id] || [];
-          // Find latest assessment of any type
-          const latest = assessments.sort(
+          const assessments = [...(studentAssessments[student.id] || [])].sort(
             (a, b) =>
-              new Date(b.dateTaken).getTime() - new Date(a.dateTaken).getTime(),
-          )[0];
+              new Date(b.dateTaken).getTime() -
+              new Date(a.dateTaken).getTime(),
+          );
+          const latest = assessments[0] as AssessmentData | undefined;
           return {
             id: student.id,
             name: student.name || "No Name",
@@ -193,16 +173,16 @@ export default function ClassListsPage() {
           student.name.toLowerCase().includes(searchQuery.toLowerCase()),
         );
     } else {
-      // Filter by selected type, only show students with at least one assessment of that type
-      return students
+      return studentList
         .map((student) => {
           const assessments = (studentAssessments[student.id] || []).filter(
             (a) => a.type === assessmentType,
           );
           if (assessments.length === 0) return null;
-          const latest = assessments.sort(
+          const latest = [...assessments].sort(
             (a, b) =>
-              new Date(b.dateTaken).getTime() - new Date(a.dateTaken).getTime(),
+              new Date(b.dateTaken).getTime() -
+              new Date(a.dateTaken).getTime(),
           )[0];
           return {
             id: student.id,
@@ -211,26 +191,25 @@ export default function ClassListsPage() {
             lastAssessment: latest
               ? new Date(latest.dateTaken).toLocaleDateString()
               : null,
-            assessmentType: latest.type,
+            assessmentType: assessmentType as string,
           };
         })
-        .filter(Boolean)
+        .filter((s): s is StudentTableItem => s !== null)
         .filter((student) =>
-          (student as any).name
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase()),
+          student.name.toLowerCase().includes(searchQuery.toLowerCase()),
         );
     }
   };
 
   const calculateStats = () => {
-    // You can update this to show stats for the current filter if needed
     return {
       assessed:
         assessmentType === "ALL"
-          ? students.filter((s) => (studentAssessments[s.id] || []).length > 0)
-              .length
-          : students.filter((s) =>
+          ? students.filter(
+              (s: StudentData) =>
+                (studentAssessments[s.id] || []).length > 0,
+            ).length
+          : students.filter((s: StudentData) =>
               (studentAssessments[s.id] || []).some(
                 (a) => a.type === assessmentType,
               ),
@@ -244,9 +223,9 @@ export default function ClassListsPage() {
   if (loading && !classData) {
     return (
       <div className="flex flex-col gap-4 p-8">
-        <div className="h-8 w-1/3 bg-gray-200 animate-pulse rounded" />
-        <div className="h-6 w-1/2 bg-gray-200 animate-pulse rounded" />
-        <div className="h-96 w-full bg-gray-100 animate-pulse rounded" />
+        <div className="h-8 w-1/3 animate-pulse rounded bg-gray-200" />
+        <div className="h-6 w-1/2 animate-pulse rounded bg-gray-200" />
+        <div className="h-96 w-full animate-pulse rounded bg-gray-100" />
       </div>
     );
   }
@@ -276,7 +255,7 @@ export default function ClassListsPage() {
 
       <main className="flex flex-1 flex-col gap-5 px-8 py-6">
         {loading && (
-          <div className="absolute top-2 right-2 text-xs text-blue-500 z-50">
+          <div className="absolute right-2 top-2 z-50 text-xs text-blue-500">
             Updating...
           </div>
         )}
@@ -296,33 +275,22 @@ export default function ClassListsPage() {
         </div>
 
         <div>
-          {showStats ? (
-            <button
-              className="flex items-center gap-2 mb-2 text-[#00306E] font-semibold focus:outline-none"
-              onClick={() => setShowStats(false)}
-              aria-expanded="true"
-              aria-controls="stat-cards-panel"
-              type="button"
-            >
-              <span>
-                Show {assessmentTypeLabels[assessmentType]} Statistics
-              </span>
-              <ChevronUp className="w-4 h-4" />
-            </button>
-          ) : (
-            <button
-              className="flex items-center gap-2 mb-2 text-[#00306E] font-semibold focus:outline-none"
-              onClick={() => setShowStats(true)}
-              aria-expanded="false"
-              aria-controls="stat-cards-panel"
-              type="button"
-            >
-              <span>
-                Show {assessmentTypeLabels[assessmentType]} Statistics
-              </span>
-              <ChevronDown className="w-4 h-4" />
-            </button>
-          )}
+          <button
+            className="mb-2 flex items-center gap-2 font-semibold text-[#00306E] focus:outline-none"
+            onClick={() => setShowStats(!showStats)}
+            aria-expanded={showStats}
+            aria-controls="stat-cards-panel"
+            type="button"
+          >
+            <span>
+              Show {assessmentTypeLabels[assessmentType]} Statistics
+            </span>
+            {showStats ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
+          </button>
 
           <div id="stat-cards-panel" hidden={!showStats}>
             <StatCards
@@ -341,7 +309,7 @@ export default function ClassListsPage() {
           />
 
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 rounded-full px-4 py-2 bg-[#F4FCFD] border border-[rgba(84,164,255,0.38)] w-87.5">
+            <div className="flex w-87.5 items-center gap-3 rounded-full border border-[rgba(84,164,255,0.38)] bg-[#F4FCFD] px-4 py-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E4F4FF]">
                 <Search className="h-4 w-4 text-[#162DB0]" />
               </div>
@@ -354,7 +322,6 @@ export default function ClassListsPage() {
               />
             </div>
 
-            {/* Sort Dropdown */}
             <div className="relative">
               <select
                 value={sortOption}
@@ -367,7 +334,7 @@ export default function ClassListsPage() {
                       | "gradeDesc",
                   )
                 }
-                className="px-4 py-2 bg-[#E4F4FF] rounded-md text-[#03438D] text-sm"
+                className="rounded-md bg-[#E4F4FF] px-4 py-2 text-sm text-[#03438D]"
                 aria-label="Sort students"
                 title="Sort students"
               >
@@ -382,7 +349,7 @@ export default function ClassListsPage() {
 
         <div className="max-h-[60vh] overflow-y-auto">
           <StudentTable
-            students={tableStudents as any}
+            students={tableStudents}
             totalStudents={tableStudents.length}
             studentAssessments={studentAssessments}
             onDeleteStudent={handleDeleteStudent}
