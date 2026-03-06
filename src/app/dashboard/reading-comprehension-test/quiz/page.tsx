@@ -7,6 +7,8 @@ import {
   ChevronRight,
   ChevronDown,
   Loader2,
+  CheckCircle,
+  X,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/auth/dashboard/dashboardHeader";
 import { ComprehensionBreakdown } from "@/components/oral-reading-test/comprehensionBreakdown";
@@ -71,6 +73,7 @@ export default function ReadingComprehensionQuestionsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [successToast, setSuccessToast] = useState(false);
   const [comprehensionResult, setComprehensionResult] =
     useState<ComprehensionResult | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -373,6 +376,7 @@ export default function ReadingComprehensionQuestionsPage() {
       }
 
       setIsSubmitted(true);
+      setSuccessToast(true);
     } catch (err) {
       console.error("Comprehension submit error:", err);
       setSubmitError("Something went wrong while submitting.");
@@ -386,6 +390,13 @@ export default function ReadingComprehensionQuestionsPage() {
   };
 
   const totalQuestions = questions.length;
+
+  useEffect(() => {
+    if (successToast) {
+      const timer = setTimeout(() => setSuccessToast(false), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [successToast]);
 
   if (isLoading) {
     return (
@@ -424,6 +435,20 @@ export default function ReadingComprehensionQuestionsPage() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
+      {successToast && (
+        <div className="absolute left-1/2 top-20 z-50 flex -translate-x-1/2 items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2.5 shadow-lg">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <span className="text-sm font-medium text-green-700">
+            Answers submitted successfully!
+          </span>
+          <button
+            onClick={() => setSuccessToast(false)}
+            className="ml-2 text-green-400 hover:text-green-600"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
       <DashboardHeader title="Reading Comprehension Test" />
 
       <div className="flex flex-1 min-h-0 flex-col gap-4 px-4 py-4 md:px-6 lg:px-8">

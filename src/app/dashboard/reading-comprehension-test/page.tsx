@@ -81,6 +81,7 @@ export default function ReadingComprehensionTestPage() {
   const [gradeLevel, setGradeLevel] = useState("");
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [isLoadingClasses, setIsLoadingClasses] = useState(true);
+  const [classLoadError, setClassLoadError] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [selectedClassName, setSelectedClassName] = useState<string>("");
 
@@ -178,8 +179,10 @@ export default function ReadingComprehensionTestPage() {
           name: c.name,
         }));
         setClasses(mappedClasses);
+        setClassLoadError(false);
       } else {
         setClasses([]);
+        setClassLoadError(true);
       }
       setIsLoadingClasses(false);
     }
@@ -454,7 +457,36 @@ export default function ReadingComprehensionTestPage() {
               passageExpanded ? "gap-0" : "gap-3"
             }`}
           >
-            {!passageExpanded && !isLoadingClasses && (
+            {!passageExpanded && isLoadingClasses && (
+              <div className="h-[72px] animate-pulse rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] shadow-[0px_1px_20px_rgba(108,164,239,0.37)]" />
+            )}
+
+            {!passageExpanded && classLoadError && !isLoadingClasses && (
+              <div className="flex items-center justify-between rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] px-6 py-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)]">
+                <span className="text-sm font-medium text-red-500">Failed to load classes.</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setClassLoadError(false);
+                    setIsLoadingClasses(true);
+                    getClassListBySchoolYear(getCurrentSchoolYear()).then((result) => {
+                      if (result.success && result.classes) {
+                        setClasses(result.classes.map((c) => ({ id: c.id, name: c.name })));
+                        setClassLoadError(false);
+                      } else {
+                        setClassLoadError(true);
+                      }
+                      setIsLoadingClasses(false);
+                    });
+                  }}
+                  className="text-xs font-semibold text-[#6666FF] hover:underline"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {!passageExpanded && !isLoadingClasses && !classLoadError && (
               <StudentInfoBar
                 studentName={studentName}
                 gradeLevel={gradeLevel}
