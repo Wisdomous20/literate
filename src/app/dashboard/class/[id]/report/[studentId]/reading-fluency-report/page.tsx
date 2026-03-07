@@ -79,9 +79,8 @@ export default function ReadingFluencyReportPage() {
 
   const miscues: OralFluencyMiscue[] = assessment.oralFluency?.miscues || [];
   const miscueData = {
-    mispronunciation: miscues.filter(
-      (m) => m.miscueType === "MISPRONUNCIATION",
-    ).length,
+    mispronunciation: miscues.filter((m) => m.miscueType === "MISPRONUNCIATION")
+      .length,
     omission: miscues.filter((m) => m.miscueType === "OMISSION").length,
     substitution: miscues.filter((m) => m.miscueType === "SUBSTITUTION").length,
     transposition: miscues.filter((m) => m.miscueType === "TRANSPOSITION")
@@ -109,9 +108,16 @@ export default function ReadingFluencyReportPage() {
     assessment.oralFluency?.behaviors || [],
   );
 
-  // Derive assessment type label from the actual assessment type
   const assessmentTypeLabel =
     assessmentTypeLabels[assessment.type] || assessment.type;
+
+  // WCPM = (totalWords - totalMiscues) / duration * 60
+  // Uniform with the test report pages
+  const totalWords = assessment.oralFluency?.totalWords ?? numberOfWords;
+  const totalMiscues = assessment.oralFluency?.totalMiscues ?? 0;
+  const duration = assessment.oralFluency?.duration ?? 0;
+  const wordsCorrect = Math.max(0, totalWords - totalMiscues);
+  const wcpm = duration > 0 ? Math.round((wordsCorrect / duration) * 60) : 0;
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
@@ -119,8 +125,8 @@ export default function ReadingFluencyReportPage() {
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_2fr]">
         <StudentInfoCard studentName={studentName} gradeLevel={gradeLevel} />
         <MetricCards
-          wcpm={Math.round(assessment.oralFluency?.wordsPerMinute ?? 0)}
-          readingTimeSeconds={assessment.oralFluency?.duration ?? 0}
+          wcpm={wcpm}
+          readingTimeSeconds={duration}
           classificationLevel={
             assessment.oralFluency?.classificationLevel ?? ""
           }

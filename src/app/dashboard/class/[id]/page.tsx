@@ -170,8 +170,7 @@ export default function ClassListsPage() {
         .map((student) => {
           const assessments = [...(studentAssessments[student.id] || [])].sort(
             (a, b) =>
-              new Date(b.dateTaken).getTime() -
-              new Date(a.dateTaken).getTime(),
+              new Date(b.dateTaken).getTime() - new Date(a.dateTaken).getTime(),
           );
           const latest = assessments[0] as AssessmentData | undefined;
           return {
@@ -196,8 +195,7 @@ export default function ClassListsPage() {
           if (assessments.length === 0) return null;
           const latest = [...assessments].sort(
             (a, b) =>
-              new Date(b.dateTaken).getTime() -
-              new Date(a.dateTaken).getTime(),
+              new Date(b.dateTaken).getTime() - new Date(a.dateTaken).getTime(),
           )[0];
           return {
             id: student.id,
@@ -302,24 +300,35 @@ export default function ClassListsPage() {
           />
         </div>
 
-               {assessmentType !== "ALL" && (
+        {assessmentType !== "ALL" && (
           <div>
-            <button
-              type="button"
-              className="mb-2 flex items-center gap-2 font-semibold text-[#00306E] focus:outline-none"
-              onClick={() => setShowStats((prev) => !prev)}
-              aria-expanded={showStats}
-              aria-controls="stat-cards-panel"
-            >
-              <span>
-                Show {assessmentTypeLabels[assessmentType]} Statistics
-              </span>
-              {showStats ? (
+            {showStats ? (
+              <button
+                type="button"
+                className="mb-2 flex items-center gap-2 font-semibold text-[#00306E] focus:outline-none"
+                onClick={() => setShowStats(false)}
+                aria-expanded="true"
+                aria-controls="stat-cards-panel"
+              >
+                <span>
+                  Show {assessmentTypeLabels[assessmentType]} Statistics
+                </span>
                 <ChevronUp className="h-4 w-4" />
-              ) : (
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="mb-2 flex items-center gap-2 font-semibold text-[#00306E] focus:outline-none"
+                onClick={() => setShowStats(true)}
+                aria-expanded="false"
+                aria-controls="stat-cards-panel"
+              >
+                <span>
+                  Show {assessmentTypeLabels[assessmentType]} Statistics
+                </span>
                 <ChevronDown className="h-4 w-4" />
-              )}
-            </button>
+              </button>
+            )}
             <div id="stat-cards-panel" hidden={!showStats}>
               <StatCards
                 assessedCount={stats.assessed}

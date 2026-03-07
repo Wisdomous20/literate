@@ -20,8 +20,11 @@ import { ReadingTimer } from "@/components/oral-reading-test/readingTimer";
 import { MiscueAnalysis } from "@/components/reading-fluency-test/miscueAnalysis";
 import { FullScreenPassage } from "@/components/oral-reading-test/fullScreenPassage";
 import { AddPassageModal } from "@/components/oral-reading-test/addPassageModal";
-import { getClassListBySchoolYear } from "@/app/actions/class/getClassList";
 import { ReadinessCheckButton } from "@/components/oral-reading-test/readinessCheck";
+import { useClassList } from "@/lib/hooks/useClassList";
+import { useQueryClient } from "@tanstack/react-query";
+import { createStudent } from "@/app/actions/student/createStudent";
+import { convertToWav } from "@/utils/convertToWav";
 import type { OralFluencyAnalysis } from "@/types/oral-reading";
 
 function getCurrentSchoolYear(): string {
@@ -34,11 +37,6 @@ function getCurrentSchoolYear(): string {
   } else {
     return `${currentYear - 1}-${currentYear}`;
   }
-}
-
-interface ClassItem {
-  id: string;
-  name: string;
 }
 
 const STORAGE_KEY = "reading-fluency-session";
@@ -61,6 +59,7 @@ interface SessionState {
   recordedSeconds: number;
   analysisResult?: OralFluencyAnalysis | null;
   sessionId?: string;
+  assessmentId?: string;
 }
 
 function loadSession(): Partial<SessionState> {
@@ -102,6 +101,7 @@ function base64ToBlob(base64: string): Blob {
 
 export default function ReadingFluencyTestPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const isRestoredRef = useRef(true);
 
   const [passageContent, setPassageContent] = useState("");
@@ -124,8 +124,6 @@ export default function ReadingFluencyTestPage() {
   const [selectedPassage, setSelectedPassage] = useState<string | undefined>();
   const [studentName, setStudentName] = useState("");
   const [gradeLevel, setGradeLevel] = useState("");
-  const [classes, setClasses] = useState<ClassItem[]>([]);
-  const [isLoadingClasses, setIsLoadingClasses] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [selectedClassName, setSelectedClassName] = useState<string>("");
@@ -137,11 +135,22 @@ export default function ReadingFluencyTestPage() {
   const [analysisResult, setAnalysisResult] =
     useState<OralFluencyAnalysis | null>(null);
   const [sessionId, setSessionId] = useState<string>("");
+  const [assessmentId, setAssessmentId] = useState<string>("");
   const [highlightedTypes, setHighlightedTypes] = useState<Set<string>>(
     new Set(),
   );
   const [passageExpanded, setPassageExpanded] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  // TanStack-cached class list
+  const schoolYear = getCurrentSchoolYear();
+  const { data: classListData = [], isLoading: isLoadingClasses } =
+    useClassList(schoolYear);
+
+  const classes = useMemo(
+    () => classListData.map((c) => ({ id: c.id, name: c.name })),
+    [classListData],
+  );
 
   const handleJumpToTime = useCallback((timestamp: number) => {
     const audio = audioRef.current;
@@ -200,6 +209,7 @@ export default function ReadingFluencyTestPage() {
       setRecordedSeconds(loaded.recordedSeconds);
     if (loaded.analysisResult) setAnalysisResult(loaded.analysisResult);
     if (loaded.sessionId) setSessionId(loaded.sessionId);
+    if (loaded.assessmentId) setAssessmentId(loaded.assessmentId);
 
     try {
       const audioBase64 = sessionStorage.getItem(AUDIO_STORAGE_KEY);
@@ -256,6 +266,7 @@ export default function ReadingFluencyTestPage() {
       recordedSeconds,
       analysisResult,
       sessionId,
+      assessmentId,
     });
   }, [
     isHydrated,
@@ -275,28 +286,8 @@ export default function ReadingFluencyTestPage() {
     recordedSeconds,
     analysisResult,
     sessionId,
+    assessmentId,
   ]);
-
-  useEffect(() => {
-    async function fetchClasses() {
-      setIsLoadingClasses(true);
-      const schoolYear = getCurrentSchoolYear();
-      const result = await getClassListBySchoolYear(schoolYear);
-
-      if (result.success && result.classes) {
-        const mappedClasses: ClassItem[] = result.classes.map((c) => ({
-          id: c.id,
-          name: c.name,
-        }));
-        setClasses(mappedClasses);
-      } else {
-        setClasses([]);
-      }
-      setIsLoadingClasses(false);
-    }
-
-    fetchClasses();
-  }, []);
 
   const hasPassage = passageContent.length > 0;
 
@@ -323,6 +314,7 @@ export default function ReadingFluencyTestPage() {
       setRecordedAudioBlob(null);
       setAnalysisResult(null);
       setSessionId("");
+      setAssessmentId("");
       if (recordedAudioURL) {
         URL.revokeObjectURL(recordedAudioURL);
         setRecordedAudioURL(null);
@@ -366,6 +358,7 @@ export default function ReadingFluencyTestPage() {
     setRecordedSeconds(0);
     setAnalysisResult(null);
     setSessionId("");
+    setAssessmentId("");
     if (recordedAudioURL) {
       URL.revokeObjectURL(recordedAudioURL);
       setRecordedAudioURL(null);
@@ -394,6 +387,7 @@ export default function ReadingFluencyTestPage() {
     setCountdownSeconds(3);
     setAnalysisResult(null);
     setSessionId("");
+    setAssessmentId("");
     sessionStorage.removeItem(STORAGE_KEY);
     sessionStorage.removeItem(AUDIO_STORAGE_KEY);
   }, [recordedAudioURL]);
@@ -406,16 +400,59 @@ export default function ReadingFluencyTestPage() {
   }, [toast]);
 
   const handleSubmitRecording = useCallback(async () => {
-    if (!recordedAudioBlob || !selectedPassage || !selectedStudentId) {
+    if (!recordedAudioBlob || !selectedPassage) {
       return;
     }
+
+    // Auto-create student if none selected
+    let studentId = selectedStudentId;
+    if (!studentId) {
+      if (!studentName.trim() || !gradeLevel || !selectedClassName) {
+        setToast({
+          message:
+            "Please enter a student name, select a grade level, and select a class.",
+          type: "error",
+        });
+        return;
+      }
+
+      try {
+        const result = await createStudent(
+          studentName.trim(),
+          Number(gradeLevel),
+          selectedClassName,
+        );
+        if (!result.success || !("student" in result) || !result.student) {
+          setToast({
+            message: result.error || "Failed to create student.",
+            type: "error",
+          });
+          return;
+        }
+        studentId = result.student.id;
+        setSelectedStudentId(studentId);
+        setToast({
+          message: `Student "${studentName.trim()}" created successfully!`,
+          type: "success",
+        });
+      } catch {
+        setToast({
+          message: "Something went wrong creating the student.",
+          type: "error",
+        });
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
       const { uploadAudioToSupabase } =
         await import("@/utils/uploadAudioToSupabase");
+      const wavBlob = await convertToWav(recordedAudioBlob);
+
       const supabaseAudioUrl = await uploadAudioToSupabase(
-        recordedAudioBlob,
-        selectedStudentId,
+        wavBlob,
+        studentId,
         selectedPassage,
       );
 
@@ -424,10 +461,10 @@ export default function ReadingFluencyTestPage() {
       }
 
       const formData = new FormData();
-      formData.append("studentId", selectedStudentId);
+      formData.append("studentId", studentId);
       formData.append("passageId", selectedPassage);
       formData.append("audioUrl", supabaseAudioUrl);
-      formData.append("audio", recordedAudioBlob, "recording.webm");
+      formData.append("audio", wavBlob, "recording.wav");
 
       const response = await fetch(`/api/fluency-reading/${selectedPassage}`, {
         method: "POST",
@@ -452,13 +489,14 @@ export default function ReadingFluencyTestPage() {
       if (result.sessionId) {
         setSessionId(result.sessionId);
       }
+      if (result.assessmentId) {
+        setAssessmentId(result.assessmentId);
+      }
 
       setToast({
         message: "Reading Fluency Session Successful!",
         type: "success",
       });
-
-      router.push("/dashboard/reading-fluency-test/report");
     } catch {
       setToast({
         message: "Failed to analyze reading fluency.",
@@ -467,25 +505,30 @@ export default function ReadingFluencyTestPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [recordedAudioBlob, selectedPassage, selectedStudentId, router]);
-
-  useEffect(() => {
-    if (isRestoredRef.current) return;
-    if (
-      hasRecording &&
-      recordedAudioBlob &&
-      selectedPassage &&
-      selectedStudentId
-    ) {
-      handleSubmitRecording();
-    }
   }, [
-    hasRecording,
     recordedAudioBlob,
     selectedPassage,
     selectedStudentId,
-    handleSubmitRecording,
+    studentName,
+    gradeLevel,
+    selectedClassName,
   ]);
+
+  // Auto-submit only for FRESH recordings, not restored ones
+  // Allow submission even without selectedStudentId if student info is filled
+  const canSubmit =
+    hasRecording &&
+    recordedAudioBlob &&
+    selectedPassage &&
+    (selectedStudentId ||
+      (studentName.trim() && gradeLevel && selectedClassName));
+
+  useEffect(() => {
+    if (isRestoredRef.current) return;
+    if (canSubmit) {
+      handleSubmitRecording();
+    }
+  }, [canSubmit, handleSubmitRecording]);
 
   if (isFullScreen) {
     return (
@@ -543,6 +586,7 @@ export default function ReadingFluencyTestPage() {
         {!passageExpanded && (
           <div className="flex items-center justify-between">
             <button
+              type="button"
               onClick={() => router.back()}
               className="flex items-center gap-1 text-sm font-semibold text-[#00306E] transition-colors hover:text-[#6666FF] md:text-base lg:text-lg"
             >
@@ -585,15 +629,12 @@ export default function ReadingFluencyTestPage() {
                 selectedClassName={selectedClassName}
                 onStudentNameChange={setStudentName}
                 onGradeLevelChange={setGradeLevel}
-                onClassCreated={(newClass) => {
-                  setClasses((prev) => [
-                    ...prev,
-                    { id: newClass, name: newClass },
-                  ]);
+                onClassCreated={() => {
+                  queryClient.invalidateQueries({
+                    queryKey: ["classes", schoolYear],
+                  });
                 }}
-                onStudentSelected={(studentId: string) =>
-                  setSelectedStudentId(studentId)
-                }
+                onStudentSelected={(id: string) => setSelectedStudentId(id)}
                 onClassChange={setSelectedClassName}
               />
             )}
