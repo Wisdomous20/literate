@@ -2,16 +2,6 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Timer,
-  Minus,
-  Plus,
-  CheckCircle,
-  XCircle,
-  X,
-} from "lucide-react";
 import { DashboardHeader } from "@/components/auth/dashboard/dashboardHeader";
 import StudentInfoBar from "@/components/oral-reading-test/studentInfoBar";
 import { PassageFilters } from "@/components/oral-reading-test/passageFilters";
@@ -20,6 +10,9 @@ import { ReadingTimer } from "@/components/oral-reading-test/readingTimer";
 import { MiscueAnalysis } from "@/components/oral-reading-test/miscueAnalysis";
 import { FullScreenPassage } from "@/components/oral-reading-test/fullScreenPassage";
 import { AddPassageModal } from "@/components/oral-reading-test/addPassageModal";
+import { ToastNotification } from "@/components/oral-reading-test/toastNotification";
+import { CountdownToggle } from "@/components/oral-reading-test/countdownToggle";
+import { OralReadingNavRow } from "@/components/oral-reading-test/oralReadingNavRow";
 import { getClassListBySchoolYear } from "@/app/actions/class/getClassList";
 import { ReadinessCheckButton } from "@/components/oral-reading-test/readinessCheck";
 import { createStudent } from "@/app/actions/student/createStudent";
@@ -134,6 +127,7 @@ export default function OralReadingTestPage() {
   const [gradeLevel, setGradeLevel] = useState("");
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [isLoadingClasses, setIsLoadingClasses] = useState(true);
+  const [classLoadError, setClassLoadError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [selectedClassName, setSelectedClassName] = useState<string>("");
@@ -300,19 +294,27 @@ export default function OralReadingTestPage() {
   useEffect(() => {
     async function fetchClasses() {
       setIsLoadingClasses(true);
-      const schoolYear = getCurrentSchoolYear();
-      const result = await getClassListBySchoolYear(schoolYear);
+      setClassLoadError(false);
+      try {
+        const schoolYear = getCurrentSchoolYear();
+        const result = await getClassListBySchoolYear(schoolYear);
 
-      if (result.success && result.classes) {
-        const mappedClasses: ClassItem[] = result.classes.map((c) => ({
-          id: c.id,
-          name: c.name,
-        }));
-        setClasses(mappedClasses);
-      } else {
+        if (result.success && result.classes) {
+          const mappedClasses: ClassItem[] = result.classes.map((c) => ({
+            id: c.id,
+            name: c.name,
+          }));
+          setClasses(mappedClasses);
+        } else {
+          setClassLoadError(true);
+          setClasses([]);
+        }
+      } catch {
+        setClassLoadError(true);
         setClasses([]);
+      } finally {
+        setIsLoadingClasses(false);
       }
-      setIsLoadingClasses(false);
     }
 
     fetchClasses();
@@ -609,35 +611,12 @@ export default function OralReadingTestPage() {
     <div className="flex h-screen flex-col overflow-hidden">
       <DashboardHeader title="Oral Reading Test" />
 
-      {/* Toast notification — fixed upper right */}
       {toast && (
-        <div
-          className={`fixed top-6 right-6 z-50 flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium shadow-lg transition-all duration-300 ${
-            toast.type === "success"
-              ? "border border-green-200 bg-green-50 text-green-800"
-              : "border border-red-200 bg-red-50 text-red-800"
-          }`}
-        >
-          {toast.type === "success" ? (
-            <CheckCircle className="h-4 w-4 shrink-0 text-green-500" />
-          ) : (
-            <XCircle className="h-4 w-4 shrink-0 text-red-500" />
-          )}
-          <span className="flex-1">{toast.message}</span>
-          <button
-            type="button"
-            onClick={() => setToast(null)}
-            aria-label="Close notification"
-            title="Close notification"
-            className={`ml-1 rounded-full p-0.5 transition-colors ${
-              toast.type === "success"
-                ? "hover:bg-green-200"
-                : "hover:bg-red-200"
-            }`}
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
+        <ToastNotification
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
 
       <main
@@ -647,39 +626,14 @@ export default function OralReadingTestPage() {
       >
         {/* Nav row */}
         {!passageExpanded && (
-          <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="flex items-center gap-1 text-sm font-semibold text-[#00306E] transition-colors hover:text-[#6666FF] md:text-base lg:text-lg"
-            >
-              <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
-              <span>Previous</span>
-            </button>
-
-            <h2 className="flex-1 text-center text-base font-bold text-[#0C1A6D] md:text-lg lg:text-xl">
-              Student Information
-            </h2>
-
-            <button
-              type="button"
-              onClick={() =>
-                hasRecording &&
-                router.push("/dashboard/oral-reading-test/comprehension")
-              }
-              aria-label="Continue to comprehension"
-              title="Continue to comprehension"
-              className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-300 md:text-base ${
-                hasRecording
-                  ? "animate-[pulseGlow_2s_ease-in-out_infinite] bg-[#6666FF] text-white shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)] hover:bg-[#5555EE]"
-                  : "cursor-not-allowed text-[#00306E]/40"
-              }`}
-              disabled={!hasRecording}
-            >
-              <span>Continue to Comprehension</span>
-              <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
-            </button>
-          </div>
+          <OralReadingNavRow
+            onGoBack={() => router.back()}
+            onContinue={() =>
+              hasRecording &&
+              router.push("/dashboard/oral-reading-test/comprehension")
+            }
+            continueEnabled={hasRecording}
+          />
         )}
 
         {/* Two-column layout: left content + right MiscueAnalysis */}
@@ -691,18 +645,51 @@ export default function OralReadingTestPage() {
             }`}
           >
             {!passageExpanded && isLoadingClasses && (
-              <>
-                <div className="h-[72px] animate-pulse rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] shadow-[0px_1px_20px_rgba(108,164,239,0.37)]" />
-                <div className="flex gap-3">
-                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
-                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
-                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
-                  <div className="h-[42px] w-[140px] shrink-0 animate-pulse rounded-lg bg-[#2E2E68]/30" />
+              <div className="grid grid-cols-[1fr_160px_180px] items-start gap-3">
+                {/* Student Name skeleton */}
+                <div className="rounded-lg bg-[rgba(108,164,239,0.09)] px-3 py-2">
+                  <div className="mb-1.5 h-2.5 w-20 animate-pulse rounded bg-[#C4C4FF]/60" />
+                  <div className="h-7 w-full animate-pulse rounded-md bg-[#C4C4FF]/40" />
                 </div>
-              </>
+                {/* Grade Level skeleton */}
+                <div className="rounded-lg bg-[rgba(108,164,239,0.09)] px-3 py-2">
+                  <div className="mb-1.5 h-2.5 w-16 animate-pulse rounded bg-[#C4C4FF]/60" />
+                  <div className="h-7 w-full animate-pulse rounded-md bg-[#C4C4FF]/40" />
+                </div>
+                {/* Class skeleton */}
+                <div className="rounded-lg bg-[rgba(108,164,239,0.09)] px-3 py-2">
+                  <div className="mb-1.5 h-2.5 w-12 animate-pulse rounded bg-[#C4C4FF]/60" />
+                  <div className="h-7 w-full animate-pulse rounded-md bg-[#C4C4FF]/40" />
+                </div>
+              </div>
             )}
 
-            {!passageExpanded && !isLoadingClasses && (
+            {!passageExpanded && classLoadError && !isLoadingClasses && (
+              <div className="flex h-[72px] w-full items-center justify-between rounded-2xl border border-red-200 bg-red-50 px-4">
+                <span className="text-sm font-medium text-red-700">Failed to load classes.</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setClassLoadError(false);
+                    setIsLoadingClasses(true);
+                    const schoolYear = getCurrentSchoolYear();
+                    getClassListBySchoolYear(schoolYear).then((result) => {
+                      if (result.success && result.classes) {
+                        setClasses(result.classes.map((c) => ({ id: c.id, name: c.name })));
+                      } else {
+                        setClassLoadError(true);
+                      }
+                    }).catch(() => setClassLoadError(true))
+                      .finally(() => setIsLoadingClasses(false));
+                  }}
+                  className="rounded-lg bg-red-600 px-3 py-1 text-xs font-semibold text-white hover:bg-red-700 transition-colors"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {!passageExpanded && !isLoadingClasses && !classLoadError && (
               <StudentInfoBar
                 studentName={studentName}
                 gradeLevel={gradeLevel}
@@ -773,72 +760,17 @@ export default function OralReadingTestPage() {
 
             {!passageExpanded && (
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Timer className="h-4 w-4" style={{ color: "#6666FF" }} />
-                  <span className="text-xs font-medium text-[#31318A]">
-                    Countdown
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setCountdownEnabled(!countdownEnabled)}
-                    aria-label={
-                      countdownEnabled
-                        ? "Disable countdown"
-                        : "Enable countdown"
-                    }
-                    title={
-                      countdownEnabled
-                        ? "Disable countdown"
-                        : "Enable countdown"
-                    }
-                    className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
-                      countdownEnabled ? "bg-[#6666FF]" : "bg-[#C4C4FF]"
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-                        countdownEnabled
-                          ? "translate-x-4.25"
-                          : "translate-x-0.75"
-                      }`}
-                    />
-                  </button>
-
-                  {countdownEnabled && (
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setCountdownSeconds(Math.max(1, countdownSeconds - 1))
-                        }
-                        aria-label="Decrease countdown seconds"
-                        title="Decrease countdown seconds"
-                        className="flex h-5 w-5 items-center justify-center rounded bg-[rgba(102,102,255,0.15)] transition-colors hover:opacity-70"
-                      >
-                        <Minus className="h-3 w-3 text-[#6666FF]" />
-                      </button>
-                      <span className="w-5 text-center text-xs font-bold tabular-nums text-[#6666FF]">
-                        {countdownSeconds}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setCountdownSeconds(
-                            Math.min(10, countdownSeconds + 1),
-                          )
-                        }
-                        aria-label="Increase countdown seconds"
-                        title="Increase countdown seconds"
-                        className="flex h-5 w-5 items-center justify-center rounded bg-[rgba(102,102,255,0.15)] transition-colors hover:opacity-70"
-                      >
-                        <Plus className="h-3 w-3 text-[#6666FF]" />
-                      </button>
-                      <span className="text-[10px] font-medium text-[#31318A]">
-                        sec
-                      </span>
-                    </div>
-                  )}
-                </div>
+                <CountdownToggle
+                  countdownEnabled={countdownEnabled}
+                  countdownSeconds={countdownSeconds}
+                  onToggle={() => setCountdownEnabled(!countdownEnabled)}
+                  onDecrease={() =>
+                    setCountdownSeconds(Math.max(1, countdownSeconds - 1))
+                  }
+                  onIncrease={() =>
+                    setCountdownSeconds(Math.min(10, countdownSeconds + 1))
+                  }
+                />
 
                 <ReadinessCheckButton />
               </div>

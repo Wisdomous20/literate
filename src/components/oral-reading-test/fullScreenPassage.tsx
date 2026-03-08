@@ -48,6 +48,23 @@ export function FullScreenPassage({
   const autoScrollRef = useRef(autoScrollEnabled)
   const autoFinishRef = useRef(autoFinishEnabled)
 
+  // Pre-acquire microphone during countdown so recording starts with zero latency at countdown=0
+  useEffect(() => {
+    if (!navigator.mediaDevices) return
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then((stream) => {
+        if (!hasStartedRef.current) {
+          streamRef.current = stream
+        } else {
+          // Recording already started (no countdown case) — discard duplicate stream
+          stream.getTracks().forEach((t) => t.stop())
+        }
+      })
+      .catch(() => {
+        // Permission denied or unavailable — startRecordingAndTimer will handle the error
+      })
+  }, [])
+
   useEffect(() => {
     autoScrollRef.current = autoScrollEnabled
   }, [autoScrollEnabled])
@@ -221,11 +238,17 @@ export function FullScreenPassage({
     if (hasStartedRef.current) return
     hasStartedRef.current = true
 
-    let stream: MediaStream | null = null
+    // Reuse the pre-acquired stream (from the countdown useEffect) to avoid
+    // getUserMedia latency at countdown=0. Fall back to a fresh request if
+    // the pre-acquire hasn't resolved yet or was denied.
+    let stream: MediaStream | null = streamRef.current
 
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      streamRef.current = stream
+      if (!stream) {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        streamRef.current = stream
+      }
+
       const mediaRecorder = new MediaRecorder(stream)
       mediaRecorderRef.current = mediaRecorder
       audioChunksRef.current = []
@@ -247,7 +270,7 @@ export function FullScreenPassage({
       console.error("Microphone access denied")
     }
 
-    if (stream) {
+    if (streamRef.current) {
       startSpeechRecognition()
     }
 

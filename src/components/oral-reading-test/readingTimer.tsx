@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from "react"
 import { Mic, Play, Pause, Download, ChevronDown } from "lucide-react"
 
+import { convertToWav } from "@/utils/convertToWav"
+
 interface ReadingTimerProps {
   hasPassage: boolean
   onStartReading: () => void
@@ -86,13 +88,22 @@ function AudioPlayer({ src, externalAudioRef }: { src: string; externalAudioRef?
     setShowSpeedMenu(false)
   }
 
-  const handleDownload = () => {
-    const a = document.createElement("a")
-    a.href = src
-    a.download = `oral-reading-test-recording-${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.webm`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
+  const handleDownload = async () => {
+    try {
+      const response = await fetch(src)
+      const originalBlob = await response.blob()
+      const wavBlob = await convertToWav(originalBlob)
+      const url = URL.createObjectURL(wavBlob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `oral-reading-test-recording-${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.wav`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error("Failed to convert/download as WAV:", err)
+    }
   }
 
   const formatAudioTime = (secs: number) => {

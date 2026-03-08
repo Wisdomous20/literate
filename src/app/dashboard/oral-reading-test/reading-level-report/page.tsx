@@ -1,11 +1,13 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   ChevronLeft,
   FileText,
   ClipboardCheck,
+  Loader2,
 } from "lucide-react";
 import type { OralFluencyAnalysis } from "@/types/oral-reading";
 
@@ -86,7 +88,61 @@ function getLevelStyle(level: string) {
 
 export default function ReadingLevelReportPage() {
   const router = useRouter();
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- Intentional mount-time hydration flag for SSR */
+    setIsHydrated(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, []);
+
   const session = loadSession();
+
+  // Loading state — wait for client hydration before reading from sessionStorage
+  if (!isHydrated) {
+    return (
+      <div className="flex flex-col h-screen overflow-hidden bg-[#E4F4FF]">
+        <div className="flex items-center gap-3 px-8 py-5 border-b border-[#8D8DEC] shadow-[0_4px_4px_#54A4FF]">
+          <LayoutDashboard size={24} className="text-[#00306E]" />
+          <h1 className="text-xl lg:text-[25px] font-semibold text-[#00306E] font-(family-name:--font-poppins)">
+            Oral Reading Test Report
+          </h1>
+        </div>
+        <div className="flex flex-1 items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-[#6666FF]" />
+            <span className="text-[#00306E] font-medium">Loading report...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state — no session data found
+  if (!session.analysisResult && !session.comprehensionResult) {
+    return (
+      <div className="flex flex-col h-screen overflow-hidden bg-[#E4F4FF]">
+        <div className="flex items-center gap-3 px-8 py-5 border-b border-[#8D8DEC] shadow-[0_4px_4px_#54A4FF]">
+          <LayoutDashboard size={24} className="text-[#00306E]" />
+          <h1 className="text-xl lg:text-[25px] font-semibold text-[#00306E] font-(family-name:--font-poppins)">
+            Oral Reading Test Report
+          </h1>
+        </div>
+        <div className="flex flex-1 items-center justify-center">
+          <div className="flex flex-col items-center gap-4 text-center px-4">
+            <p className="text-[#00306E] font-semibold text-lg">No report data found.</p>
+            <p className="text-[#00306E]/60 text-sm">Please complete an oral reading session first.</p>
+            <button
+              onClick={() => router.back()}
+              className="rounded-lg bg-[#6666FF] px-6 py-2 text-sm font-semibold text-white hover:bg-[#5555EE] transition-colors"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Fluency data from analysisResult (stored by oral-reading-test page after fluency API call)
   const analysisResult = session.analysisResult;
