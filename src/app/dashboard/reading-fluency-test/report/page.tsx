@@ -50,7 +50,9 @@ function loadSession(): Partial<SessionState> {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
-  } catch {}
+  } catch (err) {
+    console.error("Failed to load session:", err);
+  }
   return {};
 }
 
@@ -132,7 +134,6 @@ export default function OralReadingReportPage() {
   const session = loadSession();
   const analysis = session.analysisResult;
 
-  // Load recorded audio from sessionStorage (no setState inside effect body)
   const [audioSrc] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
     try {
@@ -177,10 +178,10 @@ export default function OralReadingReportPage() {
   const behaviorItems = buildBehaviorItems(analysis);
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
+    <div className="flex min-h-full flex-col overflow-y-auto">
       <ReportHeader />
 
-      <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth max-w-300 mx-auto px-6 py-6 md:px-8 lg:px-12 space-y-6 w-full">
+      <main className="flex-1 min-h-0 scroll-smooth max-w-300 mx-auto px-6 py-6 md:px-8 lg:px-12 space-y-6 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
           <StudentInfoCard
             studentName={studentName}

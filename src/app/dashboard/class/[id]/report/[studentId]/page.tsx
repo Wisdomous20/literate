@@ -1,8 +1,7 @@
-// src/app/dashboard/class/[id]/report/[studentId]/page.tsx
 "use client";
 
-import { useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { AssessmentReport } from "@/components/assessment/assessmentReport";
 import { useAssessmentsByStudent } from "@/lib/hooks/useStudentAssessments";
 import type { AssessmentData } from "@/types/assessment";
@@ -27,17 +26,22 @@ export default function AssessmentReportPage() {
   const studentId = params.studentId as string;
   const assessmentTypeParam = searchParams.get("assessmentType");
   const assessmentTypeLabel = assessmentTypeParam
-    ? assessmentTypeLabels[assessmentTypeParam] || assessmentTypeParam
+    ? (assessmentTypeLabels[assessmentTypeParam] ?? assessmentTypeParam)
     : "Unknown Assessment Type";
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const recordsPerPage = 7;
 
   const { data: allAssessments = [], isLoading } =
     useAssessmentsByStudent(studentId);
 
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-white">
+        <Loader2 className="h-12 w-12 animate-spin text-[#6666FF]" />
+      </div>
+    );
+  }
+
   const firstAssessment = allAssessments[0] as AssessmentData | undefined;
-  const studentName = firstAssessment?.student?.name || "";
+  const studentName = firstAssessment?.student?.name ?? "";
   const studentGrade = firstAssessment?.student?.level
     ? `Grade ${firstAssessment.student.level}`
     : "";
@@ -51,7 +55,7 @@ export default function AssessmentReportPage() {
         )
         .map((a, idx) => ({
           attempt: idx + 1,
-          assessmentType: assessmentTypeLabels[a.type] || a.type,
+          assessmentType: assessmentTypeLabels[a.type] ?? a.type,
           testType: formatTestType(a.passage?.testType),
           assessmentDate: a.dateTaken
             ? new Date(a.dateTaken).toLocaleDateString()
@@ -62,15 +66,7 @@ export default function AssessmentReportPage() {
         }))
     : [];
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(assessments.length / recordsPerPage),
-  );
-
-  const handleRowClick = (assessment: {
-    id: string;
-    type: string;
-  }) => {
+  const handleRowClick = (assessment: { id: string; type: string }) => {
     if (assessment.type === "ORAL_READING") {
       router.push(
         `/dashboard/class/${classId}/report/${studentId}/summary?id=${assessment.id}`,
@@ -87,19 +83,14 @@ export default function AssessmentReportPage() {
   };
 
   return (
-    <div>
-      <AssessmentReport
-        studentName={studentName}
-        studentGrade={studentGrade}
-        assessmentTypeLabel={assessmentTypeLabel}
-        assessments={assessments}
-        loading={isLoading}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-        onRowClick={handleRowClick}
-        onBack={() => router.back()}
-      />
-    </div>
+    <AssessmentReport
+      studentName={studentName}
+      studentGrade={studentGrade}
+      assessmentTypeLabel={assessmentTypeLabel}
+      assessments={assessments}
+      loading={isLoading}
+      onRowClick={handleRowClick}
+      onBack={() => router.back()}
+    />
   );
 }

@@ -1,15 +1,14 @@
-// src/lib/hooks/useRecentAssessments.ts
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
 import { getRecentAssessments } from "@/app/actions/assessment/getRecentAssessments";
 import type { RecentAssessmentItem } from "@/service/assessment/getRecentAssessmentsService";
 
-export function useRecentAssessments() {
+export function useRecentAssessments(schoolYear?: string) {
   return useQuery({
-    queryKey: ["recentAssessments"],
+    queryKey: ["recentAssessments", schoolYear],
     queryFn: async () => {
-      const result = await getRecentAssessments();
+      const result = await getRecentAssessments(schoolYear);
       if (!result.success || !result.assessments) {
         throw new Error(result.error || "Failed to fetch recent assessments");
       }
