@@ -8,6 +8,7 @@ import {
   CheckCircle,
   XCircle,
   X,
+  Clock,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/auth/dashboard/dashboardHeader";
 import StudentInfoBar from "@/components/oral-reading-test/studentInfoBar";
@@ -185,6 +186,14 @@ export default function ReadingComprehensionTestPage() {
   const wordCount = hasPassage
     ? passageContent.split(/\s+/).filter(Boolean).length
     : 0;
+  const estimatedReadingTime = wordCount > 0
+    ? (() => {
+        const totalSec = Math.ceil((wordCount / 150) * 60);
+        const mins = Math.floor(totalSec / 60);
+        const secs = totalSec % 60;
+        return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+      })()
+    : null;
 
   const handleSelectPassage = useCallback(
     (passage: {
@@ -228,7 +237,7 @@ export default function ReadingComprehensionTestPage() {
 
   const handleProceedToComprehension = useCallback(() => {
     if (!canProceed) return;
-    router.push("/dashboard/reading-comprehension-test/comprehension");
+    router.push("/dashboard/reading-comprehension-test/quiz");
   }, [canProceed, router]);
 
   const classNames = classes.map((c) => c.name);
@@ -384,13 +393,23 @@ export default function ReadingComprehensionTestPage() {
             expanded={passageExpanded}
             onToggleExpand={() => setPassageExpanded((prev) => !prev)}
             passageLevel={selectedLevel}
+            resizable={false}
           />
 
           {!passageExpanded && hasPassage && (
-            <div className="mt-2 flex items-center">
+            <div className="mt-2 flex items-center justify-between">
               <span className="text-xs font-semibold text-[#00306E]">
                 {wordCount} words
               </span>
+              {estimatedReadingTime && (
+                <span
+                  className="flex items-center gap-1 text-xs font-medium text-[#6666FF]"
+                  title={`Est. reading time: ${estimatedReadingTime}`}
+                >
+                  <Clock className="h-3.5 w-3.5" />
+                  {estimatedReadingTime}
+                </span>
+              )}
             </div>
           )}
 

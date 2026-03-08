@@ -436,7 +436,7 @@ export default function ReadingComprehensionQuestionsPage() {
   return (
     <div className="flex flex-col h-screen overflow-hidden">
       {successToast && (
-        <div className="absolute left-1/2 top-20 z-50 flex -translate-x-1/2 items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2.5 shadow-lg">
+        <div className="fixed top-6 right-6 z-50 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2.5 shadow-lg">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <span className="text-sm font-medium text-green-700">
             Answers submitted successfully!

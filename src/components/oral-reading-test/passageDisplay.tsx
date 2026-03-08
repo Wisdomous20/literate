@@ -126,6 +126,7 @@ interface PassageDisplayProps {
   expanded?: boolean;
   onToggleExpand?: () => void;
   passageLevel?: string;
+  resizable?: boolean;
 }
 
 function getPassageTextStyle(passageLevel?: string): CSSProperties {
@@ -163,6 +164,7 @@ export function PassageDisplay({
   expanded,
   onToggleExpand,
   passageLevel,
+  resizable = true,
 }: PassageDisplayProps) {
   const passageTextStyle = getPassageTextStyle(passageLevel);
   const [popup, setPopup] = useState<PopupState | null>(null);
@@ -460,7 +462,7 @@ export function PassageDisplay({
           })()}
       </div>
 
-      {!expanded && (
+      {!expanded && resizable && (
         <div
           onMouseDown={handleDragStart}
           className="flex h-4 cursor-row-resize items-center justify-center opacity-40 transition-opacity hover:opacity-80"
