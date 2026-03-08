@@ -122,6 +122,9 @@
   html, body {
     @apply h-full overflow-hidden;
   }
+  html {
+    zoom: 1.0;
+  }
   body {
     @apply bg-background text-foreground;
   }

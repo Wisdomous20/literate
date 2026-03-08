@@ -707,10 +707,11 @@ export default function OralReadingTestPage() {
                   setSelectedStudentId(studentId)
                 }
                 onClassChange={setSelectedClassName}
+                onClear={handleStartNew}
               />
             )}
 
-            {!passageExpanded && (
+            {!passageExpanded && !isLoadingClasses && (
               <PassageFilters
                 language={hasPassage ? selectedLanguage : undefined}
                 passageLevel={hasPassage ? selectedLevel : undefined}

@@ -16,15 +16,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Run both services in parallel — they both only need assessmentId
-    const [result, oralReadingResult] = await Promise.all([
-      submitComprehensionService({ assessmentId, answers }),
-      createOralReadingService(assessmentId),
-    ]);
+    // Submit comprehension first so the classification level is saved to the DB
+    const result = await submitComprehensionService({ assessmentId, answers });
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
+
+    // Now compute the oral reading level (needs both fluency & comprehension in DB)
+    const oralReadingResult = await createOralReadingService(assessmentId);
 
     if (!oralReadingResult.success) {
       return NextResponse.json({ error: oralReadingResult.error }, { status: 500 });
