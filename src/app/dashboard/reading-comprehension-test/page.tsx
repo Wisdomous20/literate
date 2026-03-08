@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
@@ -14,10 +14,6 @@ import StudentInfoBar from "@/components/oral-reading-test/studentInfoBar";
 import { PassageFilters } from "@/components/oral-reading-test/passageFilters";
 import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay";
 import { AddPassageModal } from "@/components/oral-reading-test/addPassageModal";
-import {
-  ReadingModePanel,
-  type VoiceOption,
-} from "@/components/reading-comprehension-test/readingModePanel";
 import { getClassListBySchoolYear } from "@/app/actions/class/getClassList";
 
 function getCurrentSchoolYear(): string {
@@ -50,7 +46,6 @@ interface SessionState {
   selectedTestType?: string;
   selectedTitle?: string;
   selectedPassage?: string;
-  selectedVoiceName?: string;
   quizId?: string;
 }
 
@@ -94,13 +89,6 @@ export default function ReadingComprehensionTestPage() {
   const [selectedPassage, setSelectedPassage] = useState<string | undefined>();
   const [passageExpanded, setPassageExpanded] = useState(false);
 
-  const [selectedVoiceName, setSelectedVoiceName] = useState("");
-  const [availableVoices, setAvailableVoices] = useState<VoiceOption[]>([]);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isPausedTTS, setIsPausedTTS] = useState(false);
-  const [speechRate, setSpeechRate] = useState(1);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-
   const [isHydrated, setIsHydrated] = useState(false);
   const [toast, setToast] = useState<{
     message: string;
@@ -129,8 +117,6 @@ export default function ReadingComprehensionTestPage() {
       setSelectedTitle(loaded.selectedTitle);
     if (loaded.selectedPassage !== undefined)
       setSelectedPassage(loaded.selectedPassage);
-    if (loaded.selectedVoiceName !== undefined)
-      setSelectedVoiceName(loaded.selectedVoiceName);
 
     setIsHydrated(true);
     /* eslint-enable react-hooks/set-state-in-effect */
@@ -149,7 +135,6 @@ export default function ReadingComprehensionTestPage() {
       selectedTestType,
       selectedTitle,
       selectedPassage,
-      selectedVoiceName,
     });
   }, [
     isHydrated,
@@ -163,7 +148,6 @@ export default function ReadingComprehensionTestPage() {
     selectedTestType,
     selectedTitle,
     selectedPassage,
-    selectedVoiceName,
   ]);
 
   // Fetch classes on mount
@@ -197,71 +181,6 @@ export default function ReadingComprehensionTestPage() {
     }
   }, [toast]);
 
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
-
-    function buildVoiceList() {
-      const raw = window.speechSynthesis.getVoices();
-      if (raw.length === 0) return; // voices not ready yet — wait for onvoiceschanged
-
-      const ALLOWED = /^(fil|tl-|en-US|en-GB)/i;
-      const filtered = raw.filter((v) => {
-        if (!v.lang) return false;
-        if (ALLOWED.test(v.lang)) return true;
-        // Catch voices whose name explicitly says Filipino/Tagalog but have odd lang codes
-        const n = v.name.toLowerCase();
-        return n.includes("filipino") || n.includes("tagalog");
-      });
-
-      function friendlyLabel(name: string, lang: string): string {
-        const clean = name
-          .replace(/^Microsoft\s+/i, "")
-          .replace(/\s+Desktop$/i, "")
-          .trim();
-        if (/^(fil|tl-)/i.test(lang)) return `${clean} · Filipino`;
-        if (/^en-US/i.test(lang)) return `${clean} · American English`;
-        if (/^en-GB/i.test(lang)) return `${clean} · British English`;
-        return clean;
-      }
-
-      const mapped: VoiceOption[] = filtered.map((v) => ({
-        name: v.name,
-        label: friendlyLabel(v.name, v.lang),
-        lang: v.lang,
-      }));
-
-      const filipinoVoice = filtered.find(
-        (v) =>
-          /^(fil|tl-)/i.test(v.lang) ||
-          v.name.toLowerCase().includes("filipino") ||
-          v.name.toLowerCase().includes("tagalog"),
-      );
-
-      if (mapped.length > 0) {
-        setAvailableVoices(mapped);
-        setSelectedVoiceName((prev) => {
-          if (prev && mapped.some((v) => v.name === prev)) return prev;
-          return filipinoVoice?.name ?? mapped[0].name;
-        });
-      }
-    }
-
-    buildVoiceList();
-    window.speechSynthesis.onvoiceschanged = buildVoiceList;
-
-    return () => {
-      window.speechSynthesis.onvoiceschanged = null;
-    };
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (typeof window !== "undefined" && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
-    };
-  }, []);
-
   const hasPassage = passageContent.length > 0;
   const wordCount = hasPassage
     ? passageContent.split(/\s+/).filter(Boolean).length
@@ -285,75 +204,11 @@ export default function ReadingComprehensionTestPage() {
       );
       setSelectedTitle(passage.title);
       setSelectedPassage(passage.id);
-      if (typeof window !== "undefined" && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
-      setIsSpeaking(false);
-      setIsPausedTTS(false);
     },
     [],
   );
 
-  const handlePlayTTS = useCallback(() => {
-    if (!passageContent || typeof window === "undefined") return;
-
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(passageContent);
-    utterance.rate = speechRate;
-
-    const voices = window.speechSynthesis.getVoices();
-    const chosen = voices.find((v) => v.name === selectedVoiceName);
-    if (chosen) {
-      utterance.voice = chosen;
-      utterance.lang = chosen.lang;
-    } else if (selectedLanguage?.toLowerCase() === "filipino") {
-      utterance.lang = "fil-PH";
-    } else {
-      utterance.lang = "en-US";
-    }
-
-    utterance.onstart = () => {
-      setIsSpeaking(true);
-      setIsPausedTTS(false);
-    };
-    utterance.onend = () => {
-      setIsSpeaking(false);
-      setIsPausedTTS(false);
-    };
-    utterance.onerror = () => {
-      setIsSpeaking(false);
-      setIsPausedTTS(false);
-    };
-
-    utteranceRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
-  }, [passageContent, speechRate, selectedLanguage, selectedVoiceName]);
-
-  const handlePauseTTS = useCallback(() => {
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.pause();
-      setIsPausedTTS(true);
-    }
-  }, []);
-
-  const handleResumeTTS = useCallback(() => {
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.resume();
-      setIsPausedTTS(false);
-    }
-  }, []);
-
-  const handleStopTTS = useCallback(() => {
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-    setIsSpeaking(false);
-    setIsPausedTTS(false);
-  }, []);
-
   const handleStartNew = useCallback(() => {
-    handleStopTTS();
     setStudentName("");
     setGradeLevel("");
     setSelectedStudentId("");
@@ -364,11 +219,10 @@ export default function ReadingComprehensionTestPage() {
     setSelectedTestType(undefined);
     setSelectedTitle(undefined);
     setSelectedPassage(undefined);
-    setSelectedVoiceName("");
     sessionStorage.removeItem(STORAGE_KEY);
     sessionStorage.removeItem("reading-comprehension-assessmentId");
     sessionStorage.removeItem("reading-comprehension-state");
-  }, [handleStopTTS]);
+  }, []);
 
   const canProceed = hasPassage;
 
@@ -451,124 +305,102 @@ export default function ReadingComprehensionTestPage() {
           </div>
         )}
 
-        <div className="flex min-h-0 flex-1 gap-4">
-          <div
-            className={`flex min-h-0 flex-1 flex-col overflow-y-auto ${
-              passageExpanded ? "gap-0" : "gap-3"
-            }`}
-          >
-            {!passageExpanded && isLoadingClasses && (
+        <div
+          className={`flex min-h-0 flex-1 flex-col overflow-y-auto ${
+            passageExpanded ? "gap-0" : "gap-3"
+          }`}
+        >
+          {!passageExpanded && isLoadingClasses && (
+            <>
               <div className="h-[72px] animate-pulse rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] shadow-[0px_1px_20px_rgba(108,164,239,0.37)]" />
-            )}
-
-            {!passageExpanded && classLoadError && !isLoadingClasses && (
-              <div className="flex items-center justify-between rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] px-6 py-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)]">
-                <span className="text-sm font-medium text-red-500">Failed to load classes.</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setClassLoadError(false);
-                    setIsLoadingClasses(true);
-                    getClassListBySchoolYear(getCurrentSchoolYear()).then((result) => {
-                      if (result.success && result.classes) {
-                        setClasses(result.classes.map((c) => ({ id: c.id, name: c.name })));
-                        setClassLoadError(false);
-                      } else {
-                        setClassLoadError(true);
-                      }
-                      setIsLoadingClasses(false);
-                    });
-                  }}
-                  className="text-xs font-semibold text-[#6666FF] hover:underline"
-                >
-                  Retry
-                </button>
+              <div className="flex gap-3">
+                <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                <div className="h-[42px] w-[140px] shrink-0 animate-pulse rounded-lg bg-[#2E2E68]/30" />
               </div>
-            )}
+            </>
+          )}
 
-            {!passageExpanded && !isLoadingClasses && !classLoadError && (
-              <StudentInfoBar
-                studentName={studentName}
-                gradeLevel={gradeLevel}
-                classes={classNames}
-                selectedClassName={selectedClassName}
-                onStudentNameChange={setStudentName}
-                onGradeLevelChange={setGradeLevel}
-                onClassCreated={(newClass) => {
-                  setClasses((prev) => [
-                    ...prev,
-                    { id: newClass, name: newClass },
-                  ]);
+          {!passageExpanded && classLoadError && !isLoadingClasses && (
+            <div className="flex items-center justify-between rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] px-6 py-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)]">
+              <span className="text-sm font-medium text-red-500">Failed to load classes.</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setClassLoadError(false);
+                  setIsLoadingClasses(true);
+                  getClassListBySchoolYear(getCurrentSchoolYear()).then((result) => {
+                    if (result.success && result.classes) {
+                      setClasses(result.classes.map((c) => ({ id: c.id, name: c.name })));
+                      setClassLoadError(false);
+                    } else {
+                      setClassLoadError(true);
+                    }
+                    setIsLoadingClasses(false);
+                  });
                 }}
-                onStudentSelected={(studentId: string) =>
-                  setSelectedStudentId(studentId)
-                }
-                onClassChange={setSelectedClassName}
-              />
-            )}
+                className="text-xs font-semibold text-[#6666FF] hover:underline"
+              >
+                Retry
+              </button>
+            </div>
+          )}
 
-            {!passageExpanded && (
-              <PassageFilters
-                language={hasPassage ? selectedLanguage : undefined}
-                passageLevel={hasPassage ? selectedLevel : undefined}
-                testType={hasPassage ? selectedTestType : undefined}
-                hasPassage={hasPassage}
-                onOpenPassageModal={() => setIsPassageModalOpen(true)}
-              />
-            )}
-
-            <PassageDisplay
-              content={passageContent}
-              expanded={passageExpanded}
-              onToggleExpand={() => setPassageExpanded((prev) => !prev)}
+          {!passageExpanded && !isLoadingClasses && !classLoadError && (
+            <StudentInfoBar
+              studentName={studentName}
+              gradeLevel={gradeLevel}
+              classes={classNames}
+              selectedClassName={selectedClassName}
+              onStudentNameChange={setStudentName}
+              onGradeLevelChange={setGradeLevel}
+              onClassCreated={(newClass) => {
+                setClasses((prev) => [
+                  ...prev,
+                  { id: newClass, name: newClass },
+                ]);
+              }}
+              onStudentSelected={(studentId: string) =>
+                setSelectedStudentId(studentId)
+              }
+              onClassChange={setSelectedClassName}
+              onClear={handleStartNew}
             />
+          )}
 
-            {!passageExpanded && hasPassage && (
-              <div className="mt-2 flex items-center">
-                <span className="text-xs font-semibold text-[#00306E]">
-                  {wordCount} words
-                </span>
-              </div>
-            )}
-
-            {!passageExpanded && hasPassage && (
-              <div className="mb-2 flex items-center justify-center">
-                <span className="text-lg font-bold text-[#31318A] md:text-xl">
-                  {selectedTitle}
-                </span>
-              </div>
-            )}
-
-            {!passageExpanded && hasPassage && (
-              <div className="flex items-center justify-center">
-                <button
-                  type="button"
-                  onClick={handleStartNew}
-                  className="rounded-lg border border-[#6666FF]/30 bg-[rgba(102,102,255,0.06)] px-6 py-2 text-sm font-semibold text-[#6666FF] transition-colors hover:bg-[rgba(102,102,255,0.12)]"
-                >
-                  Start New
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="w-60 shrink-0 self-stretch md:w-67.5 lg:w-75 xl:w-[320px]">
-            <ReadingModePanel
-              isSpeaking={isSpeaking}
-              isPausedTTS={isPausedTTS}
-              onPlayTTS={handlePlayTTS}
-              onPauseTTS={handlePauseTTS}
-              onResumeTTS={handleResumeTTS}
-              onStopTTS={handleStopTTS}
-              speechRate={speechRate}
-              onSpeechRateChange={setSpeechRate}
+          {!passageExpanded && !isLoadingClasses && (
+            <PassageFilters
+              language={hasPassage ? selectedLanguage : undefined}
+              passageLevel={hasPassage ? selectedLevel : undefined}
+              testType={hasPassage ? selectedTestType : undefined}
               hasPassage={hasPassage}
-              wordCount={wordCount}
-              selectedVoiceName={selectedVoiceName}
-              onVoiceChange={setSelectedVoiceName}
-              availableVoices={availableVoices}
+              onOpenPassageModal={() => setIsPassageModalOpen(true)}
             />
-          </div>
+          )}
+
+          <PassageDisplay
+            content={passageContent}
+            expanded={passageExpanded}
+            onToggleExpand={() => setPassageExpanded((prev) => !prev)}
+            passageLevel={selectedLevel}
+          />
+
+          {!passageExpanded && hasPassage && (
+            <div className="mt-2 flex items-center">
+              <span className="text-xs font-semibold text-[#00306E]">
+                {wordCount} words
+              </span>
+            </div>
+          )}
+
+          {!passageExpanded && hasPassage && (
+            <div className="mb-2 flex items-center justify-center">
+              <span className="text-lg font-bold text-[#31318A] md:text-xl">
+                {selectedTitle}
+              </span>
+            </div>
+          )}
         </div>
       </main>
 

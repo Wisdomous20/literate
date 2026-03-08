@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { ChevronDown, Plus, Search, X, CheckCircle, XCircle } from "lucide-react"
 import { createClass } from "@/app/actions/class/createClass"
+import { createStudent } from "@/app/actions/student/createStudent"
 import {
   Dialog,
   DialogContent,
@@ -30,6 +31,7 @@ interface StudentInfoBarProps {
   onClassCreated: (newClass: string) => void
   onStudentSelected: (studentId: string) => void
   onClassChange?: (className: string) => void
+  onClear?: () => void
 }
 
 export default function StudentInfoBar({
@@ -42,6 +44,7 @@ export default function StudentInfoBar({
   onClassCreated,
   onStudentSelected,
   onClassChange,
+  onClear,
 }: StudentInfoBarProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [newClassName, setNewClassName] = useState("")
@@ -60,6 +63,7 @@ export default function StudentInfoBar({
   const [selectedStudentId, setSelectedStudentId] = useState("")
   const [isCreatingClass, setIsCreatingClass] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
+  const [isCreatingStudent, setIsCreatingStudent] = useState(false)
 
   const studentInputRef = useRef<HTMLInputElement>(null)
   const studentDropdownRef = useRef<HTMLDivElement>(null)
@@ -230,10 +234,58 @@ export default function StudentInfoBar({
     return true
   })
 
+  // Show "Create Student" when name is typed and either:
+  // 1. No exact match exists at all, or
+  // 2. An exact name match exists but with a different grade/class combination
+  const exactMatches = hasSearchQuery
+    ? allStudents.filter((s) => s.name.toLowerCase() === searchQuery)
+    : []
+  const showCreateStudent =
+    hasSearchQuery &&
+    !selectedStudentId &&
+    !!gradeLevel &&
+    !!selectedClass &&
+    !exactMatches.some(
+      (s) => String(s.level) === gradeLevel && s.className === selectedClass
+    )
+
+  const handleCreateStudent = async () => {
+    const trimmedName = studentName.trim()
+    if (!trimmedName || !gradeLevel || !selectedClass) return
+
+    setIsCreatingStudent(true)
+    try {
+      const result = await createStudent(trimmedName, Number(gradeLevel), selectedClass)
+      if (result.success && result.student) {
+        setSelectedStudentId(result.student.id)
+        onStudentSelected(result.student.id)
+        onStudentNameChange(result.student.name)
+        setIsStudentInputFocused(false)
+        // Add the new student to local list so it appears immediately
+        setAllStudents((prev) => [
+          ...prev,
+          {
+            id: result.student!.id,
+            name: result.student!.name,
+            level: Number(gradeLevel),
+            className: selectedClass,
+          },
+        ])
+        setToast({ message: `Student "${trimmedName}" created successfully!`, type: "success" })
+      } else {
+        setToast({ message: result.error || "Failed to create student.", type: "error" })
+      }
+    } catch {
+      setToast({ message: "Something went wrong. Please try again.", type: "error" })
+    } finally {
+      setIsCreatingStudent(false)
+    }
+  }
+
   const showSuggestions =
     isStudentInputFocused &&
     !isLoadingStudents &&
-    displayStudents.length > 0
+    (displayStudents.length > 0 || showCreateStudent)
 
   return (
     <>
@@ -265,7 +317,7 @@ export default function StudentInfoBar({
         </div>
       )}
 
-      <div className="grid grid-cols-[1fr_160px_180px] items-start gap-3">
+      <div className="grid grid-cols-[1fr_160px_180px_auto] items-start gap-3">
         <div className="relative rounded-lg bg-[rgba(108,164,239,0.09)] px-3 py-2">
           <label className="mb-0.5 block text-[10px] font-bold uppercase tracking-widest text-[#0C1A6D]">
             STUDENT NAME
@@ -289,6 +341,18 @@ export default function StudentInfoBar({
               ref={studentDropdownRef}
               className="absolute left-3 right-3 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-lg border border-[#54A4FF] bg-white py-1 shadow-[0px_4px_12px_rgba(84,164,255,0.2)]"
             >
+              {showCreateStudent && (
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={handleCreateStudent}
+                  disabled={isCreatingStudent}
+                  className="flex w-full items-center gap-1.5 border-b border-[#EEEEFF] px-3 py-1.5 text-left text-sm font-semibold text-[#6666FF] hover:bg-[#E4F4FF] disabled:opacity-50"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  {isCreatingStudent ? "Creating..." : `Create Student "${studentName.trim()}"`}
+                </button>
+              )}
               {displayStudents.map((s) => (
                 <button
                   key={s.id}
@@ -377,75 +441,90 @@ export default function StudentInfoBar({
             Class
           </span>
           <div className="relative" ref={classDropdownRef}>
-            <button
-              ref={classButtonRef}
-              type="button"
-              onClick={() => {
-                setIsClassDropdownOpen(!isClassDropdownOpen)
-                setIsGradeDropdownOpen(false)
-              }}
-              className={`flex w-full items-center justify-between gap-2 rounded-full border px-4 py-1.5 text-xs font-medium transition-all ${
-                selectedClass
-                  ? "border-[#6666FF] bg-[#6666FF] text-white shadow-sm"
-                  : "border-dashed border-[#6666FF]/60 bg-transparent text-[#00306E] hover:border-[#6666FF] hover:bg-[#EEEEFF]"
-              }`}
-            >
-              <span className="truncate">{selectedClass || "Select"}</span>
-              {selectedClass ? (
-                <X
-                  className="h-3 w-3 shrink-0 cursor-pointer hover:opacity-70"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setSelectedClass("")
-                    onClassChange?.("")
-                    clearAutoFill()
-                  }}
-                />
-              ) : (
-                <ChevronDown className="h-3 w-3" />
+              <button
+                ref={classButtonRef}
+                type="button"
+                onClick={() => {
+                  setIsClassDropdownOpen(!isClassDropdownOpen)
+                  setIsGradeDropdownOpen(false)
+                }}
+                className={`flex w-full items-center justify-between gap-2 rounded-full border px-4 py-1.5 text-xs font-medium transition-all ${
+                  selectedClass
+                    ? "border-[#6666FF] bg-[#6666FF] text-white shadow-sm"
+                    : "border-dashed border-[#6666FF]/60 bg-transparent text-[#00306E] hover:border-[#6666FF] hover:bg-[#EEEEFF]"
+                }`}
+              >
+                <span className="truncate">{selectedClass || "Select"}</span>
+                {selectedClass ? (
+                  <X
+                    className="h-3 w-3 shrink-0 cursor-pointer hover:opacity-70"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setSelectedClass("")
+                      onClassChange?.("")
+                      clearAutoFill()
+                    }}
+                  />
+                ) : (
+                  <ChevronDown className="h-3 w-3" />
+                )}
+              </button>
+
+              {isClassDropdownOpen && (
+                <div className="absolute right-0 top-full z-10 mt-1.5 max-h-48 w-44 overflow-y-auto rounded-lg border border-[#6666FF] bg-white py-1 shadow-[0px_4px_12px_rgba(102,102,255,0.2)]">
+                  <button
+                    type="button"
+                    onClick={() => handleClassChange("create-new")}
+                    className="flex w-full items-center gap-1.5 border-b border-[#EEEEFF] px-3 py-1.5 text-left text-sm font-semibold text-[#6666FF] hover:bg-[#EEEEFF]"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Create New Class
+                  </button>
+
+                  {classes.map((cls, idx) => {
+                    const isActive = selectedClass === cls
+                    return (
+                      <button
+                        key={`${cls}-${idx}`}
+                        type="button"
+                        onClick={() => {
+                          if (isActive) {
+                            setSelectedClass("")
+                            onClassChange?.("")
+                            clearAutoFill()
+                            setIsClassDropdownOpen(false)
+                          } else {
+                            handleClassChange(cls)
+                          }
+                        }}
+                        className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm hover:bg-[#EEEEFF] ${
+                          isActive ? "bg-[#EEEEFF] font-semibold text-[#6666FF]" : "text-[#00306E]"
+                        }`}
+                      >
+                        <span>{cls}</span>
+                        {isActive && <X className="h-3.5 w-3.5 text-[#6666FF]" />}
+                      </button>
+                    )
+                  })}
+                </div>
               )}
-            </button>
-
-            {isClassDropdownOpen && (
-              <div className="absolute right-0 top-full z-10 mt-1.5 max-h-48 w-44 overflow-y-auto rounded-lg border border-[#6666FF] bg-white py-1 shadow-[0px_4px_12px_rgba(102,102,255,0.2)]">
-                <button
-                  type="button"
-                  onClick={() => handleClassChange("create-new")}
-                  className="flex w-full items-center gap-1.5 border-b border-[#EEEEFF] px-3 py-1.5 text-left text-sm font-semibold text-[#6666FF] hover:bg-[#EEEEFF]"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  Create New Class
-                </button>
-
-                {classes.map((cls, idx) => {
-                  const isActive = selectedClass === cls
-                  return (
-                    <button
-                      key={`${cls}-${idx}`}
-                      type="button"
-                      onClick={() => {
-                        if (isActive) {
-                          setSelectedClass("")
-                          onClassChange?.("")
-                          clearAutoFill()
-                          setIsClassDropdownOpen(false)
-                        } else {
-                          handleClassChange(cls)
-                        }
-                      }}
-                      className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm hover:bg-[#EEEEFF] ${
-                        isActive ? "bg-[#EEEEFF] font-semibold text-[#6666FF]" : "text-[#00306E]"
-                      }`}
-                    >
-                      <span>{cls}</span>
-                      {isActive && <X className="h-3.5 w-3.5 text-[#6666FF]" />}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
+            </div>
           </div>
-        </div>
+
+        {onClear && (
+          <div className="flex flex-col gap-1 pt-2">
+            <span className="select-none text-[10px] font-bold uppercase tracking-widest text-transparent">
+              &nbsp;
+            </span>
+            <button
+              type="button"
+              onClick={onClear}
+              className="rounded-full border border-dashed border-[#6666FF]/60 px-8 py-1.5 text-xs font-medium text-[#6666FF] transition-all hover:border-[#6666FF] hover:bg-[#EEEEFF]"
+            >
+              Clear
+            </button>
+          </div>
+        )}
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

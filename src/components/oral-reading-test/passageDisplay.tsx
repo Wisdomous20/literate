@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback, type CSSProperties } from "react";
 import { Maximize2, Minimize2, Play, GripHorizontal } from "lucide-react";
 import type { MiscueResult } from "@/types/oral-reading";
 
@@ -125,6 +125,27 @@ interface PassageDisplayProps {
   onJumpToTime?: (timestamp: number) => void;
   expanded?: boolean;
   onToggleExpand?: () => void;
+  passageLevel?: string;
+}
+
+function getPassageTextStyle(passageLevel?: string): CSSProperties {
+  if (!passageLevel) return {};
+  const num = parseInt(passageLevel.replace(/\D/g, ""), 10);
+  let fontSize: number;
+  if (isNaN(num) || num === 0) {
+    // Kindergarten
+    fontSize = 30;
+  } else if (num <= 3) {
+    // Grade 1–3
+    fontSize = 26;
+  } else if (num <= 6) {
+    // Grade 4–6
+    fontSize = 24;
+  } else {
+    // Grade 7 and up
+    fontSize = 22;
+  }
+  return { fontFamily: "'Comic Sans MS', 'Comic Sans', cursive", fontSize };
 }
 
 interface PopupState {
@@ -141,7 +162,9 @@ export function PassageDisplay({
   onJumpToTime,
   expanded,
   onToggleExpand,
+  passageLevel,
 }: PassageDisplayProps) {
+  const passageTextStyle = getPassageTextStyle(passageLevel);
   const [popup, setPopup] = useState<PopupState | null>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -364,7 +387,7 @@ export function PassageDisplay({
         className="oral-reading-scroll relative flex-1 overflow-auto rounded-[10px] border border-[#54A4FF] bg-[#EFFDFF] p-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)] md:p-5"
       >
         {content ? (
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-[#00306E] lg:text-base lg:leading-relaxed">
+          <p className="whitespace-pre-wrap text-center leading-relaxed text-[#00306E]" style={passageLevel ? passageTextStyle : undefined}>
             {hasMiscues ? renderHighlightedContent() : content}
           </p>
         ) : (
