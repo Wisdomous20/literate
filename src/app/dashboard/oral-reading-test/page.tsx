@@ -690,6 +690,18 @@ export default function OralReadingTestPage() {
               passageExpanded ? "gap-0" : "gap-3"
             }`}
           >
+            {!passageExpanded && isLoadingClasses && (
+              <>
+                <div className="h-[72px] animate-pulse rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] shadow-[0px_1px_20px_rgba(108,164,239,0.37)]" />
+                <div className="flex gap-3">
+                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                  <div className="h-[42px] w-[140px] shrink-0 animate-pulse rounded-lg bg-[#2E2E68]/30" />
+                </div>
+              </>
+            )}
+
             {!passageExpanded && !isLoadingClasses && (
               <StudentInfoBar
                 studentName={studentName}
@@ -708,10 +720,11 @@ export default function OralReadingTestPage() {
                   setSelectedStudentId(studentId)
                 }
                 onClassChange={setSelectedClassName}
+                onClear={handleStartNew}
               />
             )}
 
-            {!passageExpanded && (
+            {!passageExpanded && !isLoadingClasses && (
               <PassageFilters
                 language={hasPassage ? selectedLanguage : undefined}
                 passageLevel={hasPassage ? selectedLevel : undefined}
