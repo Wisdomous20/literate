@@ -35,17 +35,24 @@ export default function AssessmentSummaryPage() {
 
     const cards: AssessmentCard[] = [];
 
-    // Fluency card
+    // Fluency card — always show for ORAL_READING
     if (found.oralFluency) {
       cards.push({
         id: "reading-fluency-report",
         title: "Oral Reading Fluency Test",
         percentage: found.oralFluency.oralFluencyScore ?? 0,
-        level: found.oralFluency.classificationLevel || "",
+        level: found.oralFluency.classificationLevel || "—",
+      });
+    } else {
+      cards.push({
+        id: "reading-fluency-report",
+        title: "Oral Reading Fluency Test",
+        percentage: 0,
+        level: "Not Taken",
       });
     }
 
-    // Comprehension card
+    // Comprehension card — always show for ORAL_READING
     if (found.comprehension) {
       const answers = found.comprehension.answers || [];
       const totalCorrect = answers.filter(
@@ -58,12 +65,18 @@ export default function AssessmentSummaryPage() {
         id: "comprehension-report",
         title: "Reading Comprehension Test",
         percentage: pct,
-        level: found.comprehension.classificationLevel || "",
+        level: found.comprehension.classificationLevel || "—",
+      });
+    } else {
+      cards.push({
+        id: "comprehension-report",
+        title: "Reading Comprehension Test",
+        percentage: 0,
+        level: "Not Taken",
       });
     }
 
     // Final overall classification
-    // Prefer the stored oralReadingResult; fallback to computing from sub-levels
     let level = "";
     if (found.oralReadingResult) {
       level = found.oralReadingResult.classificationLevel || "";
@@ -79,6 +92,10 @@ export default function AssessmentSummaryPage() {
 
   const handleViewReport = (cardId: string) => {
     if (!assessmentId) return;
+    // Don't navigate if sub-test wasn't taken
+    if (cardId === "reading-fluency-report" && !found?.oralFluency) return;
+    if (cardId === "comprehension-report" && !found?.comprehension) return;
+
     if (cardId === "reading-fluency-report") {
       router.push(
         `/dashboard/class/${classId}/report/${studentId}/reading-fluency-report?id=${assessmentId}`,

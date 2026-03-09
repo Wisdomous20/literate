@@ -1,9 +1,8 @@
-// src/app/dashboard/class/[id]/report/[studentId]/comprehension-report/page.tsx
 "use client";
 
 import { useMemo } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import ComprehensionReportHeader from "@/components/reports/oral-reading-test/comprehension-report/reportHeader";
+import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import StudentInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/studentInfoCard";
 import PassageInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/passageInfoCard";
 import ComprehensionMetricCards from "@/components/reports/oral-reading-test/comprehension-report/comprehensionMetricCards";
@@ -68,46 +67,89 @@ export default function ReadingComprehensionReportPage() {
   const percentageGrade =
     totalItems > 0 ? Math.round((totalCorrect / totalItems) * 100) : 0;
 
-  // Derive assessment type label from actual data
   const assessmentTypeLabel =
     assessmentTypeLabels[assessment.type] || assessment.type;
 
+  // Dummy handlers for Export and Delete
+  const handleExport = () => {
+    alert("Export to PDF clicked!");
+  };
+  const handleDelete = () => {
+    alert("Delete clicked!");
+  };
+
   return (
-    <div className="min-h-screen bg-[#f0f4ff] p-4 sm:p-6 lg:p-8">
-      <ComprehensionReportHeader />
-      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto]">
-        <div className="min-w-0">
-          <StudentInfoCard studentName={studentName} gradeLevel={gradeLevel} />
-        </div>
-        <div className="min-w-0">
-          <ComprehensionMetricCards
-            percentageGrade={percentageGrade}
-            comprehensionLevel={comprehension?.classificationLevel ?? ""}
-          />
+    <div className="flex h-screen flex-col overflow-hidden">
+      <div className="w-full">
+        <DashboardHeader
+          title="Reading Comprehension Test Report"
+          action={
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleExport}
+                className="rounded-lg bg-[#297CEC] px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                type="button"
+              >
+                Export to PDF
+              </button>
+              <button
+                onClick={handleDelete}
+                className="rounded-lg bg-red-500 px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                type="button"
+              >
+                Delete
+              </button>
+            </div>
+          }
+        />
+        <div className="mb-4 max-w-6xl mx-auto">
+          <button
+            onClick={() => window.history.back()}
+            className="flex items-center gap-1.5 rounded-lg mt-6 px-6 py-3 text-base font-semibold text-[#00306E] hover:underline transition"
+            type="button"
+          >
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+            Previous
+          </button>
         </div>
       </div>
-      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="min-w-0">
-          <PassageInfoCard
-            passageTitle={passage?.title ?? ""}
-            passageLevel={passage?.level ? `Grade ${passage.level}` : ""}
-            numberOfWords={numberOfWords}
-            testType={formatTestType(passage?.testType)}
-            assessmentType={assessmentTypeLabel}
-          />
+      <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth max-w-6xl mx-auto px-6 py-6 md:px-8 lg:px-12 space-y-6 w-full bg-[#f0f4ff]">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto]">
+          <div className="min-w-0">
+            <StudentInfoCard studentName={studentName} gradeLevel={gradeLevel} />
+          </div>
+          <div className="min-w-0">
+            <ComprehensionMetricCards
+              percentageGrade={percentageGrade}
+              comprehensionLevel={comprehension?.classificationLevel ?? ""}
+            />
+          </div>
         </div>
-        <div className="min-w-0">
-          <ComprehensionBreakdownReport
-            score={`${totalCorrect}`}
-            literal={literalCorrect}
-            inferential={inferentialCorrect}
-            critical={criticalCorrect}
-            mistakes={mistakes}
-            numberOfItems={totalItems}
-            classificationLevel={comprehension?.classificationLevel ?? ""}
-          />
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="min-w-0">
+            <PassageInfoCard
+              passageTitle={passage?.title ?? ""}
+              passageLevel={passage?.level ? `Grade ${passage.level}` : ""}
+              numberOfWords={numberOfWords}
+              testType={formatTestType(passage?.testType)}
+              assessmentType={assessmentTypeLabel}
+            />
+          </div>
+          <div className="min-w-0">
+            <ComprehensionBreakdownReport
+              score={`${totalCorrect}`}
+              literal={literalCorrect}
+              inferential={inferentialCorrect}
+              critical={criticalCorrect}
+              mistakes={mistakes}
+              numberOfItems={totalItems}
+              classificationLevel={comprehension?.classificationLevel ?? ""}
+            />
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

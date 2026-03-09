@@ -5,6 +5,16 @@ import { useQuery, useQueries } from "@tanstack/react-query";
 import { getAssessmentsByStudent } from "@/app/actions/assessment/getAssessment";
 import type { AssessmentData } from "@/types/assessment";
 
+/** Deduplicate assessments by ID (guards against server returning duplicates) */
+function deduplicateAssessments(assessments: AssessmentData[]): AssessmentData[] {
+  const seen = new Set<string>();
+  return assessments.filter((a) => {
+    if (seen.has(a.id)) return false;
+    seen.add(a.id);
+    return true;
+  });
+}
+
 /**
  * Fetch assessments for a single student. Used on report pages.
  */
@@ -13,9 +23,9 @@ export function useAssessmentsByStudent(studentId: string) {
     queryKey: ["assessments", studentId],
     queryFn: async () => {
       const result = await getAssessmentsByStudent(studentId);
-      return (result || []) as AssessmentData[];
+      return deduplicateAssessments((result || []) as AssessmentData[]);
     },
-    staleTime: 0, // Always refetch in background so newly submitted data (e.g. comprehension) appears immediately
+    staleTime: 0,
     refetchOnWindowFocus: true,
     enabled: !!studentId,
   });
@@ -31,7 +41,7 @@ export function useStudentAssessments(studentIds: string[]) {
       queryKey: ["assessments", id],
       queryFn: async () => {
         const result = await getAssessmentsByStudent(id);
-        return (result || []) as AssessmentData[];
+        return deduplicateAssessments((result || []) as AssessmentData[]);
       },
       staleTime: 5 * 60 * 1000,
       refetchOnWindowFocus: true,

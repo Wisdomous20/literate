@@ -58,10 +58,10 @@ export function AssessmentReport({
   const testTypeOptions: TestTypeFilter[] = ["All", "Pre-Test", "Post-Test"];
 
   return (
-    <div className="flex min-h-full flex-col overflow-y-auto">
+    <div className="flex h-full flex-col overflow-hidden">
       <DashboardHeader title="Assessment Report" />
 
-      <main className="flex flex-col gap-4 px-6 py-5 lg:px-8">
+      <main className="flex flex-1 flex-col gap-4 overflow-y-auto px-6 py-5 lg:px-8">
         <button
           onClick={onBack}
           className="flex w-fit items-center gap-1.5 text-base font-semibold text-[#31318A] transition-opacity hover:opacity-70"
@@ -128,7 +128,7 @@ export function AssessmentReport({
             </span>
           </div>
 
-          <div className="divide-y divide-[#6666FF]/5">
+          <div className="max-h-[50vh] divide-y divide-[#6666FF]/5 overflow-y-auto">
             {loading ? (
               <div className="py-8 text-center text-sm text-[#00306E]/50">
                 Loading…
@@ -140,8 +140,10 @@ export function AssessmentReport({
             ) : (
               paginatedAssessments.map((record, index) => (
                 <div
-                  key={`${record.attempt}-${index}`}
-                  className="grid cursor-pointer grid-cols-4 items-center bg-white px-5 py-3 transition-colors hover:bg-[#FAFAFF]"
+                  key={`${record.id}-${index}`}
+                  className={`grid grid-cols-4 items-center px-5 py-3 cursor-pointer transition-colors ${
+                    index % 2 === 0 ? "bg-white" : "bg-[#F8F9FF]"
+                  } hover:bg-[#FAFAFF]`}
                   onClick={() => onRowClick(record)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") onRowClick(record);
@@ -149,8 +151,10 @@ export function AssessmentReport({
                   role="button"
                   tabIndex={0}
                 >
-                  <span className="text-center text-sm font-semibold text-[#6666FF]">
-                    #{record.attempt}
+                  <span className="flex justify-center">
+                    <span className="inline-block min-w-[48px] rounded-lg border border-[#6666FF]/40 bg-transparent px-2 py-1 text-center text-sm font-semibold text-[#6666FF]">
+                      #{record.attempt}
+                    </span>
                   </span>
                   <span className="text-center text-xs text-[#00306E]">
                     {record.assessmentType}
@@ -219,7 +223,7 @@ export function AssessmentReport({
                 aria-label="Last page"
                 title="Last page"
               >
-                »
+                » 
               </button>
             </div>
           </div>

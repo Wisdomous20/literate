@@ -1,9 +1,8 @@
-// src/app/dashboard/class/[id]/report/[studentId]/reading-fluency-report/page.tsx
 "use client";
 
 import { useMemo } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import ReportHeader from "@/components/reports/oral-reading-test/reading-fluency-report/reportHeader";
+import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import StudentInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/studentInfoCard";
 import PassageInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/passageInfoCard";
 import MetricCards from "@/components/reports/oral-reading-test/reading-fluency-report/metricCards";
@@ -111,45 +110,90 @@ export default function ReadingFluencyReportPage() {
   const assessmentTypeLabel =
     assessmentTypeLabels[assessment.type] || assessment.type;
 
-  // WCPM = (totalWords - totalMiscues) / duration * 60
-  // Uniform with the test report pages
   const totalWords = assessment.oralFluency?.totalWords ?? numberOfWords;
   const totalMiscues = assessment.oralFluency?.totalMiscues ?? 0;
   const duration = assessment.oralFluency?.duration ?? 0;
   const wordsCorrect = Math.max(0, totalWords - totalMiscues);
   const wcpm = duration > 0 ? Math.round((wordsCorrect / duration) * 60) : 0;
 
+  // Dummy handlers for Export and Delete
+  const handleExport = () => {
+    // Implement export logic here
+    alert("Export to PDF clicked!");
+  };
+  const handleDelete = () => {
+    // Implement delete logic here
+    alert("Delete clicked!");
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
-      <ReportHeader />
-      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_2fr]">
-        <StudentInfoCard studentName={studentName} gradeLevel={gradeLevel} />
-        <MetricCards
-          wcpm={wcpm}
-          readingTimeSeconds={duration}
-          classificationLevel={
-            assessment.oralFluency?.classificationLevel ?? ""
+    <div className="flex h-screen flex-col overflow-hidden">
+      <div className="w-full">
+        <DashboardHeader
+          title="Oral Fluency Test Report"
+          action={
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleExport}
+                className="rounded-lg bg-[#297CEC] px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                type="button"
+              >
+                Export to PDF
+              </button>
+              <button
+                onClick={handleDelete}
+                className="rounded-lg bg-red-500 px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                type="button"
+              >
+                Delete
+              </button>
+            </div>
           }
         />
+        <div className="mb-4 max-w-6xl mx-auto">
+          <button
+            onClick={() => window.history.back()}
+            className="flex items-center gap-1.5 rounded-lg mt-6 px-6 py-3 text-base font-semibold text-[#00306E] hover:underline transition"
+            type="button"
+          >
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+            Previous
+          </button>
+        </div>
       </div>
-      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <div className="flex flex-col gap-4">
-          <PassageInfoCard
-            passageTitle={passage?.title ?? ""}
-            passageLevel={passage?.level ? `Grade ${passage.level}` : ""}
-            numberOfWords={numberOfWords}
-            testType={formatTestType(passage?.testType)}
-            assessmentType={assessmentTypeLabel}
+      <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth max-w-6xl mx-auto px-6 py-6 md:px-8 lg:px-12 space-y-6 w-full">
+        {/* Top row: Student Info + Metric Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+          <StudentInfoCard studentName={studentName} gradeLevel={gradeLevel} />
+          <MetricCards
+            wcpm={wcpm}
+            readingTimeSeconds={duration}
+            classificationLevel={
+              assessment.oralFluency?.classificationLevel ?? ""
+            }
           />
-          <AudioPlaybackCard audioSrc={assessment.oralFluency?.audioUrl} />
         </div>
-        <div className="flex flex-col">
+        {/* Bottom row: Passage+Audio | Behavior | Miscue */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {/* Left column */}
+          <div className="flex flex-col gap-6">
+            <PassageInfoCard
+              passageTitle={passage?.title ?? ""}
+              passageLevel={passage?.level ? `Grade ${passage.level}` : ""}
+              numberOfWords={numberOfWords}
+              testType={formatTestType(passage?.testType)}
+              assessmentType={assessmentTypeLabel}
+            />
+            <AudioPlaybackCard audioSrc={assessment.oralFluency?.audioUrl} />
+          </div>
+          {/* Center column */}
           <BehaviorChecklist behaviors={behaviorItems} />
-        </div>
-        <div className="flex flex-col">
+          {/* Right column */}
           <MiscueAnalysisReport miscueData={miscueData} />
         </div>
-      </div>
+      </main>
     </div>
   );
 }
