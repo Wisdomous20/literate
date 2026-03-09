@@ -1,6 +1,5 @@
 import { AlignedWord } from "@/types/oral-reading"
-import { normalizeWord } from "./whisperService"
-import { similarityRatio } from "./similarityRatio"
+import { normalizeWord, similarityRatio } from "@/utils/textUtils";
 
 interface SpokenWordEntry {
   word: string
@@ -170,10 +169,4 @@ export function levenshteinDistance(
   }
 
   return dpArr[mLen][nLen];
-}
-
-export function isReversal(expected: string, spoken: string): boolean {
-  const a = normalizeWord(expected)
-  const b = normalizeWord(spoken)
-  return a.length > 1 && a === b.split("").reverse().join("")
 }

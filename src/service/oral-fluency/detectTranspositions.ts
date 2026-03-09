@@ -1,6 +1,6 @@
 import { isSimilar } from "./similarityRatio"
 import { AlignedWord } from "@/types/oral-reading"
-import { normalizeWord } from "./whisperService"
+import { normalizeWord } from "../googleService/googleSTTService"
 
 export default function detectTranspositions(alignedWords: AlignedWord[]): Set<number> {
   const indices = new Set<number>()

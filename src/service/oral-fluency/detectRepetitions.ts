@@ -1,5 +1,5 @@
 import { AlignedWord } from "@/types/oral-reading"
-import { normalizeWord } from "./whisperService"
+import { normalizeWord } from "../googleService/googleSTTService"
 import { isSimilarForRepetition } from "./similarityRatio"
 
 

@@ -1,6 +1,6 @@
 import { similarityRatio } from "./similarityRatio";
 import { AlignedWord} from "@/types/oral-reading"
-import { normalizeWord } from "./whisperService";
+import { normalizeWord } from "../googleService/googleSTTService";
 
 export default function detectSelfCorrections(alignedWords: AlignedWord[], repetitionIndices: Set<number>): Set<number> {
   const indices = new Set<number>()

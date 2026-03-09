@@ -1,5 +1,5 @@
 import { AlignedWord, MiscueResult } from "@/types/oral-reading"
-import { normalizeWord } from "./whisperService"
+import { normalizeWord } from "../googleService/googleSTTService"
 import {  isReversal } from "./alignmentService"
 import { similarityRatio} from "./similarityRatio"
 import detectSelfCorrections from "./detectSelfCorrections"
