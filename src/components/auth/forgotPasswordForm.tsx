@@ -6,6 +6,7 @@ import Link from "next/link"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { sendResetPasswordAction } from "@/app/actions/auth/sendResetPassword"
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("")
@@ -35,18 +36,10 @@ export function ForgotPasswordForm() {
     setIsLoading(true)
 
     try {
-      const response = await fetch("/api/auth/passwordReset", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email: email.toLowerCase().trim() }),
-      })
+      const result = await sendResetPasswordAction(email.toLowerCase().trim())
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        setError(data.error || "Failed to send reset email. Please try again.")
+      if (!result.success) {
+        setError(result.message || "Failed to send reset email. Please try again.")
         setIsLoading(false)
         return
       }
