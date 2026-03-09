@@ -1,6 +1,5 @@
 import { AlignedWord } from "@/types/oral-reading"
-import { normalizeWord } from "./whisperService"
-import { similarityRatio } from "./similarityRatio"
+import { normalizeWord, similarityRatio } from "@/utils/textUtils";
 
 interface SpokenWordEntry {
   word: string
@@ -12,81 +11,91 @@ export function alignWords(
   passageWords: string[],
   spokenWords: SpokenWordEntry[]
 ): AlignedWord[] {
-  const n = passageWords.length
-  const m = spokenWords.length
-
-  const MATCH_SCORE = 2
-  const MISMATCH_PENALTY = -1
-  const GAP_PENALTY = -1.5  // Less harsh gap penalty to prefer fuzzy matches over gaps
-
-  const dp: number[][] = Array.from({ length: n + 1 }, () =>
-    Array(m + 1).fill(0)
-  )
-
-  for (let i = 0; i <= n; i++) dp[i][0] = i * GAP_PENALTY
-  for (let j = 0; j <= m; j++) dp[0][j] = j * GAP_PENALTY
-
-  for (let i = 1; i <= n; i++) {
-    for (let j = 1; j <= m; j++) {
-      const normalExpected = normalizeWord(passageWords[i - 1])
-      const normalSpoken = normalizeWord(spokenWords[j - 1].word)
-
-      const sim = similarityRatio(normalExpected, normalSpoken)
-
-      const matchScore =
-        sim > 0.8
-          ? MATCH_SCORE
-          : sim > 0.4
-          ? MISMATCH_PENALTY / 2
-          : MISMATCH_PENALTY
-
-      dp[i][j] = Math.max(
-        dp[i - 1][j - 1] + matchScore,
-        dp[i - 1][j] + GAP_PENALTY,
-        dp[i][j - 1] + GAP_PENALTY
-      )
+  // Expand hyphenated passage words
+  const expandedPassageWords: string[] = [];
+  for (const word of passageWords) {
+    if (word.includes("-")) {
+      expandedPassageWords.push(...word.split("-"));
+    } else {
+      expandedPassageWords.push(word);
     }
   }
 
+  const n = expandedPassageWords.length
+  const m = spokenWords.length
+
+  // Pre-compute normalized words to avoid redundant work in the DP loop
+  const normExpected = expandedPassageWords.map(normalizeWord)
+  const normSpoken = spokenWords.map((w) => normalizeWord(w.word))
+
+  // Pre-compute similarity matrix (only compute once per pair)
+  const simMatrix: number[][] = Array.from({ length: n }, () => Array(m).fill(0))
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < m; j++) {
+      simMatrix[i][j] = similarityRatio(normExpected[i], normSpoken[j])
+    }
+  }
+
+  const MATCH_SCORE = 2
+  const MISMATCH_PENALTY = -1
+  const GAP_PENALTY = -1.5
+
+  function matchScore(i: number, j: number): number {
+    const sim = simMatrix[i][j]
+    return sim > 0.8 ? MATCH_SCORE : sim > 0.4 ? MISMATCH_PENALTY / 2 : MISMATCH_PENALTY
+  }
+
+  // Use two-row DP + traceback matrix to reduce memory from O(n*m) numbers to O(n*m) bytes
+  const trace: Uint8Array[] = Array.from({ length: n + 1 }, () => new Uint8Array(m + 1))
+  // 0 = diagonal, 1 = up (gap in spoken), 2 = left (gap in expected)
+
+  const dp: number[][] = Array.from({ length: n + 1 }, () => Array(m + 1).fill(0))
+
+  for (let i = 0; i <= n; i++) { dp[i][0] = i * GAP_PENALTY; trace[i][0] = 1; }
+  for (let j = 0; j <= m; j++) { dp[0][j] = j * GAP_PENALTY; trace[0][j] = 2; }
+  trace[0][0] = 0;
+
+  for (let i = 1; i <= n; i++) {
+    for (let j = 1; j <= m; j++) {
+      const diag = dp[i - 1][j - 1] + matchScore(i - 1, j - 1)
+      const up = dp[i - 1][j] + GAP_PENALTY
+      const left = dp[i][j - 1] + GAP_PENALTY
+
+      if (diag >= up && diag >= left) {
+        dp[i][j] = diag
+        trace[i][j] = 0
+      } else if (up >= left) {
+        dp[i][j] = up
+        trace[i][j] = 1
+      } else {
+        dp[i][j] = left
+        trace[i][j] = 2
+      }
+    }
+  }
+
+  // Traceback using pre-computed trace matrix (no re-computation)
   const aligned: AlignedWord[] = []
   let i = n
   let j = m
 
   while (i > 0 || j > 0) {
-    if (
-      i > 0 &&
-      j > 0 &&
-      dp[i][j] ===
-        dp[i - 1][j - 1] +
-          ((() => {
-            const ne = normalizeWord(passageWords[i - 1])
-            const ns = normalizeWord(spokenWords[j - 1].word)
-            const s = similarityRatio(ne, ns)
-            return s > 0.8
-              ? MATCH_SCORE
-              : s > 0.4
-              ? MISMATCH_PENALTY / 2
-              : MISMATCH_PENALTY
-          })())
-    ) {
-      const normalExpected = normalizeWord(passageWords[i - 1])
-      const normalSpoken = normalizeWord(spokenWords[j - 1].word)
-
+    if (i > 0 && j > 0 && trace[i][j] === 0) {
       aligned.unshift({
-        expected: passageWords[i - 1],
+        expected: expandedPassageWords[i - 1],
         spoken: spokenWords[j - 1].word,
         expectedIndex: i - 1,
         spokenIndex: j - 1,
         timestamp: spokenWords[j - 1].start,
         endTimestamp: spokenWords[j - 1].end,
         confidence: null,
-        match: normalExpected === normalSpoken ? "EXACT" : "MISMATCH",
+        match: normExpected[i - 1] === normSpoken[j - 1] ? "EXACT" : "MISMATCH",
       })
       i--
       j--
-    } else if (i > 0 && dp[i][j] === dp[i - 1][j] + GAP_PENALTY) {
+    } else if (i > 0 && trace[i][j] === 1) {
       aligned.unshift({
-        expected: passageWords[i - 1],
+        expected: expandedPassageWords[i - 1],
         spoken: null,
         expectedIndex: i - 1,
         spokenIndex: null,
@@ -113,7 +122,6 @@ export function alignWords(
 
   return aligned
 }
-
 export function tokenizeForComparison(
   word: string,
   language: string
@@ -170,10 +178,4 @@ export function levenshteinDistance(
   }
 
   return dpArr[mLen][nLen];
-}
-
-export function isReversal(expected: string, spoken: string): boolean {
-  const a = normalizeWord(expected)
-  const b = normalizeWord(spoken)
-  return a.length > 1 && a === b.split("").reverse().join("")
 }
