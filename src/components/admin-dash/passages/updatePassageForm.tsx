@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { updatePassageAction } from "@/app/actions/admin/updatePassage";
 import { useQueryClient } from "@tanstack/react-query";
@@ -45,6 +45,7 @@ export function UpdatePassageForm({
   passage,
   onSuccess,
 }: UpdatePassageFormProps) {
+  const router = useRouter();
   const [title, setTitle] = useState(passage.title);
   const [content, setContent] = useState(passage.content);
   const [language, setLanguage] = useState(passage.language);
@@ -116,160 +117,173 @@ export function UpdatePassageForm({
     }
   };
 
+  const handleCancel = () => {
+    router.push("/admin");
+  };
+
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="w-full max-w-lg mx-auto bg-white rounded-2xl shadow-lg p-4 sm:p-8 flex flex-col gap-y-4 min-w-0"
-    >
-      {error && (
-        <div className="rounded-lg bg-red-100 p-4 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+    <div className="flex-1 w-full h-full overflow-auto">
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col w-full h-full bg-white rounded-2xl shadow-lg p-8 text-base"
+      >
+        {error && (
+          <div className="rounded-lg bg-red-100 p-3 text-base text-red-700 mb-3">
+            {error}
+          </div>
+        )}
 
-      {!hasChanges && (
-        <div className="rounded-lg bg-blue-100 p-4 text-sm text-blue-700">
-          No changes made yet.
-        </div>
-      )}
+        {!hasChanges && (
+          <div className="rounded-lg bg-blue-100 p-3 text-base text-blue-700 mb-3">
+            No changes made yet.
+          </div>
+        )}
 
-      <div>
-        <label className="block mb-2 font-semibold text-[#00306E]">Title</label>
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none shadow focus:border-[#6666FF] transition"
-          placeholder="Enter passage title"
-          disabled={isLoading}
-        />
-      </div>
+        <div className="flex flex-col md:flex-row gap-6 flex-1">
+          <div className="flex-1 flex flex-col gap-4">
+            <div>
+              <label className="block mb-2 font-semibold text-[#00306E] text-base">Title</label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full rounded-lg border border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none shadow-sm focus:border-[#6666FF] transition"
+                placeholder="Enter passage title"
+                disabled={isLoading}
+              />
+            </div>
 
-      <div>
-        <label className="block mb-2 font-semibold text-[#00306E]">
-          Content
-        </label>
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          rows={5}
-          className="w-full rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none shadow focus:border-[#6666FF] transition"
-          placeholder="Enter passage content..."
-          disabled={isLoading}
-        />
-      </div>
+            <div className="flex-1 flex flex-col">
+              <label className="block mb-2 font-semibold text-[#00306E] text-base">
+                Content
+              </label>
+              <div className="w-full rounded-2xl border border-[#E4F4FF] bg-white overflow-auto max-h-80">
+                <textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  rows={10}
+                  className="w-full min-h-40 max-h-80 rounded-2xl border-none bg-transparent px-4 py-3 text-base text-[#00306E] outline-none shadow-none focus:ring-0 focus:outline-none resize-none overflow-auto"
+                  placeholder="Enter passage content..."
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
 
-      <div>
-        <label
-          htmlFor="wordCount"
-          className="block mb-2 font-semibold text-[#00306E]"
-        >
-          Word Count
-        </label>
-        <input
-          id="wordCount"
-          type="number"
-          value={wordCount}
-          readOnly
-          aria-readonly="true"
-          title="Word count"
-          className="w-full rounded-lg border-2 border-[#E4F4FF] bg-[#F8FAFC] px-4 py-3 text-base text-[#00306E]/70 outline-none shadow"
-        />
-      </div>
+            <div className="flex gap-3 pt-3">
+              <button
+                type="button"
+                onClick={handleCancel}
+                disabled={isLoading}
+                className="rounded-2xl px-6 py-3 text-base font-semibold text-[#2E2E68] border border-[#2E2E68] bg-white hover:bg-[#F0F4FF] transition-all disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading || !hasChanges}
+                className="bg-[#2E2E68] rounded-2xl px-6 py-3 text-base font-semibold text-white shadow-sm transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </div>
 
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
-          <label
-            htmlFor="language"
-            className="block mb-2 font-semibold text-[#00306E]"
-          >
-            Language
-          </label>
-          <div className="relative">
-            <select
-              id="language"
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className="w-full appearance-none rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none shadow focus:border-[#6666FF] transition"
-              disabled={isLoading}
-            >
-              <option value="">Select language</option>
-              {languages.map((l) => (
-                <option key={l} value={l}>
-                  {l}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#00306E]/50" />
+          <div className="flex flex-col gap-4 w-full md:w-72">
+            <div>
+              <label
+                htmlFor="wordCount"
+                className="block mb-2 font-semibold text-[#00306E] text-base"
+              >
+                Word Count
+              </label>
+              <input
+                id="wordCount"
+                type="number"
+                value={wordCount}
+                readOnly
+                aria-readonly="true"
+                title="Word count"
+                className="w-full rounded-lg border border-[#E4F4FF] bg-[#F8FAFC] px-4 py-3 text-base text-[#00306E]/70 outline-none shadow-sm"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="language"
+                className="block mb-2 font-semibold text-[#00306E] text-base"
+              >
+                Language
+              </label>
+              <div className="relative">
+                <select
+                  id="language"
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  className="w-full appearance-none rounded-lg border border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none shadow-sm focus:border-[#6666FF] transition"
+                  disabled={isLoading}
+                >
+                  <option value="">Select language</option>
+                  {languages.map((l) => (
+                    <option key={l} value={l}>
+                      {l}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#00306E]/50" />
+              </div>
+            </div>
+            <div>
+              <label
+                htmlFor="level"
+                className="block mb-2 font-semibold text-[#00306E] text-base"
+              >
+                Level
+              </label>
+              <div className="relative">
+                <select
+                  id="level"
+                  value={level}
+                  onChange={(e) =>
+                    setLevel(e.target.value === "" ? "" : Number(e.target.value))
+                  }
+                  className="w-full appearance-none rounded-lg border border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none shadow-sm focus:border-[#6666FF] transition"
+                  disabled={isLoading}
+                >
+                  <option value="">Select level</option>
+                  {levels.map((l) => (
+                    <option key={l.value} value={l.value}>
+                      {l.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#00306E]/50" />
+              </div>
+            </div>
+            <div>
+              <label className="block mb-2 font-semibold text-[#00306E] text-base">
+                Test Type
+              </label>
+              <div className="flex gap-3">
+                {testTypes.map((t) => (
+                  <button
+                    key={t.value}
+                    type="button"
+                    onClick={() => setTestType(t.value)}
+                    disabled={isLoading}
+                    className={`flex-1 rounded-lg border-2 px-4 py-3 text-base font-medium transition-all ${
+                      testType === t.value
+                        ? "border-[#6666FF] bg-[#6666FF]/10 text-[#6666FF] shadow"
+                        : "border-[#E4F4FF] bg-white text-[#00306E]/60 hover:border-[#6666FF]/30"
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
-        <div className="flex-1">
-          <label
-            htmlFor="level"
-            className="block mb-2 font-semibold text-[#00306E]"
-          >
-            Level
-          </label>
-          <div className="relative">
-            <select
-              id="level"
-              value={level}
-              onChange={(e) =>
-                setLevel(e.target.value === "" ? "" : Number(e.target.value))
-              }
-              className="w-full appearance-none rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none shadow focus:border-[#6666FF] transition"
-              disabled={isLoading}
-            >
-              <option value="">Select level</option>
-              {levels.map((l) => (
-                <option key={l.value} value={l.value}>
-                  {l.label}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#00306E]/50" />
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <label className="block mb-2 font-semibold text-[#00306E]">
-          Test Type
-        </label>
-        <div className="flex flex-col sm:flex-row gap-3">
-          {testTypes.map((t) => (
-            <button
-              key={t.value}
-              type="button"
-              onClick={() => setTestType(t.value)}
-              disabled={isLoading}
-              className={`flex-1 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-all ${
-                testType === t.value
-                  ? "border-[#6666FF] bg-[#6666FF]/10 text-[#6666FF] shadow"
-                  : "border-[#E4F4FF] bg-white text-[#00306E]/60 hover:border-[#6666FF]/30"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row justify-end gap-4 pt-4">
-        <Link
-          href="/admin"
-          className="rounded-lg px-10 py-3 text-base font-semibold text-[#00306E] transition-all hover:bg-[#E4F4FF] text-center"
-        >
-          Cancel
-        </Link>
-        <button
-          type="submit"
-          disabled={isLoading || !hasChanges}
-          className="rounded-lg bg-[#2E2E68] px-10 py-3 text-base font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0px_4px_15px_rgba(46,46,104,0.4)]"
-        >
-          {isLoading ? "Saving..." : "Save Changes"}
-        </button>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 }
