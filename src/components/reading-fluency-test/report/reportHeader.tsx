@@ -1,10 +1,36 @@
 "use client";
 
-import { LayoutDashboard, ChevronLeft} from "lucide-react";
+import { useState } from "react";
+import { LayoutDashboard, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { DeleteConfirmModal } from "@/components/ui/deleteConfirmModal";
+
+const FLUENCY_SESSION_KEY = "reading-fluency-session";
+const COMP_SESSION_KEY = "reading-comprehension-session";
 
 export default function ReportHeader() {
   const router = useRouter();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const handleContinueToComprehension = () => {
+    try {
+      const raw = sessionStorage.getItem(FLUENCY_SESSION_KEY);
+      if (raw) {
+        const fluencySession = JSON.parse(raw);
+        const compSession = {
+          studentName: fluencySession.studentName,
+          gradeLevel: fluencySession.gradeLevel,
+          selectedStudentId: fluencySession.selectedStudentId,
+          selectedClassName: fluencySession.selectedClassName,
+          selectedPassage: fluencySession.selectedPassage,
+        };
+        sessionStorage.setItem(COMP_SESSION_KEY, JSON.stringify(compSession));
+      }
+    } catch {
+      /* non-critical — quiz page will handle missing session */
+    }
+    router.push("/dashboard/reading-comprehension-test/quiz");
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -26,6 +52,7 @@ export default function ReportHeader() {
           </button>
           <button
             type="button"
+            onClick={() => setShowDeleteModal(true)}
             className="px-5 py-2 bg-[#DE3B40] text-white text-xs font-medium rounded-lg border border-[#DE3B40] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#DE3B40]/90 transition-colors"
           >
             Delete
@@ -33,14 +60,28 @@ export default function ReportHeader() {
         </div>
       </div>
 
+      <DeleteConfirmModal
+        open={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={() => {}}
+      />
+
       {/* Previous + Continue to Comprehension */}
       <div className="flex items-center justify-between px-8 pt-2">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-1 text-[#31318A] font-semibold text-lg hover:opacity-80 transition-opacity"
+          className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#5555EE] md:text-base shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)]"
         >
-          <ChevronLeft size={24} />
-          Previous
+          <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
+          <span>Previous</span>
+        </button>
+
+        <button
+          onClick={handleContinueToComprehension}
+          className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#5555EE] md:text-base shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)]"
+        >
+          <span>Continue to Comprehension</span>
+          <ChevronRight size={18} />
         </button>
       </div>
     </div>

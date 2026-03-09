@@ -586,7 +586,7 @@ export default function ReadingFluencyTestPage() {
             <button
               type="button"
               onClick={() => router.back()}
-              className="flex items-center gap-1 text-sm font-semibold text-[#00306E] transition-colors hover:text-[#6666FF] md:text-base lg:text-lg"
+              className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#5555EE] md:text-base shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)]"
             >
               <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
               <span>Previous</span>

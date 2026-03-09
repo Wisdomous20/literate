@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { LayoutDashboard, ChevronLeft, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { DeleteConfirmModal } from "@/components/ui/deleteConfirmModal";
 
 export default function ReadingComprehensionReportHeader() {
   const router = useRouter();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   return (
     <div className="flex flex-col gap-4">
@@ -24,12 +27,20 @@ export default function ReadingComprehensionReportHeader() {
           </button>
           <button
             type="button"
+            onClick={() => setShowDeleteModal(true)}
             className="px-5 py-2 bg-[#DE3B40] text-white text-xs font-medium rounded-lg border border-[#DE3B40] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#DE3B40]/90 transition-colors"
           >
             Delete
           </button>
         </div>
       </div>
+
+      <DeleteConfirmModal
+        open={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={() => {}}
+      />
+
       <div className="flex items-center justify-between px-8 pt-2">
         <button
           type="button"
