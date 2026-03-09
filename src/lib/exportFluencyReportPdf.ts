@@ -52,9 +52,9 @@ export interface FluencyExportInput {
   studentName: string;
   gradeLevel: string;
   selectedClassName: string;
-  selectedTitle: string;
-  selectedLevel: string;
-  selectedTestType: string;
+  selectedTitle?: string;
+  selectedLevel?: string;
+  selectedTestType?: string;
   assessmentType: string;
   passageContent: string;
   recordedSeconds: number;
