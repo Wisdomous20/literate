@@ -23,6 +23,7 @@ export async function getStudentsByClassNameService(
           name: className,
           userId,
         },
+        deletedAt: null, // Only fetch students who are not deleted
       },
       select: {
         id: true,

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Loader2 } from "lucide-react";
-import { DashboardHeader } from "@/components/auth/dashboard/dashboardHeader";
+import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import { ComprehensionBreakdown } from "@/components/oral-reading-test/comprehensionBreakdown";
 import { ComprehensionInfoBar } from "@/components/oral-reading-test/comprehensionInfoBar";
 import { ComprehensionNavRow } from "@/components/oral-reading-test/comprehensionNavRow";

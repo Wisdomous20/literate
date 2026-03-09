@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Loader2 } from "lucide-react";
+import { ChevronDown, ClipboardList, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ClassCard } from "./classCard";
 import { CreateClassModal } from "./createClassModal";
@@ -11,31 +11,15 @@ import { useClassList } from "@/lib/hooks/useClassList";
 
 type ClassCardVariant = "blue" | "yellow" | "cyan";
 
-interface ClassItem {
-  id: string;
-  name: string;
-  studentCount: number;
-  variant: ClassCardVariant;
-}
-
-// Helper to get current school year
 function getCurrentSchoolYear(): string {
   const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth();
-
-  if (currentMonth >= 7) {
-    return `${currentYear}-${currentYear + 1}`;
-  } else {
-    return `${currentYear - 1}-${currentYear}`;
-  }
+  const y = now.getFullYear();
+  return now.getMonth() >= 7 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
 }
 
-// Generate school years for dropdown (current and past 2 years)
 function getSchoolYears(): string[] {
   const current = getCurrentSchoolYear();
   const [startYear] = current.split("-").map(Number);
-
   return [
     current,
     `${startYear - 1}-${startYear}`,
@@ -43,25 +27,27 @@ function getSchoolYears(): string[] {
   ];
 }
 
-// Assign variant based on index for visual variety
 function getVariant(index: number): ClassCardVariant {
   const variants: ClassCardVariant[] = ["blue", "yellow", "cyan"];
   return variants[index % variants.length];
 }
 
-export function ClassInventory() {
+interface ClassInventoryProps {
+  selectedYear: string;
+  onYearChange: (year: string) => void;
+}
+
+export function ClassInventory({ selectedYear, onYearChange }: ClassInventoryProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const schoolYears = getSchoolYears();
-  const [selectedYear, setSelectedYear] = useState<string>(schoolYears[0]);
-  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { data: rawClasses, isLoading, error: fetchError } = useClassList(selectedYear);
-
   const error = fetchError?.message ?? null;
 
-  const classes: ClassItem[] = (rawClasses ?? []).map(
+  const classes = (rawClasses ?? []).map(
     (c: { id: string; name: string; studentCount: number }, index: number) => ({
       id: c.id,
       name: c.name,
@@ -70,18 +56,13 @@ export function ClassInventory() {
     })
   );
 
-  const previewClasses = classes.slice(0, 10);
+  const previewClasses = classes.slice(0, 5);
 
-  const handleCreateClass = async (data: {
-    className: string;
-    schoolYear: string;
-  }) => {
+  const handleCreateClass = async (data: { className: string; schoolYear: string }) => {
     const result = await createClass(data.className);
-
     if (result.success) {
       await queryClient.invalidateQueries({ queryKey: ["classes", selectedYear] });
     }
-
     return result;
   };
 
@@ -89,43 +70,36 @@ export function ClassInventory() {
     await queryClient.invalidateQueries({ queryKey: ["classes", selectedYear] });
   };
 
-  const handleClassClick = (classId: string) => {
-    router.push(`/dashboard/class/${classId}`);
-  };
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <h2 className="text-[20px] font-semibold leading-7.5 text-[#00306E]">
-            Class Inventory
-          </h2>
+    <div className="space-y-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <h2 className="text-[20px] font-semibold text-[#00306E]">Class Inventory</h2>
           <button
             type="button"
             onClick={() => router.push("/dashboard/class/all")}
-            className="ml-2 rounded-lg border border-[#7A7AFB] bg-white px-3 py-1.5 text-xs font-medium text-[#2E2E68] hover:bg-[#E4F4FF] transition-colors"
+            className="rounded-full border border-[#6666FF] bg-transparent px-3 py-1 text-[11px] font-medium text-[#6666ff] ml-1 h-7 min-w-0 hover:bg-[#6666FF]/10 transition-colors"
           >
             View All
           </button>
         </div>
-        <div className="flex gap-3">
-          {/* School Year Dropdown */}
+        <div className="flex items-center gap-2">
           <div className="relative">
             <button
+              type="button"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-2 rounded-lg border border-[#5D5DFB]/30 bg-white px-4 py-2 text-sm font-medium text-[#00306E] transition-colors hover:bg-[#E4F4FF]"
+              className="rounded-lg border border-[#6666FF]/25 bg-[#6666FF]/8 px-5 py-2 text-sm font-medium text-[#6666FF] flex items-center gap-1 h-10 min-w-30"
             >
               {selectedYear}
               <ChevronDown className="h-4 w-4" />
             </button>
             {isDropdownOpen && (
-              <div className="absolute right-0 top-full z-10 mt-1 w-40 rounded-lg border border-[#5D5DFB]/30 bg-white py-1 shadow-lg">
+              <div className="absolute right-0 top-full z-10 mt-1 w-36 rounded-lg border border-[#5D5DFB]/30 bg-white py-1 shadow-lg">
                 {schoolYears.map((year) => (
                   <button
                     key={year}
                     onClick={() => {
-                      setSelectedYear(year);
+                      onYearChange(year);
                       setIsDropdownOpen(false);
                     }}
                     className={`w-full px-4 py-2 text-left text-sm transition-colors hover:bg-[#E4F4FF] ${
@@ -140,53 +114,37 @@ export function ClassInventory() {
               </div>
             )}
           </div>
-
-          {/* Create Class Button */}
           <button
             type="button"
             onClick={() => setIsModalOpen(true)}
-            className="
-              flex h-10 w-37.5 items-center justify-center gap-2
-              rounded-lg border border-[#7A7AFB]
-              bg-[#2E2E68]
-              px-5 py-2.5
-              text-sm font-medium text-white
-              shadow-[0px_1px_20px_rgba(65,155,180,0.47)]
-              transition-opacity hover:opacity-90
-            "
+            className="rounded-lg border border-[#7A7AFB] bg-[#6666FF] px-5 py-2 text-sm font-medium text-white shadow-[0px_1px_20px_rgba(65,155,180,0.47)] transition-opacity hover:opacity-90 h-10 min-w-30"
           >
-            Create Class
+            + Create Class
           </button>
         </div>
       </div>
 
-      {/* Loading State */}
+      <div className="flex items-center gap-2 pl-1 text-[15px] text-[#5d5db6] font-semibold mb-5">
+        <ClipboardList className="w-5 h-5" />
+        Manage your classes for the selected school year.
+      </div>
+
       {isLoading && (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-[#6666FF]" />
         </div>
       )}
-
-      {/* Error State */}
       {!isLoading && error && (
         <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
           {error}
         </div>
       )}
-
-      {/* Empty State */}
       {!isLoading && !error && classes.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <p className="text-[#00306E]/70 mb-2">
-            No classes found for {selectedYear}
-          </p>
-          <p className="text-sm text-[#00306E]/50">
-            Click &quot;Create Class&quot; to add your first class
-          </p>
+          <p className="text-[#00306E]/70 mb-2">No classes found for {selectedYear}</p>
+          <p className="text-sm text-[#00306E]/50">Click Create Class to add your first class</p>
         </div>
       )}
-
-      {/* Class Grid - show only preview */}
       {!isLoading && !error && previewClasses.length > 0 && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
           {previewClasses.map((classItem) => (
@@ -196,14 +154,12 @@ export function ClassInventory() {
               name={classItem.name}
               studentCount={classItem.studentCount}
               variant={classItem.variant}
-              onClick={() => handleClassClick(classItem.id)}
+              onClick={() => router.push(`/dashboard/class/${classItem.id}`)}
               onClassUpdated={handleClassUpdated}
             />
           ))}
         </div>
       )}
-
-      {/* Create Class Modal */}
       <CreateClassModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

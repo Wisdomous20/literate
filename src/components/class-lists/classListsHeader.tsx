@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutGrid } from "lucide-react";
+import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 
 interface ClassListsHeaderProps {
   onCreateStudent: () => void;
@@ -8,21 +8,17 @@ interface ClassListsHeaderProps {
 
 export function ClassListsHeader({ onCreateStudent }: ClassListsHeaderProps) {
   return (
-    <header className="flex h-29.5 items-center justify-between px-10 border-b border-[#8D8DEC] shadow-[0px_4px_4px_#54A4FF] rounded-tl-[50px]">
-      <div className="flex items-center gap-3">
-        <LayoutGrid className="h-6 w-6 text-[#6666FF]" />
-        <h1 className="text-[25px] font-semibold text-[#00306E]">
-          Class Lists
-        </h1>
-      </div>
-
-      <button
-        onClick={onCreateStudent}
-        type="button"
-        className="px-6 py-2.5 text-sm font-medium text-white transition-colors hover:opacity-90 bg-[#2E2E68] border border-[#7A7AFB] shadow-[0px_1px_20px_rgba(65,155,180,0.47)] rounded-xl"
-      >
-        Create Student
-      </button>
-    </header>
+    <DashboardHeader
+      title="Class Lists"
+      action={
+        <button
+          onClick={onCreateStudent}
+          type="button"
+          className="rounded-md border border-[#7A7AFB] bg-[#6666FF] px-3.5 py-1.5 text-xs font-medium text-white shadow-[0px_1px_12px_rgba(65,155,180,0.35)] transition-opacity hover:opacity-90"
+        >
+          Create Student
+        </button>
+      }
+    />
   );
 }

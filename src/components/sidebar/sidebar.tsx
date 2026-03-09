@@ -15,6 +15,12 @@ import {
   ChevronDown,
 } from "lucide-react";
 
+function getCurrentSchoolYear(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  return now.getMonth() >= 7 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
+}
+
 const menuItems = [
   {
     label: "My Dashboard",
@@ -52,6 +58,7 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
 
   const firstName = session?.user?.name?.split(" ")[0] || "User";
+  const schoolYear = getCurrentSchoolYear();
 
   const handleLogout = async () => {
     await signOut({ redirect: true, callbackUrl: "/login" });
@@ -106,7 +113,7 @@ export function Sidebar() {
       {!collapsed ? (
         <div className="px-8 pb-4 pt-4">
           <h2 className="text-lg font-semibold text-white">Hi, Teacher {firstName}!</h2>
-          <p className="text-sm text-white/70">S.Y 2026-2027</p>
+          <p className="text-sm text-white/70">S.Y {schoolYear}</p>
         </div>
       ) : (
         <div className="pb-4 pt-4" />
