@@ -215,7 +215,7 @@ export function MiscueAnalysis({
             <div className="mt-2.5 flex justify-center">
               <button
                 type="button"
-                onClick={() => router.push("/dashboard/oral-reading-test/report")}
+                onClick={() => router.push("/dashboard/oral-reading-test/reading-fluency-report")}
                 className="mt-3 w-full rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90"
               >
                 View Fluency Report

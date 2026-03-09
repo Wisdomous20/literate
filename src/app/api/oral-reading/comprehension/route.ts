@@ -16,18 +16,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await submitComprehensionService({
-      assessmentId,
-      answers,
-    });
+    // Submit comprehension first so the classification level is saved to the DB
+    const result = await submitComprehensionService({ assessmentId, answers });
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
+    // Now compute the oral reading level (needs both fluency & comprehension in DB)
     const oralReadingResult = await createOralReadingService(assessmentId);
 
-    
     if (!oralReadingResult.success) {
       return NextResponse.json({ error: oralReadingResult.error }, { status: 500 });
     }
@@ -40,10 +38,9 @@ export async function POST(request: NextRequest) {
       totalItems: result.totalItems,
       level: result.level,
       oralReadingResult: oralReadingResult ?? null,
-
     });
   } catch (error) {
-    console.error("Comprehension submit & oralReading submnit error:", error);
+    console.error("Comprehension submit & oralReading submit error:", error);
     return NextResponse.json(
       { error: "Failed to process comprehension submission" },
       { status: 500 }

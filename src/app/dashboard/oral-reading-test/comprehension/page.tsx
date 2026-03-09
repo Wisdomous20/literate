@@ -2,50 +2,18 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronDown,
-  Clock,
-  Loader2,
-} from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import { ComprehensionBreakdown } from "@/components/oral-reading-test/comprehensionBreakdown";
+import { ComprehensionInfoBar } from "@/components/oral-reading-test/comprehensionInfoBar";
+import { ComprehensionNavRow } from "@/components/oral-reading-test/comprehensionNavRow";
+import { ComprehensionSubmitArea } from "@/components/oral-reading-test/comprehensionSubmitArea";
+import { QuestionCard } from "@/components/oral-reading-test/questionCard";
+import type { QuestionData } from "@/components/oral-reading-test/questionCard";
 import { getQuizByPassageAction } from "@/app/actions/comprehension-Test/getQuizByPassage";
-import { getAssessmentByIdAction } from "@/app/actions/assessment/getAssessmentById";
+import { getAssessmentComprehension } from "@/app/actions/assessment/getAssessmentComprehension";
 
-const OPTION_LABELS = ["A", "B", "C", "D"];
 const COMP_STORAGE_KEY = "oral-reading-comprehension-state";
-
-const TAG_HIGHLIGHT: Record<
-  string,
-  { bg: string; border: string; shadow: string }
-> = {
-  literal: {
-    bg: "rgba(160, 200, 255, 0.35)",
-    border: "#2563EB",
-    shadow: "0px 1px 20px rgba(37, 99, 235, 0.3)",
-  },
-  inferential: {
-    bg: "rgba(180, 170, 240, 0.4)",
-    border: "#4B3BA3",
-    shadow: "0px 1px 20px rgba(75, 59, 163, 0.3)",
-  },
-  critical: {
-    bg: "rgba(253, 182, 210, 0.44)",
-    border: "#C41048",
-    shadow: "0px 1px 20px rgba(196, 16, 72, 0.3)",
-  },
-};
-
-interface QuestionData {
-  id: string;
-  questionNumber: number;
-  questionText: string;
-  type: "MULTIPLE_CHOICE" | "ESSAY";
-  tags?: string;
-  options?: string[];
-}
 
 interface TagBreakdown {
   literal: { correct: number; total: number };
@@ -112,6 +80,68 @@ function computeTagBreakdown(
   return breakdown;
 }
 
+function buildResultFromAssessment(assessment: {
+  comprehension: {
+    id: string;
+    score: number;
+    totalItems: number;
+    classificationLevel: string | null;
+    answers: { questionId: string; answer: string; isCorrect: boolean | null; question: { tags: string } }[];
+  };
+}): { result: ComprehensionResult; restoredAnswers: Record<string, string> } {
+  const comp = assessment.comprehension;
+  const tagBreakdown = computeTagBreakdown(comp.answers);
+  const result: ComprehensionResult = {
+    score: comp.score,
+    totalItems: comp.totalItems,
+    level: comp.classificationLevel ?? "",
+    comprehensionTestId: comp.id,
+    tagBreakdown,
+  };
+  const restoredAnswers: Record<string, string> = {};
+  for (const a of comp.answers) {
+    restoredAnswers[a.questionId] = a.answer;
+  }
+  return { result, restoredAnswers };
+}
+
+/** Sync comprehension + fluency into the main oral-reading-session for the report page */
+function syncMainSession(
+  compResult: ComprehensionResult,
+  fluencyClassification?: string | null,
+) {
+  try {
+    const mainRaw = sessionStorage.getItem("oral-reading-session");
+    if (!mainRaw) return;
+    const mainSession = JSON.parse(mainRaw);
+    mainSession.comprehensionResult = {
+      score: compResult.score,
+      totalItems: compResult.totalItems,
+      percentage: compResult.totalItems
+        ? Math.round((compResult.score / compResult.totalItems) * 100)
+        : 0,
+      level: compResult.level,
+    };
+    if (fluencyClassification && compResult.level) {
+      const ranks: Record<string, number> = {
+        INDEPENDENT: 0,
+        INSTRUCTIONAL: 1,
+        FRUSTRATION: 2,
+      };
+      const labels = ["INDEPENDENT", "INSTRUCTIONAL", "FRUSTRATION"];
+      const overall = Math.max(
+        ranks[fluencyClassification] ?? 0,
+        ranks[compResult.level] ?? 0,
+      );
+      mainSession.oralReadingLevel = labels[overall];
+    }
+    sessionStorage.setItem("oral-reading-session", JSON.stringify(mainSession));
+  } catch {
+    /* non-critical */
+  }
+}
+
+
 export default function OralReadingComprehensionPage() {
   const router = useRouter();
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -137,11 +167,11 @@ export default function OralReadingComprehensionPage() {
 
   // Fetch questions on mount + restore saved state
   useEffect(() => {
-    async function fetchQuestions() {
+
+        async function fetchQuestions() {
       try {
-        const currentAssessmentId = sessionStorage.getItem(
-          "oral-reading-assessmentId",
-        );
+        const currentAssessmentId = sessionStorage.getItem("oral-reading-assessmentId");
+        const raw = sessionStorage.getItem("oral-reading-session");
 
         // Restore saved comprehension progress only if it belongs to the current assessment
         const saved = loadComprehensionState();
@@ -160,100 +190,41 @@ export default function OralReadingComprehensionPage() {
         // If not already submitted from saved state, check DB for existing submission
         const isRestoredSubmitted =
           saved?.assessmentId === currentAssessmentId && saved?.isSubmitted;
-        if (!isRestoredSubmitted) {
-          const assessmentId = currentAssessmentId;
-          if (assessmentId) {
-            try {
-              const assessment = await getAssessmentByIdAction(assessmentId);
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const existing = (assessment as any)?.comprehension;
-              if (existing) {
-                const tagBreakdown = computeTagBreakdown(existing.answers);
-                const restoredResult = {
-                  score: existing.score,
-                  totalItems: existing.totalItems,
-                  level: existing.classificationLevel ?? existing.level,
-                  comprehensionTestId: existing.id,
-                  tagBreakdown,
-                };
-                setComprehensionResult(restoredResult);
-                setIsSubmitted(true);
-                // Restore answers from DB
-                const restoredAnswers: Record<string, string> = {};
-                for (const a of existing.answers) {
-                  restoredAnswers[a.questionId] = a.answer;
-                }
-                setAnswers(restoredAnswers);
-                if (existing.id) {
-                  sessionStorage.setItem(
-                    "oral-reading-comprehensionTestId",
-                    existing.id,
-                  );
-                }
-                saveComprehensionState({
-                  assessmentId: assessmentId,
-                  answers: restoredAnswers,
-                  elapsedSeconds: saved?.elapsedSeconds ?? 0,
-                  isSubmitted: true,
-                  comprehensionResult: restoredResult,
-                });
+        if (!isRestoredSubmitted && currentAssessmentId) {
+          try {
+            const res = await getAssessmentComprehension(currentAssessmentId);
+            if (res.success && "assessment" in res && res.assessment?.comprehension) {
+              const { result: restoredResult, restoredAnswers } =
+                buildResultFromAssessment(res.assessment as Parameters<typeof buildResultFromAssessment>[0]);
 
-                try {
-                  const mainRaw = sessionStorage.getItem(
-                    "oral-reading-session",
-                  );
-                  if (mainRaw) {
-                    const mainSession = JSON.parse(mainRaw);
-                    mainSession.comprehensionResult = {
-                      score: restoredResult.score,
-                      totalItems: restoredResult.totalItems,
-                      percentage: restoredResult.totalItems
-                        ? Math.round(
-                            (restoredResult.score / restoredResult.totalItems) *
-                              100,
-                          )
-                        : 0,
-                      level: restoredResult.level,
-                    };
+              setComprehensionResult(restoredResult);
+              setIsSubmitted(true);
+              setAnswers(restoredAnswers);
 
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const fluencyClassification = (assessment as any)
-                      ?.oralFluency?.classificationLevel;
-                    const compClassification = restoredResult.level;
-                    if (fluencyClassification && compClassification) {
-                      const ranks: Record<string, number> = {
-                        INDEPENDENT: 0,
-                        INSTRUCTIONAL: 1,
-                        FRUSTRATION: 2,
-                      };
-                      const labels = [
-                        "INDEPENDENT",
-                        "INSTRUCTIONAL",
-                        "FRUSTRATION",
-                      ];
-                      const overall = Math.max(
-                        ranks[fluencyClassification] ?? 0,
-                        ranks[compClassification] ?? 0,
-                      );
-                      mainSession.oralReadingLevel = labels[overall];
-                    }
-                    sessionStorage.setItem(
-                      "oral-reading-session",
-                      JSON.stringify(mainSession),
-                    );
-                  }
-                } catch {
-                  /* failed to update main session — non-critical */
-                }
+              if (restoredResult.comprehensionTestId) {
+                sessionStorage.setItem(
+                  "oral-reading-comprehensionTestId",
+                  restoredResult.comprehensionTestId,
+                );
               }
-            } catch {
-              // Assessment not found or error — continue to load questions
+              saveComprehensionState({
+                assessmentId: currentAssessmentId,
+                answers: restoredAnswers,
+                elapsedSeconds: saved?.elapsedSeconds ?? 0,
+                isSubmitted: true,
+                comprehensionResult: restoredResult,
+              });
+
+              const fluencyClassification =
+                res.assessment?.oralFluency?.classificationLevel;
+              syncMainSession(restoredResult, fluencyClassification);
             }
+          } catch {
+            // Assessment not found or error — continue to load questions
           }
         }
-
-        const raw = sessionStorage.getItem("oral-reading-session");
-        if (!raw) {
+        
+         if (!raw) {
           setLoadError("Session not found. Please go back and start again.");
           setIsLoading(false);
           return;
@@ -390,66 +361,22 @@ export default function OralReadingComprehensionPage() {
 
       // Check if a comprehension test already exists for this assessment
       try {
-        const assessment = await getAssessmentByIdAction(assessmentId);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const existingComp = (assessment as any)?.comprehension;
-        if (existingComp) {
-          const tagBreakdown = computeTagBreakdown(existingComp.answers);
-          const existingLevel =
-            existingComp.classificationLevel ?? existingComp.level;
-          setComprehensionResult({
-            score: existingComp.score,
-            totalItems: existingComp.totalItems,
-            level: existingLevel,
-            comprehensionTestId: existingComp.id,
-            tagBreakdown,
-          });
-          if (existingComp.id) {
+        const res = await getAssessmentComprehension(assessmentId);
+        if (res.success && "assessment" in res && res.assessment?.comprehension) {
+          const { result: existingResult, restoredAnswers: _ } =
+            buildResultFromAssessment(res.assessment as Parameters<typeof buildResultFromAssessment>[0]);
+
+          setComprehensionResult(existingResult);
+          if (existingResult.comprehensionTestId) {
             sessionStorage.setItem(
               "oral-reading-comprehensionTestId",
-              existingComp.id,
+              existingResult.comprehensionTestId,
             );
           }
 
-          // Sync into main session for reading-level-report
-          try {
-            const mainRaw = sessionStorage.getItem("oral-reading-session");
-            if (mainRaw) {
-              const mainSession = JSON.parse(mainRaw);
-              mainSession.comprehensionResult = {
-                score: existingComp.score,
-                totalItems: existingComp.totalItems,
-                percentage: existingComp.totalItems
-                  ? Math.round(
-                      (existingComp.score / existingComp.totalItems) * 100,
-                    )
-                  : 0,
-                level: existingLevel,
-              };
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const fluencyClassification = (assessment as any)?.oralFluency
-                ?.classificationLevel;
-              if (fluencyClassification && existingLevel) {
-                const ranks: Record<string, number> = {
-                  INDEPENDENT: 0,
-                  INSTRUCTIONAL: 1,
-                  FRUSTRATION: 2,
-                };
-                const labels = ["INDEPENDENT", "INSTRUCTIONAL", "FRUSTRATION"];
-                const overall = Math.max(
-                  ranks[fluencyClassification] ?? 0,
-                  ranks[existingLevel] ?? 0,
-                );
-                mainSession.oralReadingLevel = labels[overall];
-              }
-              sessionStorage.setItem(
-                "oral-reading-session",
-                JSON.stringify(mainSession),
-              );
-            }
-          } catch {
-            /* non-critical */
-          }
+          const fluencyClassification =
+            res.assessment?.oralFluency?.classificationLevel;
+          syncMainSession(existingResult, fluencyClassification);
 
           setIsSubmitted(true);
           return;
@@ -492,12 +419,14 @@ export default function OralReadingComprehensionPage() {
 
       // Fetch the full assessment to get tag breakdown
       let tagBreakdown: TagBreakdown | undefined;
+      let fluencyClassification: string | null | undefined;
       try {
-        const assessment = await getAssessmentByIdAction(assessmentId);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const comp = (assessment as any)?.comprehension;
-        if (comp) {
-          tagBreakdown = computeTagBreakdown(comp.answers);
+        const res = await getAssessmentComprehension(assessmentId);
+        if (res.success && "assessment" in res && res.assessment?.comprehension) {
+          tagBreakdown = computeTagBreakdown(
+            res.assessment.comprehension.answers as Parameters<typeof computeTagBreakdown>[0],
+          );
+          fluencyClassification = res.assessment?.oralFluency?.classificationLevel;
         }
       } catch {
         // Failed to fetch tag breakdown — continue without it
@@ -609,189 +538,50 @@ export default function OralReadingComprehensionPage() {
       {/* Two-column layout */}
       <div className="flex flex-1 min-h-0 flex-col gap-4 px-4 py-4 md:px-6 lg:px-8">
         {/* Navigation Buttons — above both columns */}
-        <div className="flex items-center justify-between">
-          <button
-            onClick={handleGoBack}
-            className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#5555EE] md:text-base shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)]"
-          >
-            <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
-            <span>Previous</span>
-          </button>
-          <button
-            onClick={() =>
-              router.push("/dashboard/oral-reading-test/reading-level-report")
-            }
-            disabled={!isSubmitted}
-            className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#5555EE] md:text-base disabled:cursor-not-allowed disabled:opacity-50 shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)]"
-          >
-            <span>Reading Level</span>
-            <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
-          </button>
-        </div>
+        <ComprehensionNavRow
+          onGoBack={handleGoBack}
+          onContinue={() =>
+            router.push("/dashboard/oral-reading-test/reading-level-report")
+          }
+          continueEnabled={isSubmitted}
+        />
 
         {/* Two columns: left (info bar + scrollable questions) | right (breakdown aligned with timer top) */}
         <div className="flex flex-1 min-h-0 gap-4">
           {/* Left column */}
           <div className="flex flex-1 min-h-0 flex-col gap-4">
-            {/* Info Bar: Questions Info + Timer */}
-            <div className="flex gap-4 shrink-0">
-              <div className="flex-1 bg-[#EFFDFF] border border-[#10AABF] rounded-4xl shadow-[0px_1px_20px_rgba(65,155,180,0.47)] px-8 py-5">
-                <h2 className="text-[#00306E] font-bold text-lg">
-                  Questions 1-{totalQuestions}
-                </h2>
-                <p className="text-[#00306E] font-medium text-[15px]">
-                  Choose the correct answer
-                </p>
-              </div>
-              <button
-                onClick={togglePause}
-                className={`w-58.5 bg-[#EFFDFF] border rounded-4xl shadow-[0px_1px_20px_rgba(65,155,180,0.47)] flex items-center justify-center gap-3 shrink-0 transition-all cursor-pointer select-none ${
-                  isPaused
-                    ? "border-[#E53E3E] shadow-[0px_1px_20px_rgba(229,62,62,0.47)]"
-                    : "border-[#10AABF]"
-                }`}
-                title={
-                  isPaused ? "Click to resume timer" : "Click to pause timer"
-                }
-              >
-                <Clock
-                  className={`w-6 h-6 ${isPaused ? "text-[#E53E3E]" : "text-[#00306E]"}`}
-                />
-                <span
-                  className={`font-bold text-2xl tabular-nums ${isPaused ? "text-[#E53E3E]" : "text-[#00306E]"}`}
-                >
-                  {formattedTime}
-                </span>
-                {isPaused && (
-                  <span className="text-[#E53E3E] text-xs font-semibold">
-                    PAUSED
-                  </span>
-                )}
-              </button>
-            </div>
+            <ComprehensionInfoBar
+              totalQuestions={totalQuestions}
+              formattedTime={formattedTime}
+              isPaused={isPaused}
+              onTogglePause={togglePause}
+            />
 
             {/* Scrollable questions */}
             <div
               ref={contentRef}
               className="flex-1 overflow-y-auto scroll-smooth pr-2"
             >
-              {/* Questions */}
               <div className="space-y-6">
-                {questions.map((question) => {
-                  const tagKey = question.tags?.toLowerCase() as
-                    | "literal"
-                    | "inferential"
-                    | "critical"
-                    | undefined;
-
-                  const tagClass =
-                    highlightedTag && tagKey === highlightedTag
-                      ? TAG_HIGHLIGHT[tagKey]
-                      : "bg-[#EFFDFF] border-[#10AABF] shadow-[0px_1px_20px_rgba(65,155,180,0.47)]";
-
-                  return (
-                    <div
-                      key={question.id}
-                      className={`rounded-4xl border px-8 py-6 transition-all duration-300 ${tagClass}`}
-                    >
-                      {/* Question Header */}
-                      <div className="mb-2 flex items-start gap-3">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-[#00306E] bg-[#0C1A6D]">
-                          <span className="text-xs font-semibold text-white">
-                            {question.questionNumber}
-                          </span>
-                        </div>
-                        <h3 className="text-[15px] font-semibold leading-8.75 text-[#00306E]">
-                          {question.questionText}
-                        </h3>
-                      </div>
-
-                      {/* Multiple Choice Options */}
-                      {question.type === "MULTIPLE_CHOICE" &&
-                        question.options && (
-                          <div className="space-y-1 ml-10">
-                            {question.options.map((option, index) => {
-                              const label = OPTION_LABELS[index];
-                              const isSelected =
-                                answers[question.id] === option;
-
-                              return (
-                                <button
-                                  key={index}
-                                  onClick={() =>
-                                    handleSelectOption(question.id, option)
-                                  }
-                                  disabled={isSubmitted}
-                                  className={`flex items-center gap-3 w-full text-left py-1 px-2 rounded-lg transition-all duration-200 ${
-                                    isSelected
-                                      ? "bg-[#162DB0]/10 shadow-[0px_0px_10px_rgba(255,176,32,0.3)]"
-                                      : "hover:bg-[#162DB0]/5"
-                                  } ${isSubmitted ? "cursor-default" : ""}`}
-                                >
-                                  <div
-                                    className={`shrink-0 w-7 h-6.5 rounded-full flex items-center justify-center transition-all duration-200 ${
-                                      isSelected
-                                        ? "bg-[#0C1A6D] border-2 border-[#00306E] shadow-[0px_0px_8px_rgba(255,176,32,0.5)]"
-                                        : "bg-[rgba(185,188,207,0.36)]"
-                                    }`}
-                                  >
-                                    <span
-                                      className={`text-xs font-semibold ${
-                                        isSelected
-                                          ? "text-white"
-                                          : "text-[#0F2676]"
-                                      }`}
-                                    >
-                                      {label}
-                                    </span>
-                                  </div>
-                                  <span className="text-[#00306E] text-[15px]">
-                                    {option}
-                                  </span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                      {/* Essay Input */}
-                      {question.type === "ESSAY" && (
-                        <div className="ml-10">
-                          <textarea
-                            value={answers[question.id] || ""}
-                            onChange={(e) =>
-                              handleEssayChange(question.id, e.target.value)
-                            }
-                            disabled={isSubmitted}
-                            placeholder="Type your answer here..."
-                            className="w-full min-h-12.5 bg-[rgba(108,164,239,0.09)] rounded-md px-4 py-3 text-[#00306E] text-[15px] placeholder:text-[#00306E]/40 outline-none resize-y disabled:opacity-60"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                {questions.map((question) => (
+                  <QuestionCard
+                    key={question.id}
+                    question={question}
+                    answer={answers[question.id]}
+                    highlightedTag={highlightedTag}
+                    isSubmitted={isSubmitted}
+                    onSelectOption={handleSelectOption}
+                    onEssayChange={handleEssayChange}
+                  />
+                ))}
               </div>
 
-              {/* Submit Button */}
-              <div className="flex flex-col items-center mt-8 mb-8 gap-2">
-                {submitError && (
-                  <p className="text-red-600 text-sm font-medium">
-                    {submitError}
-                  </p>
-                )}
-                <button
-                  onClick={handleSubmit}
-                  disabled={isSubmitting || isSubmitted}
-                  className="w-56.25 h-15.75 bg-[#2E2E68] border border-[#7A7AFB] rounded-lg shadow-[0px_1px_20px_rgba(65,155,180,0.47)] text-white font-semibold text-xl hover:bg-[#2E2E68]/90 transition-colors disabled:opacity-60"
-                >
-                  {isSubmitting
-                    ? "Submitting..."
-                    : isSubmitted
-                      ? "Submitted"
-                      : "Submit"}
-                </button>
-              </div>
+              <ComprehensionSubmitArea
+                submitError={submitError}
+                isSubmitting={isSubmitting}
+                isSubmitted={isSubmitted}
+                onSubmit={handleSubmit}
+              />
             </div>
           </div>
 
