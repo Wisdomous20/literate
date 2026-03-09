@@ -4,6 +4,7 @@ import { useState } from "react";
 import { LayoutDashboard, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { DeleteConfirmModal } from "@/components/ui/deleteConfirmModal";
+import { NavButton } from "@/components/ui/navButton";
 
 const FLUENCY_SESSION_KEY = "reading-fluency-session";
 const COMP_SESSION_KEY = "reading-comprehension-session";
@@ -63,26 +64,20 @@ export default function ReportHeader() {
       <DeleteConfirmModal
         open={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
-        onConfirm={() => {}}
+        onConfirm={() => { /* TODO: wire up actual delete handler */ }}
       />
 
       {/* Previous + Continue to Comprehension */}
       <div className="flex items-center justify-between px-8 pt-2">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#5555EE] md:text-base shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)]"
-        >
+        <NavButton onClick={() => router.back()}>
           <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
           <span>Previous</span>
-        </button>
+        </NavButton>
 
-        <button
-          onClick={handleContinueToComprehension}
-          className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#5555EE] md:text-base shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)]"
-        >
+        <NavButton onClick={handleContinueToComprehension}>
           <span>Continue to Comprehension</span>
           <ChevronRight size={18} />
-        </button>
+        </NavButton>
       </div>
     </div>
   );

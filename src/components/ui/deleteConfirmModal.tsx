@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { Trash2 } from "lucide-react";
 
 interface DeleteConfirmModalProps {
@@ -10,6 +11,9 @@ interface DeleteConfirmModalProps {
   description?: string;
 }
 
+const titleId = "delete-confirm-modal-title";
+const descriptionId = "delete-confirm-modal-description";
+
 export function DeleteConfirmModal({
   open,
   onClose,
@@ -17,6 +21,14 @@ export function DeleteConfirmModal({
   title = "Delete Report?",
   description = "This action cannot be undone. The report and all associated data will be permanently deleted.",
 }: DeleteConfirmModalProps) {
+  const deleteButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      deleteButtonRef.current?.focus();
+    }
+  }, [open]);
+
   if (!open) return null;
 
   return (
@@ -28,7 +40,13 @@ export function DeleteConfirmModal({
       />
 
       {/* Modal card */}
-      <div className="relative z-10 mx-4 flex w-full max-w-sm flex-col items-center gap-5 rounded-2xl border border-[#8D8DEC] bg-white p-7 shadow-[0_8px_40px_rgba(102,102,255,0.18)]">
+      <div
+        className="relative z-10 mx-4 flex w-full max-w-sm flex-col items-center gap-5 rounded-2xl border border-[#8D8DEC] bg-white p-7 shadow-[0_8px_40px_rgba(102,102,255,0.18)]"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descriptionId}
+      >
         {/* Icon */}
         <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[#DE3B40]/20 bg-[#FFF0F0]">
           <Trash2 className="h-7 w-7 text-[#DE3B40]" />
@@ -36,8 +54,8 @@ export function DeleteConfirmModal({
 
         {/* Text */}
         <div className="flex flex-col gap-1.5 text-center">
-          <h2 className="text-lg font-bold text-[#00306E]">{title}</h2>
-          <p className="text-sm text-[#00306E]/60">{description}</p>
+          <h2 id={titleId} className="text-lg font-bold text-[#00306E]">{title}</h2>
+          <p id={descriptionId} className="text-sm text-[#00306E]/60">{description}</p>
         </div>
 
         {/* Buttons */}
@@ -50,6 +68,7 @@ export function DeleteConfirmModal({
             Cancel
           </button>
           <button
+            ref={deleteButtonRef}
             type="button"
             onClick={() => {
               onConfirm();

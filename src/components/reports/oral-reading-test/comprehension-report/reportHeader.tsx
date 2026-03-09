@@ -2,6 +2,7 @@
 
 import { LayoutDashboard, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { NavButton } from "@/components/ui/navButton";
 
 export default function ComprehensionReportHeader() {
   const router = useRouter();
@@ -28,25 +29,19 @@ export default function ComprehensionReportHeader() {
 
       {/* Previous + Reading Level */}
       <div className="flex items-center justify-between px-8 pt-2">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)] transition-all duration-300 hover:bg-[#5555EE] md:text-base"
-        >
+        <NavButton onClick={() => router.back()}>
           <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
           <span>Previous</span>
-        </button>
+        </NavButton>
 
-        <button
-          type="button"
+        <NavButton
           onClick={() =>
             router.push("/dashboard/oral-reading-test/reading-level-report")
           }
-          className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)] transition-all duration-300 hover:bg-[#5555EE] md:text-base"
         >
           <span>Reading Level</span>
           <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
-        </button>
+        </NavButton>
       </div>
     </div>
   );

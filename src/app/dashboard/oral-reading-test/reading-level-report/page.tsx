@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import type { OralFluencyAnalysis } from "@/types/oral-reading";
 import { DeleteConfirmModal } from "@/components/ui/deleteConfirmModal";
+import { NavButton } from "@/components/ui/navButton";
 
 const STORAGE_KEY = "oral-reading-session";
 
@@ -200,21 +201,17 @@ export default function ReadingLevelReportPage() {
       <DeleteConfirmModal
         open={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
-        onConfirm={() => {}}
+        onConfirm={() => { /* TODO: wire up actual delete handler */ }}
       />
 
       <div className="flex items-center justify-between px-8 pt-4 pb-2">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#5555EE] md:text-base shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)]"
-        >
+        <NavButton onClick={() => router.back()}>
           <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
           <span>Previous</span>
-        </button>
+        </NavButton>
 
-        <button
-          type="button"
+        <NavButton
+          variant="outlined"
           onClick={() => {
             sessionStorage.removeItem(STORAGE_KEY);
             sessionStorage.removeItem("oral-reading-audio");
@@ -223,11 +220,10 @@ export default function ReadingLevelReportPage() {
             sessionStorage.removeItem("oral-reading-comprehensionTestId");
             router.push("/dashboard/oral-reading-test");
           }}
-          className="flex items-center gap-1.5 rounded-lg border border-[#6666FF]/30 bg-[rgba(102,102,255,0.06)] px-4 py-2 text-sm font-semibold text-[#6666FF] transition-colors hover:bg-[rgba(102,102,255,0.12)] md:text-base"
         >
           <RotateCcw className="h-4 w-4 md:h-5 md:w-5" />
           <span>Start New</span>
-        </button>
+        </NavButton>
       </div>
 
       {/* ── Main Content ─────────────────────── */}

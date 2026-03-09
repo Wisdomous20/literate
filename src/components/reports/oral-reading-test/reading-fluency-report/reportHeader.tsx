@@ -3,6 +3,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
+import { NavButton } from "@/components/ui/navButton";
 
 export default function ReportHeader() {
   const router = useRouter();
@@ -23,20 +24,14 @@ export default function ReportHeader() {
         }
       />
       <div className="flex items-center justify-between px-6 pt-4 lg:px-8">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#5555EE] md:text-base shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)]"
-        >
+        <NavButton onClick={() => router.back()}>
           <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
           <span>Previous</span>
-        </button>
-        <button
-          onClick={() => router.push("/dashboard/oral-reading-test/comprehension")}
-          className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#5555EE] md:text-base shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)]"
-        >
+        </NavButton>
+        <NavButton onClick={() => router.push("/dashboard/oral-reading-test/comprehension")}>
           <span>Continue to Comprehension</span>
           <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
-        </button>
+        </NavButton>
       </div>
     </div>
   );

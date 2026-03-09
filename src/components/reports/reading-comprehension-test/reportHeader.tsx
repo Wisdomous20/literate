@@ -4,6 +4,7 @@ import { useState } from "react";
 import { LayoutDashboard, ChevronLeft, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { DeleteConfirmModal } from "@/components/ui/deleteConfirmModal";
+import { NavButton } from "@/components/ui/navButton";
 
 export default function ReadingComprehensionReportHeader() {
   const router = useRouter();
@@ -38,31 +39,26 @@ export default function ReadingComprehensionReportHeader() {
       <DeleteConfirmModal
         open={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
-        onConfirm={() => {}}
+        onConfirm={() => { /* TODO: wire up actual delete handler */ }}
       />
 
       <div className="flex items-center justify-between px-8 pt-2">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)] transition-all duration-300 hover:bg-[#5555EE] md:text-base"
-        >
+        <NavButton onClick={() => router.back()}>
           <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
           <span>Previous</span>
-        </button>
-        <button
-          type="button"
+        </NavButton>
+        <NavButton
+          variant="outlined"
           onClick={() => {
             sessionStorage.removeItem("reading-comprehension-session");
             sessionStorage.removeItem("reading-comprehension-comp-state");
             sessionStorage.removeItem("reading-comprehension-assessmentId");
             router.push("/dashboard/reading-comprehension-test");
           }}
-          className="flex items-center gap-1.5 rounded-lg border border-[#6666FF]/30 bg-[rgba(102,102,255,0.06)] px-4 py-2 text-sm font-semibold text-[#6666FF] transition-colors hover:bg-[rgba(102,102,255,0.12)] md:text-base"
         >
           <RotateCcw className="h-4 w-4 md:h-5 md:w-5" />
           <span>Start New</span>
-        </button>
+        </NavButton>
       </div>
     </div>
   );

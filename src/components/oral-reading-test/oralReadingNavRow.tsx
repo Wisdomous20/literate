@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { NavButton } from "@/components/ui/navButton";
 
 interface OralReadingNavRowProps {
   onGoBack: () => void;
@@ -15,34 +16,29 @@ export function OralReadingNavRow({
 }: OralReadingNavRowProps) {
   return (
     <div className="flex items-center justify-between">
-      <button
-        type="button"
-        onClick={onGoBack}
-        className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#5555EE] md:text-base shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)]"
-      >
+      <NavButton onClick={onGoBack}>
         <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
         <span>Previous</span>
-      </button>
+      </NavButton>
 
       <h2 className="flex-1 text-center text-base font-bold text-[#0C1A6D] md:text-lg lg:text-xl">
         Student Information
       </h2>
 
-      <button
-        type="button"
+      <NavButton
         onClick={onContinue}
         aria-label="Continue to comprehension"
         title="Continue to comprehension"
-        className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-300 md:text-base ${
+        className={
           continueEnabled
-            ? "animate-[pulseGlow_2s_ease-in-out_infinite] bg-[#6666FF] text-white shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)] hover:bg-[#5555EE]"
-            : "cursor-not-allowed text-[#00306E]/40"
-        }`}
+            ? "animate-[pulseGlow_2s_ease-in-out_infinite]"
+            : "cursor-not-allowed bg-transparent text-[#00306E]/40 shadow-none hover:bg-transparent"
+        }
         disabled={!continueEnabled}
       >
         <span>Continue to Comprehension</span>
         <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
-      </button>
+      </NavButton>
     </div>
   );
 }
