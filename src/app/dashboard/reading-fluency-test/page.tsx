@@ -26,6 +26,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createStudent } from "@/app/actions/student/createStudent";
 import { convertToWav } from "@/utils/convertToWav";
 import type { OralFluencyAnalysis } from "@/types/oral-reading";
+import { exportFluencyReportPdf } from "@/lib/exportFluencyReportPdf";
 
 function getCurrentSchoolYear(): string {
   const now = new Date();
@@ -767,6 +768,49 @@ export default function ReadingFluencyTestPage() {
               classificationLevel={analysisResult?.classificationLevel}
               highlightedTypes={highlightedTypes}
               onToggleHighlight={toggleHighlightType}
+              onExportPdf={() => {
+                if (!analysisResult) return;
+                const totalWords = passageContent.split(/\s+/).filter(Boolean).length;
+                const duration = analysisResult.duration ?? recordedSeconds;
+                const totalMiscues = analysisResult.totalMiscues ?? 0;
+                const wordsCorrect = Math.max(0, totalWords - totalMiscues);
+                const wcpm = duration > 0 ? Math.round((wordsCorrect / duration) * 60) : 0;
+                const counts: Record<string, number> = {};
+                for (const m of analysisResult.miscues) counts[m.miscueType] = (counts[m.miscueType] || 0) + 1;
+                const detectedBehaviors = new Set(analysisResult.behaviors.map(b => b.behaviorType));
+                exportFluencyReportPdf({
+                  studentName,
+                  gradeLevel: gradeLevel ? `Grade ${gradeLevel}` : "\u2014",
+                  className: selectedClassName,
+                  passageTitle: selectedTitle || "\u2014",
+                  passageLevel: selectedLevel || "\u2014",
+                  numberOfWords: totalWords,
+                  testType: selectedTestType || "\u2014",
+                  assessmentType: "Oral Reading",
+                  wcpm,
+                  readingTimeSeconds: Math.round(duration),
+                  classificationLevel: analysisResult.classificationLevel,
+                  miscueData: {
+                    mispronunciation: counts["MISPRONUNCIATION"] || 0,
+                    omission: counts["OMISSION"] || 0,
+                    substitution: counts["SUBSTITUTION"] || 0,
+                    transposition: counts["TRANSPOSITION"] || 0,
+                    reversal: counts["REVERSAL"] || 0,
+                    insertion: counts["INSERTION"] || 0,
+                    repetition: counts["REPETITION"] || 0,
+                    selfCorrection: counts["SELF_CORRECTION"] || 0,
+                    totalMiscue: totalMiscues,
+                    oralFluencyScore: `${analysisResult.oralFluencyScore}%`,
+                    classificationLevel: analysisResult.classificationLevel,
+                  },
+                  behaviors: [
+                    { label: "Does word-by-word reading", description: "(Nagbabasa nang pa-isa isang salita)", checked: detectedBehaviors.has("WORD_BY_WORD_READING") },
+                    { label: "Lacks expression: reads in a monotonous tone", description: "(Walang damdamin; walang pagbabago ang tono)", checked: detectedBehaviors.has("MONOTONOUS_READING") },
+                    { label: "Disregards Punctuation", description: "(Hindi pinapansin ang mga bantas)", checked: detectedBehaviors.has("DISMISSAL_OF_PUNCTUATION") },
+                    { label: "Employs little or no method of analysis", description: "(Bahagya o walang paraan ng pagsusuri)", checked: false },
+                  ],
+                }, `Oral_Fluency_Report_${studentName.replace(/[^a-zA-Z0-9]/g, "_")}`);
+              }}
             />
           </div>
         </div>

@@ -18,6 +18,7 @@ import { ReadinessCheckButton } from "@/components/oral-reading-test/readinessCh
 import { createStudent } from "@/app/actions/student/createStudent";
 import type { OralFluencyAnalysis } from "@/types/oral-reading";
 import { convertToWav } from "@/utils/convertToWav"
+import { exportFluencyReportPdf } from "@/lib/exportFluencyReportPdf"
 // Helper to get current school year
 function getCurrentSchoolYear(): string {
   const now = new Date();
@@ -127,7 +128,7 @@ export default function OralReadingTestPage() {
   const [gradeLevel, setGradeLevel] = useState("");
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [isLoadingClasses, setIsLoadingClasses] = useState(true);
-  const [classLoadError, setClassLoadError] = useState(false);
+  const [, setClassLoadError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [selectedClassName, setSelectedClassName] = useState<string>("");
@@ -645,51 +646,18 @@ export default function OralReadingTestPage() {
             }`}
           >
             {!passageExpanded && isLoadingClasses && (
-              <div className="grid grid-cols-[1fr_160px_180px] items-start gap-3">
-                {/* Student Name skeleton */}
-                <div className="rounded-lg bg-[rgba(108,164,239,0.09)] px-3 py-2">
-                  <div className="mb-1.5 h-2.5 w-20 animate-pulse rounded bg-[#C4C4FF]/60" />
-                  <div className="h-7 w-full animate-pulse rounded-md bg-[#C4C4FF]/40" />
+              <>
+                <div className="h-[72px] animate-pulse rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] shadow-[0px_1px_20px_rgba(108,164,239,0.37)]" />
+                <div className="flex gap-3">
+                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                  <div className="h-[42px] w-[140px] shrink-0 animate-pulse rounded-lg bg-[#2E2E68]/30" />
                 </div>
-                {/* Grade Level skeleton */}
-                <div className="rounded-lg bg-[rgba(108,164,239,0.09)] px-3 py-2">
-                  <div className="mb-1.5 h-2.5 w-16 animate-pulse rounded bg-[#C4C4FF]/60" />
-                  <div className="h-7 w-full animate-pulse rounded-md bg-[#C4C4FF]/40" />
-                </div>
-                {/* Class skeleton */}
-                <div className="rounded-lg bg-[rgba(108,164,239,0.09)] px-3 py-2">
-                  <div className="mb-1.5 h-2.5 w-12 animate-pulse rounded bg-[#C4C4FF]/60" />
-                  <div className="h-7 w-full animate-pulse rounded-md bg-[#C4C4FF]/40" />
-                </div>
-              </div>
+              </>
             )}
 
-            {!passageExpanded && classLoadError && !isLoadingClasses && (
-              <div className="flex h-[72px] w-full items-center justify-between rounded-2xl border border-red-200 bg-red-50 px-4">
-                <span className="text-sm font-medium text-red-700">Failed to load classes.</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setClassLoadError(false);
-                    setIsLoadingClasses(true);
-                    const schoolYear = getCurrentSchoolYear();
-                    getClassListBySchoolYear(schoolYear).then((result) => {
-                      if (result.success && result.classes) {
-                        setClasses(result.classes.map((c) => ({ id: c.id, name: c.name })));
-                      } else {
-                        setClassLoadError(true);
-                      }
-                    }).catch(() => setClassLoadError(true))
-                      .finally(() => setIsLoadingClasses(false));
-                  }}
-                  className="rounded-lg bg-red-600 px-3 py-1 text-xs font-semibold text-white hover:bg-red-700 transition-colors"
-                >
-                  Retry
-                </button>
-              </div>
-            )}
-
-            {!passageExpanded && !isLoadingClasses && !classLoadError && (
+            {!passageExpanded && !isLoadingClasses && (
               <StudentInfoBar
                 studentName={studentName}
                 gradeLevel={gradeLevel}
@@ -788,6 +756,49 @@ export default function OralReadingTestPage() {
               classificationLevel={analysisResult?.classificationLevel}
               highlightedTypes={highlightedTypes}
               onToggleHighlight={toggleHighlightType}
+              onExportPdf={() => {
+                if (!analysisResult) return;
+                const totalWords = passageContent.split(/\s+/).filter(Boolean).length;
+                const duration = analysisResult.duration ?? recordedSeconds;
+                const totalMiscues = analysisResult.totalMiscues ?? 0;
+                const wordsCorrect = Math.max(0, totalWords - totalMiscues);
+                const wcpm = duration > 0 ? Math.round((wordsCorrect / duration) * 60) : 0;
+                const counts: Record<string, number> = {};
+                for (const m of analysisResult.miscues) counts[m.miscueType] = (counts[m.miscueType] || 0) + 1;
+                const detectedBehaviors = new Set(analysisResult.behaviors.map(b => b.behaviorType));
+                exportFluencyReportPdf({
+                  studentName,
+                  gradeLevel: gradeLevel ? `Grade ${gradeLevel}` : "\u2014",
+                  className: selectedClassName,
+                  passageTitle: selectedTitle || "\u2014",
+                  passageLevel: selectedLevel || "\u2014",
+                  numberOfWords: totalWords,
+                  testType: selectedTestType || "\u2014",
+                  assessmentType: "Oral Reading",
+                  wcpm,
+                  readingTimeSeconds: Math.round(duration),
+                  classificationLevel: analysisResult.classificationLevel,
+                  miscueData: {
+                    mispronunciation: counts["MISPRONUNCIATION"] || 0,
+                    omission: counts["OMISSION"] || 0,
+                    substitution: counts["SUBSTITUTION"] || 0,
+                    transposition: counts["TRANSPOSITION"] || 0,
+                    reversal: counts["REVERSAL"] || 0,
+                    insertion: counts["INSERTION"] || 0,
+                    repetition: counts["REPETITION"] || 0,
+                    selfCorrection: counts["SELF_CORRECTION"] || 0,
+                    totalMiscue: totalMiscues,
+                    oralFluencyScore: `${analysisResult.oralFluencyScore}%`,
+                    classificationLevel: analysisResult.classificationLevel,
+                  },
+                  behaviors: [
+                    { label: "Does word-by-word reading", description: "(Nagbabasa nang pa-isa isang salita)", checked: detectedBehaviors.has("WORD_BY_WORD_READING") },
+                    { label: "Lacks expression: reads in a monotonous tone", description: "(Walang damdamin; walang pagbabago ang tono)", checked: detectedBehaviors.has("MONOTONOUS_READING") },
+                    { label: "Disregards Punctuation", description: "(Hindi pinapansin ang mga bantas)", checked: detectedBehaviors.has("DISMISSAL_OF_PUNCTUATION") },
+                    { label: "Employs little or no method of analysis", description: "(Bahagya o walang paraan ng pagsusuri)", checked: false },
+                  ],
+                }, `Oral_Fluency_Report_${studentName.replace(/[^a-zA-Z0-9]/g, "_")}`);
+              }}
             />
           </div>
         </div>
