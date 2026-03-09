@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, ChevronDown, List, LayoutGrid, FileText } from "lucide-react";
+import { X, ChevronDown, List, LayoutGrid, FileText, Globe, BarChart3, ClipboardList, Search, type LucideIcon } from "lucide-react";
 import { getAllPassagesAction } from "@/app/actions/passage/getAllPassage";
 
 interface Passage {
@@ -16,9 +16,9 @@ interface Passage {
   updatedAt: Date;
 }
 
-// Helper to display level as "Grade X"
+// Helper to display level as "Grade X" or "Kindergarten"
 function formatLevel(level: number): string {
-  return `Grade ${level}`;
+  return level === 0 ? "Kindergarten" : `Grade ${level}`;
 }
 
 // Helper to display testType enum as readable string
@@ -35,10 +35,19 @@ function formatTestType(testType: string): string {
 
 const PASSAGE_LEVELS = [
   "All Levels",
+  "Kindergarten",
+  "Grade 1",
+  "Grade 2",
   "Grade 3",
   "Grade 4",
   "Grade 5",
   "Grade 6",
+  "Grade 7",
+  "Grade 8",
+  "Grade 9",
+  "Grade 10",
+  "Grade 11",
+  "Grade 12",
 ];
 const TEST_TYPES = ["All", "Pre-Test", "Post-Test"];
 const LANGUAGES = ["All Languages", "English", "Filipino"];
@@ -51,16 +60,19 @@ interface AddPassageModalProps {
 
 function FilterDropdown({
   label,
+  icon: Icon,
   options,
   value,
   onChange,
 }: {
   label: string;
+  icon: LucideIcon;
   options: string[];
   value: string;
   onChange: (val: string) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const isFiltered = options[0] !== value;
 
   return (
     <div className="relative flex-1">
@@ -69,10 +81,20 @@ function FilterDropdown({
         onClick={() => setIsOpen(!isOpen)}
         aria-label={label}
         title={label}
-        className="flex w-full items-center justify-between rounded-[10px] border border-[#54A4FF] bg-[#EFFDFF] px-4 py-3 text-[15px] font-medium text-[#00306E] shadow-[0px_1px_20px_rgba(108,164,239,0.37)]"
+        className={`flex w-full items-center gap-2 rounded-[10px] border px-3 py-2 text-sm font-medium shadow-[0px_1px_20px_rgba(108,164,239,0.37)] ${
+          isFiltered
+            ? "border-[#6666FF] bg-[#EEEEFF] text-[#31318A]"
+            : "border-[#54A4FF] bg-[#EFFDFF] text-[#00306E]"
+        }`}
       >
-        <span>{value}</span>
-        <ChevronDown className="h-4 w-4 text-[#03438D]" />
+        <Icon className="h-4 w-4 shrink-0 text-[#5D5DFB]" />
+        <span className="flex-1 text-left">
+          <span className="font-normal text-[#00306E]/60">{label}:</span>{" "}
+          <span className={isFiltered ? "font-semibold text-[#31318A]" : "italic text-[#00306E]/35"}>
+            {isFiltered ? value : "All"}
+          </span>
+        </span>
+        <ChevronDown className={`h-4 w-4 shrink-0 text-[#03438D] transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
       {isOpen && (
@@ -81,7 +103,7 @@ function FilterDropdown({
             className="fixed inset-0 z-10"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-lg border border-[#54A4FF] bg-white py-1 shadow-[0px_4px_12px_rgba(84,164,255,0.2)]">
+          <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-52 overflow-y-auto rounded-lg border border-[#54A4FF] bg-white py-1 shadow-[0px_4px_12px_rgba(84,164,255,0.2)]">
             {options.map((opt) => (
               <button
                 key={opt}
@@ -114,6 +136,7 @@ export function AddPassageModal({
   const [selectedLevel, setSelectedLevel] = useState(PASSAGE_LEVELS[0]);
   const [selectedTestType, setSelectedTestType] = useState(TEST_TYPES[0]);
   const [selectedLanguage, setSelectedLanguage] = useState(LANGUAGES[0]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedPassageId, setSelectedPassageId] = useState<string | null>(
     null,
   );
@@ -161,6 +184,16 @@ export function AddPassageModal({
       return false;
     if (selectedLanguage !== LANGUAGES[0] && p.language !== selectedLanguage)
       return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      const matchesTitle = p.title.toLowerCase().includes(q);
+      const matchesContent = p.content.toLowerCase().includes(q);
+      const matchesLevel = formatLevel(p.level).toLowerCase().includes(q);
+      const matchesLanguage = p.language.toLowerCase().includes(q);
+      const matchesTestType = formatTestType(p.testType).toLowerCase().includes(q);
+      if (!matchesTitle && !matchesContent && !matchesLevel && !matchesLanguage && !matchesTestType)
+        return false;
+    }
     return true;
   });
 
@@ -235,22 +268,46 @@ export function AddPassageModal({
 
         {/* Scrollable content area */}
         <div className="flex min-h-0 flex-1 flex-col px-8 pb-6">
+          {/* Search Bar */}
+          <div className="relative mb-3 shrink-0">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5D5DFB]" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by title, content, grade level, language, or test type..."
+              className="w-full rounded-[10px] border border-[#54A4FF] bg-white py-2.5 pl-9 pr-9 text-sm text-[#00306E] shadow-[0px_1px_10px_rgba(108,164,239,0.2)] outline-none placeholder:text-[#00306E]/40 focus:border-[#6666FF] focus:shadow-[0px_1px_14px_rgba(102,102,255,0.25)]"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#00306E]/40 hover:text-[#00306E]"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
           {/* Filters */}
           <div className="mb-4 flex shrink-0 gap-3">
             <FilterDropdown
               label="Passage Level"
+              icon={BarChart3}
               options={PASSAGE_LEVELS}
               value={selectedLevel}
               onChange={setSelectedLevel}
             />
             <FilterDropdown
               label="Test Type"
+              icon={ClipboardList}
               options={TEST_TYPES}
               value={selectedTestType}
               onChange={setSelectedTestType}
             />
             <FilterDropdown
               label="Language"
+              icon={Globe}
               options={LANGUAGES}
               value={selectedLanguage}
               onChange={setSelectedLanguage}
