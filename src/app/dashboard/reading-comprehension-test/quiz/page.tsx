@@ -10,7 +10,7 @@ import {
   CheckCircle,
   X,
 } from "lucide-react";
-import { DashboardHeader } from "@/components/auth/dashboard/dashboardHeader";
+import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import { ComprehensionBreakdown } from "@/components/oral-reading-test/comprehensionBreakdown";
 import { ComprehensionInfoBar } from "@/components/reading-comprehension-test/comprehensionInfoBar";
 import { QuestionCard, type QuestionData } from "@/components/reading-comprehension-test/questionCard";
