@@ -1,4 +1,15 @@
 import jsPDF from "jspdf";
+import {
+  type RGB,
+  PDF_COLORS,
+  classificationBg,
+  classificationTextColor,
+  rrect,
+  hline,
+  drawFileTextIcon,
+  drawClockIcon,
+  drawClipboardCheckIcon,
+} from "./pdfHelpers";
 
 /* ------------------------------------------------------------------ */
 /*  Public data interface – callers build this from session state      */
@@ -34,34 +45,86 @@ export interface FluencyReportData {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Colour palette (RGB tuples matching the React components)         */
+/*  Shared builder – assembles FluencyReportData from page state       */
 /* ------------------------------------------------------------------ */
 
-type RGB = [number, number, number];
+export interface FluencyExportInput {
+  studentName: string;
+  gradeLevel: string;
+  selectedClassName: string;
+  selectedTitle: string;
+  selectedLevel: string;
+  selectedTestType: string;
+  assessmentType: string;
+  passageContent: string;
+  recordedSeconds: number;
+  analysisResult: {
+    duration?: number;
+    totalMiscues?: number;
+    oralFluencyScore: number;
+    classificationLevel: string;
+    miscues: { miscueType: string }[];
+    behaviors: { behaviorType: string }[];
+  };
+}
+
+export function buildFluencyReportData(input: FluencyExportInput): FluencyReportData {
+  const { analysisResult } = input;
+  const totalWords = input.passageContent.split(/\s+/).filter(Boolean).length;
+  const duration = analysisResult.duration ?? input.recordedSeconds;
+  const totalMiscues = analysisResult.totalMiscues ?? 0;
+  const wordsCorrect = Math.max(0, totalWords - totalMiscues);
+  const wcpm = duration > 0 ? Math.round((wordsCorrect / duration) * 60) : 0;
+
+  const counts: Record<string, number> = {};
+  for (const m of analysisResult.miscues) {
+    counts[m.miscueType] = (counts[m.miscueType] || 0) + 1;
+  }
+
+  const detectedBehaviors = new Set(analysisResult.behaviors.map((b) => b.behaviorType));
+
+  return {
+    studentName: input.studentName,
+    gradeLevel: input.gradeLevel ? `Grade ${input.gradeLevel}` : "\u2014",
+    className: input.selectedClassName,
+    passageTitle: input.selectedTitle || "\u2014",
+    passageLevel: input.selectedLevel || "\u2014",
+    numberOfWords: totalWords,
+    testType: input.selectedTestType || "\u2014",
+    assessmentType: input.assessmentType,
+    wcpm,
+    readingTimeSeconds: Math.round(duration),
+    classificationLevel: analysisResult.classificationLevel,
+    miscueData: {
+      mispronunciation: counts["MISPRONUNCIATION"] || 0,
+      omission: counts["OMISSION"] || 0,
+      substitution: counts["SUBSTITUTION"] || 0,
+      transposition: counts["TRANSPOSITION"] || 0,
+      reversal: counts["REVERSAL"] || 0,
+      insertion: counts["INSERTION"] || 0,
+      repetition: counts["REPETITION"] || 0,
+      selfCorrection: counts["SELF_CORRECTION"] || 0,
+      totalMiscue: totalMiscues,
+      oralFluencyScore: `${analysisResult.oralFluencyScore}%`,
+      classificationLevel: analysisResult.classificationLevel,
+    },
+    behaviors: [
+      { label: "Does word-by-word reading", description: "(Nagbabasa nang pa-isa isang salita)", checked: detectedBehaviors.has("WORD_BY_WORD_READING") },
+      { label: "Lacks expression: reads in a monotonous tone", description: "(Walang damdamin; walang pagbabago ang tono)", checked: detectedBehaviors.has("MONOTONOUS_READING") },
+      { label: "Disregards Punctuation", description: "(Hindi pinapansin ang mga bantas)", checked: detectedBehaviors.has("DISMISSAL_OF_PUNCTUATION") },
+      { label: "Employs little or no method of analysis", description: "(Bahagya o walang paraan ng pagsusuri)", checked: false },
+    ],
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Colour palette                                                     */
+/* ------------------------------------------------------------------ */
 
 const C = {
-  cardBg: [239, 253, 255] as RGB,       // #EFFDFF
-  cardBorder: [84, 164, 255] as RGB,     // #54A4FF
-  headerBar: [41, 124, 236] as RGB,      // #297CEC
-  textDark: [0, 48, 110] as RGB,         // #00306E
-  textHeading: [0, 51, 102] as RGB,      // #003366
-  labelDark: [12, 21, 52] as RGB,        // #0C1534
-  purple: [49, 49, 138] as RGB,          // #31318A
-  deepPurple: [46, 46, 163] as RGB,      // #2E2EA3
-  divider: [18, 48, 220] as RGB,         // #1230DC
-  dividerLight: [180, 190, 230] as RGB,
-  fieldBg: [240, 247, 255] as RGB,
-  fieldBorder: [130, 150, 220] as RGB,
-  passageFieldBg: [244, 246, 249] as RGB,
-  passageFieldBorder: [230, 233, 240] as RGB,
-  iconBoxBg: [245, 245, 255] as RGB,
-  iconBoxBorder: [218, 230, 255] as RGB,
+  ...PDF_COLORS,
   checkFill: [93, 93, 251] as RGB,       // #5D5DFB
   obsBg: [240, 240, 252] as RGB,
-  white: [255, 255, 255] as RGB,
-  summaryBg1: [230, 230, 250] as RGB,
-  summaryBg2: [235, 235, 248] as RGB,
-  // Metric‑card accent colours
   rateColor: [22, 45, 176] as RGB,       // #162DB0
   timeColor: [26, 102, 115] as RGB,      // #1A6673
   classColor: [206, 51, 12] as RGB,      // #CE330C
@@ -85,78 +148,8 @@ const MISCUE_CFG: {
 ];
 
 /* ------------------------------------------------------------------ */
-/*  Tiny drawing helpers                                               */
+/*  Fluency‑specific helpers                                           */
 /* ------------------------------------------------------------------ */
-
-function rrect(
-  doc: jsPDF,
-  x: number, y: number, w: number, h: number,
-  r: number,
-  fill?: RGB, stroke?: RGB,
-) {
-  if (fill) doc.setFillColor(...fill);
-  if (stroke) {
-    doc.setDrawColor(...stroke);
-    doc.setLineWidth(0.3);
-  }
-  const mode = fill && stroke ? "FD" : fill ? "F" : "S";
-  doc.roundedRect(x, y, w, h, r, r, mode);
-}
-
-function hline(doc: jsPDF, x: number, y: number, w: number, color: RGB, lw = 0.3) {
-  doc.setDrawColor(...color);
-  doc.setLineWidth(lw);
-  doc.line(x, y, x + w, y);
-}
-
-/* Mini‑icon drawers (all drawn inside a 7×7 mm box at (bx, by)) */
-
-/** FileText icon — a document with lines */
-function drawFileTextIcon(doc: jsPDF, bx: number, by: number, color: RGB) {
-  const cx = bx + 3.5, cy = by + 3.5; // centre
-  doc.setDrawColor(...color);
-  doc.setLineWidth(0.35);
-  // page outline with folded corner
-  const l = cx - 1.6, r = cx + 1.6, t = cy - 2, b = cy + 2, fold = 1;
-  doc.line(l, t, r - fold, t);          // top edge
-  doc.line(r - fold, t, r, t + fold);   // fold diagonal
-  doc.line(r, t + fold, r, b);          // right edge
-  doc.line(r, b, l, b);                 // bottom edge
-  doc.line(l, b, l, t);                 // left edge
-  // text lines
-  doc.setLineWidth(0.25);
-  doc.line(l + 0.6, cy - 0.6, r - 0.6, cy - 0.6);
-  doc.line(l + 0.6, cy + 0.3, r - 0.6, cy + 0.3);
-  doc.line(l + 0.6, cy + 1.2, cx + 0.4, cy + 1.2);
-}
-
-/** Clock icon — circle with hands */
-function drawClockIcon(doc: jsPDF, bx: number, by: number, color: RGB) {
-  const cx = bx + 3.5, cy = by + 3.5, r = 2;
-  doc.setDrawColor(...color);
-  doc.setLineWidth(0.35);
-  doc.circle(cx, cy, r, "S");
-  // hour hand (pointing up‑right ≈ 2 o'clock)
-  doc.setLineWidth(0.3);
-  doc.line(cx, cy, cx, cy - 1.2);          // minute hand (12)
-  doc.line(cx, cy, cx + 0.9, cy + 0.3);    // hour hand (~4)
-}
-
-/** ClipboardCheck icon — clipboard with a checkmark */
-function drawClipboardCheckIcon(doc: jsPDF, bx: number, by: number, color: RGB) {
-  const cx = bx + 3.5, cy = by + 3.5;
-  doc.setDrawColor(...color);
-  doc.setLineWidth(0.35);
-  // clipboard body
-  const l = cx - 1.6, r = cx + 1.6, t = cy - 1.6, b = cy + 2;
-  doc.roundedRect(l, t, r - l, b - t, 0.4, 0.4, "S");
-  // clip tab
-  doc.roundedRect(cx - 0.8, t - 0.6, 1.6, 0.9, 0.3, 0.3, "S");
-  // checkmark
-  doc.setLineWidth(0.35);
-  doc.line(cx - 0.8, cy + 0.3, cx - 0.1, cy + 1);
-  doc.line(cx - 0.1, cy + 1, cx + 1, cy - 0.4);
-}
 
 function formatTime(s: number): { value: string; subtitle: string } {
   if (s >= 3600) {
@@ -170,24 +163,6 @@ function formatTime(s: number): { value: string; subtitle: string } {
     return { value: sec ? `${m}:${String(sec).padStart(2, "0")}` : String(m), subtitle: sec ? "Minutes & Seconds" : "Minutes" };
   }
   return { value: String(Math.round(s)), subtitle: "Seconds" };
-}
-
-function classificationBg(level: string): RGB {
-  switch (level?.toUpperCase()) {
-    case "INDEPENDENT": return [199, 238, 204];
-    case "INSTRUCTIONAL": return [207, 228, 255];
-    case "FRUSTRATION": return [254, 231, 241];
-    default: return [240, 240, 251];
-  }
-}
-
-function classificationTextColor(level: string): RGB {
-  switch (level?.toUpperCase()) {
-    case "INDEPENDENT": return [30, 122, 53];
-    case "INSTRUCTIONAL": return [26, 95, 180];
-    case "FRUSTRATION": return [196, 16, 72];
-    default: return [46, 46, 163];
-  }
 }
 
 /* ------------------------------------------------------------------ */
