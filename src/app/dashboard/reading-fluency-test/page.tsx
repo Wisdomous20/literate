@@ -514,8 +514,6 @@ export default function ReadingFluencyTestPage() {
     selectedClassName,
   ]);
 
-  // Auto-submit only for FRESH recordings, not restored ones
-  // Allow submission even without selectedStudentId if student info is filled
   const canSubmit =
     hasRecording &&
     recordedAudioBlob &&

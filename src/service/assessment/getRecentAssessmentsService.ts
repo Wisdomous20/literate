@@ -1,4 +1,3 @@
-// src/service/dashboard/getRecentAssessmentsService.ts
 import { prisma } from "@/lib/prisma";
 
 export interface RecentAssessmentItem {

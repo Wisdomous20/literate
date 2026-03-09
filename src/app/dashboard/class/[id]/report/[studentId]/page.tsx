@@ -46,8 +46,6 @@ export default function AssessmentReportPage() {
     ? `Grade ${firstAssessment.student.level}`
     : "";
 
-  // Filter by assessment type, deduplicate by assessment ID,
-  // and sort oldest-first so attempt numbers are chronological
   const seen = new Set<string>();
   const assessments = assessmentTypeParam
     ? allAssessments

@@ -152,7 +152,7 @@ export function AssessmentReport({
                   tabIndex={0}
                 >
                   <span className="flex justify-center">
-                    <span className="inline-block min-w-[48px] rounded-lg border border-[#6666FF]/40 bg-transparent px-2 py-1 text-center text-sm font-semibold text-[#6666FF]">
+                    <span className="inline-block min-w-12 rounded-lg border border-[#6666FF]/40 bg-transparent px-2 py-1 text-center text-sm font-semibold text-[#6666FF]">
                       #{record.attempt}
                     </span>
                   </span>

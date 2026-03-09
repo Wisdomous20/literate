@@ -1,11 +1,9 @@
-// src/lib/hooks/useStudentAssessments.ts
 "use client";
 
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { getAssessmentsByStudent } from "@/app/actions/assessment/getAssessment";
 import type { AssessmentData } from "@/types/assessment";
 
-/** Deduplicate assessments by ID (guards against server returning duplicates) */
 function deduplicateAssessments(assessments: AssessmentData[]): AssessmentData[] {
   const seen = new Set<string>();
   return assessments.filter((a) => {
@@ -15,9 +13,6 @@ function deduplicateAssessments(assessments: AssessmentData[]): AssessmentData[]
   });
 }
 
-/**
- * Fetch assessments for a single student. Used on report pages.
- */
 export function useAssessmentsByStudent(studentId: string) {
   return useQuery({
     queryKey: ["assessments", studentId],
@@ -31,10 +26,6 @@ export function useAssessmentsByStudent(studentId: string) {
   });
 }
 
-/**
- * Fetch assessments for multiple students at once. Used on the class page.
- * Each student gets its own cache entry so navigating back is instant.
- */
 export function useStudentAssessments(studentIds: string[]) {
   const queries = useQueries({
     queries: studentIds.map((id) => ({
