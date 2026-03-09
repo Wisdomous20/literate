@@ -129,7 +129,7 @@ interface PassageDisplayProps {
   resizable?: boolean;
 }
 
-function getPassageTextStyle(passageLevel?: string): CSSProperties {
+export function getPassageTextStyle(passageLevel?: string): CSSProperties {
   if (!passageLevel) return {};
   const num = parseInt(passageLevel.replace(/\D/g, ""), 10);
   let fontSize: number;

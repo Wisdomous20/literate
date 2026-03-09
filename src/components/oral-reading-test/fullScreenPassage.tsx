@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { X, CircleCheckBig } from "lucide-react"
 import { useSettings } from "@/context/settingsContext"
+import { getPassageTextStyle } from "./passageDisplay"
 
 interface FullScreenPassageProps {
   content: string
@@ -11,6 +12,7 @@ interface FullScreenPassageProps {
   onClose: () => void
   countdownEnabled?: boolean
   countdownSeconds?: number
+  passageLevel?: string
 }
 
 function normalize(word: string): string {
@@ -24,8 +26,10 @@ export function FullScreenPassage({
   onClose,
   countdownEnabled = true,
   countdownSeconds = 3,
+  passageLevel,
 }: FullScreenPassageProps) {
-  const { autoScrollEnabled, autoFinishEnabled } = useSettings()
+  const passageTextStyle = getPassageTextStyle(passageLevel);
+  const { autoFinishEnabled } = useSettings()
   const [countdown, setCountdown] = useState(countdownEnabled ? countdownSeconds : 0)
   const [seconds, setSeconds] = useState(0)
   const [showOverlayUI, setShowOverlayUI] = useState(true)
@@ -44,8 +48,7 @@ export function FullScreenPassage({
   const secondsRef = useRef(0)
   const processedResultsRef = useRef(0)
 
-  // Refs for settings so speech callback always has latest values
-  const autoScrollRef = useRef(autoScrollEnabled)
+  // Ref for setting so speech callback always has latest value
   const autoFinishRef = useRef(autoFinishEnabled)
 
   // Pre-acquire microphone during countdown so recording starts with zero latency at countdown=0
@@ -64,10 +67,6 @@ export function FullScreenPassage({
         // Permission denied or unavailable — startRecordingAndTimer will handle the error
       })
   }, [])
-
-  useEffect(() => {
-    autoScrollRef.current = autoScrollEnabled
-  }, [autoScrollEnabled])
 
   useEffect(() => {
     autoFinishRef.current = autoFinishEnabled
@@ -141,9 +140,9 @@ export function FullScreenPassage({
     }, 100)
   }, [onDone, stopEverything])
 
-  // Start speech recognition for passive auto-scroll + auto-finish
+  // Start speech recognition for auto-finish
   const startSpeechRecognition = useCallback(() => {
-    if (!autoScrollRef.current && !autoFinishRef.current) return
+    if (!autoFinishRef.current) return
 
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechRecognitionAPI) {
@@ -182,14 +181,7 @@ export function FullScreenPassage({
             if (passageWord && normalizedSpoken === passageWord) {
               wordTrackIndexRef.current = i + 1
 
-              if (autoScrollRef.current) {
-                anchorRefs.current[tokenIdx]?.scrollIntoView({
-                  behavior: "smooth",
-                  block: "center",
-                })
-              }
-
-              if (autoFinishRef.current && i + 1 >= totalTrackable) {
+              if (i + 1 >= totalTrackable) {
                 console.log("Auto-finish triggered: last word detected")
                 setTimeout(() => {
                   finishReading()
@@ -227,7 +219,7 @@ export function FullScreenPassage({
 
     try {
       recognition.start()
-      console.log("Speech recognition started, autoFinish:", autoFinishRef.current, "autoScroll:", autoScrollRef.current)
+      console.log("Speech recognition started for auto-finish")
     } catch (err) {
       console.error("Failed to start speech recognition:", err)
     }
@@ -389,7 +381,7 @@ export function FullScreenPassage({
 
           {/* Passage Content */}
           <div className="flex flex-1 flex-col overflow-auto px-6 pt-14 md:px-12 md:pt-16 lg:px-16 lg:pt-20">
-            <p className="whitespace-pre-wrap font-[Georgia,'Times_New_Roman',serif] text-lg leading-[2.2] tracking-[0.01em] text-[#00306E] [word-spacing:0.05em] md:text-xl md:leading-[2.3] lg:text-[22px] lg:leading-[2.4]">
+            <p className="whitespace-pre-wrap leading-[2.2] tracking-[0.01em] text-[#00306E] [word-spacing:0.05em] md:leading-[2.3] lg:leading-[2.4]" style={passageLevel ? passageTextStyle : { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: undefined }}>
               {tokenMeta.map((token, i) => (
                 <span
                   key={i}

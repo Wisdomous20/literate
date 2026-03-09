@@ -601,6 +601,7 @@ export default function OralReadingTestPage() {
         onClose={handleFullScreenClose}
         countdownEnabled={countdownEnabled}
         countdownSeconds={countdownSeconds}
+        passageLevel={selectedLevel}
       />
     );
   }
@@ -719,6 +720,7 @@ export default function OralReadingTestPage() {
               onJumpToTime={handleJumpToTime}
               expanded={passageExpanded}
               onToggleExpand={() => setPassageExpanded((prev) => !prev)}
+              passageLevel={selectedLevel}
             />
 
             {!passageExpanded && hasPassage && (

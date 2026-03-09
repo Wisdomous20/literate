@@ -538,6 +538,7 @@ export default function ReadingFluencyTestPage() {
         onClose={handleFullScreenClose}
         countdownEnabled={countdownEnabled}
         countdownSeconds={countdownSeconds}
+        passageLevel={selectedLevel}
       />
     );
   }
@@ -661,6 +662,7 @@ export default function ReadingFluencyTestPage() {
               onJumpToTime={handleJumpToTime}
               expanded={passageExpanded}
               onToggleExpand={() => setPassageExpanded((prev) => !prev)}
+              passageLevel={selectedLevel}
             />
 
             {!passageExpanded && hasPassage && (

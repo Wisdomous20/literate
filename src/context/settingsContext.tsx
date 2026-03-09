@@ -3,19 +3,16 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react"
 
 interface SettingsState {
-  autoScrollEnabled: boolean
   autoFinishEnabled: boolean
 }
 
 interface SettingsContextType extends SettingsState {
-  setAutoScrollEnabled: (enabled: boolean) => void
   setAutoFinishEnabled: (enabled: boolean) => void
 }
 
 const SETTINGS_STORAGE_KEY = "literate-settings"
 
 const defaultSettings: SettingsState = {
-  autoScrollEnabled: true,
   autoFinishEnabled: false,
 }
 
@@ -43,10 +40,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, [settings])
 
-  const setAutoScrollEnabled = useCallback((v: boolean) => {
-    setSettings((prev) => ({ ...prev, autoScrollEnabled: v }))
-  }, [])
-
   const setAutoFinishEnabled = useCallback((v: boolean) => {
     setSettings((prev) => ({ ...prev, autoFinishEnabled: v }))
   }, [])
@@ -55,7 +48,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     <SettingsContext.Provider
       value={{
         ...settings,
-        setAutoScrollEnabled,
         setAutoFinishEnabled,
       }}
     >
