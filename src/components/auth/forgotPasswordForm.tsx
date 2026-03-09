@@ -38,6 +38,10 @@ export function ForgotPasswordForm() {
     try {
       const result = await sendResetPasswordAction(email.toLowerCase().trim())
 
+      if (!result || typeof result !== "object" || !("success" in result)) {
+        throw new Error("Unexpected response from server.")
+      }
+
       if (!result.success) {
         setError(result.message || "Failed to send reset email. Please try again.")
         setIsLoading(false)
@@ -47,7 +51,11 @@ export function ForgotPasswordForm() {
       setSubmitted(true)
     } catch (err) {
       console.error("Forgot password error:", err)
-      setError("An unexpected error occurred. Please try again.")
+      setError(
+        err instanceof Error && err.message
+          ? err.message
+          : "An unexpected error occurred. Please try again."
+      )
       setIsLoading(false)
     }
   }
