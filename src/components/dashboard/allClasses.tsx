@@ -3,8 +3,8 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, ArrowLeft, ChevronDown } from "lucide-react";
-import { ClassCard } from "@/components/auth/dashboard/classCard";
-import { DashboardHeader } from "@/components/auth/dashboard/dashboardHeader";
+import { ClassCard } from "@/components/dashboard/classCard";
+import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 
 type ClassCardVariant = "blue" | "yellow" | "cyan";
 
@@ -36,17 +36,16 @@ export default function AllClassesPage({
   allClasses,
   isLoading,
   error,
-  refetch,
   schoolYears,
   selectedYear,
   onYearChange,
   onCreateClass,
+  refetch,
 }: AllClassesPageProps) {
   const router = useRouter();
   const [showLatest, setShowLatest] = useState(true);
   const [showOld, setShowOld] = useState(false);
 
-  // Split classes into latest (3) and old (rest)
   const latestClasses = allClasses.slice(0, 3);
   const oldClasses = allClasses.slice(3);
 
@@ -55,14 +54,11 @@ export default function AllClassesPage({
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#eaf6ff]">
-      {/* Dashboard Header */}
+    <div className="flex min-h-full flex-col overflow-y-auto">
       <DashboardHeader title="Class Inventory" />
 
-      <div className="w-full px-2 sm:px-4 py-6">
-        {/* Header Row */}
+      <div className="w-full px-4 sm:px-6 py-6 lg:px-8">
         <div className="flex flex-row items-center justify-between gap-4 mb-6">
-          {/* Back to Dashboard */}
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.push("/dashboard")}
@@ -75,34 +71,33 @@ export default function AllClassesPage({
               </span>
             </button>
           </div>
-          {/* School Year Dropdown and Create Class Button */}
-          <div className="flex items-center gap-3">
-            <label htmlFor="schoolYear" className="sr-only">
-              Select school year
-            </label>
-            <select
-              id="schoolYear"
-              name="schoolYear"
-              className="rounded-lg border border-[#54a4ff] bg-[#f4fcfd] px-3 py-2 text-[#00306E] focus:outline-none"
-              value={selectedYear}
-              onChange={(e) => onYearChange(e.target.value)}
-            >
-              {schoolYears.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-            {onCreateClass && (
-              <button
-                type="button"
-                onClick={onCreateClass}
-                className="rounded-full bg-[#2e2e68] hover:bg-[#2e2e68]/90 text-white font-medium px-6 py-2"
-              >
-                Create Class
-              </button>
-            )}
-          </div>
+         <div className="flex items-center gap-3">
+  <div className="relative">
+    <select
+      id="schoolYear"
+      name="schoolYear"
+      className="rounded-full border border-dashed border-[#6666FF]/60 bg-[#afafef3e] px-4 py-1.5 text-sm text-[#00306E] font-medium min-w-28 h-9 transition-all focus:outline-none focus:border-[#6666FF]"
+      value={selectedYear}
+      onChange={(e) => onYearChange(e.target.value)}
+      aria-label="Select school year"
+    >
+      {schoolYears.map((year) => (
+        <option key={year} value={year} className="text-[#00306E]">
+          {year}
+        </option>
+      ))}
+    </select>
+  </div>
+  {onCreateClass && (
+    <button
+      type="button"
+      onClick={onCreateClass}
+      className="rounded-full border border-[#7A7AFB] bg-[#6666FF] px-6 py-2 text-sm font-semibold text-white shadow-[0px_1px_20px_rgba(65,155,180,0.47)] transition-opacity hover:opacity-90"
+    >
+      Create Class
+    </button>
+  )}
+</div>
         </div>
 
         {isLoading && (
@@ -125,7 +120,6 @@ export default function AllClassesPage({
 
         {!isLoading && !error && allClasses.length > 0 && (
           <div className="space-y-8">
-            {/* Latest Classes */}
             <div>
               <button
                 className="flex items-center gap-2 mb-2 text-lg font-semibold text-[#00306E] focus:outline-none"
@@ -152,7 +146,6 @@ export default function AllClassesPage({
                 </div>
               )}
             </div>
-            {/* Old Classes */}
             {oldClasses.length > 0 && (
               <div>
                 <button

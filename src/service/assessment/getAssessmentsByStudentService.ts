@@ -24,7 +24,7 @@ export async function getAssessmentsByStudentService(
       where,
       include: {
         passage: {
-          select: { id: true, title: true, language: true, level: true },
+          select: { id: true, title: true, language: true, level: true, content: true, testType: true },
         },
         oralFluency: {
           include: {
@@ -40,7 +40,8 @@ export async function getAssessmentsByStudentService(
             },
           },
         },
-        student: { select: { id: true, name: true } },
+        oralReadingResult: true,
+        student: { select: { id: true, name: true, level: true } },
       },
       orderBy: { dateTaken: "desc" },
     });

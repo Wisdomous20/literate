@@ -13,14 +13,11 @@ interface CreateClassModalProps {
   }) => Promise<{ success: boolean; error?: string }>;
 }
 
-// Helper to get current school year (e.g., "2026-2027")
 function getCurrentSchoolYear(): string {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth(); // 0-indexed (0 = January)
 
-  // If it's August or later, the school year starts this year
-  // Otherwise, the school year started last year
   if (currentMonth >= 7) {
     // August onwards
     return `${currentYear}-${currentYear + 1}`;
@@ -53,7 +50,6 @@ export function CreateClassModal({
     };
   }, [isOpen]);
 
-  // Reset state when modal opens/closes
   useEffect(() => {
     if (!isOpen) {
       setClassName("");

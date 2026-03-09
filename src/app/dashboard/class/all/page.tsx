@@ -1,11 +1,11 @@
 "use client";
 import AllClassesPage, {
   ClassItem,
-} from "@/components/auth/dashboard/allClasses";
+} from "@/components/dashboard/allClasses";
 import { createClass } from "@/app/actions/class/createClass";
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { CreateClassModal } from "@/components/auth/dashboard/createClassModal";
+import { CreateClassModal } from "@/components/dashboard/createClassModal";
 import { useClassList } from "@/lib/hooks/useClassList";
 
 function getAllSchoolYears(): string[] {

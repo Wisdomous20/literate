@@ -17,6 +17,10 @@ const gradeLevels = [
   "Grade 4",
   "Grade 5",
   "Grade 6",
+  "Grade 7",
+  "Grade 8",
+  "Grade 9",
+  "Grade 10",
 ];
 
 export function CreateStudentModal({
@@ -31,7 +35,6 @@ export function CreateStudentModal({
   const modalRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Handle body scroll lock
   useEffect(() => {
     if (!isOpen) return;
 
@@ -43,7 +46,6 @@ export function CreateStudentModal({
     };
   }, [isOpen]);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -81,19 +83,16 @@ export function CreateStudentModal({
     setIsDropdownOpen(false);
   };
 
-  // Don't render on server or when closed
   if (typeof window === "undefined" || !isOpen) return null;
 
   const modalContent = (
     <div className="fixed inset-0 flex items-center justify-center z-99999">
-      {/* Backdrop with blur - covers entire viewport */}
       <div
         ref={backdropRef}
         className="absolute inset-0 animate-in fade-in duration-300 bg-[rgba(0,0,0,0.4)] backdrop-blur-[10px]"
         onClick={onClose}
       />
 
-      {/* Modal */}
       <div
         ref={modalRef}
         className="relative animate-in fade-in zoom-in-95 duration-300"
@@ -102,7 +101,6 @@ export function CreateStudentModal({
         aria-labelledby="create-student-title"
       >
         <div className="w-125 bg-white p-8 rounded-[30px] shadow-[0px_10px_60px_rgba(0,48,110,0.25)]">
-          {/* Close Button */}
           <button
             type="button"
             onClick={onClose}
@@ -113,7 +111,6 @@ export function CreateStudentModal({
             <X className="h-5 w-5" />
           </button>
 
-          {/* Header */}
           <div className="mb-8">
             <h2
               id="create-student-title"
@@ -128,7 +125,6 @@ export function CreateStudentModal({
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Student Name Field */}
             <div className="flex items-center gap-6">
               <label
                 htmlFor="studentName"
@@ -146,7 +142,6 @@ export function CreateStudentModal({
               />
             </div>
 
-            {/* Grade Level Field - Dropdown */}
             <div className="flex items-center gap-6">
               <label
                 htmlFor="gradeLevel"
@@ -172,7 +167,6 @@ export function CreateStudentModal({
                   />
                 </button>
 
-                {/* Dropdown Menu */}
                 {isDropdownOpen && (
                   <div className="absolute left-0 right-0 top-full z-10 mt-2 overflow-hidden rounded-lg border border-[#E4F4FF] bg-white py-1 shadow-[0px_4px_20px_rgba(0,48,110,0.15)]">
                     {gradeLevels.map((grade) => (
@@ -180,7 +174,7 @@ export function CreateStudentModal({
                         key={grade}
                         type="button"
                         onClick={() => handleSelectGrade(grade)}
-                        className={`w-full px-4 py-2.5 text-left text-base transition-colors hover:bg-[#E4F4FF] ${
+                        className={`w-full px-4 py-1 text-left text-sm transition-colors hover:bg-[#E4F4FF] ${
                           gradeLevel === grade
                             ? "bg-[#E4F4FF] font-medium text-[#6666FF]"
                             : "text-[#00306E]"
@@ -194,7 +188,6 @@ export function CreateStudentModal({
               </div>
             </div>
 
-            {/* Submit Button */}
             <div className="flex justify-center pt-4">
               <button
                 type="submit"
@@ -208,7 +201,5 @@ export function CreateStudentModal({
       </div>
     </div>
   );
-
-  // Use portal to render modal at document body level
   return createPortal(modalContent, document.body);
 }

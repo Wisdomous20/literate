@@ -4,84 +4,74 @@ import { useState, useRef, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 
 export type AssessmentTypeFilter =
+  | "ALL"
   | "ORAL_READING"
   | "COMPREHENSION"
-  | "ORAL_READING_TEST";
+  | "READING_FLUENCY";
 
 interface AssessmentTypeFilterProps {
   onFilterChange?: (filter: AssessmentTypeFilter) => void;
 }
 
 const assessmentTypeOptions = [
-  { value: "ORAL_READING" as const, label: "Oral Reading Test" },
-  { value: "COMPREHENSION" as const, label: "Reading Comprehension Test" },
-  { value: "ORAL_READING_TEST" as const, label: "Reading Fluency Test" },
+  { value: "ALL" as const, label: "All Students" },
+  { value: "ORAL_READING" as const, label: "Oral Reading" },
+  { value: "COMPREHENSION" as const, label: "Comprehension" },
+  { value: "READING_FLUENCY" as const, label: "Reading Fluency" },
 ];
 
 export function AssessmentTypeFilterDropdown({
   onFilterChange,
 }: AssessmentTypeFilterProps) {
   const [selectedFilter, setSelectedFilter] =
-    useState<AssessmentTypeFilter>("ORAL_READING");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+    useState<AssessmentTypeFilter>("ALL");
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsDropdownOpen(false);
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setIsOpen(false);
       }
     };
-
-    if (isDropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isDropdownOpen]);
-
-  const handleFilterChange = (value: AssessmentTypeFilter) => {
-    setSelectedFilter(value);
-    setIsDropdownOpen(false);
-    onFilterChange?.(value);
-  };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const selectedLabel =
-    assessmentTypeOptions.find((opt) => opt.value === selectedFilter)?.label ||
-    "Oral Reading Test";
+    assessmentTypeOptions.find((o) => o.value === selectedFilter)?.label ??
+    "All Students";
 
   return (
-    <div ref={dropdownRef} className="relative">
+    <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-[#00306E] transition-colors hover:bg-[#d9efff] bg-[#E4F4FF] border border-[#54A4FF] min-w-55"
+        onClick={() => setIsOpen((v) => !v)}
+        className="flex items-center gap-2 rounded-lg border border-[#6666FF]/25 bg-[#6666FF]/8 px-4 py-2 text-xs font-medium text-[#6666FF] transition-all hover:bg-[#EEEEFF] min-w-40"
       >
         <span className="flex-1 text-left">{selectedLabel}</span>
         <ChevronDown
-          className={`h-4 w-4 text-[#162DB0] transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`}
+          className={`h-3.5 w-3.5 transition-transform ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
-
-      {isDropdownOpen && (
-        <div className="absolute right-0 top-full z-50 mt-2 min-w-55 overflow-hidden rounded-lg border border-[#54A4FF] bg-white py-1 shadow-[0px_4px_20px_rgba(0,48,110,0.15)]">
-          {assessmentTypeOptions.map((option) => (
+      {isOpen && (
+        <div className="absolute right-0 top-full z-50 mt-1 min-w-40 rounded-lg border border-[#6666FF]/20 bg-white py-1 shadow-lg">
+          {assessmentTypeOptions.map((opt) => (
             <button
-              key={option.value}
+              key={opt.value}
               type="button"
-              onClick={() => handleFilterChange(option.value)}
-              className={`w-full px-4 py-2.5 text-left text-sm transition-colors hover:bg-[#E4F4FF] ${
-                selectedFilter === option.value
-                  ? "bg-[#E4F4FF] font-medium text-[#162DB0]"
+              onClick={() => {
+                setSelectedFilter(opt.value);
+                setIsOpen(false);
+                onFilterChange?.(opt.value);
+              }}
+              className={`w-full px-3 py-2 text-left text-xs transition-colors hover:bg-[#E4F4FF] ${
+                selectedFilter === opt.value
+                  ? "font-semibold text-[#6666FF] bg-[#EEEEFF]"
                   : "text-[#00306E]"
               }`}
             >
-              {option.label}
+              {opt.label}
             </button>
           ))}
         </div>

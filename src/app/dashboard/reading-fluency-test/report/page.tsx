@@ -50,7 +50,9 @@ function loadSession(): Partial<SessionState> {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
-  } catch {}
+  } catch (err) {
+    console.error("Failed to load session:", err);
+  }
   return {};
 }
 
@@ -132,7 +134,6 @@ export default function OralReadingReportPage() {
   const session = loadSession();
   const analysis = session.analysisResult;
 
-  // Load recorded audio from sessionStorage (no setState inside effect body)
   const [audioSrc] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
     try {
