@@ -1,4 +1,3 @@
-// src/utils/textUtils.ts
 
 /**
  * Normalize a word for comparison — lowercase, keep only letters/ñ/apostrophes/hyphens.
@@ -6,7 +5,7 @@
 export function normalizeWord(word: string): string {
   return word
     .toLowerCase()
-    .replace(/[^a-zñ'\-]/g, "")
+    .replace(/[^a-zñ']/g, "")
     .trim();
 }
 
@@ -98,9 +97,16 @@ export function editDistance(a: string, b: string): number {
  * Similarity ratio between two strings (0–1). Language-aware.
  */
 export function similarityRatio(a: string, b: string, language: string = "en"): number {
+  if (a === b) return 1.0;
+  if (a.length === 0 || b.length === 0) return 0.0;
+
+  // Quick length-based rejection: if lengths differ too much, similarity is low
   const maxLen = Math.max(a.length, b.length);
-  if (maxLen === 0) return 1;
-  return 1 - levenshteinDistance(a, b, language) / maxLen;
+  const minLen = Math.min(a.length, b.length);
+  if (minLen / maxLen < 0.4) return minLen / maxLen; // rough estimate, skip full edit distance
+
+  const dist = levenshteinDistance(a, b, language);
+  return 1 - dist / maxLen;
 }
 
 /**
@@ -128,4 +134,15 @@ export function isReversal(expected: string, spoken: string): boolean {
   const a = normalizeWord(expected);
   const b = normalizeWord(spoken);
   return a.length > 1 && a === b.split("").reverse().join("");
+}
+
+export function isHyphenatedMatch(expected: string, spoken: string): boolean {
+  if (!expected.includes("-")) return false;
+  const parts = expected.toLowerCase().split("-");
+  const normSpoken = normalizeWord(spoken);
+  // Check if spoken matches any individual part
+  if (parts.some((part) => normalizeWord(part) === normSpoken)) return true;
+  // Check if the joined form matches
+  if (parts.join("") === normSpoken) return true;
+  return false;
 }

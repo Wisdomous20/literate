@@ -5,11 +5,22 @@ import { randomUUID } from "crypto";
 import convertToTranscriptResponse from "./convertToTranscriptResponse";
 
 const LOCATION = "us-central1";
+
+const credentials = {
+  client_email: process.env.GOOGLE_CLOUD_CLIENT_EMAIL ?? "",
+  private_key: (process.env.GOOGLE_CLOUD_PRIVATE_KEY ?? "").replace(/\\n/g, "\n"),
+};
+
 const speechClient = new v2.SpeechClient({
   apiEndpoint: `${LOCATION}-speech.googleapis.com`,
+  projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
+  credentials,
 });
 
-const storage = new Storage();
+const storage = new Storage({
+  projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
+  credentials,
+});
 
 const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT_ID ?? "";
 const GCS_BUCKET = process.env.GOOGLE_CLOUD_STORAGE_BUCKET ?? "cpuliterate";
@@ -133,6 +144,8 @@ export async function transcribeAudio(
         recognitionOutputConfig: {
           inlineResponseConfig: {},
         },
+       processingStrategy: "DYNAMIC_BATCHING" as unknown as protos.google.cloud.speech.v2.BatchRecognizeRequest.ProcessingStrategy,
+
       });
 
       const [response] = await operation.promise();

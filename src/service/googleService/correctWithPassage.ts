@@ -1,5 +1,5 @@
 import { TranscriptWord } from "@/types/oral-reading";
-import { similarityRatio } from "@/utils/textUtils";
+import { normalizeWord, similarityRatio } from "@/utils/textUtils";
 
 /**
  * Passage-guided correction using Smith-Waterman-style local alignment.
@@ -9,7 +9,11 @@ export default function correctWithPassage(
   passageText: string,
   similarityThreshold = 0.55
 ): TranscriptWord[] {
-  const passageWords = passageText
+  const expandedPassageText = passageText.replace(
+    /(\p{L})-(\p{L})/gu,
+    "$1 $2"
+  );
+  const passageWords = expandedPassageText
     .split(/\s+/)
     .filter((w) => w.length > 0);
 
@@ -20,6 +24,18 @@ export default function correctWithPassage(
   const tLen = transcribedWords.length;
   const pLen = passageWords.length;
 
+  // Pre-compute normalized words
+  const normTranscribed = transcribedWords.map((w) => normalizeWord(w.word));
+  const normPassage = passageWords.map(normalizeWord);
+
+  // Pre-compute similarity matrix
+  const simMatrix: number[][] = Array.from({ length: tLen }, () => Array(pLen).fill(0));
+  for (let i = 0; i < tLen; i++) {
+    for (let j = 0; j < pLen; j++) {
+      simMatrix[i][j] = similarityRatio(normTranscribed[i], normPassage[j]);
+    }
+  }
+
   const MATCH_BONUS = 2;
   const CLOSE_BONUS = 1;
   const GAP_PENALTY = -0.5;
@@ -27,81 +43,70 @@ export default function correctWithPassage(
   const dp: number[][] = Array.from({ length: tLen + 1 }, () =>
     Array(pLen + 1).fill(0)
   );
-  const backtrack: number[][][] = Array.from({ length: tLen + 1 }, () =>
-    Array(pLen + 1).fill([0, 0])
+  const trace: Uint8Array[] = Array.from({ length: tLen + 1 }, () =>
+    new Uint8Array(pLen + 1)
   );
+  // 0 = zero/reset, 1 = diagonal, 2 = up, 3 = left
 
-  for (let i = 1; i <= tLen; i++) {
-    dp[i][0] = i * GAP_PENALTY;
-    backtrack[i][0] = [i - 1, 0];
-  }
-  for (let j = 1; j <= pLen; j++) {
-    dp[0][j] = 0;
-    backtrack[0][j] = [0, j - 1];
-  }
+  let bestScore = 0;
+  let bestI = 0;
+  let bestJ = 0;
 
   for (let i = 1; i <= tLen; i++) {
     for (let j = 1; j <= pLen; j++) {
-      const sim = similarityRatio(transcribedWords[i - 1].word, passageWords[j - 1]);
+      const sim = simMatrix[i - 1][j - 1];
+      const bonus = sim > 0.8 ? MATCH_BONUS : sim > similarityThreshold ? CLOSE_BONUS : -1;
 
-      let matchScore: number;
-      if (sim >= 0.85) {
-        matchScore = dp[i - 1][j - 1] + MATCH_BONUS;
-      } else if (sim >= similarityThreshold) {
-        matchScore = dp[i - 1][j - 1] + CLOSE_BONUS;
+      const diag = dp[i - 1][j - 1] + bonus;
+      const up = dp[i - 1][j] + GAP_PENALTY;
+      const left = dp[i][j - 1] + GAP_PENALTY;
+
+      if (diag >= up && diag >= left && diag > 0) {
+        dp[i][j] = diag;
+        trace[i][j] = 1;
+      } else if (up >= left && up > 0) {
+        dp[i][j] = up;
+        trace[i][j] = 2;
+      } else if (left > 0) {
+        dp[i][j] = left;
+        trace[i][j] = 3;
       } else {
-        matchScore = dp[i - 1][j - 1] - 1;
+        dp[i][j] = 0;
+        trace[i][j] = 0;
       }
 
-      const skipTranscribed = dp[i - 1][j] + GAP_PENALTY;
-      const skipPassage = dp[i][j - 1] + GAP_PENALTY;
-
-      if (matchScore >= skipTranscribed && matchScore >= skipPassage) {
-        dp[i][j] = matchScore;
-        backtrack[i][j] = [i - 1, j - 1];
-      } else if (skipTranscribed >= skipPassage) {
-        dp[i][j] = skipTranscribed;
-        backtrack[i][j] = [i - 1, j];
-      } else {
-        dp[i][j] = skipPassage;
-        backtrack[i][j] = [i, j - 1];
+      if (dp[i][j] > bestScore) {
+        bestScore = dp[i][j];
+        bestI = i;
+        bestJ = j;
       }
     }
   }
 
-  let bestJ = 0;
-  let bestScore = dp[tLen][0];
-  for (let j = 1; j <= pLen; j++) {
-    if (dp[tLen][j] >= bestScore) {
-      bestScore = dp[tLen][j];
-      bestJ = j;
-    }
-  }
-
-  const correctionMap = new Map<number, string>();
-
-  let ci = tLen;
+  // Traceback to find matched pairs
+  const corrections = new Map<number, string>();
+  let ci = bestI;
   let cj = bestJ;
 
-  while (ci > 0 && cj > 0) {
-    const [pi, pj] = backtrack[ci][cj];
-
-    if (pi === ci - 1 && pj === cj - 1) {
-      const sim = similarityRatio(transcribedWords[ci - 1].word, passageWords[cj - 1]);
-      if (sim >= similarityThreshold) {
-        correctionMap.set(ci - 1, passageWords[cj - 1]);
+  while (ci > 0 && cj > 0 && dp[ci][cj] > 0) {
+    if (trace[ci][cj] === 1) {
+      const sim = simMatrix[ci - 1][cj - 1];
+      if (sim > similarityThreshold && sim < 1.0) {
+        corrections.set(ci - 1, passageWords[cj - 1]);
       }
+      ci--;
+      cj--;
+    } else if (trace[ci][cj] === 2) {
+      ci--;
+    } else if (trace[ci][cj] === 3) {
+      cj--;
+    } else {
+      break;
     }
-
-    ci = pi;
-    cj = pj;
   }
 
   return transcribedWords.map((w, idx) => {
-    const corrected = correctionMap.get(idx);
-    if (corrected) {
-      return { ...w, word: corrected };
-    }
-    return w;
+    const corrected = corrections.get(idx);
+    return corrected ? { ...w, word: corrected } : w;
   });
 }
