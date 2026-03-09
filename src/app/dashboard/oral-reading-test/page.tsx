@@ -6,7 +6,7 @@ import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import StudentInfoBar from "@/components/oral-reading-test/studentInfoBar";
 import { PassageFilters } from "@/components/oral-reading-test/passageFilters";
 import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay";
-import { ReadingTimer } from "@/components/oral-reading-test/readingTimer";
+import { ReadingTimer, AudioPlayer } from "@/components/oral-reading-test/readingTimer";
 import { MiscueAnalysis } from "@/components/oral-reading-test/miscueAnalysis";
 import { FullScreenPassage } from "@/components/oral-reading-test/fullScreenPassage";
 import { AddPassageModal } from "@/components/oral-reading-test/addPassageModal";
@@ -722,6 +722,12 @@ export default function OralReadingTestPage() {
               onToggleExpand={() => setPassageExpanded((prev) => !prev)}
               passageLevel={selectedLevel}
             />
+
+            {passageExpanded && hasRecording && recordedAudioURL && (
+              <div className="mt-2">
+                <AudioPlayer src={recordedAudioURL} externalAudioRef={audioRef} />
+              </div>
+            )}
 
             {!passageExpanded && hasPassage && (
               <div className="mt-2 flex items-center">

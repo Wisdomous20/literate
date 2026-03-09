@@ -33,6 +33,7 @@ export function FullScreenPassage({
   const [countdown, setCountdown] = useState(countdownEnabled ? countdownSeconds : 0)
   const [seconds, setSeconds] = useState(0)
   const [showOverlayUI, setShowOverlayUI] = useState(true)
+  const [recordingReady, setRecordingReady] = useState(false)
   const isCountingDown = countdownEnabled && countdown > 0
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -269,6 +270,11 @@ export function FullScreenPassage({
     intervalRef.current = setInterval(() => {
       setSeconds((prev) => prev + 1)
     }, 1000)
+
+    // Brief warm-up: let the recorder settle before showing the passage
+    setTimeout(() => {
+      setRecordingReady(true)
+    }, 300)
   }, [startSpeechRecognition])
 
   // Countdown
@@ -313,16 +319,18 @@ export function FullScreenPassage({
   }, [onClose, stopEverything])
 
   // Countdown overlay
-  if (isCountingDown) {
+  if (isCountingDown || !recordingReady) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#E4F4FF]">
         <div className="flex flex-col items-center gap-6">
-          <p className="text-lg font-semibold text-[#31318A]">Get Ready...</p>
-          <div className="flex h-32 w-32 items-center justify-center rounded-full border-[3px] border-[#6666FF] bg-[rgba(102,102,255,0.12)] text-6xl font-bold text-[#6666FF]">
-            <span key={countdown} className="animate-pulse">
-              {countdown}
-            </span>
-          </div>
+          <p className="text-lg font-semibold text-[#31318A]">{isCountingDown ? "Get Ready..." : "Starting..."}</p>
+          {isCountingDown && (
+            <div className="flex h-32 w-32 items-center justify-center rounded-full border-[3px] border-[#6666FF] bg-[rgba(102,102,255,0.12)] text-6xl font-bold text-[#6666FF]">
+              <span key={countdown} className="animate-pulse">
+                {countdown}
+              </span>
+            </div>
+          )}
           <p className="text-sm font-medium text-[#00306E]">
             Recording will start automatically
           </p>
@@ -381,7 +389,7 @@ export function FullScreenPassage({
 
           {/* Passage Content */}
           <div className="flex flex-1 flex-col overflow-auto px-6 pt-14 md:px-12 md:pt-16 lg:px-16 lg:pt-20">
-            <p className="whitespace-pre-wrap leading-[2.2] tracking-[0.01em] text-[#00306E] [word-spacing:0.05em] md:leading-[2.3] lg:leading-[2.4]" style={passageLevel ? passageTextStyle : { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: undefined }}>
+            <p className="whitespace-pre-wrap text-center leading-relaxed text-[#00306E]" style={passageLevel ? passageTextStyle : undefined}>
               {tokenMeta.map((token, i) => (
                 <span
                   key={i}

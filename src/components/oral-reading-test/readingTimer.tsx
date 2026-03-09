@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Mic, Play, Pause, Download, ChevronDown } from "lucide-react"
+import { Mic, Play, Pause, Download, ChevronDown, RotateCcw } from "lucide-react"
+import { NavButton } from "@/components/ui/navButton"
 
 import { convertToWav } from "@/utils/convertToWav"
 
@@ -18,7 +19,7 @@ interface ReadingTimerProps {
 
 const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 2]
 
-function AudioPlayer({ src, externalAudioRef }: { src: string; externalAudioRef?: React.RefObject<HTMLAudioElement | null> }) {
+export function AudioPlayer({ src, externalAudioRef }: { src: string; externalAudioRef?: React.RefObject<HTMLAudioElement | null> }) {
   const internalRef = useRef<HTMLAudioElement>(null)
   const audioRef = externalAudioRef || internalRef
   const rangeRef = useRef<HTMLInputElement>(null)
@@ -251,13 +252,10 @@ export function ReadingTimer({
             >
               Try Again
             </button>
-            <button
-              type="button"
-              onClick={onStartNew}
-              className="rounded-lg border border-[#6666FF] bg-transparent px-6 py-2.5 text-sm font-semibold text-[#6666FF] transition-all duration-200 hover:bg-[#6666FF] hover:text-white md:px-8 lg:px-10"
-            >
-              Start New
-            </button>
+            <NavButton variant="outlined" onClick={onStartNew}>
+              <RotateCcw className="h-4 w-4 md:h-5 md:w-5" />
+              <span>Start New</span>
+            </NavButton>
           </>
         )}
       </div>
