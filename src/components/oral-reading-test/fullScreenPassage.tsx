@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { X, ArrowDownToLine, CircleCheckBig } from "lucide-react"
+import { X, CircleCheckBig } from "lucide-react"
 import { useSettings } from "@/context/settingsContext"
 
 interface FullScreenPassageProps {
@@ -373,15 +373,6 @@ export function FullScreenPassage({
               </span>
               <span className="text-xs font-medium text-red-500">Recording</span>
             </div>
-
-            {autoScrollEnabled && (
-              <div className="flex items-center gap-1 rounded-full border border-[rgba(102,102,255,0.25)] bg-[rgba(102,102,255,0.08)] px-2 py-0.5">
-                <ArrowDownToLine className="h-2.5 w-2.5 text-[#6666FF]" />
-                <span className="text-[10px] font-medium text-[#6666FF]">
-                  Auto Scroll
-                </span>
-              </div>
-            )}
 
             {autoFinishEnabled && (
               <div className="flex items-center gap-1 rounded-full border border-[rgba(34,197,94,0.25)] bg-[rgba(34,197,94,0.08)] px-2 py-0.5">

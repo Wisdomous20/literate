@@ -2,7 +2,7 @@
 
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader"
 import { useSettings } from "@/context/settingsContext"
-import { ScrollText, CheckCircle, FileText, BookOpen, Info } from "lucide-react"
+import { CheckCircle, FileText, BookOpen, Info } from "lucide-react"
 
 interface ToggleRowProps {
   icon: React.ReactNode
@@ -65,8 +65,6 @@ function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }
 
 export default function SettingsPage() {
   const {
-    autoScrollEnabled,
-    setAutoScrollEnabled,
     autoFinishEnabled,
     setAutoFinishEnabled,
   } = useSettings()
@@ -92,18 +90,6 @@ export default function SettingsPage() {
             <div className="space-y-3">
               <ToggleRow
                 icon={
-                  <ScrollText
-                    className={`h-5 w-5 ${autoScrollEnabled ? "text-[#6666FF]" : "text-[#6B7DB3]"}`}
-                  />
-                }
-                label="Auto-Scroll Passage"
-                description="Automatically scroll the fullscreen passage as the student reads aloud using speech detection."
-                enabled={autoScrollEnabled}
-                onToggle={() => setAutoScrollEnabled(!autoScrollEnabled)}
-              />
-
-              <ToggleRow
-                icon={
                   <CheckCircle
                     className={`h-5 w-5 ${autoFinishEnabled ? "text-[#6666FF]" : "text-[#6B7DB3]"}`}
                   />
@@ -124,18 +110,6 @@ export default function SettingsPage() {
             <div className="space-y-3">
               <ToggleRow
                 icon={
-                  <ScrollText
-                    className={`h-5 w-5 ${autoScrollEnabled ? "text-[#6666FF]" : "text-[#6B7DB3]"}`}
-                  />
-                }
-                label="Auto-Scroll Passage"
-                description="Automatically scroll the passage during reading fluency assessment using speech detection."
-                enabled={autoScrollEnabled}
-                onToggle={() => setAutoScrollEnabled(!autoScrollEnabled)}
-              />
-
-              <ToggleRow
-                icon={
                   <CheckCircle
                     className={`h-5 w-5 ${autoFinishEnabled ? "text-[#6666FF]" : "text-[#6B7DB3]"}`}
                   />
@@ -152,8 +126,8 @@ export default function SettingsPage() {
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#6666FF]" />
             <p className="text-xs leading-relaxed text-[#6B7DB3]">
               <span className="font-semibold text-[#31318A]">Note:</span>{" "}
-              Auto-Scroll and Auto-Finish rely on the Web Speech API for real-time
-              speech detection. These features work best on{" "}
+              Auto-Finish relies on the Web Speech API for real-time
+              speech detection. This feature works best on{" "}
               <span className="font-medium text-[#31318A]">Chrome</span> and{" "}
               <span className="font-medium text-[#31318A]">Edge</span> browsers.
               Settings apply to all reading tests in the current session.
