@@ -1,10 +1,10 @@
 import { OralFluencyAnalysis } from "@/types/oral-reading";
-import { transcribeAudio } from "./whisperService";
+import { transcribeAudio } from "../googleService/googleSTTService";
 import { alignWords } from "./alignmentService";
 import { detectMiscues } from "./miscueDetectionService";
 import { detectBehaviors } from "./behaviorDetectionService";
-import { postCorrectTranscription } from "@/utils/posCorrectTranscription";
-
+import { postCorrectTranscription } from "@/utils/postCorrectTranscription";
+import { normalizeWordStrict as normalizeWord } from "@/utils/textUtils";
 
 function computeOralFluencyScore(totalWords: number, totalMiscues: number): number {
   if (totalWords <= 0) return 0;
@@ -16,15 +16,6 @@ function classifyReadingLevel(oralFluencyScore: number): "INDEPENDENT" | "INSTRU
   if (oralFluencyScore >= 97) return "INDEPENDENT";
   if (oralFluencyScore >= 90) return "INSTRUCTIONAL";
   return "FRUSTRATION";
-}
-
-function normalizeWord(word: string): string {
-  return word
-    .toLowerCase()
-    .replace(/[.,!?;:'""\u2018\u2019\u201C\u201D\u2014\u2013\-()[\]{}]/g, "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // strip diacritics
-    .trim()
 }
 
 export async function analyzeOralFluency(
