@@ -1,36 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import { LayoutDashboard, ChevronLeft, ChevronRight } from "lucide-react";
+import { LayoutDashboard, ChevronLeft, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { DeleteConfirmModal } from "@/components/ui/deleteConfirmModal";
 import { NavButton } from "@/components/ui/navButton";
 
 const FLUENCY_SESSION_KEY = "reading-fluency-session";
-const COMP_SESSION_KEY = "reading-comprehension-session";
+const AUDIO_STORAGE_KEY = "reading-fluency-audio";
 
 export default function ReportHeader() {
   const router = useRouter();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const handleContinueToComprehension = () => {
+  const handleStartNew = () => {
     try {
-      const raw = sessionStorage.getItem(FLUENCY_SESSION_KEY);
-      if (raw) {
-        const fluencySession = JSON.parse(raw);
-        const compSession = {
-          studentName: fluencySession.studentName,
-          gradeLevel: fluencySession.gradeLevel,
-          selectedStudentId: fluencySession.selectedStudentId,
-          selectedClassName: fluencySession.selectedClassName,
-          selectedPassage: fluencySession.selectedPassage,
-        };
-        sessionStorage.setItem(COMP_SESSION_KEY, JSON.stringify(compSession));
-      }
+      sessionStorage.removeItem(FLUENCY_SESSION_KEY);
+      sessionStorage.removeItem(AUDIO_STORAGE_KEY);
     } catch {
-      /* non-critical — quiz page will handle missing session */
+      /* non-critical */
     }
-    router.push("/dashboard/reading-comprehension-test/quiz");
+    router.push("/dashboard/reading-fluency-test");
   };
 
   return (
@@ -67,16 +57,16 @@ export default function ReportHeader() {
         onConfirm={() => { /* TODO: wire up actual delete handler */ }}
       />
 
-      {/* Previous + Continue to Comprehension */}
+      {/* Previous + Start New */}
       <div className="flex items-center justify-between px-8 pt-2">
         <NavButton onClick={() => router.back()}>
           <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
           <span>Previous</span>
         </NavButton>
 
-        <NavButton onClick={handleContinueToComprehension}>
-          <span>Continue to Comprehension</span>
-          <ChevronRight size={18} />
+        <NavButton variant="outlined" onClick={handleStartNew}>
+          <RotateCcw className="h-4 w-4" />
+          <span>Start New</span>
         </NavButton>
       </div>
     </div>

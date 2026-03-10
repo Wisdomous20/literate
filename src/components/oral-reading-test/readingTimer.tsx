@@ -1,8 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Mic, Play, Pause, Download, ChevronDown, RotateCcw } from "lucide-react"
-import { NavButton } from "@/components/ui/navButton"
+import { Mic, Play, Pause, Download, ChevronDown } from "lucide-react"
 
 import { convertToWav } from "@/utils/convertToWav"
 
@@ -13,7 +12,6 @@ interface ReadingTimerProps {
   recordedSeconds: number
   recordedAudioURL: string | null
   onTryAgain: () => void
-  onStartNew: () => void
   audioRef?: React.RefObject<HTMLAudioElement | null>
 }
 
@@ -203,7 +201,6 @@ export function ReadingTimer({
   recordedSeconds,
   recordedAudioURL,
   onTryAgain,
-  onStartNew,
   audioRef,
 }: ReadingTimerProps) {
   const formatTime = (totalSeconds: number) => {
@@ -244,19 +241,13 @@ export function ReadingTimer({
         )}
 
         {hasRecording && (
-          <>
-            <button
-              type="button"
-              onClick={onTryAgain}
-              className="rounded-lg border border-[#0C1A6D] bg-[#2E2E68] px-6 py-2.5 text-sm font-semibold text-white shadow-[0px_1px_20px_rgba(65,155,180,0.47)] transition-colors hover:opacity-90 md:px-8 lg:px-10"
-            >
-              Try Again
-            </button>
-            <NavButton variant="outlined" onClick={onStartNew}>
-              <RotateCcw className="h-4 w-4 md:h-5 md:w-5" />
-              <span>Start New</span>
-            </NavButton>
-          </>
+          <button
+            type="button"
+            onClick={onTryAgain}
+            className="rounded-lg border border-[#0C1A6D] bg-[#2E2E68] px-6 py-2.5 text-sm font-semibold text-white shadow-[0px_1px_20px_rgba(65,155,180,0.47)] transition-colors hover:opacity-90 md:px-8 lg:px-10"
+          >
+            Try Again
+          </button>
         )}
       </div>
     </div>

@@ -753,7 +753,6 @@ export default function OralReadingTestPage() {
                 recordedSeconds={recordedSeconds}
                 recordedAudioURL={recordedAudioURL}
                 onTryAgain={handleTryAgain}
-                onStartNew={handleStartNew}
                 audioRef={audioRef}
               />
             )}

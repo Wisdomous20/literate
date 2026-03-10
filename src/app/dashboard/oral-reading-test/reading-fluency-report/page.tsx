@@ -10,6 +10,7 @@ import MetricCards from "@/components/reports/oral-reading-test/reading-fluency-
 import MiscueAnalysisReport from "@/components/reports/oral-reading-test/reading-fluency-report/miscueAnalysis";
 import AudioPlaybackCard from "@/components/reports/oral-reading-test/reading-fluency-report/audioPlaybackCard";
 import BehaviorChecklist from "@/components/reports/oral-reading-test/reading-fluency-report/readingBehaviorChecklist";
+import ViewMiscuesModal from "@/components/reports/oral-reading-test/reading-fluency-report/viewMiscuesModal";
 import type { MiscueData } from "@/components/reports/oral-reading-test/reading-fluency-report/miscueAnalysis";
 import type { BehaviorItem } from "@/components/reports/oral-reading-test/reading-fluency-report/readingBehaviorChecklist";
 import type {
@@ -133,6 +134,7 @@ function buildBehaviorItems(
 export default function OralReadingReportPage() {
   const router = useRouter();
   const [isHydrated, setIsHydrated] = useState(false);
+  const [showMiscuesModal, setShowMiscuesModal] = useState(false);
 
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect -- Intentional mount-time hydration flag for SSR */
@@ -262,9 +264,17 @@ export default function OralReadingReportPage() {
           <BehaviorChecklist behaviors={behaviorItems} />
 
           {/* Right column */}
-          <MiscueAnalysisReport miscueData={miscueData} />
+          <MiscueAnalysisReport miscueData={miscueData} onViewMiscues={() => setShowMiscuesModal(true)} />
         </div>
       </main>
+
+      <ViewMiscuesModal
+        open={showMiscuesModal}
+        onClose={() => setShowMiscuesModal(false)}
+        passageContent={session.passageContent || ""}
+        miscues={analysis?.miscues || []}
+        passageLevel={session.selectedLevel}
+      />
     </div>
   );
 }

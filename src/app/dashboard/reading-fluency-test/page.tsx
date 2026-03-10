@@ -680,7 +680,6 @@ export default function ReadingFluencyTestPage() {
                 recordedSeconds={recordedSeconds}
                 recordedAudioURL={recordedAudioURL}
                 onTryAgain={handleTryAgain}
-                onStartNew={handleStartNew}
                 audioRef={audioRef}
               />
             )}
