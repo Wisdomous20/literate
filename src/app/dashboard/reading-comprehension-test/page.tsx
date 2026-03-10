@@ -429,12 +429,12 @@ export default function ReadingComprehensionTestPage() {
   }, []);
 
   const handleContinueToComprehension = useCallback(() => {
-    if (!hasPassage) return;
+    if (!hasPassage || !studentName.trim() || !gradeLevel || !selectedClassName) return;
     setShowQuestions(true);
     setTimeout(() => {
       questionsRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 100);
-  }, [hasPassage]);
+  }, [hasPassage, studentName, gradeLevel, selectedClassName]);
 
   const handleSelectOption = useCallback(
     (questionId: string, option: string) => {
@@ -762,12 +762,24 @@ export default function ReadingComprehensionTestPage() {
             )}
 
             {/* Continue to Comprehension button — centered like Start Reading */}
-            {!passageExpanded && hasPassage && !showQuestions && (
+            {!passageExpanded && !showQuestions && (
               <div className="flex justify-center">
                 <button
                   type="button"
                   onClick={handleContinueToComprehension}
-                  className="rounded-lg bg-[#2E2E68] px-10 py-2.5 text-sm font-semibold text-white shadow-[0px_1px_20px_rgba(108,164,239,0.37)] transition-all duration-200 hover:brightness-110 md:px-12 md:py-3 md:text-[15px]"
+                  disabled={!hasPassage || !studentName.trim() || !gradeLevel || !selectedClassName}
+                  className={`rounded-lg px-10 py-2.5 text-sm font-semibold text-white transition-all duration-200 md:px-12 md:py-3 md:text-[15px] ${
+                    !hasPassage || !studentName.trim() || !gradeLevel || !selectedClassName
+                      ? "bg-[#2E2E68]/30 cursor-not-allowed opacity-60 shadow-none"
+                      : "bg-[#2E2E68] shadow-[0px_1px_20px_rgba(108,164,239,0.37)] hover:brightness-110"
+                  }`}
+                  title={
+                    !studentName.trim() || !gradeLevel || !selectedClassName
+                      ? "Enter student information first"
+                      : !hasPassage
+                        ? "Add a passage first"
+                        : undefined
+                  }
                 >
                   Continue to Comprehension
                 </button>

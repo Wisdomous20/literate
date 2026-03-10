@@ -7,6 +7,7 @@ import { convertToWav } from "@/utils/convertToWav"
 
 interface ReadingTimerProps {
   hasPassage: boolean
+  hasStudentInfo: boolean
   onStartReading: () => void
   hasRecording: boolean
   recordedSeconds: number
@@ -196,6 +197,7 @@ export function AudioPlayer({ src, externalAudioRef }: { src: string; externalAu
 
 export function ReadingTimer({
   hasPassage,
+  hasStudentInfo,
   onStartReading,
   hasRecording,
   recordedSeconds,
@@ -210,7 +212,12 @@ export function ReadingTimer({
     return `${hrs.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
   }
 
-  const isDisabled = !hasPassage
+  const isDisabled = !hasPassage || !hasStudentInfo
+  const disabledReason = !hasStudentInfo
+    ? "Enter student information first"
+    : !hasPassage
+      ? "Add a passage first to start reading"
+      : undefined
 
   return (
     <div className="flex flex-col items-center gap-2 py-2">
@@ -233,7 +240,7 @@ export function ReadingTimer({
                 ? "bg-[rgba(102,102,255,0.3)] opacity-60 shadow-none"
                 : "bg-[#6666FF] opacity-100 shadow-[0px_1px_20px_rgba(102,102,255,0.4)]"
             }`}
-            title={isDisabled ? "Add a passage first to start reading" : undefined}
+            title={disabledReason}
           >
             <Mic className="h-4 w-4" />
             Start Reading

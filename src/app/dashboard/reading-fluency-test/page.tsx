@@ -141,6 +141,7 @@ export default function ReadingFluencyTestPage() {
     new Set(),
   );
   const [passageExpanded, setPassageExpanded] = useState(false);
+  const [showMiscues, setShowMiscues] = useState(true);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   // TanStack-cached class list
@@ -325,14 +326,14 @@ export default function ReadingFluencyTestPage() {
   );
 
   const handleStartReading = useCallback(() => {
-    if (!hasPassage) return;
+    if (!hasPassage || !studentName.trim() || !gradeLevel || !selectedClassName) return;
     setIsFullScreen(true);
     setHasRecording(false);
     if (recordedAudioURL) {
       URL.revokeObjectURL(recordedAudioURL);
       setRecordedAudioURL(null);
     }
-  }, [hasPassage, recordedAudioURL]);
+  }, [hasPassage, studentName, gradeLevel, selectedClassName, recordedAudioURL]);
 
   const handleFullScreenDone = useCallback(
     (
@@ -643,7 +644,7 @@ export default function ReadingFluencyTestPage() {
 
             <PassageDisplay
               content={passageContent}
-              miscues={filteredMiscues}
+              miscues={showMiscues ? filteredMiscues : undefined}
               onJumpToTime={handleJumpToTime}
               expanded={passageExpanded}
               onToggleExpand={() => setPassageExpanded((prev) => !prev)}
@@ -657,10 +658,42 @@ export default function ReadingFluencyTestPage() {
             )}
 
             {!passageExpanded && hasPassage && (
-              <div className="mt-2 flex items-center">
+              <div className="mt-2 flex items-center justify-between">
                 <span className="text-xs font-semibold text-[#00306E]">
                   {passageContent.split(/\s+/).length} words
                 </span>
+                {analysisResult && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-[#31318A]">
+                      {showMiscues ? "Miscues" : "Original"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowMiscues((prev) => !prev)}
+                      aria-label={showMiscues ? "Show original passage" : "Show miscue highlights"}
+                      title={showMiscues ? "Show original passage" : "Show miscue highlights"}
+                      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+                        showMiscues ? "bg-[#6666FF]" : "bg-[#C4C4FF]"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+                          showMiscues ? "translate-x-4.25" : "translate-x-0.75"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                )}
+                {!analysisResult && (
+                  <div className="flex items-center gap-2 opacity-40 pointer-events-none">
+                    <span className="text-xs font-medium text-[#31318A]">
+                      Miscues
+                    </span>
+                    <div className="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full bg-[#C4C4FF]">
+                      <span className="inline-block h-3.5 w-3.5 translate-x-0.75 rounded-full bg-white shadow" />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -675,6 +708,7 @@ export default function ReadingFluencyTestPage() {
             {!passageExpanded && (
               <ReadingTimer
                 hasPassage={hasPassage}
+                hasStudentInfo={!!(studentName.trim() && gradeLevel && selectedClassName)}
                 onStartReading={handleStartReading}
                 hasRecording={hasRecording}
                 recordedSeconds={recordedSeconds}
