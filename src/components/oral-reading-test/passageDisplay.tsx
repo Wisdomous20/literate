@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef, useCallback, type CSSProperties } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback, Fragment, type CSSProperties } from "react";
 import { Maximize2, Minimize2, Play, GripHorizontal } from "lucide-react";
-import type { MiscueResult } from "@/types/oral-reading";
+import type { MiscueResult, AlignedWord } from "@/types/oral-reading";
 
 type MiscueColor = {
   bg: string;
@@ -119,9 +119,15 @@ const FALLBACK_COLOR: MiscueColor = {
   arrowBottomClass: "border-b-[#DAE6FF]",
 };
 
+interface InlineInsertion {
+  spokenWord: string;
+  miscue: MiscueResult;
+}
+
 interface PassageDisplayProps {
   content: string;
   miscues?: MiscueResult[];
+  alignedWords?: AlignedWord[];
   onJumpToTime?: (timestamp: number) => void;
   expanded?: boolean;
   onToggleExpand?: () => void;
@@ -160,6 +166,7 @@ interface PopupState {
 export function PassageDisplay({
   content,
   miscues,
+  alignedWords,
   onJumpToTime,
   expanded,
   onToggleExpand,
@@ -264,11 +271,50 @@ export function PassageDisplay({
     return () => cancelAnimationFrame(raf);
   }, [popup]);
 
+  // Map passage word index → inline inserted words (REPETITION and INSERTION miscues)
+  const inlineInsertions = useMemo(() => {
+    if (!miscues || !alignedWords?.length) return null;
+
+    // Collect miscues that are "inserted" words (not in the passage)
+    const insertedMiscues = miscues.filter(
+      (m) =>
+        (m.miscueType === "INSERTION" || (m.miscueType === "REPETITION" && !m.expectedWord)) &&
+        m.spokenWord,
+    );
+    if (insertedMiscues.length === 0) return null;
+
+    // Lookup by spokenIndex (= wordIndex for insertion-type miscues)
+    const bySpokenIdx = new Map<number, MiscueResult>();
+    for (const m of insertedMiscues) bySpokenIdx.set(m.wordIndex, m);
+
+    const map = new Map<number, InlineInsertion[]>();
+    let lastExpectedIndex = -1;
+
+    for (const aw of alignedWords) {
+      if (aw.expectedIndex != null) lastExpectedIndex = aw.expectedIndex;
+
+      if (aw.match === "INSERTION" && aw.spokenIndex != null) {
+        const miscue = bySpokenIdx.get(aw.spokenIndex);
+        if (miscue && lastExpectedIndex >= 0) {
+          const list = map.get(lastExpectedIndex) || [];
+          list.push({ spokenWord: miscue.spokenWord!, miscue });
+          map.set(lastExpectedIndex, list);
+          bySpokenIdx.delete(aw.spokenIndex);
+        }
+      }
+    }
+
+    return map.size > 0 ? map : null;
+  }, [miscues, alignedWords]);
+
   // Build a map from wordIndex → miscue type for O(1) lookup
   const miscueMap = useMemo(() => {
     if (!miscues || miscues.length === 0) return null;
     const map = new Map<number, MiscueResult>();
     for (const m of miscues) {
+      // Skip insertion-type miscues — they are rendered as inline inserts
+      if (m.miscueType === "INSERTION") continue;
+      if (m.miscueType === "REPETITION" && !m.expectedWord) continue;
       if (!map.has(m.wordIndex)) {
         map.set(m.wordIndex, m);
       }
@@ -276,12 +322,55 @@ export function PassageDisplay({
     return map;
   }, [miscues]);
 
-  const hasMiscues = miscueMap !== null && miscueMap.size > 0;
+  const hasMiscues =
+    (miscueMap !== null && miscueMap.size > 0) ||
+    (inlineInsertions !== null && inlineInsertions.size > 0);
 
   const words = useMemo(() => {
     if (!content) return [];
     return content.split(/(\s+)/).filter(Boolean);
   }, [content]);
+
+  const openPopup = useCallback(
+    (e: React.MouseEvent, miscue: MiscueResult) => {
+      if (miscue.timestamp == null || !onJumpToTime) return;
+      const rect = (e.target as HTMLElement).getBoundingClientRect();
+      const container = containerRef.current;
+      if (!container) return;
+      const containerRect = container.getBoundingClientRect();
+      const xPos =
+        rect.left -
+        containerRect.left +
+        rect.width / 2 +
+        container.scrollLeft;
+      const yAbove =
+        rect.top - containerRect.top + container.scrollTop - 4;
+      const yBelow =
+        rect.bottom - containerRect.top + container.scrollTop + 4;
+      const spaceAbove = rect.top - containerRect.top;
+      const flip = spaceAbove < 95;
+
+      const popupHalfWidth = 90;
+      const spaceLeft = rect.left - containerRect.left + rect.width / 2;
+      const spaceRight =
+        containerRect.right - rect.left - rect.width / 2;
+      let hAlign: "center" | "left" | "right" = "center";
+      if (spaceLeft < popupHalfWidth) {
+        hAlign = "left";
+      } else if (spaceRight < popupHalfWidth) {
+        hAlign = "right";
+      }
+
+      setPopup({
+        miscue,
+        x: xPos,
+        y: flip ? yBelow : yAbove,
+        flipped: flip,
+        hAlign,
+      });
+    },
+    [onJumpToTime],
+  );
 
   const renderHighlightedContent = () => {
     let wordIndex = 0;
@@ -294,62 +383,65 @@ export function PassageDisplay({
       wordIndex++;
 
       const miscue = miscueMap?.get(currentWordIndex);
+      const insertions = inlineInsertions?.get(currentWordIndex);
+
+      // Build the word element (highlighted or plain)
+      let wordEl: React.ReactNode;
       if (miscue) {
         const colors = MISCUE_COLORS[miscue.miscueType] || FALLBACK_COLOR;
         const hasTimestamp =
           miscue.timestamp !== null && miscue.timestamp !== undefined;
-        return (
+        wordEl = (
           <span
-            key={i}
+            key={`w-${i}`}
             title={`${miscue.miscueType.replace(/_/g, " ")}${miscue.spokenWord ? ` — spoken: "${miscue.spokenWord}"` : ""}${hasTimestamp ? " (click to jump)" : ""}`}
             className={`relative inline-block rounded-sm px-0.5 font-semibold transition-all ${colors.bgClass} ${colors.textClass} ${colors.borderBottomClass} ${
               hasTimestamp && onJumpToTime
                 ? "cursor-pointer hover:brightness-90"
                 : "cursor-help"
             }`}
-            onClick={(e) => {
-              if (!hasTimestamp || !onJumpToTime) return;
-              const rect = (e.target as HTMLElement).getBoundingClientRect();
-              const container = containerRef.current;
-              if (!container) return;
-              const containerRect = container.getBoundingClientRect();
-              const xPos =
-                rect.left -
-                containerRect.left +
-                rect.width / 2 +
-                container.scrollLeft;
-              const yAbove =
-                rect.top - containerRect.top + container.scrollTop - 4;
-              const yBelow =
-                rect.bottom - containerRect.top + container.scrollTop + 4;
-              const spaceAbove = rect.top - containerRect.top;
-              const flip = spaceAbove < 95;
-
-              const popupHalfWidth = 90;
-              const spaceLeft = rect.left - containerRect.left + rect.width / 2;
-              const spaceRight =
-                containerRect.right - rect.left - rect.width / 2;
-              let hAlign: "center" | "left" | "right" = "center";
-              if (spaceLeft < popupHalfWidth) {
-                hAlign = "left";
-              } else if (spaceRight < popupHalfWidth) {
-                hAlign = "right";
-              }
-
-              setPopup({
-                miscue,
-                x: xPos,
-                y: flip ? yBelow : yAbove,
-                flipped: flip,
-                hAlign,
-              });
-            }}
+            onClick={(e) => openPopup(e, miscue)}
           >
             {token}
           </span>
         );
+      } else {
+        wordEl = <span key={`w-${i}`}>{token}</span>;
       }
-      return <span key={i}>{token}</span>;
+
+      // If no inline insertions follow, return just the word
+      if (!insertions || insertions.length === 0) return wordEl;
+
+      // Render word + inline inserted/repeated words
+      return (
+        <Fragment key={i}>
+          {wordEl}
+          {insertions.map((ins, j) => {
+            const hasTs = ins.miscue.timestamp != null;
+            const isRepetition = ins.miscue.miscueType === "REPETITION";
+            const colors = MISCUE_COLORS[ins.miscue.miscueType] || FALLBACK_COLOR;
+            const label = isRepetition
+              ? `REPETITION — repeated: "${ins.spokenWord}"`
+              : `INSERTION — inserted: "${ins.spokenWord}"`;
+            return (
+              <span key={`ins-${i}-${j}`}>
+                {" "}
+                <span
+                  title={`${label}${hasTs ? " (click to jump)" : ""}`}
+                  className={`relative inline-block rounded-sm px-0.5 font-semibold italic transition-all ${colors.bgClass} ${colors.textClass} border-b-2 border-dashed ${colors.borderBottomClass.replace("border-b-2 ", "")} ${
+                    hasTs && onJumpToTime
+                      ? "cursor-pointer hover:brightness-90"
+                      : "cursor-help"
+                  }`}
+                  onClick={(e) => openPopup(e, ins.miscue)}
+                >
+                  {ins.spokenWord}
+                </span>
+              </span>
+            );
+          })}
+        </Fragment>
+      );
     });
   };
 

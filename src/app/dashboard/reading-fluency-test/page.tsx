@@ -645,6 +645,7 @@ export default function ReadingFluencyTestPage() {
             <PassageDisplay
               content={passageContent}
               miscues={showMiscues ? filteredMiscues : undefined}
+              alignedWords={showMiscues ? analysisResult?.alignedWords : undefined}
               onJumpToTime={handleJumpToTime}
               expanded={passageExpanded}
               onToggleExpand={() => setPassageExpanded((prev) => !prev)}

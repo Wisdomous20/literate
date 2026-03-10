@@ -220,6 +220,7 @@ export default function OralReadingReportPage() {
         onClose={() => setShowMiscuesModal(false)}
         passageContent={session.passageContent || ""}
         miscues={analysis?.miscues || []}
+        alignedWords={analysis?.alignedWords}
         passageLevel={session.selectedLevel}
       />
     </div>
