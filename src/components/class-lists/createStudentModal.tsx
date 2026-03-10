@@ -132,14 +132,20 @@ export function CreateStudentModal({
               >
                 Student Name
               </label>
-              <input
-                id="studentName"
-                type="text"
-                value={studentName}
-                onChange={(e) => setStudentName(e.target.value)}
-                className="flex-1 rounded-lg border-2 border-[#6666FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none transition-colors focus:border-[#6666FF] shadow-[inset_0px_2px_4px_rgba(0,48,110,0.08)]"
-                placeholder=""
-              />
+              <div className="flex-1 flex flex-col">
+                <input
+                  id="studentName"
+                  type="text"
+                  value={studentName}
+                  onChange={(e) => setStudentName(e.target.value)}
+                  maxLength={50}
+                  className="rounded-lg border-2 border-[#6666FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none transition-colors focus:border-[#6666FF] shadow-[inset_0px_2px_4px_rgba(0,48,110,0.08)]"
+                  placeholder=""
+                />
+                <span className="text-right text-xs text-gray-500 mt-2">
+                  {studentName.length}/50
+                </span>
+              </div>
             </div>
 
             <div className="flex items-center gap-6">
