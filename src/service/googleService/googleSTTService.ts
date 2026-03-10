@@ -115,8 +115,9 @@ export async function transcribeAudio(
   }
 
   // Estimate audio duration
-  const bytesPerSec = isWav ? 32000 : 8000;
-  const estimatedDurationSec = audioBuffer.length / bytesPerSec;
+const estimatedDurationSec = isWav
+  ? (audioBuffer.length - 44) / 32000  
+  : audioBuffer.length / 6000;   
 
   let allResults: protos.google.cloud.speech.v2.ISpeechRecognitionResult[];
 

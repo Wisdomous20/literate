@@ -88,22 +88,32 @@ export default function correctWithPassage(
   let ci = bestI;
   let cj = bestJ;
 
-  while (ci > 0 && cj > 0 && dp[ci][cj] > 0) {
-    if (trace[ci][cj] === 1) {
-      const sim = simMatrix[ci - 1][cj - 1];
-      if (sim > similarityThreshold && sim < 1.0) {
-        corrections.set(ci - 1, passageWords[cj - 1]);
-      }
-      ci--;
-      cj--;
-    } else if (trace[ci][cj] === 2) {
-      ci--;
-    } else if (trace[ci][cj] === 3) {
-      cj--;
-    } else {
-      break;
+while (ci > 0 && cj > 0 && dp[ci][cj] > 0) {
+  if (trace[ci][cj] === 1) {
+    const sim = simMatrix[ci - 1][cj - 1];
+    const transcribedNorm = normTranscribed[ci - 1];
+    const passageNorm = normPassage[cj - 1];
+    
+    // Only correct if:
+    // 1. Similar enough to be the intended word
+    // 2. Not already an exact match (don't fix what isn't broken)
+    // 3. The passage word is more similar than the transcribed word itself
+    if (
+      sim > similarityThreshold &&
+      transcribedNorm !== passageNorm  // ← skip if already exact
+    ) {
+      corrections.set(ci - 1, passageWords[cj - 1]);
     }
+    ci--;
+    cj--;
+  } else if (trace[ci][cj] === 2) {
+    ci--;
+  } else if (trace[ci][cj] === 3) {
+    cj--;
+  } else {
+    break;
   }
+}
 
   return transcribedWords.map((w, idx) => {
     const corrected = corrections.get(idx);
