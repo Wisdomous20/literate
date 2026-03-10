@@ -1,22 +1,21 @@
-export interface WhisperWord {
+export interface TranscriptWord {
   word: string;
   start: number;
   end: number;
 }
 
-export interface WhisperSegment {
+export interface TranscriptSegment {
   id: number;
   text: string;
   start: number;
   end: number;
-  words: WhisperWord[];
-  no_speech_prob?: number;
+  words: TranscriptWord[];
 }
 
-export interface WhisperTranscriptResponse {
+export interface TranscriptResponse {
   text: string;
-  segments: WhisperSegment[];
-  words: WhisperWord[];
+  segments: TranscriptSegment[];
+  words: TranscriptWord[];
   duration: number;
 }
 

@@ -1,10 +1,10 @@
 import { OralFluencyAnalysis } from "@/types/oral-reading";
-import { transcribeAudio } from "./whisperService";
+import { transcribeAudio } from "../googleService/googleSTTService";
 import { alignWords } from "./alignmentService";
 import { detectMiscues } from "./miscueDetectionService";
 import { detectBehaviors } from "./behaviorDetectionService";
-import { postCorrectTranscription } from "@/utils/posCorrectTranscription";
-
+import { postCorrectTranscription } from "@/utils/postCorrectTranscription";
+import { normalizeWordStrict as normalizeWord } from "@/utils/textUtils";
 
 function computeOralFluencyScore(totalWords: number, totalMiscues: number): number {
   if (totalWords <= 0) return 0;
@@ -18,15 +18,6 @@ function classifyReadingLevel(oralFluencyScore: number): "INDEPENDENT" | "INSTRU
   return "FRUSTRATION";
 }
 
-function normalizeWord(word: string): string {
-  return word
-    .toLowerCase()
-    .replace(/[.,!?;:'""\u2018\u2019\u201C\u201D\u2014\u2013\-()[\]{}]/g, "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // strip diacritics
-    .trim()
-}
-
 export async function analyzeOralFluency(
   audioBuffer: Buffer,
   fileName: string,
@@ -34,15 +25,20 @@ export async function analyzeOralFluency(
   language: string
 ): Promise<OralFluencyAnalysis> {
   // 1. Transcribe with Whisper (language-aware)
-  const whisperResult = await transcribeAudio(audioBuffer, fileName, language, passageText);
+  const sttResult = await transcribeAudio(audioBuffer, fileName, language, passageText);
 
   //add layer to normalize passage words and transcribed words for better comparison (e.g. ignore punctuation, case, etc.)
   // 2. Tokenize passage
+  const HYPHEN_REGEX = /[-\u2010\u2011\u2012\u2013\u2014\u2015\uFE58\uFE63\uFF0D]/g;
 
-  const passageWords = passageText.split(/\s+/).filter((w) => w.length > 0);
+  const passageWords = passageText
+    .split(/\s+/)
+    .filter((w) => w.length > 0)
+    .flatMap((w) => w.split(HYPHEN_REGEX).filter(Boolean)); // ← split hyphens first
+
   const normalizedPassageWords = passageWords.map(normalizeWord);
 
-  const spokenWords = whisperResult.words.map((w) => ({
+  const spokenWords = sttResult.words.map((w) => ({
     word: normalizeWord(w.word),
     originalWord: w.word,
     start: w.start,
@@ -67,7 +63,7 @@ export async function analyzeOralFluency(
   const behaviors = detectBehaviors(alignedWords);
 
   // 6. Calculate metrics
-  const duration = whisperResult.duration;
+  const duration = sttResult.duration;
   const totalWords = passageWords.length;
   const exactMatches = alignedWords.filter((w) => w.match === "EXACT").length;
   const countedMiscues = miscues.filter((m) => !m.isSelfCorrected).length;
@@ -75,7 +71,7 @@ export async function analyzeOralFluency(
   const wordsPerMinute = duration > 0 ? (totalWords / duration) * 60 : 0;
 
   return {
-    transcript: whisperResult.text,
+    transcript: sttResult.text,
     wordsPerMinute: Math.round(wordsPerMinute * 10) / 10,
     accuracy: Math.round(accuracy * 10) / 10,
     totalWords,
