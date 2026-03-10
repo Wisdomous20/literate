@@ -102,7 +102,7 @@ model OralFluencySession {
   id                  String               @id @default(cuid())
   assessmentId        String?              @unique
   audioUrl            String               @default("")
-  transcript          String?
+  transcript          String?              @db.Text
   wordsPerMinute      Float?
   accuracy            Float?
   totalWords          Int?
