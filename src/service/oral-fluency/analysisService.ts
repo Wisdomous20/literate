@@ -25,15 +25,20 @@ export async function analyzeOralFluency(
   language: string
 ): Promise<OralFluencyAnalysis> {
   // 1. Transcribe with Whisper (language-aware)
-  const whisperResult = await transcribeAudio(audioBuffer, fileName, language, passageText);
+  const sttResult = await transcribeAudio(audioBuffer, fileName, language, passageText);
 
   //add layer to normalize passage words and transcribed words for better comparison (e.g. ignore punctuation, case, etc.)
   // 2. Tokenize passage
+  const HYPHEN_REGEX = /[-\u2010\u2011\u2012\u2013\u2014\u2015\uFE58\uFE63\uFF0D]/g;
 
-  const passageWords = passageText.split(/\s+/).filter((w) => w.length > 0);
+  const passageWords = passageText
+    .split(/\s+/)
+    .filter((w) => w.length > 0)
+    .flatMap((w) => w.split(HYPHEN_REGEX).filter(Boolean)); // ← split hyphens first
+
   const normalizedPassageWords = passageWords.map(normalizeWord);
 
-  const spokenWords = whisperResult.words.map((w) => ({
+  const spokenWords = sttResult.words.map((w) => ({
     word: normalizeWord(w.word),
     originalWord: w.word,
     start: w.start,
@@ -58,7 +63,7 @@ export async function analyzeOralFluency(
   const behaviors = detectBehaviors(alignedWords);
 
   // 6. Calculate metrics
-  const duration = whisperResult.duration;
+  const duration = sttResult.duration;
   const totalWords = passageWords.length;
   const exactMatches = alignedWords.filter((w) => w.match === "EXACT").length;
   const countedMiscues = miscues.filter((m) => !m.isSelfCorrected).length;
@@ -66,7 +71,7 @@ export async function analyzeOralFluency(
   const wordsPerMinute = duration > 0 ? (totalWords / duration) * 60 : 0;
 
   return {
-    transcript: whisperResult.text,
+    transcript: sttResult.text,
     wordsPerMinute: Math.round(wordsPerMinute * 10) / 10,
     accuracy: Math.round(accuracy * 10) / 10,
     totalWords,
