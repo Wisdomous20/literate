@@ -61,11 +61,13 @@ export function SignupForm() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   // const router = useRouter()
 
   const validate = () => {
@@ -78,6 +80,9 @@ export function SignupForm() {
     if (!password) errors.password = "Password is required.";
     else if (password.length < 8)
       errors.password = "Password must be at least 8 characters.";
+    if (!confirmPassword) errors.confirmPassword = "Please confirm your password.";
+    else if (password !== confirmPassword)
+      errors.confirmPassword = "Passwords do not match.";
     return errors;
   };
 
@@ -264,6 +269,39 @@ export function SignupForm() {
           </p>
           {fieldErrors.password && (
             <p className="text-xs text-red-600">{fieldErrors.password}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="confirmPassword" className="text-[#040029] font-semibold">
+            Confirm Password
+          </Label>
+          <div className="relative">
+            <Input
+              id="confirmPassword"
+              type={showConfirmPassword ? "text" : "password"}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className={`h-12 rounded-xl border-[#54a4ff] bg-[#f4fcfd] focus-visible:border-[#54a4ff] focus-visible:ring-[#54a4ff]/30 pr-10 ${fieldErrors.confirmPassword ? "border-red-400" : ""}`}
+              required
+              disabled={isLoading}
+            />
+            <button
+              type="button"
+              tabIndex={-1}
+              className="absolute inset-y-0 right-3 flex items-center text-[#54a4ff] focus:outline-none"
+              onClick={() => setShowConfirmPassword((prev) => !prev)}
+              aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+            >
+              {showConfirmPassword ? (
+                <EyeOffIcon className="h-5 w-5" />
+              ) : (
+                <EyeIcon className="h-5 w-5" />
+              )}
+            </button>
+          </div>
+          {fieldErrors.confirmPassword && (
+            <p className="text-xs text-red-600">{fieldErrors.confirmPassword}</p>
           )}
         </div>
       </div>
