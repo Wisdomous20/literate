@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { OralReadingResultData, OralReading } from "@/types/OralReadingResult";
+import { OralReadingResultData, OralReading } from "@/types/oral-reading-result";
+
 export async function getOralReadingResultByIdService(
   oralReadingResultId: string
 ): Promise<OralReading> {

@@ -71,7 +71,7 @@ export async function createOralFluencySessionService(
     )
 
     // 4. Persist results in transaction
-    await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx) => {
       await tx.oralFluencySession.update({
         where: { id: session.id },
         data: {
@@ -129,6 +129,9 @@ export async function createOralFluencySessionService(
           })),
         })
       }
+    }, {
+      maxWait: 10000,  // max time to wait to acquire a connection (10s)
+      timeout: 30000,  // max time the transaction can run (30s)
     })
 
     return { success: true, sessionId: session.id, analysis }
