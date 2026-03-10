@@ -5,9 +5,10 @@
 export function normalizeWord(word: string): string {
   return word
     .toLowerCase()
-    .replace(/[^a-zñ']/g, "")
+    .replace(/[^a-zñ'\-]/g, "")
     .trim();
 }
+
 
 /**
  * Normalize a word with diacritic stripping (for passage ↔ transcription comparison).
@@ -136,13 +137,4 @@ export function isReversal(expected: string, spoken: string): boolean {
   return a.length > 1 && a === b.split("").reverse().join("");
 }
 
-export function isHyphenatedMatch(expected: string, spoken: string): boolean {
-  if (!expected.includes("-")) return false;
-  const parts = expected.toLowerCase().split("-");
-  const normSpoken = normalizeWord(spoken);
-  // Check if spoken matches any individual part
-  if (parts.some((part) => normalizeWord(part) === normSpoken)) return true;
-  // Check if the joined form matches
-  if (parts.join("") === normSpoken) return true;
-  return false;
-}
+
