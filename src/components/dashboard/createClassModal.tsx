@@ -11,29 +11,17 @@ interface CreateClassModalProps {
     className: string;
     schoolYear: string;
   }) => Promise<{ success: boolean; error?: string }>;
+  schoolYear: string;
 }
-
-function getCurrentSchoolYear(): string {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth(); 
-
-  if (currentMonth >= 7) {
-    return `${currentYear}-${currentYear + 1}`;
-  } else {
-    return `${currentYear - 1}-${currentYear}`;
-  }
-}
-
 export function CreateClassModal({
   isOpen,
   onClose,
   onCreateClass,
+  schoolYear,
 }: CreateClassModalProps) {
   const [className, setClassName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const schoolYear = getCurrentSchoolYear();
   const backdropRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const MAX_CLASS_NAME_LENGTH = 50;
@@ -111,20 +99,17 @@ export function CreateClassModal({
 
   const modalContent = (
     <div className="fixed inset-0 z-99999 flex items-center justify-center">
-      {/* Backdrop */}
       <div
         ref={backdropRef}
         onClick={onClose}
         className="absolute inset-0 animate-in fade-in duration-300 bg-black/40 backdrop-blur-[10px]"
       />
 
-      {/* Modal */}
       <div
         ref={modalRef}
         className="relative animate-in fade-in zoom-in-95 duration-300"
       >
         <div className="w-125 rounded-[30px] bg-white p-8 shadow-[0px_10px_60px_rgba(0,48,110,0.25)]">
-          {/* Close button */}
           <button
             type="button"
             onClick={onClose}
