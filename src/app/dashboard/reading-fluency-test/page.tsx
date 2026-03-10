@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
-  ChevronRight,
+  RotateCcw,
   Timer,
   Minus,
   Plus,
@@ -589,32 +589,16 @@ export default function ReadingFluencyTestPage() {
               <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
               <span>Previous</span>
             </NavButton>
-            <h2 className="flex-1 text-center text-base font-bold text-[#0C1A6D] md:text-lg lg:text-xl">
-              Student Information
-            </h2>
-            <NavButton
-              onClick={() =>
-                hasRecording &&
-                router.push("/dashboard/reading-fluency-test/report")
-              }
-              aria-label="View reading fluency report"
-              title="View reading fluency report"
-              className={
-                hasRecording
-                  ? "animate-[pulseGlow_2s_ease-in-out_infinite]"
-                  : "cursor-not-allowed bg-transparent text-[#00306E]/40 shadow-none hover:bg-transparent"
-              }
-              disabled={!hasRecording}
-            >
-              <span>View Report</span>
-              <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
+            <NavButton variant="outlined" onClick={handleStartNew} disabled={!hasPassage}>
+              <RotateCcw className="h-4 w-4" />
+              <span>Start New</span>
             </NavButton>
           </div>
         )}
 
         <div className="flex min-h-0 flex-1 gap-4">
           <div
-            className={`flex min-h-0 flex-1 flex-col overflow-y-auto ${passageExpanded ? "gap-0" : "gap-3"}`}
+            className={`flex min-h-0 flex-1 flex-col overflow-y-auto ${passageExpanded ? "gap-0" : "gap-3 px-2"}`}
           >
             {!passageExpanded && isLoadingClasses && (
               <>
@@ -643,6 +627,7 @@ export default function ReadingFluencyTestPage() {
                 }}
                 onStudentSelected={(id: string) => setSelectedStudentId(id)}
                 onClassChange={setSelectedClassName}
+                onClear={handleStartNew}
               />
             )}
 

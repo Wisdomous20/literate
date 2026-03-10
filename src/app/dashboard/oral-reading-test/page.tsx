@@ -642,7 +642,7 @@ export default function OralReadingTestPage() {
           {/* Left column: student info, filters, passage, timer */}
           <div
             className={`flex min-h-0 flex-1 flex-col overflow-y-auto ${
-              passageExpanded ? "gap-0" : "gap-3"
+              passageExpanded ? "gap-0" : "gap-3 px-2"
             }`}
           >
             {!passageExpanded && isLoadingClasses && (

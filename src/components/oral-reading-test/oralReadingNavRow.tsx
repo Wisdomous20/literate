@@ -21,10 +21,6 @@ export function OralReadingNavRow({
         <span>Previous</span>
       </NavButton>
 
-      <h2 className="flex-1 text-center text-base font-bold text-[#0C1A6D] md:text-lg lg:text-xl">
-        Student Information
-      </h2>
-
       <NavButton
         onClick={onContinue}
         aria-label="Continue to comprehension"

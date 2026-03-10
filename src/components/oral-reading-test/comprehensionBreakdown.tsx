@@ -49,6 +49,7 @@ interface ComprehensionBreakdownProps {
   highlightedTag?: "literal" | "inferential" | "critical" | null
   onTagClick?: (tag: "literal" | "inferential" | "critical") => void
   showReportButton?: boolean
+  reportHref?: string
 }
 
 function getLevelClasses(level: string): { bgClass: string; textClass: string } {
@@ -75,6 +76,7 @@ export function ComprehensionBreakdown({
   highlightedTag = null,
   onTagClick,
   showReportButton = true,
+  reportHref = "/dashboard/oral-reading-test/comprehension/report",
 }: ComprehensionBreakdownProps) {
   const router = useRouter()
   const levelClasses = getLevelClasses(level)
@@ -150,7 +152,7 @@ export function ComprehensionBreakdown({
           <div className="mt-2.5 flex justify-center">
             <button
               type="button"
-              onClick={() => router.push("/dashboard/oral-reading-test/comprehension/report")}
+              onClick={() => router.push(reportHref)}
               className="mt-3 w-full rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90"
             >
               View Full Report
