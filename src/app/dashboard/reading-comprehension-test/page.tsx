@@ -1,27 +1,37 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
-  ChevronRight,
   CheckCircle,
   XCircle,
   X,
   Clock,
+  Loader2,
+  RotateCcw,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
+import { NavButton } from "@/components/ui/navButton";
 import StudentInfoBar from "@/components/oral-reading-test/studentInfoBar";
 import { PassageFilters } from "@/components/oral-reading-test/passageFilters";
 import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay";
 import { AddPassageModal } from "@/components/oral-reading-test/addPassageModal";
+import { ComprehensionBreakdown } from "@/components/oral-reading-test/comprehensionBreakdown";
+import { ComprehensionInfoBar } from "@/components/reading-comprehension-test/comprehensionInfoBar";
+import {
+  QuestionCard,
+  type QuestionData,
+} from "@/components/reading-comprehension-test/questionCard";
+import { ComprehensionSubmitArea } from "@/components/reading-comprehension-test/comprehensionSubmitArea";
 import { getClassListBySchoolYear } from "@/app/actions/class/getClassList";
+import { getQuizByPassageAction } from "@/app/actions/comprehension-Test/getQuizByPassage";
+import { createStudent } from "@/app/actions/student/createStudent";
 
 function getCurrentSchoolYear(): string {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
-
   if (currentMonth >= 7) {
     return `${currentYear}-${currentYear + 1}`;
   } else {
@@ -35,6 +45,7 @@ interface ClassItem {
 }
 
 const STORAGE_KEY = "reading-comprehension-session";
+const COMP_STATE_KEY = "reading-comprehension-comp-state";
 
 interface SessionState {
   studentName: string;
@@ -47,7 +58,29 @@ interface SessionState {
   selectedTestType?: string;
   selectedTitle?: string;
   selectedPassage?: string;
-  quizId?: string;
+}
+
+interface TagBreakdown {
+  literal: { correct: number; total: number };
+  inferential: { correct: number; total: number };
+  critical: { correct: number; total: number };
+}
+
+interface ComprehensionResult {
+  score: number;
+  totalItems: number;
+  level: string;
+  comprehensionTestId: string;
+  tagBreakdown?: TagBreakdown;
+  assessmentId?: string;
+}
+
+interface ComprehensionState {
+  passageId: string;
+  answers: Record<string, string>;
+  elapsedSeconds: number;
+  isSubmitted: boolean;
+  comprehensionResult: ComprehensionResult | null;
 }
 
 function loadSession(): Partial<SessionState> {
@@ -70,9 +103,29 @@ function saveSession(state: SessionState) {
   }
 }
 
+function loadComprehensionState(): ComprehensionState | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(COMP_STATE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {
+    /* empty */
+  }
+  return null;
+}
+
+function saveComprehensionState(state: ComprehensionState) {
+  try {
+    sessionStorage.setItem(COMP_STATE_KEY, JSON.stringify(state));
+  } catch {
+    /* empty */
+  }
+}
+
 export default function ReadingComprehensionTestPage() {
   const router = useRouter();
 
+  // ── Student & passage state ──
   const [studentName, setStudentName] = useState("");
   const [gradeLevel, setGradeLevel] = useState("");
   const [classes, setClasses] = useState<ClassItem[]>([]);
@@ -90,16 +143,39 @@ export default function ReadingComprehensionTestPage() {
   const [selectedPassage, setSelectedPassage] = useState<string | undefined>();
   const [passageExpanded, setPassageExpanded] = useState(false);
 
+  // ── Comprehension quiz state ──
+  const [showQuestions, setShowQuestions] = useState(false);
+  const [questions, setQuestions] = useState<QuestionData[]>([]);
+  const [quizId, setQuizId] = useState<string>("");
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
+  const [questionsLoadError, setQuestionsLoadError] = useState<string | null>(
+    null,
+  );
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [comprehensionResult, setComprehensionResult] =
+    useState<ComprehensionResult | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [highlightedTag, setHighlightedTag] = useState<
+    "literal" | "inferential" | "critical" | null
+  >(null);
+
+  // ── General UI state ──
   const [isHydrated, setIsHydrated] = useState(false);
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
   } | null>(null);
 
+  const questionsRef = useRef<HTMLDivElement>(null);
+
+  // ── Session restore ──
   useEffect(() => {
     const loaded = loadSession();
 
-    /* eslint-disable react-hooks/set-state-in-effect -- Intentional mount-time restoration from sessionStorage for SSR hydration */
     if (loaded.studentName !== undefined) setStudentName(loaded.studentName);
     if (loaded.gradeLevel !== undefined) setGradeLevel(loaded.gradeLevel);
     if (loaded.selectedStudentId !== undefined)
@@ -119,10 +195,30 @@ export default function ReadingComprehensionTestPage() {
     if (loaded.selectedPassage !== undefined)
       setSelectedPassage(loaded.selectedPassage);
 
+    // Restore comprehension progress
+    if (loaded.selectedPassage) {
+      const saved = loadComprehensionState();
+      if (saved && saved.passageId === loaded.selectedPassage) {
+        setAnswers(saved.answers);
+        setElapsedSeconds(saved.elapsedSeconds);
+        setShowQuestions(true);
+        if (saved.isSubmitted && saved.comprehensionResult) {
+          setIsSubmitted(true);
+          setComprehensionResult(saved.comprehensionResult);
+          if (saved.comprehensionResult.assessmentId) {
+            sessionStorage.setItem(
+              "reading-comprehension-assessmentId",
+              saved.comprehensionResult.assessmentId,
+            );
+          }
+        }
+      }
+    }
+
     setIsHydrated(true);
-    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
+  // ── Persist session ──
   useEffect(() => {
     if (!isHydrated) return;
     saveSession({
@@ -151,19 +247,33 @@ export default function ReadingComprehensionTestPage() {
     selectedPassage,
   ]);
 
-  // Fetch classes on mount
+  // ── Persist comprehension state ──
+  useEffect(() => {
+    if (!showQuestions || !selectedPassage) return;
+    saveComprehensionState({
+      passageId: selectedPassage,
+      answers,
+      elapsedSeconds,
+      isSubmitted,
+      comprehensionResult,
+    });
+  }, [
+    showQuestions,
+    selectedPassage,
+    answers,
+    elapsedSeconds,
+    isSubmitted,
+    comprehensionResult,
+  ]);
+
+  // ── Fetch classes ──
   useEffect(() => {
     async function fetchClasses() {
       setIsLoadingClasses(true);
       const schoolYear = getCurrentSchoolYear();
       const result = await getClassListBySchoolYear(schoolYear);
-
       if (result.success && result.classes) {
-        const mappedClasses: ClassItem[] = result.classes.map((c) => ({
-          id: c.id,
-          name: c.name,
-        }));
-        setClasses(mappedClasses);
+        setClasses(result.classes.map((c) => ({ id: c.id, name: c.name })));
         setClassLoadError(false);
       } else {
         setClasses([]);
@@ -171,10 +281,70 @@ export default function ReadingComprehensionTestPage() {
       }
       setIsLoadingClasses(false);
     }
-
     fetchClasses();
   }, []);
 
+  // ── Fetch questions when showQuestions becomes true ──
+  useEffect(() => {
+    if (!showQuestions || !selectedPassage || questions.length > 0) return;
+
+    async function fetchQuestions() {
+      setIsLoadingQuestions(true);
+      try {
+        const result = await getQuizByPassageAction(selectedPassage!);
+        if (!result.success || !("quiz" in result) || !result.quiz) {
+          setQuestionsLoadError(
+            ("error" in result && result.error) ||
+              "Failed to load quiz questions.",
+          );
+          return;
+        }
+        const { quiz } = result;
+        setQuizId(quiz.id as string);
+        setQuestions(
+          quiz.questions.map(
+            (
+              q: {
+                id: string;
+                questionText: string;
+                tags: string | null;
+                type: string;
+                options: unknown;
+              },
+              idx: number,
+            ) => ({
+              id: q.id,
+              questionNumber: idx + 1,
+              questionText: q.questionText,
+              type: q.type as "MULTIPLE_CHOICE" | "ESSAY",
+              tags: q.tags ?? undefined,
+              options: Array.isArray(q.options)
+                ? (q.options as string[])
+                : undefined,
+            }),
+          ),
+        );
+      } catch (err) {
+        console.error("Failed to fetch questions:", err);
+        setQuestionsLoadError("Something went wrong while loading questions.");
+      } finally {
+        setIsLoadingQuestions(false);
+      }
+    }
+    fetchQuestions();
+  }, [showQuestions, selectedPassage, questions.length]);
+
+  // ── Timer ──
+  const timerActive = showQuestions && !isSubmitted && !isPaused && !isLoadingQuestions && questions.length > 0;
+  useEffect(() => {
+    if (!timerActive) return;
+    const interval = setInterval(() => {
+      setElapsedSeconds((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [timerActive]);
+
+  // ── Toast auto-dismiss ──
   useEffect(() => {
     if (toast) {
       const timer = setTimeout(() => setToast(null), 4000);
@@ -182,19 +352,24 @@ export default function ReadingComprehensionTestPage() {
     }
   }, [toast]);
 
+  // ── Derived values ──
   const hasPassage = passageContent.length > 0;
   const wordCount = hasPassage
     ? passageContent.split(/\s+/).filter(Boolean).length
     : 0;
-  const estimatedReadingTime = wordCount > 0
-    ? (() => {
-        const totalSec = Math.ceil((wordCount / 150) * 60);
-        const mins = Math.floor(totalSec / 60);
-        const secs = totalSec % 60;
-        return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
-      })()
-    : null;
+  const estimatedReadingTime =
+    wordCount > 0
+      ? (() => {
+          const totalSec = Math.ceil((wordCount / 150) * 60);
+          const mins = Math.floor(totalSec / 60);
+          const secs = totalSec % 60;
+          return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+        })()
+      : null;
 
+  const formattedTime = `${String(Math.floor(elapsedSeconds / 60)).padStart(2, "0")}:${String(elapsedSeconds % 60).padStart(2, "0")}`;
+
+  // ── Handlers ──
   const handleSelectPassage = useCallback(
     (passage: {
       id: string;
@@ -213,6 +388,16 @@ export default function ReadingComprehensionTestPage() {
       );
       setSelectedTitle(passage.title);
       setSelectedPassage(passage.id);
+      // Reset comprehension state for new passage
+      setShowQuestions(false);
+      setQuestions([]);
+      setQuizId("");
+      setAnswers({});
+      setElapsedSeconds(0);
+      setIsSubmitted(false);
+      setComprehensionResult(null);
+      setQuestionsLoadError(null);
+      sessionStorage.removeItem(COMP_STATE_KEY);
     },
     [],
   );
@@ -228,17 +413,178 @@ export default function ReadingComprehensionTestPage() {
     setSelectedTestType(undefined);
     setSelectedTitle(undefined);
     setSelectedPassage(undefined);
+    setShowQuestions(false);
+    setQuestions([]);
+    setQuizId("");
+    setAnswers({});
+    setElapsedSeconds(0);
+    setIsSubmitted(false);
+    setComprehensionResult(null);
+    setQuestionsLoadError(null);
+    setHighlightedTag(null);
     sessionStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(COMP_STATE_KEY);
     sessionStorage.removeItem("reading-comprehension-assessmentId");
     sessionStorage.removeItem("reading-comprehension-state");
   }, []);
 
-  const canProceed = hasPassage;
+  const handleContinueToComprehension = useCallback(() => {
+    if (!hasPassage || !studentName.trim() || !gradeLevel || !selectedClassName) return;
+    setShowQuestions(true);
+    setTimeout(() => {
+      questionsRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+  }, [hasPassage, studentName, gradeLevel, selectedClassName]);
 
-  const handleProceedToComprehension = useCallback(() => {
-    if (!canProceed) return;
-    router.push("/dashboard/reading-comprehension-test/quiz");
-  }, [canProceed, router]);
+  const handleSelectOption = useCallback(
+    (questionId: string, option: string) => {
+      setAnswers((prev) => ({ ...prev, [questionId]: option }));
+    },
+    [],
+  );
+
+  const handleEssayChange = useCallback((questionId: string, value: string) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: value }));
+  }, []);
+
+  const handleTagClick = (tag: "literal" | "inferential" | "critical") => {
+    setHighlightedTag((prev) => (prev === tag ? null : tag));
+  };
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      let studentId = selectedStudentId;
+
+      // Auto-create student if needed
+      if (!studentId) {
+        const trimmedName = studentName.trim();
+        if (!trimmedName || !gradeLevel || !selectedClassName) {
+          setSubmitError(
+            "Please enter a student name, select a grade level, and select a class.",
+          );
+          setIsSubmitting(false);
+          return;
+        }
+        try {
+          const result = await createStudent(
+            trimmedName,
+            Number(gradeLevel),
+            selectedClassName,
+          );
+          if (!result.success || !("student" in result) || !result.student) {
+            setSubmitError(result.error || "Failed to create student.");
+            setIsSubmitting(false);
+            return;
+          }
+          studentId = result.student.id;
+          setSelectedStudentId(studentId);
+          setToast({
+            message: `Student "${trimmedName}" created successfully!`,
+            type: "success",
+          });
+        } catch (err) {
+          console.error("Failed to create student:", err);
+          setSubmitError("Something went wrong creating the student.");
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      if (!quizId || !selectedPassage) {
+        setSubmitError("Quiz not found. Please select a passage first.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const formattedAnswers = questions
+        .filter((q) => answers[q.id] !== undefined && answers[q.id] !== "")
+        .map((q) => ({
+          questionId: q.id,
+          answer: answers[q.id],
+        }));
+
+      if (formattedAnswers.length === 0) {
+        setSubmitError(
+          "Please answer at least one question before submitting.",
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
+      const response = await fetch("/api/comprehension/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId,
+          passageId: selectedPassage,
+          quizId,
+          answers: formattedAnswers,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        setSubmitError(
+          result.error || "Failed to submit comprehension answers.",
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Compute tag breakdown
+      let tagBreakdown: TagBreakdown | undefined;
+      if (result.answers && Array.isArray(result.answers)) {
+        tagBreakdown = {
+          literal: { correct: 0, total: 0 },
+          inferential: { correct: 0, total: 0 },
+          critical: { correct: 0, total: 0 },
+        };
+        for (const a of result.answers) {
+          const tag = a.question?.tags;
+          if (tag === "Literal") {
+            tagBreakdown.literal.total++;
+            if (a.isCorrect) tagBreakdown.literal.correct++;
+          } else if (tag === "Inferential") {
+            tagBreakdown.inferential.total++;
+            if (a.isCorrect) tagBreakdown.inferential.correct++;
+          } else if (tag === "Critical") {
+            tagBreakdown.critical.total++;
+            if (a.isCorrect) tagBreakdown.critical.correct++;
+          }
+        }
+      }
+
+      const comprehensionData: ComprehensionResult = {
+        score: result.score,
+        totalItems: result.totalItems,
+        level: result.level,
+        comprehensionTestId: result.comprehensionTestId,
+        tagBreakdown,
+        assessmentId: result.assessmentId,
+      };
+
+      setComprehensionResult(comprehensionData);
+
+      if (result.assessmentId) {
+        sessionStorage.setItem(
+          "reading-comprehension-assessmentId",
+          result.assessmentId,
+        );
+      }
+
+      setIsSubmitted(true);
+      setToast({ message: "Answers submitted successfully!", type: "success" });
+    } catch (err) {
+      console.error("Comprehension submit error:", err);
+      setSubmitError("Something went wrong while submitting.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const classNames = classes.map((c) => c.name);
 
@@ -248,10 +594,10 @@ export default function ReadingComprehensionTestPage() {
 
       {toast && (
         <div
-          className={`fixed top-6 right-6 z-50 flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium shadow-lg transition-all duration-300 ${
+          className={`fixed right-6 top-6 z-50 flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium shadow-lg transition-all duration-300 ${
             toast.type === "success"
-              ? "bg-green-50 border border-green-200 text-green-800"
-              : "bg-red-50 border border-red-200 text-red-800"
+              ? "border border-green-200 bg-green-50 text-green-800"
+              : "border border-red-200 bg-red-50 text-red-800"
           }`}
         >
           {toast.type === "success" ? (
@@ -281,149 +627,244 @@ export default function ReadingComprehensionTestPage() {
           passageExpanded ? "gap-0 py-2" : "gap-3"
         }`}
       >
+        {/* Nav row */}
         {!passageExpanded && (
           <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)] transition-all duration-300 hover:bg-[#5555EE] md:text-base"
-            >
+            <NavButton onClick={() => router.back()}>
               <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
               <span>Previous</span>
-            </button>
+            </NavButton>
 
-            <h2 className="flex-1 text-center text-base font-bold text-[#0C1A6D] md:text-lg lg:text-xl">
-              Student Information
-            </h2>
-
-            <button
-              type="button"
-              onClick={handleProceedToComprehension}
-              aria-label="Continue to comprehension"
-              title="Continue to comprehension"
-              className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-300 md:text-base ${
-                canProceed
-                  ? "animate-[pulseGlow_2s_ease-in-out_infinite] bg-[#6666FF] text-white shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)] hover:bg-[#5555EE]"
-                  : "cursor-not-allowed text-[#00306E]/40"
-              }`}
-              disabled={!canProceed}
-            >
-              <span>Continue to Comprehension</span>
-              <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
-            </button>
+            <NavButton variant="outlined" onClick={handleStartNew} disabled={!hasPassage}>
+              <RotateCcw className="h-4 w-4" />
+              <span>Start New</span>
+            </NavButton>
           </div>
         )}
 
-        <div
-          className={`flex min-h-0 flex-1 flex-col overflow-y-auto ${
-            passageExpanded ? "gap-0" : "gap-3"
-          }`}
-        >
-          {!passageExpanded && isLoadingClasses && (
-            <>
-              <div className="h-[72px] animate-pulse rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] shadow-[0px_1px_20px_rgba(108,164,239,0.37)]" />
-              <div className="flex gap-3">
-                <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
-                <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
-                <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
-                <div className="h-[42px] w-[140px] shrink-0 animate-pulse rounded-lg bg-[#2E2E68]/30" />
-              </div>
-            </>
-          )}
+        {/* Two-column layout: left content + right ComprehensionBreakdown */}
+        <div className="flex min-h-0 flex-1 gap-4">
+          {/* Left column */}
+          <div
+            className={`flex min-h-0 flex-1 flex-col overflow-y-auto ${
+              passageExpanded ? "gap-0" : "gap-3 px-2"
+            }`}
+          >
+            {!passageExpanded && isLoadingClasses && (
+              <>
+                <div className="h-[72px] animate-pulse rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] shadow-[0px_1px_20px_rgba(108,164,239,0.37)]" />
+                <div className="flex gap-3">
+                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                  <div className="h-[42px] w-[140px] shrink-0 animate-pulse rounded-lg bg-[#2E2E68]/30" />
+                </div>
+              </>
+            )}
 
-          {!passageExpanded && classLoadError && !isLoadingClasses && (
-            <div className="flex items-center justify-between rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] px-6 py-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)]">
-              <span className="text-sm font-medium text-red-500">Failed to load classes.</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setClassLoadError(false);
-                  setIsLoadingClasses(true);
-                  getClassListBySchoolYear(getCurrentSchoolYear()).then((result) => {
-                    if (result.success && result.classes) {
-                      setClasses(result.classes.map((c) => ({ id: c.id, name: c.name })));
-                      setClassLoadError(false);
-                    } else {
-                      setClassLoadError(true);
-                    }
-                    setIsLoadingClasses(false);
-                  });
-                }}
-                className="text-xs font-semibold text-[#6666FF] hover:underline"
-              >
-                Retry
-              </button>
-            </div>
-          )}
-
-          {!passageExpanded && !isLoadingClasses && !classLoadError && (
-            <StudentInfoBar
-              studentName={studentName}
-              gradeLevel={gradeLevel}
-              classes={classNames}
-              selectedClassName={selectedClassName}
-              onStudentNameChange={setStudentName}
-              onGradeLevelChange={setGradeLevel}
-              onClassCreated={(newClass) => {
-                setClasses((prev) => [
-                  ...prev,
-                  { id: newClass, name: newClass },
-                ]);
-              }}
-              onStudentSelected={(studentId: string) =>
-                setSelectedStudentId(studentId)
-              }
-              onClassChange={setSelectedClassName}
-              onClear={handleStartNew}
-            />
-          )}
-
-          {!passageExpanded && !isLoadingClasses && (
-            <PassageFilters
-              language={hasPassage ? selectedLanguage : undefined}
-              passageLevel={hasPassage ? selectedLevel : undefined}
-              testType={hasPassage ? selectedTestType : undefined}
-              hasPassage={hasPassage}
-              onOpenPassageModal={() => setIsPassageModalOpen(true)}
-            />
-          )}
-
-          <PassageDisplay
-            content={passageContent}
-            expanded={passageExpanded}
-            onToggleExpand={() => setPassageExpanded((prev) => !prev)}
-            passageLevel={selectedLevel}
-            resizable={false}
-          />
-
-          {!passageExpanded && hasPassage && (
-            <div className="mt-2 flex items-center justify-between">
-              <span className="text-xs font-semibold text-[#00306E]">
-                {wordCount} words
-              </span>
-              {estimatedReadingTime && (
-                <span
-                  className="flex items-center gap-1 text-xs font-medium text-[#6666FF]"
-                  title={`Est. reading time: ${estimatedReadingTime}`}
-                >
-                  <Clock className="h-3.5 w-3.5" />
-                  {estimatedReadingTime}
+            {!passageExpanded && classLoadError && !isLoadingClasses && (
+              <div className="flex items-center justify-between rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] px-6 py-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)]">
+                <span className="text-sm font-medium text-red-500">
+                  Failed to load classes.
                 </span>
-              )}
-            </div>
-          )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setClassLoadError(false);
+                    setIsLoadingClasses(true);
+                    getClassListBySchoolYear(getCurrentSchoolYear()).then(
+                      (result) => {
+                        if (result.success && result.classes) {
+                          setClasses(
+                            result.classes.map((c) => ({
+                              id: c.id,
+                              name: c.name,
+                            })),
+                          );
+                          setClassLoadError(false);
+                        } else {
+                          setClassLoadError(true);
+                        }
+                        setIsLoadingClasses(false);
+                      },
+                    );
+                  }}
+                  className="text-xs font-semibold text-[#6666FF] hover:underline"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
 
-          {!passageExpanded && hasPassage && (
-            <div className="mb-2 flex items-center justify-center">
-              <span className="text-lg font-bold text-[#31318A] md:text-xl">
-                {selectedTitle}
-              </span>
+            {!passageExpanded && !isLoadingClasses && !classLoadError && (
+              <StudentInfoBar
+                studentName={studentName}
+                gradeLevel={gradeLevel}
+                classes={classNames}
+                selectedClassName={selectedClassName}
+                onStudentNameChange={setStudentName}
+                onGradeLevelChange={setGradeLevel}
+                onClassCreated={(newClass) => {
+                  setClasses((prev) => [
+                    ...prev,
+                    { id: newClass, name: newClass },
+                  ]);
+                }}
+                onStudentSelected={(studentId: string) =>
+                  setSelectedStudentId(studentId)
+                }
+                onClassChange={setSelectedClassName}
+                onClear={handleStartNew}
+              />
+            )}
+
+            {!passageExpanded && !isLoadingClasses && (
+              <PassageFilters
+                language={hasPassage ? selectedLanguage : undefined}
+                passageLevel={hasPassage ? selectedLevel : undefined}
+                testType={hasPassage ? selectedTestType : undefined}
+                hasPassage={hasPassage}
+                onOpenPassageModal={() => setIsPassageModalOpen(true)}
+              />
+            )}
+
+            <PassageDisplay
+              content={passageContent}
+              expanded={passageExpanded}
+              onToggleExpand={() => setPassageExpanded((prev) => !prev)}
+              passageLevel={selectedLevel}
+              resizable={true}
+            />
+
+            {!passageExpanded && hasPassage && (
+              <div className="mt-2 flex items-center justify-between">
+                <span className="text-xs font-semibold text-[#00306E]">
+                  {wordCount} words
+                </span>
+                {estimatedReadingTime && (
+                  <span
+                    className="flex items-center gap-1 text-xs font-medium text-[#6666FF]"
+                    title={`Est. reading time: ${estimatedReadingTime}`}
+                  >
+                    <Clock className="h-3.5 w-3.5" />
+                    {estimatedReadingTime}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {!passageExpanded && hasPassage && (
+              <div className="mb-4 flex items-center justify-center">
+                <span className="text-lg font-bold text-[#31318A] md:text-xl">
+                  {selectedTitle}
+                </span>
+              </div>
+            )}
+
+            {/* Continue to Comprehension button — centered like Start Reading */}
+            {!passageExpanded && !showQuestions && (
+              <div className="flex justify-center">
+                <button
+                  type="button"
+                  onClick={handleContinueToComprehension}
+                  disabled={!hasPassage || !studentName.trim() || !gradeLevel || !selectedClassName}
+                  className={`rounded-lg px-10 py-2.5 text-sm font-semibold text-white transition-all duration-200 md:px-12 md:py-3 md:text-[15px] ${
+                    !hasPassage || !studentName.trim() || !gradeLevel || !selectedClassName
+                      ? "bg-[#2E2E68]/30 cursor-not-allowed opacity-60 shadow-none"
+                      : "bg-[#2E2E68] shadow-[0px_1px_20px_rgba(108,164,239,0.37)] hover:brightness-110"
+                  }`}
+                  title={
+                    !studentName.trim() || !gradeLevel || !selectedClassName
+                      ? "Enter student information first"
+                      : !hasPassage
+                        ? "Add a passage first"
+                        : undefined
+                  }
+                >
+                  Continue to Comprehension
+                </button>
+              </div>
+            )}
+
+            {/* ── Comprehension Questions Section ── */}
+            {!passageExpanded && showQuestions && (
+              <div ref={questionsRef} className="flex flex-col gap-4 pt-6">
+                <ComprehensionInfoBar
+                  totalQuestions={questions.length}
+                  formattedTime={formattedTime}
+                  isPaused={isPaused}
+                  isSubmitted={isSubmitted}
+                  onTogglePause={() => {
+                    if (!isSubmitted) setIsPaused((prev) => !prev);
+                  }}
+                />
+
+                {isLoadingQuestions && (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="flex flex-col items-center gap-3">
+                      <Loader2 className="h-8 w-8 animate-spin text-[#6666FF]" />
+                      <span className="text-sm font-medium text-[#00306E]">
+                        Loading questions...
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {questionsLoadError && (
+                  <div className="flex items-center justify-center py-12">
+                    <p className="text-sm font-medium text-red-600">
+                      {questionsLoadError}
+                    </p>
+                  </div>
+                )}
+
+                {!isLoadingQuestions && !questionsLoadError && (
+                  <>
+                    <div className="space-y-6">
+                      {questions.map((question) => (
+                        <QuestionCard
+                          key={question.id}
+                          question={question}
+                          answers={answers}
+                          isSubmitted={isSubmitted}
+                          highlightedTag={highlightedTag}
+                          onSelectOption={handleSelectOption}
+                          onEssayChange={handleEssayChange}
+                        />
+                      ))}
+                    </div>
+
+                    <ComprehensionSubmitArea
+                      isSubmitting={isSubmitting}
+                      isSubmitted={isSubmitted}
+                      submitError={submitError}
+                      onSubmit={handleSubmit}
+                    />
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Right column: ComprehensionBreakdown */}
+          {!passageExpanded && (
+            <div className="w-60 shrink-0 self-stretch md:w-67.5 lg:w-75 xl:w-[320px]">
+              <ComprehensionBreakdown
+                score={comprehensionResult?.score}
+                totalItems={comprehensionResult?.totalItems}
+                level={comprehensionResult?.level}
+                tagBreakdown={comprehensionResult?.tagBreakdown}
+                disabled={!isSubmitted}
+                highlightedTag={highlightedTag}
+                onTagClick={handleTagClick}
+                showReportButton={true}
+                reportHref="/dashboard/reading-comprehension-test/report"
+              />
             </div>
           )}
         </div>
       </main>
 
-      {/* Add Passage Modal */}
       <AddPassageModal
         isOpen={isPassageModalOpen}
         onClose={() => setIsPassageModalOpen(false)}

@@ -8,8 +8,11 @@ import {
   FileText,
   ClipboardCheck,
   Loader2,
+  RotateCcw,
 } from "lucide-react";
 import type { OralFluencyAnalysis } from "@/types/oral-reading";
+import { DeleteConfirmModal } from "@/components/ui/deleteConfirmModal";
+import { NavButton } from "@/components/ui/navButton";
 
 const STORAGE_KEY = "oral-reading-session";
 
@@ -89,6 +92,7 @@ function getLevelStyle(level: string) {
 export default function ReadingLevelReportPage() {
   const router = useRouter();
   const [isHydrated, setIsHydrated] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect -- Intentional mount-time hydration flag for SSR */
@@ -177,41 +181,49 @@ export default function ReadingLevelReportPage() {
             Oral Reading Test Report
           </h1>
         </div>
-      </div>
-
-      <div className="flex items-center justify-between px-8 pt-4 pb-2">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#5555EE] md:text-base shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)]"
-        >
-          <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
-          <span>Previous</span>
-        </button>
-
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => {
-              // Clear all oral reading session data so the fluency page starts fresh
-              sessionStorage.removeItem(STORAGE_KEY);
-              sessionStorage.removeItem("oral-reading-audio");
-              sessionStorage.removeItem("oral-reading-assessmentId");
-              sessionStorage.removeItem("oral-reading-comprehension-state");
-              sessionStorage.removeItem("oral-reading-comprehensionTestId");
-              router.push("/dashboard/oral-reading-test");
-            }}
-            className="px-5 py-2 bg-[#2E2E68] text-white text-xs font-medium rounded-[10px] border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#2E2E68]/90 transition-colors"
-          >
-            Start New
-          </button>
-          <button
-            type="button"
-            className="px-5 py-2 bg-[#297CEC] text-white text-xs font-medium rounded-[10px] border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#297CEC]/90 transition-colors"
+            className="px-5 py-2 bg-[#297CEC] text-white text-xs font-medium rounded-lg border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#297CEC]/90 transition-colors"
           >
             Export to PDF
           </button>
+          <button
+            type="button"
+            onClick={() => setShowDeleteModal(true)}
+            className="px-5 py-2 bg-[#DE3B40] text-white text-xs font-medium rounded-lg border border-[#DE3B40] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#DE3B40]/90 transition-colors"
+          >
+            Delete
+          </button>
         </div>
+      </div>
+
+      <DeleteConfirmModal
+        open={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={() => { /* TODO: wire up actual delete handler */ }}
+      />
+
+      <div className="flex items-center justify-between px-8 pt-4 pb-2">
+        <NavButton onClick={() => router.back()}>
+          <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
+          <span>Previous</span>
+        </NavButton>
+
+        <NavButton
+          variant="outlined"
+          onClick={() => {
+            sessionStorage.removeItem(STORAGE_KEY);
+            sessionStorage.removeItem("oral-reading-audio");
+            sessionStorage.removeItem("oral-reading-assessmentId");
+            sessionStorage.removeItem("oral-reading-comprehension-state");
+            sessionStorage.removeItem("oral-reading-comprehensionTestId");
+            router.push("/dashboard/oral-reading-test");
+          }}
+        >
+          <RotateCcw className="h-4 w-4 md:h-5 md:w-5" />
+          <span>Start New</span>
+        </NavButton>
       </div>
 
       {/* ── Main Content ─────────────────────── */}

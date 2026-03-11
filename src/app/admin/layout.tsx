@@ -14,7 +14,7 @@ export default function AdminLayout({
   return (
     <div className="min-h-screen bg-[#F4FCFD] flex flex-col">
       {/* Header */}
-      <header className="w-full h-[70px] flex items-center px-10 border-b border-[#8D8DEC] bg-white shadow justify-between">
+      <header className="w-full h-17.5 flex items-center px-10 border-b border-[#8D8DEC] bg-white shadow justify-between">
         <h1 className="text-xl font-bold text-[#31318A]">Admin Dashboard</h1>
         <button
           onClick={handleLogout}

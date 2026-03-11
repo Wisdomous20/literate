@@ -1,5 +1,5 @@
 import { AlignedWord, MiscueResult } from "@/types/oral-reading"
-import { similarityRatio, isSimilarForRepetition, isReversal, normalizeWord, isHyphenatedMatch } from "@/utils/textUtils";
+import { similarityRatio, isSimilarForRepetition, isReversal, normalizeWord} from "@/utils/textUtils";
 import detectSelfCorrections from "./detectSelfCorrections"
 import detectTranspositions from "./detectTranspositions"
 import detectRepetitions from "./detectRepetitions"
@@ -97,9 +97,26 @@ export function detectMiscues(
     }
 
     if (selfCorrectedIndices.has(i)) {
+      // For INSERTIONs flagged as self-correction, the reader was attempting
+      // a nearby omitted/mismatched passage word — find it
+      let expectedWord = aligned.expected ?? "";
+      if (!expectedWord && aligned.spoken) {
+        const spokenNorm = normalizeWord(aligned.spoken);
+        for (let k = Math.max(0, i - 3); k <= Math.min(alignedWords.length - 1, i + 3); k++) {
+          if (k === i) continue;
+          const nearby = alignedWords[k];
+          if ((nearby.match === "OMISSION" || nearby.match === "MISMATCH") && nearby.expected) {
+            if (similarityRatio(spokenNorm, normalizeWord(nearby.expected)) > 0.5) {
+              expectedWord = nearby.expected;
+              break;
+            }
+          }
+        }
+      }
+
       miscues.push({
         miscueType: "SELF_CORRECTION",
-        expectedWord: aligned.expected ?? aligned.spoken ?? "",
+        expectedWord: expectedWord || aligned.spoken || "",
         spokenWord: aligned.spoken,
         wordIndex: aligned.expectedIndex ?? aligned.spokenIndex ?? i,
         timestamp: aligned.timestamp,
@@ -123,25 +140,6 @@ export function detectMiscues(
     if (aligned.match === "EXACT") continue;
 
     if (aligned.match === "OMISSION") {
-      // Skip omission if the expected word is hyphenated and adjacent spoken
-      // words cover its parts (e.g., "problem-solvers" → "problem" + "solvers")
-      if (aligned.expected && aligned.expected.includes("-")) {
-        const parts = aligned.expected.toLowerCase().split("-");
-        const nearby: string[] = [];
-        for (
-          let k = Math.max(0, i - parts.length);
-          k <= Math.min(alignedWords.length - 1, i + parts.length);
-          k++
-        ) {
-          if (alignedWords[k].spoken)
-            nearby.push(normalizeWord(alignedWords[k].spoken!));
-        }
-        const allPartsCovered = parts.every((part) =>
-          nearby.includes(normalizeWord(part))
-        );
-        if (allPartsCovered) continue;
-      }
-
       miscues.push({
         miscueType: "OMISSION",
         expectedWord: aligned.expected!,
@@ -154,25 +152,6 @@ export function detectMiscues(
     }
 
     if (aligned.match === "INSERTION") {
-      // Skip insertion if the spoken word is part of a nearby hyphenated expected word
-      if (aligned.spoken) {
-        let isPartOfHyphenated = false;
-        for (
-          let k = Math.max(0, i - 3);
-          k <= Math.min(alignedWords.length - 1, i + 3);
-          k++
-        ) {
-          if (
-            alignedWords[k].expected &&
-            isHyphenatedMatch(alignedWords[k].expected!, aligned.spoken!)
-          ) {
-            isPartOfHyphenated = true;
-            break;
-          }
-        }
-        if (isPartOfHyphenated) continue;
-      }
-
       miscues.push({
         miscueType: "INSERTION",
         expectedWord: "",
@@ -185,8 +164,7 @@ export function detectMiscues(
     }
 
     if (aligned.match === "MISMATCH" && aligned.expected && aligned.spoken) {
-      // Check if this is a hyphenated word match
-      if (isHyphenatedMatch(aligned.expected, aligned.spoken)) continue;
+      if (normalizeWord(aligned.expected) === normalizeWord(aligned.spoken)) continue;
 
       const normExpected = normalizeWord(aligned.expected);
       const normSpoken = normalizeWord(aligned.spoken);

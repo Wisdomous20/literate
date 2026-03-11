@@ -10,6 +10,7 @@ import MetricCards from "@/components/reports/oral-reading-test/reading-fluency-
 import MiscueAnalysisReport from "@/components/reports/oral-reading-test/reading-fluency-report/miscueAnalysis";
 import AudioPlaybackCard from "@/components/reports/oral-reading-test/reading-fluency-report/audioPlaybackCard";
 import BehaviorChecklist from "@/components/reports/oral-reading-test/reading-fluency-report/readingBehaviorChecklist";
+import ViewMiscuesModal from "@/components/reports/oral-reading-test/reading-fluency-report/viewMiscuesModal";
 import type { MiscueData } from "@/components/reports/oral-reading-test/reading-fluency-report/miscueAnalysis";
 import type { BehaviorItem } from "@/components/reports/oral-reading-test/reading-fluency-report/readingBehaviorChecklist";
 import type {
@@ -17,6 +18,7 @@ import type {
   MiscueResult,
   BehaviorResult,
 } from "@/types/oral-reading";
+import { exportFluencyReportPdf } from "@/lib/exportFluencyReportPdf";
 
 const STORAGE_KEY = "oral-reading-session";
 const AUDIO_STORAGE_KEY = "oral-reading-audio";
@@ -133,6 +135,7 @@ function buildBehaviorItems(
 export default function OralReadingReportPage() {
   const router = useRouter();
   const [isHydrated, setIsHydrated] = useState(false);
+  const [showMiscuesModal, setShowMiscuesModal] = useState(false);
 
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect -- Intentional mount-time hydration flag for SSR */
@@ -162,6 +165,8 @@ export default function OralReadingReportPage() {
       if (audioSrc) URL.revokeObjectURL(audioSrc);
     };
   }, [audioSrc]);
+
+  const studentName = session.studentName || "—";
 
   // Loading state — wait for client hydration before reading from sessionStorage
   if (!isHydrated) {
@@ -199,7 +204,6 @@ export default function OralReadingReportPage() {
     );
   }
 
-  const studentName = session.studentName || "—";
   const gradeLevel = session.gradeLevel ? `Grade ${session.gradeLevel}` : "—";
   const studentClass = session.selectedClassName || "—";
   const passageTitle = session.selectedTitle || "—";
@@ -225,9 +229,35 @@ export default function OralReadingReportPage() {
   const miscueData = buildMiscueData(analysis);
   const behaviorItems = buildBehaviorItems(analysis);
 
+  const handleExportPdf = () => {
+    const safeName = studentName.replace(/[^a-zA-Z0-9]/g, "_");
+    exportFluencyReportPdf(
+      {
+        studentName,
+        gradeLevel,
+        className: studentClass,
+        passageTitle,
+        passageLevel,
+        numberOfWords: totalWords,
+        testType,
+        assessmentType: "Oral Reading",
+        wcpm,
+        readingTimeSeconds,
+        classificationLevel: classification,
+        miscueData,
+        behaviors: behaviorItems.map((b) => ({
+          label: b.label,
+          description: b.description,
+          checked: b.checked ?? false,
+        })),
+      },
+      `Oral_Fluency_Report_${safeName}`,
+    );
+  };
+
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <ReportHeader />
+      <ReportHeader onExportPdf={handleExportPdf} />
 
       <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth max-w-300 mx-auto px-6 py-6 md:px-8 lg:px-12 space-y-6 w-full">
         {/* Top row: Student Info + Metric Cards */}
@@ -262,9 +292,18 @@ export default function OralReadingReportPage() {
           <BehaviorChecklist behaviors={behaviorItems} />
 
           {/* Right column */}
-          <MiscueAnalysisReport miscueData={miscueData} />
+          <MiscueAnalysisReport miscueData={miscueData} onViewMiscues={() => setShowMiscuesModal(true)} />
         </div>
       </main>
+
+      <ViewMiscuesModal
+        open={showMiscuesModal}
+        onClose={() => setShowMiscuesModal(false)}
+        passageContent={session.passageContent || ""}
+        miscues={analysis?.miscues || []}
+        alignedWords={analysis?.alignedWords}
+        passageLevel={session.selectedLevel}
+      />
     </div>
   );
 }

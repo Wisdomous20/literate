@@ -1,6 +1,6 @@
 import { TranscriptWord } from "@/types/oral-reading";
 import { normalizeWord, similarityRatio } from "@/utils/textUtils";
-
+import mergeSplitWords from "./mergeSplitWords";
 /**
  * Passage-guided correction using Smith-Waterman-style local alignment.
  */
@@ -9,6 +9,7 @@ export default function correctWithPassage(
   passageText: string,
   similarityThreshold = 0.55
 ): TranscriptWord[] {
+  
   const expandedPassageText = passageText.replace(
     /(\p{L})-(\p{L})/gu,
     "$1 $2"
@@ -20,6 +21,8 @@ export default function correctWithPassage(
   if (passageWords.length === 0 || transcribedWords.length === 0) {
     return transcribedWords;
   }
+  transcribedWords = mergeSplitWords(transcribedWords, passageWords);
+
 
   const tLen = transcribedWords.length;
   const pLen = passageWords.length;

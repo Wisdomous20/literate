@@ -85,13 +85,14 @@ export default function PassageQuestionsPage() {
         url.pathname.endsWith(`/edit-question`) &&
         url.searchParams.get("id") === id;
       const viewing =
-        url.pathname.endsWith(`/view-question`) &&
+        url.pathname.endsWith(`/view-question
+          `) &&
         url.searchParams.get("id") === id;
       if (editing || viewing) {
         router.push(`/admin/passages/${passageId}`);
       }
-    } catch {
-      // Optionally show error
+    } catch (err) {
+      alert("Failed to delete question. " + (err instanceof Error ? err.message : ""));
     } finally {
       setIsDeleting(null);
     }
@@ -158,7 +159,7 @@ export default function PassageQuestionsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F4FCFD]">
+    <div className="min-h-screen h-screen overflow-auto bg-[#F4FCFD]">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-[#F4FCFD]/95 backdrop-blur border-b border-[#E4F4FF] px-8 py-4">
         <button

@@ -11,21 +11,11 @@ export function alignWords(
   passageWords: string[],
   spokenWords: SpokenWordEntry[]
 ): AlignedWord[] {
-  // Expand hyphenated passage words
-  const expandedPassageWords: string[] = [];
-  for (const word of passageWords) {
-    if (word.includes("-")) {
-      expandedPassageWords.push(...word.split("-"));
-    } else {
-      expandedPassageWords.push(word);
-    }
-  }
-
-  const n = expandedPassageWords.length
+  const n = passageWords.length
   const m = spokenWords.length
 
   // Pre-compute normalized words to avoid redundant work in the DP loop
-  const normExpected = expandedPassageWords.map(normalizeWord)
+  const normExpected = passageWords.map(normalizeWord)
   const normSpoken = spokenWords.map((w) => normalizeWord(w.word))
 
   // Pre-compute similarity matrix (only compute once per pair)
@@ -42,6 +32,8 @@ export function alignWords(
 
   function matchScore(i: number, j: number): number {
     const sim = simMatrix[i][j]
+    // Exact match on short function words gets extra bonus to prevent misalignment
+    if (sim === 1.0 && normExpected[i].length <= 3) return MATCH_SCORE + 1
     return sim > 0.8 ? MATCH_SCORE : sim > 0.4 ? MISMATCH_PENALTY / 2 : MISMATCH_PENALTY
   }
 
@@ -82,7 +74,7 @@ export function alignWords(
   while (i > 0 || j > 0) {
     if (i > 0 && j > 0 && trace[i][j] === 0) {
       aligned.unshift({
-        expected: expandedPassageWords[i - 1],
+        expected: passageWords[i - 1],
         spoken: spokenWords[j - 1].word,
         expectedIndex: i - 1,
         spokenIndex: j - 1,
@@ -95,7 +87,7 @@ export function alignWords(
       j--
     } else if (i > 0 && trace[i][j] === 1) {
       aligned.unshift({
-        expected: expandedPassageWords[i - 1],
+        expected: passageWords[i - 1],
         spoken: null,
         expectedIndex: i - 1,
         spokenIndex: null,

@@ -1,7 +1,8 @@
 "use client";
 
-import { ChevronLeft, FileText } from "lucide-react";
+import { ChevronLeft, FileText, RotateCcw } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
+import { NavButton } from "@/components/ui/navButton";
 
 interface AssessmentCard {
   id: string;
@@ -66,13 +67,10 @@ export function AssessmentSummary({
         action={
           <div className="flex items-center gap-3">
             {onStartNew && (
-              <button
-                onClick={onStartNew}
-                className="rounded-lg bg-[#2E2E68] px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                type="button"
-              >
-                Start New
-              </button>
+              <NavButton variant="outlined" onClick={onStartNew}>
+                <RotateCcw className="h-4 w-4 md:h-5 md:w-5" />
+                <span>Start New</span>
+              </NavButton>
             )}
             <button
               onClick={onExportPdf}

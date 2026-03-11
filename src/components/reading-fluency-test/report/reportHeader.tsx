@@ -1,10 +1,31 @@
 "use client";
 
-import { LayoutDashboard, ChevronLeft} from "lucide-react";
+import { useState } from "react";
+import { LayoutDashboard, ChevronLeft, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { DeleteConfirmModal } from "@/components/ui/deleteConfirmModal";
+import { NavButton } from "@/components/ui/navButton";
 
-export default function ReportHeader() {
+const FLUENCY_SESSION_KEY = "reading-fluency-session";
+const AUDIO_STORAGE_KEY = "reading-fluency-audio";
+
+interface ReportHeaderProps {
+  onExportPdf?: () => void;
+}
+
+export default function ReportHeader({ onExportPdf }: ReportHeaderProps) {
   const router = useRouter();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const handleStartNew = () => {
+    try {
+      sessionStorage.removeItem(FLUENCY_SESSION_KEY);
+      sessionStorage.removeItem(AUDIO_STORAGE_KEY);
+    } catch {
+      /* non-critical */
+    }
+    router.push("/dashboard/reading-fluency-test");
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -20,12 +41,15 @@ export default function ReportHeader() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            className="px-5 py-2 bg-[#297CEC] text-white text-xs font-medium rounded-lg border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#297CEC]/90 transition-colors"
+            onClick={() => onExportPdf?.()}
+            disabled={!onExportPdf}
+            className="px-5 py-2 bg-[#297CEC] text-white text-xs font-medium rounded-lg border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#297CEC]/90 transition-colors disabled:opacity-50 disabled:pointer-events-none"
           >
             Export to PDF
           </button>
           <button
             type="button"
+            onClick={() => setShowDeleteModal(true)}
             className="px-5 py-2 bg-[#DE3B40] text-white text-xs font-medium rounded-lg border border-[#DE3B40] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#DE3B40]/90 transition-colors"
           >
             Delete
@@ -33,15 +57,23 @@ export default function ReportHeader() {
         </div>
       </div>
 
-      {/* Previous + Continue to Comprehension */}
+      <DeleteConfirmModal
+        open={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={() => { /* TODO: wire up actual delete handler */ }}
+      />
+
+      {/* Previous + Start New */}
       <div className="flex items-center justify-between px-8 pt-2">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-1 text-[#31318A] font-semibold text-lg hover:opacity-80 transition-opacity"
-        >
-          <ChevronLeft size={24} />
-          Previous
-        </button>
+        <NavButton onClick={() => router.back()}>
+          <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
+          <span>Previous</span>
+        </NavButton>
+
+        <NavButton variant="outlined" onClick={handleStartNew}>
+          <RotateCcw className="h-4 w-4" />
+          <span>Start New</span>
+        </NavButton>
       </div>
     </div>
   );

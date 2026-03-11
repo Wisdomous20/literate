@@ -27,14 +27,10 @@ export async function analyzeOralFluency(
   // 1. Transcribe with Whisper (language-aware)
   const sttResult = await transcribeAudio(audioBuffer, fileName, language, passageText);
 
-  //add layer to normalize passage words and transcribed words for better comparison (e.g. ignore punctuation, case, etc.)
   // 2. Tokenize passage
-  const HYPHEN_REGEX = /[-\u2010\u2011\u2012\u2013\u2014\u2015\uFE58\uFE63\uFF0D]/g;
-
   const passageWords = passageText
     .split(/\s+/)
-    .filter((w) => w.length > 0)
-    .flatMap((w) => w.split(HYPHEN_REGEX).filter(Boolean)); // ← split hyphens first
+    .filter((w) => w.length > 0);
 
   const normalizedPassageWords = passageWords.map(normalizeWord);
 

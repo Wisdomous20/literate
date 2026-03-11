@@ -11,12 +11,14 @@ import {
   X,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
+import { NavButton } from "@/components/ui/navButton";
 import { ComprehensionBreakdown } from "@/components/oral-reading-test/comprehensionBreakdown";
 import { ComprehensionInfoBar } from "@/components/reading-comprehension-test/comprehensionInfoBar";
 import { QuestionCard, type QuestionData } from "@/components/reading-comprehension-test/questionCard";
 import { ComprehensionSubmitArea } from "@/components/reading-comprehension-test/comprehensionSubmitArea";
 import { getQuizByPassageAction } from "@/app/actions/comprehension-Test/getQuizByPassage";
 import { createStudent } from "@/app/actions/student/createStudent";
+import { exportComprehensionReportPdf } from "@/lib/exportComprehensionReportPdf";
 
 const SESSION_KEY = "reading-comprehension-session";
 const COMP_STATE_KEY = "reading-comprehension-comp-state";
@@ -453,23 +455,19 @@ export default function ReadingComprehensionQuestionsPage() {
 
       <div className="flex flex-1 min-h-0 flex-col gap-4 px-4 py-4 md:px-6 lg:px-8">
         <div className="flex items-center justify-between">
-          <button
-            onClick={handleGoBack}
-            className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#5555EE] md:text-base shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)]"
-          >
+          <NavButton onClick={handleGoBack}>
             <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
             <span>Previous</span>
-          </button>
-          <button
+          </NavButton>
+          <NavButton
             onClick={() =>
               router.push("/dashboard/reading-comprehension-test/report")
             }
             disabled={!isSubmitted}
-            className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#5555EE] md:text-base disabled:cursor-not-allowed disabled:opacity-50 shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)]"
           >
             <span>View Report</span>
             <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
-          </button>
+          </NavButton>
         </div>
 
         <div className="flex flex-1 min-h-0 gap-4">
@@ -519,6 +517,30 @@ export default function ReadingComprehensionQuestionsPage() {
               highlightedTag={highlightedTag}
               onTagClick={handleTagClick}
               showReportButton={false}
+              onExportPdf={() => {
+                if (!comprehensionResult || !comprehensionResult.tagBreakdown) return;
+                const raw = sessionStorage.getItem("reading-comprehension-session");
+                const session = raw ? JSON.parse(raw) : {};
+                const totalItems = comprehensionResult.totalItems;
+                const score = comprehensionResult.score;
+                exportComprehensionReportPdf({
+                  studentName: session.studentName || "\u2014",
+                  gradeLevel: session.gradeLevel ? `Grade ${session.gradeLevel}` : "\u2014",
+                  className: session.selectedClassName || "\u2014",
+                  passageTitle: session.selectedTitle || "\u2014",
+                  passageLevel: session.selectedLevel || "\u2014",
+                  numberOfWords: session.passageContent ? session.passageContent.split(/\s+/).filter(Boolean).length : 0,
+                  testType: session.selectedTestType || "\u2014",
+                  assessmentType: "Reading Comprehension Test",
+                  score,
+                  totalItems,
+                  percentage: totalItems > 0 ? Math.round((score / totalItems) * 100) : 0,
+                  classificationLevel: comprehensionResult.level,
+                  literal: comprehensionResult.tagBreakdown.literal,
+                  inferential: comprehensionResult.tagBreakdown.inferential,
+                  critical: comprehensionResult.tagBreakdown.critical,
+                }, `Comprehension_Report_${(session.studentName || "report").replace(/[^a-zA-Z0-9]/g, "_")}`);
+              }}
             />
           </div>
         </div>

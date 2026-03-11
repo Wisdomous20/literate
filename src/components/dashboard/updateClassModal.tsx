@@ -26,20 +26,18 @@ export function UpdateClassModal({
   const backdropRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const MAX_CLASS_NAME_LENGTH = 50;
 
-  // Update className when currentName changes
   useEffect(() => {
     setClassName(currentName);
   }, [currentName]);
 
-  // Handle body scroll lock
   useEffect(() => {
     if (!isOpen) return;
 
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
-    // Focus input on open
     setTimeout(() => inputRef.current?.focus(), 0);
 
     return () => {
@@ -47,7 +45,6 @@ export function UpdateClassModal({
     };
   }, [isOpen]);
 
-  // Close on backdrop click
   const handleBackdropClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       if (e.target === backdropRef.current) {
@@ -57,7 +54,6 @@ export function UpdateClassModal({
     [onClose],
   );
 
-  // Close on Escape key
   useEffect(() => {
     if (!isOpen) return;
 
@@ -137,16 +133,22 @@ export function UpdateClassModal({
             >
               Class Name
             </label>
-            <input
-              ref={inputRef}
-              id="className"
-              type="text"
-              value={className}
-              onChange={(e) => setClassName(e.target.value)}
-              disabled={isLoading}
-              placeholder="Enter class name"
-              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:border-[#6666FF] focus:outline-none focus:ring-2 focus:ring-[#6666FF]/20 disabled:opacity-50"
-            />
+            <div className="flex flex-col">
+              <input
+                ref={inputRef}
+                id="className"
+                type="text"
+                value={className}
+                onChange={(e) => setClassName(e.target.value)}
+                disabled={isLoading}
+                placeholder="Enter class name"
+                maxLength={MAX_CLASS_NAME_LENGTH}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:border-[#6666FF] focus:outline-none focus:ring-2 focus:ring-[#6666FF]/20 disabled:opacity-50"
+              />
+              <span className="text-right text-xs text-gray-500 mt-2">
+                {className.length}/{MAX_CLASS_NAME_LENGTH}
+              </span>
+            </div>
           </div>
         </form>
 

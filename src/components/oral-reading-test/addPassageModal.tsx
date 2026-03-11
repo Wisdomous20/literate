@@ -322,8 +322,19 @@ export function AddPassageModal({
           {/* Loading / Error / Passage List */}
           <div className="min-h-0 flex-1 overflow-auto pr-1">
             {isLoading ? (
-              <div className="flex h-32 items-center justify-center">
-                <p className="text-sm text-[#00306E]/60">Loading passages...</p>
+              <div className="flex flex-col gap-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex animate-pulse items-center gap-3 rounded-lg border border-[rgba(84,164,255,0.3)] bg-white px-4 py-3"
+                  >
+                    <div className="h-5 w-5 shrink-0 rounded bg-[#D5E7FE]" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3.5 w-3/4 rounded bg-[#D5E7FE]" />
+                      <div className="h-3 w-1/2 rounded bg-[#D5E7FE]" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : error ? (
               <div className="flex h-32 items-center justify-center">

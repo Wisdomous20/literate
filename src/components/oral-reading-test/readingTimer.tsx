@@ -7,18 +7,18 @@ import { convertToWav } from "@/utils/convertToWav"
 
 interface ReadingTimerProps {
   hasPassage: boolean
+  hasStudentInfo: boolean
   onStartReading: () => void
   hasRecording: boolean
   recordedSeconds: number
   recordedAudioURL: string | null
   onTryAgain: () => void
-  onStartNew: () => void
   audioRef?: React.RefObject<HTMLAudioElement | null>
 }
 
 const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 2]
 
-function AudioPlayer({ src, externalAudioRef }: { src: string; externalAudioRef?: React.RefObject<HTMLAudioElement | null> }) {
+export function AudioPlayer({ src, externalAudioRef }: { src: string; externalAudioRef?: React.RefObject<HTMLAudioElement | null> }) {
   const internalRef = useRef<HTMLAudioElement>(null)
   const audioRef = externalAudioRef || internalRef
   const rangeRef = useRef<HTMLInputElement>(null)
@@ -197,12 +197,12 @@ function AudioPlayer({ src, externalAudioRef }: { src: string; externalAudioRef?
 
 export function ReadingTimer({
   hasPassage,
+  hasStudentInfo,
   onStartReading,
   hasRecording,
   recordedSeconds,
   recordedAudioURL,
   onTryAgain,
-  onStartNew,
   audioRef,
 }: ReadingTimerProps) {
   const formatTime = (totalSeconds: number) => {
@@ -212,7 +212,12 @@ export function ReadingTimer({
     return `${hrs.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
   }
 
-  const isDisabled = !hasPassage
+  const isDisabled = !hasPassage || !hasStudentInfo
+  const disabledReason = !hasStudentInfo
+    ? "Enter student information first"
+    : !hasPassage
+      ? "Add a passage first to start reading"
+      : undefined
 
   return (
     <div className="flex flex-col items-center gap-2 py-2">
@@ -235,7 +240,7 @@ export function ReadingTimer({
                 ? "bg-[rgba(102,102,255,0.3)] opacity-60 shadow-none"
                 : "bg-[#6666FF] opacity-100 shadow-[0px_1px_20px_rgba(102,102,255,0.4)]"
             }`}
-            title={isDisabled ? "Add a passage first to start reading" : undefined}
+            title={disabledReason}
           >
             <Mic className="h-4 w-4" />
             Start Reading
@@ -243,22 +248,13 @@ export function ReadingTimer({
         )}
 
         {hasRecording && (
-          <>
-            <button
-              type="button"
-              onClick={onTryAgain}
-              className="rounded-lg border border-[#0C1A6D] bg-[#2E2E68] px-6 py-2.5 text-sm font-semibold text-white shadow-[0px_1px_20px_rgba(65,155,180,0.47)] transition-colors hover:opacity-90 md:px-8 lg:px-10"
-            >
-              Try Again
-            </button>
-            <button
-              type="button"
-              onClick={onStartNew}
-              className="rounded-lg border border-[#6666FF] bg-transparent px-6 py-2.5 text-sm font-semibold text-[#6666FF] transition-all duration-200 hover:bg-[#6666FF] hover:text-white md:px-8 lg:px-10"
-            >
-              Start New
-            </button>
-          </>
+          <button
+            type="button"
+            onClick={onTryAgain}
+            className="rounded-lg border border-[#0C1A6D] bg-[#2E2E68] px-6 py-2.5 text-sm font-semibold text-white shadow-[0px_1px_20px_rgba(65,155,180,0.47)] transition-colors hover:opacity-90 md:px-8 lg:px-10"
+          >
+            Try Again
+          </button>
         )}
       </div>
     </div>

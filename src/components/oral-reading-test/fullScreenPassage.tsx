@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { X, ArrowDownToLine, CircleCheckBig } from "lucide-react"
+import { X, CircleCheckBig } from "lucide-react"
 import { useSettings } from "@/context/settingsContext"
+import { getPassageTextStyle } from "./passageDisplay"
 
 interface FullScreenPassageProps {
   content: string
@@ -11,6 +12,7 @@ interface FullScreenPassageProps {
   onClose: () => void
   countdownEnabled?: boolean
   countdownSeconds?: number
+  passageLevel?: string
 }
 
 function normalize(word: string): string {
@@ -24,11 +26,14 @@ export function FullScreenPassage({
   onClose,
   countdownEnabled = true,
   countdownSeconds = 3,
+  passageLevel,
 }: FullScreenPassageProps) {
-  const { autoScrollEnabled, autoFinishEnabled } = useSettings()
+  const passageTextStyle = getPassageTextStyle(passageLevel);
+  const { autoFinishEnabled } = useSettings()
   const [countdown, setCountdown] = useState(countdownEnabled ? countdownSeconds : 0)
   const [seconds, setSeconds] = useState(0)
   const [showOverlayUI, setShowOverlayUI] = useState(true)
+  const [recordingReady, setRecordingReady] = useState(false)
   const isCountingDown = countdownEnabled && countdown > 0
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -44,8 +49,7 @@ export function FullScreenPassage({
   const secondsRef = useRef(0)
   const processedResultsRef = useRef(0)
 
-  // Refs for settings so speech callback always has latest values
-  const autoScrollRef = useRef(autoScrollEnabled)
+  // Ref for setting so speech callback always has latest value
   const autoFinishRef = useRef(autoFinishEnabled)
 
   // Pre-acquire microphone during countdown so recording starts with zero latency at countdown=0
@@ -64,10 +68,6 @@ export function FullScreenPassage({
         // Permission denied or unavailable — startRecordingAndTimer will handle the error
       })
   }, [])
-
-  useEffect(() => {
-    autoScrollRef.current = autoScrollEnabled
-  }, [autoScrollEnabled])
 
   useEffect(() => {
     autoFinishRef.current = autoFinishEnabled
@@ -141,9 +141,9 @@ export function FullScreenPassage({
     }, 100)
   }, [onDone, stopEverything])
 
-  // Start speech recognition for passive auto-scroll + auto-finish
+  // Start speech recognition for auto-finish
   const startSpeechRecognition = useCallback(() => {
-    if (!autoScrollRef.current && !autoFinishRef.current) return
+    if (!autoFinishRef.current) return
 
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechRecognitionAPI) {
@@ -182,14 +182,7 @@ export function FullScreenPassage({
             if (passageWord && normalizedSpoken === passageWord) {
               wordTrackIndexRef.current = i + 1
 
-              if (autoScrollRef.current) {
-                anchorRefs.current[tokenIdx]?.scrollIntoView({
-                  behavior: "smooth",
-                  block: "center",
-                })
-              }
-
-              if (autoFinishRef.current && i + 1 >= totalTrackable) {
+              if (i + 1 >= totalTrackable) {
                 console.log("Auto-finish triggered: last word detected")
                 setTimeout(() => {
                   finishReading()
@@ -227,7 +220,7 @@ export function FullScreenPassage({
 
     try {
       recognition.start()
-      console.log("Speech recognition started, autoFinish:", autoFinishRef.current, "autoScroll:", autoScrollRef.current)
+      console.log("Speech recognition started for auto-finish")
     } catch (err) {
       console.error("Failed to start speech recognition:", err)
     }
@@ -277,6 +270,11 @@ export function FullScreenPassage({
     intervalRef.current = setInterval(() => {
       setSeconds((prev) => prev + 1)
     }, 1000)
+
+    // Brief warm-up: let the recorder settle before showing the passage
+    setTimeout(() => {
+      setRecordingReady(true)
+    }, 300)
   }, [startSpeechRecognition])
 
   // Countdown
@@ -321,16 +319,18 @@ export function FullScreenPassage({
   }, [onClose, stopEverything])
 
   // Countdown overlay
-  if (isCountingDown) {
+  if (isCountingDown || !recordingReady) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#E4F4FF]">
         <div className="flex flex-col items-center gap-6">
-          <p className="text-lg font-semibold text-[#31318A]">Get Ready...</p>
-          <div className="flex h-32 w-32 items-center justify-center rounded-full border-[3px] border-[#6666FF] bg-[rgba(102,102,255,0.12)] text-6xl font-bold text-[#6666FF]">
-            <span key={countdown} className="animate-pulse">
-              {countdown}
-            </span>
-          </div>
+          <p className="text-lg font-semibold text-[#31318A]">{isCountingDown ? "Get Ready..." : "Starting..."}</p>
+          {isCountingDown && (
+            <div className="flex h-32 w-32 items-center justify-center rounded-full border-[3px] border-[#6666FF] bg-[rgba(102,102,255,0.12)] text-6xl font-bold text-[#6666FF]">
+              <span key={countdown} className="animate-pulse">
+                {countdown}
+              </span>
+            </div>
+          )}
           <p className="text-sm font-medium text-[#00306E]">
             Recording will start automatically
           </p>
@@ -374,15 +374,6 @@ export function FullScreenPassage({
               <span className="text-xs font-medium text-red-500">Recording</span>
             </div>
 
-            {autoScrollEnabled && (
-              <div className="flex items-center gap-1 rounded-full border border-[rgba(102,102,255,0.25)] bg-[rgba(102,102,255,0.08)] px-2 py-0.5">
-                <ArrowDownToLine className="h-2.5 w-2.5 text-[#6666FF]" />
-                <span className="text-[10px] font-medium text-[#6666FF]">
-                  Auto Scroll
-                </span>
-              </div>
-            )}
-
             {autoFinishEnabled && (
               <div className="flex items-center gap-1 rounded-full border border-[rgba(34,197,94,0.25)] bg-[rgba(34,197,94,0.08)] px-2 py-0.5">
                 <CircleCheckBig className="h-2.5 w-2.5 text-[#16a34a]" />
@@ -398,7 +389,7 @@ export function FullScreenPassage({
 
           {/* Passage Content */}
           <div className="flex flex-1 flex-col overflow-auto px-6 pt-14 md:px-12 md:pt-16 lg:px-16 lg:pt-20">
-            <p className="whitespace-pre-wrap font-[Georgia,'Times_New_Roman',serif] text-lg leading-[2.2] tracking-[0.01em] text-[#00306E] [word-spacing:0.05em] md:text-xl md:leading-[2.3] lg:text-[22px] lg:leading-[2.4]">
+            <p className="whitespace-pre-wrap text-center leading-relaxed text-[#00306E]" style={passageLevel ? passageTextStyle : undefined}>
               {tokenMeta.map((token, i) => (
                 <span
                   key={i}

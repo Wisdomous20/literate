@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
-  ChevronRight,
+  RotateCcw,
   Timer,
   Minus,
   Plus,
@@ -13,10 +13,11 @@ import {
   X,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
+import { NavButton } from "@/components/ui/navButton";
 import StudentInfoBar from "@/components/oral-reading-test/studentInfoBar";
 import { PassageFilters } from "@/components/oral-reading-test/passageFilters";
 import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay";
-import { ReadingTimer } from "@/components/oral-reading-test/readingTimer";
+import { ReadingTimer, AudioPlayer } from "@/components/oral-reading-test/readingTimer";
 import { MiscueAnalysis } from "@/components/reading-fluency-test/miscueAnalysis";
 import { FullScreenPassage } from "@/components/oral-reading-test/fullScreenPassage";
 import { AddPassageModal } from "@/components/oral-reading-test/addPassageModal";
@@ -26,6 +27,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createStudent } from "@/app/actions/student/createStudent";
 import { convertToWav } from "@/utils/convertToWav";
 import type { OralFluencyAnalysis } from "@/types/oral-reading";
+import { exportFluencyReportPdf, buildFluencyReportData } from "@/lib/exportFluencyReportPdf";
 
 function getCurrentSchoolYear(): string {
   const now = new Date();
@@ -140,6 +142,7 @@ export default function ReadingFluencyTestPage() {
     new Set(),
   );
   const [passageExpanded, setPassageExpanded] = useState(false);
+  const [showMiscues, setShowMiscues] = useState(true);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   // TanStack-cached class list
@@ -324,14 +327,14 @@ export default function ReadingFluencyTestPage() {
   );
 
   const handleStartReading = useCallback(() => {
-    if (!hasPassage) return;
+    if (!hasPassage || !studentName.trim() || !gradeLevel || !selectedClassName) return;
     setIsFullScreen(true);
     setHasRecording(false);
     if (recordedAudioURL) {
       URL.revokeObjectURL(recordedAudioURL);
       setRecordedAudioURL(null);
     }
-  }, [hasPassage, recordedAudioURL]);
+  }, [hasPassage, studentName, gradeLevel, selectedClassName, recordedAudioURL]);
 
   const handleFullScreenDone = useCallback(
     (
@@ -537,6 +540,7 @@ export default function ReadingFluencyTestPage() {
         onClose={handleFullScreenClose}
         countdownEnabled={countdownEnabled}
         countdownSeconds={countdownSeconds}
+        passageLevel={selectedLevel}
       />
     );
   }
@@ -583,42 +587,33 @@ export default function ReadingFluencyTestPage() {
         {/* Nav row */}
         {!passageExpanded && (
           <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="flex items-center gap-1 text-sm font-semibold text-[#00306E] transition-colors hover:text-[#6666FF] md:text-base lg:text-lg"
-            >
+            <NavButton onClick={() => router.back()}>
               <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
               <span>Previous</span>
-            </button>
-            <h2 className="flex-1 text-center text-base font-bold text-[#0C1A6D] md:text-lg lg:text-xl">
-              Student Information
-            </h2>
-            <button
-              type="button"
-              onClick={() =>
-                hasRecording &&
-                router.push("/dashboard/reading-fluency-test/report")
-              }
-              aria-label="View reading fluency report"
-              title="View reading fluency report"
-              className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-300 md:text-base ${
-                hasRecording
-                  ? "animate-[pulseGlow_2s_ease-in-out_infinite] bg-[#6666FF] text-white shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)] hover:bg-[#5555EE]"
-                  : "cursor-not-allowed text-[#00306E]/40"
-              }`}
-              disabled={!hasRecording}
-            >
-              <span>View Report</span>
-              <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
-            </button>
+            </NavButton>
+            <NavButton variant="outlined" onClick={handleStartNew} disabled={!hasPassage}>
+              <RotateCcw className="h-4 w-4" />
+              <span>Start New</span>
+            </NavButton>
           </div>
         )}
 
         <div className="flex min-h-0 flex-1 gap-4">
           <div
-            className={`flex min-h-0 flex-1 flex-col overflow-y-auto ${passageExpanded ? "gap-0" : "gap-3"}`}
+            className={`flex min-h-0 flex-1 flex-col overflow-y-auto ${passageExpanded ? "gap-0" : "gap-3 px-2"}`}
           >
+            {!passageExpanded && isLoadingClasses && (
+              <>
+                <div className="h-[72px] animate-pulse rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] shadow-[0px_1px_20px_rgba(108,164,239,0.37)]" />
+                <div className="flex gap-3">
+                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                  <div className="h-[42px] w-[140px] shrink-0 animate-pulse rounded-lg bg-[#2E2E68]/30" />
+                </div>
+              </>
+            )}
+
             {!passageExpanded && !isLoadingClasses && (
               <StudentInfoBar
                 studentName={studentName}
@@ -634,10 +629,11 @@ export default function ReadingFluencyTestPage() {
                 }}
                 onStudentSelected={(id: string) => setSelectedStudentId(id)}
                 onClassChange={setSelectedClassName}
+                onClear={handleStartNew}
               />
             )}
 
-            {!passageExpanded && (
+            {!passageExpanded && !isLoadingClasses && (
               <PassageFilters
                 language={hasPassage ? selectedLanguage : undefined}
                 passageLevel={hasPassage ? selectedLevel : undefined}
@@ -649,17 +645,57 @@ export default function ReadingFluencyTestPage() {
 
             <PassageDisplay
               content={passageContent}
-              miscues={filteredMiscues}
+              miscues={showMiscues ? filteredMiscues : undefined}
+              alignedWords={showMiscues ? analysisResult?.alignedWords : undefined}
               onJumpToTime={handleJumpToTime}
               expanded={passageExpanded}
               onToggleExpand={() => setPassageExpanded((prev) => !prev)}
+              passageLevel={selectedLevel}
             />
 
+            {passageExpanded && hasRecording && recordedAudioURL && (
+              <div className="mt-2">
+                <AudioPlayer src={recordedAudioURL} externalAudioRef={audioRef} />
+              </div>
+            )}
+
             {!passageExpanded && hasPassage && (
-              <div className="mt-2 flex items-center">
+              <div className="mt-2 flex items-center justify-between">
                 <span className="text-xs font-semibold text-[#00306E]">
                   {passageContent.split(/\s+/).length} words
                 </span>
+                {analysisResult && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-[#31318A]">
+                      {showMiscues ? "Miscues" : "Original"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowMiscues((prev) => !prev)}
+                      aria-label={showMiscues ? "Show original passage" : "Show miscue highlights"}
+                      title={showMiscues ? "Show original passage" : "Show miscue highlights"}
+                      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+                        showMiscues ? "bg-[#6666FF]" : "bg-[#C4C4FF]"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+                          showMiscues ? "translate-x-4.25" : "translate-x-0.75"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                )}
+                {!analysisResult && (
+                  <div className="flex items-center gap-2 opacity-40 pointer-events-none">
+                    <span className="text-xs font-medium text-[#31318A]">
+                      Miscues
+                    </span>
+                    <div className="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full bg-[#C4C4FF]">
+                      <span className="inline-block h-3.5 w-3.5 translate-x-0.75 rounded-full bg-white shadow" />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -674,12 +710,12 @@ export default function ReadingFluencyTestPage() {
             {!passageExpanded && (
               <ReadingTimer
                 hasPassage={hasPassage}
+                hasStudentInfo={!!(studentName.trim() && gradeLevel && selectedClassName)}
                 onStartReading={handleStartReading}
                 hasRecording={hasRecording}
                 recordedSeconds={recordedSeconds}
                 recordedAudioURL={recordedAudioURL}
                 onTryAgain={handleTryAgain}
-                onStartNew={handleStartNew}
                 audioRef={audioRef}
               />
             )}
@@ -767,6 +803,22 @@ export default function ReadingFluencyTestPage() {
               classificationLevel={analysisResult?.classificationLevel}
               highlightedTypes={highlightedTypes}
               onToggleHighlight={toggleHighlightType}
+              onExportPdf={() => {
+                if (!analysisResult) return;
+                const data = buildFluencyReportData({
+                  studentName,
+                  gradeLevel,
+                  selectedClassName,
+                  selectedTitle,
+                  selectedLevel,
+                  selectedTestType,
+                  assessmentType: "Oral Reading",
+                  passageContent,
+                  recordedSeconds,
+                  analysisResult,
+                });
+                exportFluencyReportPdf(data, `Oral_Fluency_Report_${studentName.replace(/[^a-zA-Z0-9]/g, "_")}`);
+              }}
             />
           </div>
         </div>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import { Loader2 } from "lucide-react"
+import { Loader2, Download } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type { MiscueResult } from "@/types/oral-reading"
 
@@ -73,6 +73,7 @@ interface MiscueAnalysisProps {
   disabled?: boolean
   highlightedTypes?: Set<string>
   onToggleHighlight?: (miscueType: string) => void
+  onExportPdf?: () => void
 }
 
 function getClassificationClasses(level?: string): {
@@ -100,6 +101,7 @@ export function MiscueAnalysis({
   disabled = false,
   highlightedTypes = new Set(),
   onToggleHighlight,
+  onExportPdf,
 }: MiscueAnalysisProps) {
   const router = useRouter()
 
@@ -137,9 +139,20 @@ export function MiscueAnalysis({
       }`}
     >
       {/* Title */}
-      <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-[#6666FF]">
-        Miscue Analysis
-      </span>
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-[#6666FF]">
+          Miscue Analysis
+        </span>
+        <button
+          type="button"
+          title="Download as PDF"
+          onClick={() => onExportPdf?.()}
+          disabled={disabled || !onExportPdf}
+          className="rounded p-0.5 text-[#6666FF] transition-colors hover:bg-[rgba(102,102,255,0.1)] disabled:pointer-events-none disabled:opacity-40"
+        >
+          <Download className="h-4 w-4" />
+        </button>
+      </div>
 
       {/* Loading state while analyzing */}
       {isAnalyzing ? (

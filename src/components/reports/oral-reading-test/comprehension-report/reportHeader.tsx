@@ -1,9 +1,14 @@
 "use client";
 
-import { LayoutDashboard, ChevronLeft } from "lucide-react";
+import { LayoutDashboard, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { NavButton } from "@/components/ui/navButton";
 
-export default function ComprehensionReportHeader() {
+interface ComprehensionReportHeaderProps {
+  onExportPdf?: () => void;
+}
+
+export default function ComprehensionReportHeader({ onExportPdf }: ComprehensionReportHeaderProps) {
   const router = useRouter();
 
   return (
@@ -16,19 +21,6 @@ export default function ComprehensionReportHeader() {
             Reading Comprehension Test Report
           </h1>
         </div>
-      </div>
-
-      {/* Previous + Action buttons */}
-      <div className="flex items-center justify-between px-8 pt-2">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)] transition-all duration-300 hover:bg-[#5555EE] md:text-base"
-        >
-          <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
-          <span>Previous</span>
-        </button>
-
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -41,17 +33,30 @@ export default function ComprehensionReportHeader() {
           </button>
           <button
             type="button"
-            className="px-5 py-2 bg-[#297CEC] text-white text-xs font-medium rounded-lg border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#297CEC]/90 transition-colors"
+            onClick={() => onExportPdf?.()}
+            disabled={!onExportPdf}
+            className="px-5 py-2 bg-[#297CEC] text-white text-xs font-medium rounded-lg border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#297CEC]/90 transition-colors disabled:opacity-50 disabled:pointer-events-none"
           >
             Export to PDF
           </button>
-          <button
-            type="button"
-            className="px-5 py-2 bg-[#DE3B40] text-white text-xs font-medium rounded-lg border border-[#DE3B40] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#DE3B40]/90 transition-colors"
-          >
-            Delete
-          </button>
         </div>
+      </div>
+
+      {/* Previous + Reading Level */}
+      <div className="flex items-center justify-between px-8 pt-2">
+        <NavButton onClick={() => router.back()}>
+          <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
+          <span>Previous</span>
+        </NavButton>
+
+        <NavButton
+          onClick={() =>
+            router.push("/dashboard/oral-reading-test/reading-level-report")
+          }
+        >
+          <span>Reading Level</span>
+          <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
+        </NavButton>
       </div>
     </div>
   );

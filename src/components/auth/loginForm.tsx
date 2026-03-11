@@ -52,17 +52,29 @@ const EyeOffIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+const REMEMBER_ME_KEY = "literate_remember_me";
+const REMEMBERED_EMAIL_KEY = "literate_remembered_email";
+
 export function LoginForm() {
   const { data: session } = useSession();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(() => {
+    if (typeof window !== "undefined" && localStorage.getItem(REMEMBER_ME_KEY) === "true") {
+      return localStorage.getItem(REMEMBERED_EMAIL_KEY) ?? "";
+    }
+    return "";
+  });
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(REMEMBER_ME_KEY) === "true";
+    }
+    return false;
+  });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const [loginSuccess, setLoginSuccess] = useState(false);
-
 
   useEffect(() => {
     if (loginSuccess && session?.user?.role) {
@@ -119,6 +131,14 @@ export function LoginForm() {
     }
 
     if (result?.ok) {
+      // Persist or clear remembered email based on checkbox
+      if (rememberMe) {
+        localStorage.setItem(REMEMBER_ME_KEY, "true");
+        localStorage.setItem(REMEMBERED_EMAIL_KEY, email);
+      } else {
+        localStorage.removeItem(REMEMBER_ME_KEY);
+        localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+      }
       setLoginSuccess(true); 
     }
   } catch (err) {

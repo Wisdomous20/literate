@@ -33,6 +33,10 @@ const gradeLevels = [
   "Grade 4",
   "Grade 5",
   "Grade 6",
+  "Grade 7",
+  "Grade 8",
+  "Grade 9",
+  "Grade 10",
 ];
 
 const assessmentTypeLabels: Record<string, string> = {
@@ -59,6 +63,7 @@ export function StudentTable({
   const [editGradeLevel, setEditGradeLevel] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const studentsPerPage = 10;
 
@@ -66,10 +71,7 @@ export function StudentTable({
     setCurrentPage(1);
   }, [students]);
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(students.length / studentsPerPage),
-  );
+  const totalPages = Math.max(1, Math.ceil(students.length / studentsPerPage));
 
   const paginatedStudents = students.slice(
     (currentPage - 1) * studentsPerPage,
@@ -123,148 +125,186 @@ export function StudentTable({
         </span>
       </div>
 
-<div className="overflow-x-auto max-h-125 rounded-xl border border-[#6666FF]/10 bg-white shadow-[0_4px_24px_0_rgba(102,102,255,0.12)]">        <div className="grid grid-cols-[1.5fr_1fr_1.2fr_1fr_130px] border-b border-[#6666FF]/15 bg-linear-to-r from-[#8585faed] to-[#b8c2f7] px-4 py-2.5">
-          <span className="text-[11px] font-bold tracking-wide text-white">Name</span>
-          <span className="text-[11px] font-bold tracking-wide text-white">Grade Level</span>
-          <span className="text-[11px] font-bold tracking-wide text-white">Latest Assessment</span>
-          <span className="text-[11px] font-bold tracking-wide text-white">Last Date</span>
-          <span className="text-[11px] font-bold tracking-wide text-white">Actions</span>
+      <div className="overflow-x-auto min-h-125 max-h-125 rounded-xl border border-[#6666FF]/10 bg-white shadow-[0_4px_24px_0_rgba(102,102,255,0.12)]">
+        {" "}
+        <div className="grid grid-cols-[1.5fr_1fr_1.2fr_1fr_130px] border-b border-[#6666FF]/15 bg-linear-to-r from-[#8585faed] to-[#b8c2f7] px-4 py-2.5">
+          <span className="text-[11px] font-bold tracking-wide text-white">
+            Name
+          </span>
+          <span className="text-[11px] font-bold tracking-wide text-white">
+            Grade Level
+          </span>
+          <span className="text-[11px] font-bold tracking-wide text-white">
+            Latest Assessment
+          </span>
+          <span className="text-[11px] font-bold tracking-wide text-white">
+            Last Date
+          </span>
+          <span className="text-[11px] font-bold tracking-wide text-white">
+            Actions
+          </span>
         </div>
-
         <div className="divide-y divide-[#6666FF]/5">
           {paginatedStudents.length === 0 ? (
             <div className="px-4 py-6 text-center text-xs text-[#00306E]/50">
               No students found
             </div>
           ) : (
-            paginatedStudents.map((student, idx) => {
-              const hasAssessment =
-                (studentAssessments[student.id] || []).length > 0;
-              return (
+            <>
+              {paginatedStudents.map((student, idx) => {
+                const hasAssessment =
+                  (studentAssessments[student.id] || []).length > 0;
+                return (
+                  <div
+                    key={student.id}
+                    className={`grid grid-cols-[1.5fr_1fr_1.2fr_1fr_130px] items-center px-4 py-2 transition-colors hover:bg-[#EEF0FF] ${
+                      idx % 2 === 0 ? "bg-white" : "bg-[#F8F9FF]"
+                    }`}
+                  >
+                    {editingId === student.id ? (
+                      <>
+                        <input
+                          aria-label="Edit student name"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          maxLength={50}
+                          disabled={isUpdating}
+                          className="mr-2 rounded border border-[#162DB0]/30 px-2 py-0.5 text-[11px]"
+                        />
+
+                        <select
+                          aria-label="Edit grade level"
+                          value={editGradeLevel}
+                          onChange={(e) => setEditGradeLevel(e.target.value)}
+                          disabled={isUpdating}
+                          className="mr-2 rounded border border-[#162DB0]/30 px-2 py-0.5 text-[11px]"
+                        >
+                          {gradeLevels.map((level) => (
+                            <option key={level} value={level}>
+                              {level}
+                            </option>
+                          ))}
+                        </select>
+                        <span className="text-[11px] text-[#00306E]/60">
+                          {assessmentTypeLabels[student.assessmentType] ??
+                            student.assessmentType}
+                        </span>
+                        <span className="text-[11px] text-[#00306E]/60">
+                          {student.lastAssessment ?? "—"}
+                        </span>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => handleSaveEdit(student.id)}
+                            disabled={isUpdating}
+                            className="flex h-6 w-6 items-center justify-center rounded-md bg-[#162DB0] text-white disabled:opacity-50"
+                            aria-label="Save changes"
+                            title="Save changes"
+                          >
+                            {isUpdating ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Check className="h-3 w-3" />
+                            )}
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            disabled={isUpdating}
+                            className="flex h-6 w-6 items-center justify-center rounded-md bg-gray-200 disabled:opacity-50"
+                            aria-label="Cancel editing"
+                            title="Cancel editing"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <span className="truncate pr-2 text-xs font-medium text-[#00306E]">
+                          {student.name}
+                        </span>
+                        <span className="text-[11px] text-[#00306E]/80">
+                          {student.gradeLevel}
+                        </span>
+                        <span className="text-[11px] text-[#00306E]/70">
+                          {assessmentTypeLabels[student.assessmentType] ??
+                            student.assessmentType}
+                        </span>
+                        <span className="text-[11px]">
+                          {student.lastAssessment ? (
+                            <span className="text-emerald-700">
+                              {student.lastAssessment}
+                            </span>
+                          ) : (
+                            <span className="text-[#00306E]/40">—</span>
+                          )}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleEdit(student)}
+                            className="flex h-6 w-6 items-center justify-center rounded-md bg-[#E4F4FF] text-[#162DB0] transition-colors hover:bg-[#d0e8ff]"
+                            aria-label={`Edit ${student.name}`}
+                            title="Edit"
+                          >
+                            <Edit2 size={11} />
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirmId(student.id)}
+                            disabled={isDeleting === student.id}
+                            className="flex h-6 w-6 items-center justify-center rounded-md bg-red-50 text-red-500 transition-colors hover:bg-red-100 disabled:opacity-50"
+                            aria-label={`Delete ${student.name}`}
+                            title="Delete"
+                          >
+                            {isDeleting === student.id ? (
+                              <Loader2 size={11} className="animate-spin" />
+                            ) : (
+                              <Trash2 size={11} />
+                            )}
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleViewReport(
+                                student.id,
+                                student.assessmentType,
+                              )
+                            }
+                            disabled={!hasAssessment}
+                            className={`flex h-6 items-center gap-1 rounded-md border border-[#6666FF] px-1.5 text-[10px] font-medium transition-colors ${
+                              hasAssessment
+                                ? "bg-transparent text-[#6666FF] hover:bg-[#6666FF]/10"
+                                : "cursor-not-allowed border-gray-300 bg-transparent text-gray-400"
+                            }`}
+                            title="View report"
+                          >
+                            <Eye size={10} />
+                            View
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+              {/* Fill empty rows to always show 10 rows */}
+              {Array.from({
+                length: studentsPerPage - paginatedStudents.length,
+              }).map((_, i) => (
                 <div
-                  key={student.id}
-                  className={`grid grid-cols-[1.5fr_1fr_1.2fr_1fr_130px] items-center px-4 py-2 transition-colors hover:bg-[#EEF0FF] ${
-                    idx % 2 === 0 ? "bg-white" : "bg-[#F8F9FF]"
+                  key={`empty-row-${i}`}
+                  className={`grid grid-cols-[1.5fr_1fr_1.2fr_1fr_130px] items-center px-4 py-2 ${
+                    (paginatedStudents.length + i) % 2 === 0
+                      ? "bg-white"
+                      : "bg-[#F8F9FF]"
                   }`}
+                  aria-hidden="true"
                 >
-                  {editingId === student.id ? (
-                    <>
-                      <input
-                        aria-label="Edit student name"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        disabled={isUpdating}
-                        className="mr-2 rounded border border-[#162DB0]/30 px-2 py-0.5 text-[11px]"
-                      />
-                      <select
-                        aria-label="Edit grade level"
-                        value={editGradeLevel}
-                        onChange={(e) => setEditGradeLevel(e.target.value)}
-                        disabled={isUpdating}
-                        className="mr-2 rounded border border-[#162DB0]/30 px-2 py-0.5 text-[11px]"
-                      >
-                        {gradeLevels.map((level) => (
-                          <option key={level} value={level}>
-                            {level}
-                          </option>
-                        ))}
-                      </select>
-                      <span className="text-[11px] text-[#00306E]/60">
-                        {assessmentTypeLabels[student.assessmentType] ??
-                          student.assessmentType}
-                      </span>
-                      <span className="text-[11px] text-[#00306E]/60">
-                        {student.lastAssessment ?? "—"}
-                      </span>
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => handleSaveEdit(student.id)}
-                          disabled={isUpdating}
-                          className="flex h-6 w-6 items-center justify-center rounded-md bg-[#162DB0] text-white disabled:opacity-50"
-                          aria-label="Save changes"
-                          title="Save changes"
-                        >
-                          {isUpdating ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <Check className="h-3 w-3" />
-                          )}
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          disabled={isUpdating}
-                          className="flex h-6 w-6 items-center justify-center rounded-md bg-gray-200 disabled:opacity-50"
-                          aria-label="Cancel editing"
-                          title="Cancel editing"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <span className="truncate pr-2 text-xs font-medium text-[#00306E]">
-                        {student.name}
-                      </span>
-                      <span className="text-[11px] text-[#00306E]/80">
-                        {student.gradeLevel}
-                      </span>
-                      <span className="text-[11px] text-[#00306E]/70">
-                        {assessmentTypeLabels[student.assessmentType] ??
-                          student.assessmentType}
-                      </span>
-                      <span className="text-[11px]">
-                        {student.lastAssessment ? (
-                          <span className="text-emerald-700">
-                            {student.lastAssessment}
-                          </span>
-                        ) : (
-                          <span className="text-[#00306E]/40">—</span>
-                        )}
-                      </span>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => handleEdit(student)}
-                          className="flex h-6 w-6 items-center justify-center rounded-md bg-[#E4F4FF] text-[#162DB0] transition-colors hover:bg-[#d0e8ff]"
-                          aria-label={`Edit ${student.name}`}
-                          title="Edit"
-                        >
-                          <Edit2 size={11} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(student.id)}
-                          disabled={isDeleting === student.id}
-                          className="flex h-6 w-6 items-center justify-center rounded-md bg-red-50 text-red-500 transition-colors hover:bg-red-100 disabled:opacity-50"
-                          aria-label={`Delete ${student.name}`}
-                          title="Delete"
-                        >
-                          {isDeleting === student.id ? (
-                            <Loader2 size={11} className="animate-spin" />
-                          ) : (
-                            <Trash2 size={11} />
-                          )}
-                        </button>
-                        <button
-                          onClick={() =>
-                            handleViewReport(student.id, student.assessmentType)
-                          }
-                          disabled={!hasAssessment}
-                          className={`flex h-6 items-center gap-1 rounded-md border border-[#6666FF] px-1.5 text-[10px] font-medium transition-colors ${
-                            hasAssessment
-                              ? "bg-transparent text-[#6666FF] hover:bg-[#6666FF]/10"
-                              : "cursor-not-allowed border-gray-300 bg-transparent text-gray-400"
-                          }`}
-                          title="View report"
-                        >
-                          <Eye size={10} />
-                          View
-                        </button>
-                      </div>
-                    </>
-                  )}
+                  <span>&nbsp;</span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
                 </div>
-              );
-            })
+              ))}
+            </>
           )}
         </div>
       </div>
@@ -309,6 +349,49 @@ export function StudentTable({
             >
               <ChevronRight className="h-3 w-3" />
             </button>
+          </div>
+        </div>
+      )}
+
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-85 border border-[#E4F4FF] flex flex-col items-center">
+            {/* Optional: Soft warning icon */}
+            <div className="mb-3 flex items-center justify-center w-12 h-12 rounded-full bg-[#FFF4F4]">
+              <Trash2 className="text-red-400" size={28} />
+            </div>
+            <h3 className="text-xl font-semibold mb-1 text-[#31318A] text-center">
+              Delete Student?
+            </h3>
+            <p className="text-sm text-[#00306E]/70 mb-6 text-center">
+              Are you sure you want to delete this student? <br />
+              <span className="text-[#E57373]">
+                This action cannot be undone.
+              </span>
+            </p>
+            <div className="flex w-full justify-end gap-2">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                className="px-5 py-2 rounded-lg bg-[#F4F8FF] text-[#31318A] font-medium hover:bg-[#e6edfa] transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  setIsDeleting(deleteConfirmId);
+                  await handleDelete(deleteConfirmId);
+                  setDeleteConfirmId(null);
+                }}
+                className="px-5 py-2 rounded-lg bg-[#FF6B6B] text-white font-semibold shadow-sm hover:bg-[#ff8787] transition"
+                disabled={isDeleting === deleteConfirmId}
+              >
+                {isDeleting === deleteConfirmId ? (
+                  <Loader2 size={18} className="inline animate-spin" />
+                ) : (
+                  "Delete"
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

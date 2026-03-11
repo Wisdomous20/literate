@@ -6,7 +6,7 @@ import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import StudentInfoBar from "@/components/oral-reading-test/studentInfoBar";
 import { PassageFilters } from "@/components/oral-reading-test/passageFilters";
 import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay";
-import { ReadingTimer } from "@/components/oral-reading-test/readingTimer";
+import { ReadingTimer, AudioPlayer } from "@/components/oral-reading-test/readingTimer";
 import { MiscueAnalysis } from "@/components/oral-reading-test/miscueAnalysis";
 import { FullScreenPassage } from "@/components/oral-reading-test/fullScreenPassage";
 import { AddPassageModal } from "@/components/oral-reading-test/addPassageModal";
@@ -18,6 +18,7 @@ import { ReadinessCheckButton } from "@/components/oral-reading-test/readinessCh
 import { createStudent } from "@/app/actions/student/createStudent";
 import type { OralFluencyAnalysis } from "@/types/oral-reading";
 import { convertToWav } from "@/utils/convertToWav"
+import { exportFluencyReportPdf, buildFluencyReportData } from "@/lib/exportFluencyReportPdf"
 // Helper to get current school year
 function getCurrentSchoolYear(): string {
   const now = new Date();
@@ -144,6 +145,7 @@ export default function OralReadingTestPage() {
     new Set(),
   );
   const [passageExpanded, setPassageExpanded] = useState(false);
+  const [showMiscues, setShowMiscues] = useState(true);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const handleJumpToTime = useCallback((timestamp: number) => {
@@ -354,14 +356,14 @@ export default function OralReadingTestPage() {
   );
 
   const handleStartReading = useCallback(() => {
-    if (!hasPassage) return;
+    if (!hasPassage || !studentName.trim() || !gradeLevel || !selectedClassName) return;
     setIsFullScreen(true);
     setHasRecording(false);
     if (recordedAudioURL) {
       URL.revokeObjectURL(recordedAudioURL);
       setRecordedAudioURL(null);
     }
-  }, [hasPassage, recordedAudioURL]);
+  }, [hasPassage, studentName, gradeLevel, selectedClassName, recordedAudioURL]);
 
   const handleFullScreenDone = useCallback(
     (
@@ -601,6 +603,7 @@ export default function OralReadingTestPage() {
         onClose={handleFullScreenClose}
         countdownEnabled={countdownEnabled}
         countdownSeconds={countdownSeconds}
+        passageLevel={selectedLevel}
       />
     );
   }
@@ -630,9 +633,10 @@ export default function OralReadingTestPage() {
             onGoBack={() => router.back()}
             onContinue={() =>
               hasRecording &&
+              studentName.trim() && gradeLevel && selectedClassName &&
               router.push("/dashboard/oral-reading-test/comprehension")
             }
-            continueEnabled={hasRecording}
+            continueEnabled={hasRecording && !!(studentName.trim() && gradeLevel && selectedClassName)}
           />
         )}
 
@@ -641,32 +645,24 @@ export default function OralReadingTestPage() {
           {/* Left column: student info, filters, passage, timer */}
           <div
             className={`flex min-h-0 flex-1 flex-col overflow-y-auto ${
-              passageExpanded ? "gap-0" : "gap-3"
+              passageExpanded ? "gap-0" : "gap-3 px-2"
             }`}
           >
             {!passageExpanded && isLoadingClasses && (
-              <div className="grid grid-cols-[1fr_160px_180px] items-start gap-3">
-                {/* Student Name skeleton */}
-                <div className="rounded-lg bg-[rgba(108,164,239,0.09)] px-3 py-2">
-                  <div className="mb-1.5 h-2.5 w-20 animate-pulse rounded bg-[#C4C4FF]/60" />
-                  <div className="h-7 w-full animate-pulse rounded-md bg-[#C4C4FF]/40" />
+              <>
+                <div className="h-[72px] animate-pulse rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] shadow-[0px_1px_20px_rgba(108,164,239,0.37)]" />
+                <div className="flex gap-3">
+                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                  <div className="h-[42px] w-[140px] shrink-0 animate-pulse rounded-lg bg-[#2E2E68]/30" />
                 </div>
-                {/* Grade Level skeleton */}
-                <div className="rounded-lg bg-[rgba(108,164,239,0.09)] px-3 py-2">
-                  <div className="mb-1.5 h-2.5 w-16 animate-pulse rounded bg-[#C4C4FF]/60" />
-                  <div className="h-7 w-full animate-pulse rounded-md bg-[#C4C4FF]/40" />
-                </div>
-                {/* Class skeleton */}
-                <div className="rounded-lg bg-[rgba(108,164,239,0.09)] px-3 py-2">
-                  <div className="mb-1.5 h-2.5 w-12 animate-pulse rounded bg-[#C4C4FF]/60" />
-                  <div className="h-7 w-full animate-pulse rounded-md bg-[#C4C4FF]/40" />
-                </div>
-              </div>
+              </>
             )}
 
             {!passageExpanded && classLoadError && !isLoadingClasses && (
-              <div className="flex h-[72px] w-full items-center justify-between rounded-2xl border border-red-200 bg-red-50 px-4">
-                <span className="text-sm font-medium text-red-700">Failed to load classes.</span>
+              <div className="flex items-center justify-between rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] px-6 py-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)]">
+                <span className="text-sm font-medium text-red-500">Failed to load classes.</span>
                 <button
                   type="button"
                   onClick={() => {
@@ -682,7 +678,7 @@ export default function OralReadingTestPage() {
                     }).catch(() => setClassLoadError(true))
                       .finally(() => setIsLoadingClasses(false));
                   }}
-                  className="rounded-lg bg-red-600 px-3 py-1 text-xs font-semibold text-white hover:bg-red-700 transition-colors"
+                  className="text-xs font-semibold text-[#6666FF] hover:underline"
                 >
                   Retry
                 </button>
@@ -723,17 +719,57 @@ export default function OralReadingTestPage() {
 
             <PassageDisplay
               content={passageContent}
-              miscues={filteredMiscues}
+              miscues={showMiscues ? filteredMiscues : undefined}
+              alignedWords={showMiscues ? analysisResult?.alignedWords : undefined}
               onJumpToTime={handleJumpToTime}
               expanded={passageExpanded}
               onToggleExpand={() => setPassageExpanded((prev) => !prev)}
+              passageLevel={selectedLevel}
             />
 
+            {passageExpanded && hasRecording && recordedAudioURL && (
+              <div className="mt-2">
+                <AudioPlayer src={recordedAudioURL} externalAudioRef={audioRef} />
+              </div>
+            )}
+
             {!passageExpanded && hasPassage && (
-              <div className="mt-2 flex items-center">
+              <div className="mt-2 flex items-center justify-between">
                 <span className="text-xs font-semibold text-[#00306E]">
                   {passageContent.split(/\s+/).length} words
                 </span>
+                {analysisResult && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-[#31318A]">
+                      {showMiscues ? "Miscues" : "Original"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowMiscues((prev) => !prev)}
+                      aria-label={showMiscues ? "Show original passage" : "Show miscue highlights"}
+                      title={showMiscues ? "Show original passage" : "Show miscue highlights"}
+                      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+                        showMiscues ? "bg-[#6666FF]" : "bg-[#C4C4FF]"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+                          showMiscues ? "translate-x-4.25" : "translate-x-0.75"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                )}
+                {!analysisResult && (
+                  <div className="flex items-center gap-2 opacity-40 pointer-events-none">
+                    <span className="text-xs font-medium text-[#31318A]">
+                      Miscues
+                    </span>
+                    <div className="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full bg-[#C4C4FF]">
+                      <span className="inline-block h-3.5 w-3.5 translate-x-0.75 rounded-full bg-white shadow" />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -748,12 +784,12 @@ export default function OralReadingTestPage() {
             {!passageExpanded && (
               <ReadingTimer
                 hasPassage={hasPassage}
+                hasStudentInfo={!!(studentName.trim() && gradeLevel && selectedClassName)}
                 onStartReading={handleStartReading}
                 hasRecording={hasRecording}
                 recordedSeconds={recordedSeconds}
                 recordedAudioURL={recordedAudioURL}
                 onTryAgain={handleTryAgain}
-                onStartNew={handleStartNew}
                 audioRef={audioRef}
               />
             )}
@@ -788,6 +824,22 @@ export default function OralReadingTestPage() {
               classificationLevel={analysisResult?.classificationLevel}
               highlightedTypes={highlightedTypes}
               onToggleHighlight={toggleHighlightType}
+              onExportPdf={() => {
+                if (!analysisResult) return;
+                const data = buildFluencyReportData({
+                  studentName,
+                  gradeLevel,
+                  selectedClassName,
+                  selectedTitle,
+                  selectedLevel,
+                  selectedTestType,
+                  assessmentType: "Oral Reading",
+                  passageContent,
+                  recordedSeconds,
+                  analysisResult,
+                });
+                exportFluencyReportPdf(data, `Oral_Fluency_Report_${studentName.replace(/[^a-zA-Z0-9]/g, "_")}`);
+              }}
             />
           </div>
         </div>
