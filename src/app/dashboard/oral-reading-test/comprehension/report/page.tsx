@@ -9,6 +9,7 @@ import PassageInfoCard from "@/components/reports/oral-reading-test/reading-flue
 import ComprehensionMetricCards from "@/components/reports/oral-reading-test/comprehension-report/comprehensionMetricCards"
 import ComprehensionBreakdownReport from "@/components/reports/oral-reading-test/comprehension-report/comprehensionBreakdownReport"
 import { getAssessmentByIdAction } from "@/app/actions/assessment/getAssessmentById"
+import { exportComprehensionReportPdf } from "@/lib/exportComprehensionReportPdf"
 
 const STORAGE_KEY = "oral-reading-session"
 
@@ -169,9 +170,33 @@ export default function ComprehensionReportPage() {
 
   const mistakes = reportData.totalItems - reportData.score
 
+  const handleExportPdf = () => {
+    const safeName = reportData.studentName.replace(/[^a-zA-Z0-9]/g, "_")
+    exportComprehensionReportPdf(
+      {
+        studentName: reportData.studentName,
+        gradeLevel: reportData.gradeLevel,
+        className: reportData.className,
+        passageTitle: reportData.passageTitle,
+        passageLevel: reportData.passageLevel,
+        numberOfWords: reportData.totalWords,
+        testType: reportData.testType,
+        assessmentType: "Oral Reading Test",
+        score: reportData.score,
+        totalItems: reportData.totalItems,
+        percentage: reportData.percentage,
+        classificationLevel: reportData.level,
+        literal: reportData.literal,
+        inferential: reportData.inferential,
+        critical: reportData.critical,
+      },
+      `Comprehension_Report_${safeName}`,
+    )
+  }
+
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <ComprehensionReportHeader />
+      <ComprehensionReportHeader onExportPdf={handleExportPdf} />
 
       <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth max-w-300 mx-auto px-6 py-6 md:px-8 lg:px-12 space-y-6 w-full">
         {/* Top row: Student Info + Metric Cards */}

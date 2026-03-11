@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { Download } from "lucide-react"
 
 interface BreakdownItem {
   label: string
@@ -49,6 +50,7 @@ interface ComprehensionBreakdownProps {
   highlightedTag?: "literal" | "inferential" | "critical" | null
   onTagClick?: (tag: "literal" | "inferential" | "critical") => void
   showReportButton?: boolean
+  onExportPdf?: () => void
 }
 
 function getLevelClasses(level: string): { bgClass: string; textClass: string } {
@@ -75,6 +77,7 @@ export function ComprehensionBreakdown({
   highlightedTag = null,
   onTagClick,
   showReportButton = true,
+  onExportPdf,
 }: ComprehensionBreakdownProps) {
   const router = useRouter()
   const levelClasses = getLevelClasses(level)
@@ -85,9 +88,20 @@ export function ComprehensionBreakdown({
         disabled ? "pointer-events-none opacity-40" : "opacity-100"
       }`}
     >
-      <span className="mb-3 block text-[10px] font-bold uppercase tracking-widest text-[#6666FF]">
-        Comprehension Breakdown
-      </span>
+      <div className="mb-3 flex items-center justify-between">
+        <span className="block text-[10px] font-bold uppercase tracking-widest text-[#6666FF]">
+          Comprehension Breakdown
+        </span>
+        <button
+          type="button"
+          title="Download as PDF"
+          onClick={() => onExportPdf?.()}
+          disabled={disabled || !onExportPdf}
+          className="rounded p-0.5 text-[#6666FF] transition-colors hover:bg-[rgba(102,102,255,0.1)] disabled:pointer-events-none disabled:opacity-40"
+        >
+          <Download className="h-4 w-4" />
+        </button>
+      </div>
 
       <div className="flex flex-1 flex-col overflow-y-auto">
         {breakdownItems.map((item, index) => {
