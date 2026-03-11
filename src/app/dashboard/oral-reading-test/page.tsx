@@ -18,6 +18,7 @@ import { ReadinessCheckButton } from "@/components/oral-reading-test/readinessCh
 import { createStudent } from "@/app/actions/student/createStudent";
 import type { OralFluencyAnalysis } from "@/types/oral-reading";
 import { convertToWav } from "@/utils/convertToWav"
+import { exportFluencyReportPdf, buildFluencyReportData } from "@/lib/exportFluencyReportPdf"
 // Helper to get current school year
 function getCurrentSchoolYear(): string {
   const now = new Date();
@@ -823,6 +824,22 @@ export default function OralReadingTestPage() {
               classificationLevel={analysisResult?.classificationLevel}
               highlightedTypes={highlightedTypes}
               onToggleHighlight={toggleHighlightType}
+              onExportPdf={() => {
+                if (!analysisResult) return;
+                const data = buildFluencyReportData({
+                  studentName,
+                  gradeLevel,
+                  selectedClassName,
+                  selectedTitle,
+                  selectedLevel,
+                  selectedTestType,
+                  assessmentType: "Oral Reading",
+                  passageContent,
+                  recordedSeconds,
+                  analysisResult,
+                });
+                exportFluencyReportPdf(data, `Oral_Fluency_Report_${studentName.replace(/[^a-zA-Z0-9]/g, "_")}`);
+              }}
             />
           </div>
         </div>

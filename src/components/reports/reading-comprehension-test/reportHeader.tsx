@@ -6,7 +6,11 @@ import { useRouter } from "next/navigation";
 import { DeleteConfirmModal } from "@/components/ui/deleteConfirmModal";
 import { NavButton } from "@/components/ui/navButton";
 
-export default function ReadingComprehensionReportHeader() {
+interface ReadingComprehensionReportHeaderProps {
+  onExportPdf?: () => void;
+}
+
+export default function ReadingComprehensionReportHeader({ onExportPdf }: ReadingComprehensionReportHeaderProps) {
   const router = useRouter();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -22,7 +26,9 @@ export default function ReadingComprehensionReportHeader() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            className="px-5 py-2 bg-[#297CEC] text-white text-xs font-medium rounded-lg border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#297CEC]/90 transition-colors"
+            onClick={() => onExportPdf?.()}
+            disabled={!onExportPdf}
+            className="px-5 py-2 bg-[#297CEC] text-white text-xs font-medium rounded-lg border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#297CEC]/90 transition-colors disabled:opacity-50 disabled:pointer-events-none"
           >
             Export to PDF
           </button>
