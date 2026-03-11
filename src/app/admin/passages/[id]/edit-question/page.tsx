@@ -14,7 +14,7 @@ export default function EditQuestionPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-full flex-col">
+      <div className="flex min-h-screen flex-col overflow-y-scroll">
         <main className="flex flex-1 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#31318A] border-t-transparent" />
           <span className="ml-3 text-sm text-[#00306E]/60 font-medium">
@@ -27,7 +27,7 @@ export default function EditQuestionPage() {
 
   if (!question) {
     return (
-      <div className="flex h-full flex-col">
+      <div className="flex min-h-screen flex-col overflow-y-scroll">
         <main className="flex flex-1 items-center justify-center">
           <div className="rounded-lg bg-red-100 p-6 text-sm text-red-700">
             {error?.message || "Question not found"}
@@ -38,8 +38,8 @@ export default function EditQuestionPage() {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <main className="flex-1 overflow-auto">
+<div className="min-h-screen h-screen w-full overflow-auto bg-[#F4FCFD] flex flex-col">
+  <main className="flex-1 w-full">
         <div className="mx-auto max-w-2xl px-8 py-8">
           <UpdateQuestionForm question={{ ...question, passageId }} />
         </div>
