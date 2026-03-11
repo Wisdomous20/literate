@@ -4,7 +4,11 @@ import { LayoutDashboard, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { NavButton } from "@/components/ui/navButton";
 
-export default function ComprehensionReportHeader() {
+interface ComprehensionReportHeaderProps {
+  onExportPdf?: () => void;
+}
+
+export default function ComprehensionReportHeader({ onExportPdf }: ComprehensionReportHeaderProps) {
   const router = useRouter();
 
   return (
@@ -21,6 +25,18 @@ export default function ComprehensionReportHeader() {
           <button
             type="button"
             className="px-5 py-2 bg-[#297CEC] text-white text-xs font-medium rounded-lg border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#297CEC]/90 transition-colors"
+            onClick={() =>
+              router.push("/dashboard/oral-reading-test/reading-level-report")
+            }
+            className="px-5 py-2 bg-[#2E2E68] text-white text-xs font-medium rounded-lg border border-[#7A7AFB] shadow-[0_1px_20px_rgba(65,155,180,0.47)] hover:bg-[#2E2E68]/90 transition-colors"
+          >
+            Reading Level
+          </button>
+          <button
+            type="button"
+            onClick={() => onExportPdf?.()}
+            disabled={!onExportPdf}
+            className="px-5 py-2 bg-[#297CEC] text-white text-xs font-medium rounded-lg border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#297CEC]/90 transition-colors disabled:opacity-50 disabled:pointer-events-none"
           >
             Export to PDF
           </button>

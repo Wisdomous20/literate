@@ -119,9 +119,8 @@ export function ResetPasswordForm() {
     setIsLoading(true)
 
     try {
-      // Call the API to reset the password
-      const response = await fetch("/api/auth/passwordReset", {
-        method: "PUT",
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },

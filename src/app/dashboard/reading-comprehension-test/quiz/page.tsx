@@ -18,6 +18,7 @@ import { QuestionCard, type QuestionData } from "@/components/reading-comprehens
 import { ComprehensionSubmitArea } from "@/components/reading-comprehension-test/comprehensionSubmitArea";
 import { getQuizByPassageAction } from "@/app/actions/comprehension-Test/getQuizByPassage";
 import { createStudent } from "@/app/actions/student/createStudent";
+import { exportComprehensionReportPdf } from "@/lib/exportComprehensionReportPdf";
 
 const SESSION_KEY = "reading-comprehension-session";
 const COMP_STATE_KEY = "reading-comprehension-comp-state";
@@ -516,6 +517,30 @@ export default function ReadingComprehensionQuestionsPage() {
               highlightedTag={highlightedTag}
               onTagClick={handleTagClick}
               showReportButton={false}
+              onExportPdf={() => {
+                if (!comprehensionResult || !comprehensionResult.tagBreakdown) return;
+                const raw = sessionStorage.getItem("reading-comprehension-session");
+                const session = raw ? JSON.parse(raw) : {};
+                const totalItems = comprehensionResult.totalItems;
+                const score = comprehensionResult.score;
+                exportComprehensionReportPdf({
+                  studentName: session.studentName || "\u2014",
+                  gradeLevel: session.gradeLevel ? `Grade ${session.gradeLevel}` : "\u2014",
+                  className: session.selectedClassName || "\u2014",
+                  passageTitle: session.selectedTitle || "\u2014",
+                  passageLevel: session.selectedLevel || "\u2014",
+                  numberOfWords: session.passageContent ? session.passageContent.split(/\s+/).filter(Boolean).length : 0,
+                  testType: session.selectedTestType || "\u2014",
+                  assessmentType: "Reading Comprehension Test",
+                  score,
+                  totalItems,
+                  percentage: totalItems > 0 ? Math.round((score / totalItems) * 100) : 0,
+                  classificationLevel: comprehensionResult.level,
+                  literal: comprehensionResult.tagBreakdown.literal,
+                  inferential: comprehensionResult.tagBreakdown.inferential,
+                  critical: comprehensionResult.tagBreakdown.critical,
+                }, `Comprehension_Report_${(session.studentName || "report").replace(/[^a-zA-Z0-9]/g, "_")}`);
+              }}
             />
           </div>
         </div>

@@ -12,6 +12,7 @@ import { QuestionCard } from "@/components/oral-reading-test/questionCard";
 import type { QuestionData } from "@/components/oral-reading-test/questionCard";
 import { getQuizByPassageAction } from "@/app/actions/comprehension-Test/getQuizByPassage";
 import { getAssessmentComprehension } from "@/app/actions/assessment/getAssessmentComprehension";
+import { exportComprehensionReportPdf } from "@/lib/exportComprehensionReportPdf";
 
 const COMP_STORAGE_KEY = "oral-reading-comprehension-state";
 
@@ -363,7 +364,7 @@ export default function OralReadingComprehensionPage() {
       try {
         const res = await getAssessmentComprehension(assessmentId);
         if (res.success && "assessment" in res && res.assessment?.comprehension) {
-          const { result: existingResult, restoredAnswers: _ } =
+          const { result: existingResult } =
             buildResultFromAssessment(res.assessment as Parameters<typeof buildResultFromAssessment>[0]);
 
           setComprehensionResult(existingResult);
@@ -419,14 +420,13 @@ export default function OralReadingComprehensionPage() {
 
       // Fetch the full assessment to get tag breakdown
       let tagBreakdown: TagBreakdown | undefined;
-      let fluencyClassification: string | null | undefined;
       try {
         const res = await getAssessmentComprehension(assessmentId);
         if (res.success && "assessment" in res && res.assessment?.comprehension) {
           tagBreakdown = computeTagBreakdown(
             res.assessment.comprehension.answers as Parameters<typeof computeTagBreakdown>[0],
           );
-          fluencyClassification = res.assessment?.oralFluency?.classificationLevel;
+          // fluencyClassification not needed here but available via res.assessment?.oralFluency?.classificationLevel
         }
       } catch {
         // Failed to fetch tag breakdown — continue without it
@@ -595,6 +595,30 @@ export default function OralReadingComprehensionPage() {
               disabled={!isSubmitted}
               highlightedTag={highlightedTag}
               onTagClick={handleTagClick}
+              onExportPdf={() => {
+                if (!comprehensionResult || !comprehensionResult.tagBreakdown) return;
+                const raw = sessionStorage.getItem("oral-reading-session");
+                const session = raw ? JSON.parse(raw) : {};
+                const totalItems = comprehensionResult.totalItems;
+                const score = comprehensionResult.score;
+                exportComprehensionReportPdf({
+                  studentName: session.studentName || "\u2014",
+                  gradeLevel: session.gradeLevel ? `Grade ${session.gradeLevel}` : "\u2014",
+                  className: session.selectedClassName || "\u2014",
+                  passageTitle: session.selectedTitle || "\u2014",
+                  passageLevel: session.selectedLevel || "\u2014",
+                  numberOfWords: session.passageContent ? session.passageContent.split(/\s+/).filter(Boolean).length : 0,
+                  testType: session.selectedTestType || "\u2014",
+                  assessmentType: "Oral Reading Test",
+                  score,
+                  totalItems,
+                  percentage: totalItems > 0 ? Math.round((score / totalItems) * 100) : 0,
+                  classificationLevel: comprehensionResult.level,
+                  literal: comprehensionResult.tagBreakdown.literal,
+                  inferential: comprehensionResult.tagBreakdown.inferential,
+                  critical: comprehensionResult.tagBreakdown.critical,
+                }, `Comprehension_Report_${(session.studentName || "report").replace(/[^a-zA-Z0-9]/g, "_")}`);
+              }}
             />
           </div>
         </div>
