@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ChevronDown, ClipboardList, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ClassCard } from "./classCard";
@@ -17,14 +17,15 @@ function getCurrentSchoolYear(): string {
   return now.getMonth() >= 7 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
 }
 
-function getSchoolYears(): string[] {
-  const current = getCurrentSchoolYear();
-  const [startYear] = current.split("-").map(Number);
-  return [
-    current,
-    `${startYear - 1}-${startYear}`,
-    `${startYear - 2}-${startYear - 1}`,
-  ];
+function getNextSchoolYear(): string {
+  const [startYear] = getCurrentSchoolYear().split("-").map(Number);
+  return `${startYear + 1}-${startYear + 2}`;
+}
+
+interface ClassInventoryProps {
+  selectedYear: string;
+  onYearChange: (year: string) => void;
+  showToast?: (message: string, type: "success" | "error") => void;
 }
 
 function getVariant(index: number): ClassCardVariant {
@@ -32,49 +33,85 @@ function getVariant(index: number): ClassCardVariant {
   return variants[index % variants.length];
 }
 
-interface ClassInventoryProps {
-  selectedYear: string;
-  onYearChange: (year: string) => void;
-}
-
-export function ClassInventory({ selectedYear, onYearChange }: ClassInventoryProps) {
+export function ClassInventory({
+  selectedYear,
+  onYearChange,
+  showToast,
+}: ClassInventoryProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const schoolYears = getSchoolYears();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { data: rawClasses, isLoading, error: fetchError } = useClassList(selectedYear);
+  const {
+    data: rawClasses,
+    isLoading,
+    error: fetchError,
+  } = useClassList(selectedYear);
+
   const error = fetchError?.message ?? null;
 
+  // Compute available years for dropdown
+  const currentYear = getCurrentSchoolYear();
+  const nextYear = getNextSchoolYear();
+  const now = new Date();
+  const nextYearStart = new Date(Number(nextYear.split("-")[0]), 7, 1); // August 1st of next year
+  const isNextYearDisabled = now < nextYearStart;
+
+  const yearsWithData = useMemo(() => {
+    const years = [currentYear];
+    if (!years.includes(nextYear)) years.push(nextYear);
+    return years.sort((a, b) => b.localeCompare(a));
+  }, [currentYear, nextYear]);
+
   const classes = (rawClasses ?? []).map(
-    (c: { id: string; name: string; studentCount: number }, index: number) => ({
+    (
+      c: { id: string; name: string; studentCount: number },
+      index: number,
+    ): {
+      id: string;
+      name: string;
+      studentCount: number;
+      variant: ClassCardVariant;
+    } => ({
       id: c.id,
       name: c.name,
       studentCount: c.studentCount,
       variant: getVariant(index),
-    })
+    }),
   );
 
   const previewClasses = classes.slice(0, 5);
 
-  const handleCreateClass = async (data: { className: string; schoolYear: string }) => {
+  const handleCreateClass = async (data: {
+    className: string;
+    schoolYear: string;
+  }) => {
     const result = await createClass(data.className);
     if (result.success) {
-      await queryClient.invalidateQueries({ queryKey: ["classes", selectedYear] });
+      await queryClient.invalidateQueries({
+        queryKey: ["classes", selectedYear],
+      });
+      showToast?.("Class created successfully!", "success");
+    } else {
+      showToast?.("Failed to create class.", "error");
     }
     return result;
   };
 
   const handleClassUpdated = async () => {
-    await queryClient.invalidateQueries({ queryKey: ["classes", selectedYear] });
+    await queryClient.invalidateQueries({
+      queryKey: ["classes", selectedYear],
+    });
   };
 
   return (
     <div className="space-y-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <h2 className="text-[20px] font-semibold text-[#00306E]">Class Inventory</h2>
+          <h2 className="text-[20px] font-semibold text-[#00306E]">
+            Class Inventory
+          </h2>
           <button
             type="button"
             onClick={() => router.push("/dashboard/class/all")}
@@ -95,22 +132,35 @@ export function ClassInventory({ selectedYear, onYearChange }: ClassInventoryPro
             </button>
             {isDropdownOpen && (
               <div className="absolute right-0 top-full z-10 mt-1 w-36 rounded-lg border border-[#5D5DFB]/30 bg-white py-1 shadow-lg">
-                {schoolYears.map((year) => (
-                  <button
-                    key={year}
-                    onClick={() => {
-                      onYearChange(year);
-                      setIsDropdownOpen(false);
-                    }}
-                    className={`w-full px-4 py-2 text-left text-sm transition-colors hover:bg-[#E4F4FF] ${
-                      selectedYear === year
-                        ? "font-semibold text-[#6666FF]"
-                        : "text-[#00306E]"
-                    }`}
-                  >
-                    {year}
-                  </button>
-                ))}
+                {yearsWithData.map((year) => {
+                  const isCurrent = year === currentYear;
+                  const isNext = year === nextYear;
+                  const disabled = isNext && isNextYearDisabled;
+                  return (
+                    <button
+                      key={year}
+                      onClick={() => {
+                        if (!disabled) {
+                          onYearChange(year);
+                          setIsDropdownOpen(false);
+                        }
+                      }}
+                      disabled={disabled}
+                      className={`w-full px-4 py-2 text-left text-sm transition-colors
+                        ${
+                          year === selectedYear
+                            ? "font-semibold text-[#6666FF] bg-gray-100"
+                            : "text-[#00306E] hover:bg-[#E4F4FF]"
+                        }
+                        ${disabled ? "cursor-not-allowed opacity-60" : ""}
+                      `}
+                    >
+                      {year}
+                      {isCurrent && " (Current)"}
+                      {isNext && isNextYearDisabled && " (Upcoming)"}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -141,8 +191,12 @@ export function ClassInventory({ selectedYear, onYearChange }: ClassInventoryPro
       )}
       {!isLoading && !error && classes.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <p className="text-[#00306E]/70 mb-2">No classes found for {selectedYear}</p>
-          <p className="text-sm text-[#00306E]/50">Click Create Class to add your first class</p>
+          <p className="text-[#00306E]/70 mb-2">
+            No classes found for {selectedYear}
+          </p>
+          <p className="text-sm text-[#00306E]/50">
+            Click Create Class to add your first class
+          </p>
         </div>
       )}
       {!isLoading && !error && previewClasses.length > 0 && (
@@ -164,6 +218,7 @@ export function ClassInventory({ selectedYear, onYearChange }: ClassInventoryPro
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onCreateClass={handleCreateClass}
+        schoolYear={selectedYear}
       />
     </div>
   );

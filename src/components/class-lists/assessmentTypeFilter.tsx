@@ -15,9 +15,9 @@ interface AssessmentTypeFilterProps {
 
 const assessmentTypeOptions = [
   { value: "ALL" as const, label: "All Students" },
-  { value: "ORAL_READING" as const, label: "Oral Reading" },
-  { value: "COMPREHENSION" as const, label: "Comprehension" },
-  { value: "READING_FLUENCY" as const, label: "Reading Fluency" },
+  { value: "ORAL_READING" as const, label: "Oral Reading Test" },
+  { value: "COMPREHENSION" as const, label: "Comprehension Test" },
+  { value: "READING_FLUENCY" as const, label: "Reading Fluency Test" },
 ];
 
 export function AssessmentTypeFilterDropdown({

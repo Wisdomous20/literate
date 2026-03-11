@@ -97,9 +97,26 @@ export function detectMiscues(
     }
 
     if (selfCorrectedIndices.has(i)) {
+      // For INSERTIONs flagged as self-correction, the reader was attempting
+      // a nearby omitted/mismatched passage word — find it
+      let expectedWord = aligned.expected ?? "";
+      if (!expectedWord && aligned.spoken) {
+        const spokenNorm = normalizeWord(aligned.spoken);
+        for (let k = Math.max(0, i - 3); k <= Math.min(alignedWords.length - 1, i + 3); k++) {
+          if (k === i) continue;
+          const nearby = alignedWords[k];
+          if ((nearby.match === "OMISSION" || nearby.match === "MISMATCH") && nearby.expected) {
+            if (similarityRatio(spokenNorm, normalizeWord(nearby.expected)) > 0.5) {
+              expectedWord = nearby.expected;
+              break;
+            }
+          }
+        }
+      }
+
       miscues.push({
         miscueType: "SELF_CORRECTION",
-        expectedWord: aligned.expected ?? aligned.spoken ?? "",
+        expectedWord: expectedWord || aligned.spoken || "",
         spokenWord: aligned.spoken,
         wordIndex: aligned.expectedIndex ?? aligned.spokenIndex ?? i,
         timestamp: aligned.timestamp,
