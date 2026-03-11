@@ -19,6 +19,7 @@ export interface ClassItem {
   studentCount: number;
   createdAt?: string;
   schoolYear?: string;
+  currentYear?: string;
 }
 
 interface AllClassesPageProps {
@@ -30,6 +31,10 @@ interface AllClassesPageProps {
   selectedYear: string;
   onYearChange: (year: string) => void;
   onCreateClass?: () => void;
+  nextYear?: string;
+  isNextYearDisabled?: boolean;
+  showToast?: (message: string, type: "success" | "error") => void;
+  currentYear?: string; 
 }
 
 export default function AllClassesPage({
@@ -41,16 +46,21 @@ export default function AllClassesPage({
   onYearChange,
   onCreateClass,
   refetch,
+  nextYear,
+  isNextYearDisabled,
+  showToast,
+  currentYear,
 }: AllClassesPageProps) {
   const router = useRouter();
   const [showLatest, setShowLatest] = useState(true);
   const [showOld, setShowOld] = useState(false);
-
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const latestClasses = allClasses.slice(0, 3);
   const oldClasses = allClasses.slice(3);
 
   const handleClassClick = (classId: string) => {
     router.push(`/dashboard/class/${classId}`);
+    if (showToast) showToast("Navigated to class details.", "success");
   };
 
   return (
@@ -71,33 +81,61 @@ export default function AllClassesPage({
               </span>
             </button>
           </div>
-         <div className="flex items-center gap-3">
-  <div className="relative">
-    <select
-      id="schoolYear"
-      name="schoolYear"
-      className="rounded-full border border-dashed border-[#6666FF]/60 bg-[#afafef3e] px-4 py-1.5 text-sm text-[#00306E] font-medium min-w-28 h-9 transition-all focus:outline-none focus:border-[#6666FF]"
-      value={selectedYear}
-      onChange={(e) => onYearChange(e.target.value)}
-      aria-label="Select school year"
-    >
-      {schoolYears.map((year) => (
-        <option key={year} value={year} className="text-[#00306E]">
-          {year}
-        </option>
-      ))}
-    </select>
-  </div>
-  {onCreateClass && (
-    <button
-      type="button"
-      onClick={onCreateClass}
-      className="rounded-full border border-[#7A7AFB] bg-[#6666FF] px-6 py-2 text-sm font-semibold text-white shadow-[0px_1px_20px_rgba(65,155,180,0.47)] transition-opacity hover:opacity-90"
-    >
-      Create Class
-    </button>
-  )}
-</div>
+
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setDropdownOpen((open) => !open)}
+                className="rounded-lg border border-[#6666FF]/25 bg-[#6666FF]/8 px-5 py-2 text-sm font-medium text-[#6666FF] flex items-center gap-1 h-10 min-w-30"
+              >
+                {selectedYear}
+                <ChevronDown className="h-4 w-4" />
+              </button>
+
+              {dropdownOpen && (
+                <div className="absolute right-0 top-full z-10 mt-1 w-36 rounded-lg border border-[#5D5DFB]/30 bg-white py-1 shadow-lg">
+                  {schoolYears.map((year) => {
+                    const isCurrent = year === currentYear;
+                    const isNext = nextYear === year;
+                    const disabled = isNext && !!isNextYearDisabled;
+                    return (
+                      <button
+                        key={year}
+                        onClick={() => {
+                          if (!disabled) {
+                            onYearChange(year);
+                            setDropdownOpen(false);
+                          }
+                        }}
+                        disabled={disabled}
+                        className={`w-full px-4 py-2 text-left text-sm transition-colors
+                          ${year === selectedYear
+                            ? "font-semibold text-[#6666FF] bg-gray-100"
+                            : "text-[#00306E] hover:bg-[#E4F4FF]"}
+                          ${disabled ? "cursor-not-allowed opacity-60" : ""}
+                        `}
+                      >
+                        {year}
+                        {isCurrent && " (Current)"}
+                        {isNext && isNextYearDisabled && " (Upcoming)"}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {onCreateClass && (
+              <button
+                type="button"
+                onClick={onCreateClass}
+                className="rounded-lg border border-[#7A7AFB] bg-[#6666FF] px-5 py-2 text-sm font-medium text-white shadow-[0px_1px_20px_rgba(65,155,180,0.47)] transition-opacity hover:opacity-90 h-10 min-w-30"
+              >
+                + Create Class
+              </button>
+            )}
+          </div>
         </div>
 
         {isLoading && (

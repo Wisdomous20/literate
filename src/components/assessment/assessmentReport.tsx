@@ -70,7 +70,7 @@ export function AssessmentReport({
           Previous
         </button>
 
-        <div className="flex flex-col gap-3 rounded-2xl border border-[#6666FF]/10 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-2xl border border-[#6666FF] bg-[#6666FF]/10 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#EEF0FF]">
               <User className="h-5 w-5 text-[#6666FF]" />
@@ -112,22 +112,21 @@ export function AssessmentReport({
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-[#6666FF]/10 bg-white shadow-sm">
-          <div className="grid grid-cols-4 border-b border-[#6666FF]/8 bg-[#F8F9FF] px-5 py-3">
-            <span className="text-center text-xs font-semibold text-[#00306E]">
+        <div className="overflow-hidden min-h-125 rounded-2xl border border-[#6666FF]/10 bg-white shadow-sm">
+          <div className="grid grid-cols-4 border-b border-[#6666FF]/15 bg-linear-to-r from-[#8585faed] to-[#b8c2f7] px-5 py-3">
+            <span className="text-center text-xs font-bold text-white">
               Attempt
             </span>
-            <span className="text-center text-xs font-semibold text-[#00306E]">
+            <span className="text-center text-xs font-bold text-white">
               Assessment Type
             </span>
-            <span className="text-center text-xs font-semibold text-[#00306E]">
+            <span className="text-center text-xs font-bold text-white">
               Test Type
             </span>
-            <span className="text-center text-xs font-semibold text-[#00306E]">
+            <span className="text-center text-xs font-bold text-white">
               Date
             </span>
           </div>
-
           <div className="max-h-[50vh] divide-y divide-[#6666FF]/5 overflow-y-auto">
             {loading ? (
               <div className="py-8 text-center text-sm text-[#00306E]/50">
@@ -141,36 +140,26 @@ export function AssessmentReport({
               paginatedAssessments.map((record, index) => (
                 <div
                   key={`${record.id}-${index}`}
-                  className={`grid grid-cols-4 items-center px-5 py-3 cursor-pointer transition-colors ${
+                  className={`grid grid-cols-4 items-center px-5 py-3 ${
                     index % 2 === 0 ? "bg-white" : "bg-[#F8F9FF]"
-                  } hover:bg-[#FAFAFF]`}
+                  } cursor-pointer transition-colors hover:bg-[#E4F4FF] hover:shadow-md hover:border hover:border-[#6666FF]/30`}
                   onClick={() => onRowClick(record)}
+                  tabIndex={0}
+                  role="button"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") onRowClick(record);
                   }}
-                  role="button"
-                  tabIndex={0}
                 >
-                  <span className="flex justify-center">
-                    <span className="inline-block min-w-12 rounded-lg border border-[#6666FF]/40 bg-transparent px-2 py-1 text-center text-sm font-semibold text-[#6666FF]">
-                      #{record.attempt}
-                    </span>
+                  <span className="flex justify-center text-xs font-medium text-[#00306E]">
+                    #{record.attempt}
                   </span>
-                  <span className="text-center text-xs text-[#00306E]">
+                  <span className="text-center text-xs text-[#00306E]/80">
                     {record.assessmentType}
                   </span>
-                  <span className="text-center">
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        record.testType === "Post-Test"
-                          ? "bg-[#6666FF]/10 text-[#6666FF]"
-                          : "bg-[#00306E]/10 text-[#00306E]"
-                      }`}
-                    >
-                      {record.testType}
-                    </span>
-                  </span>
                   <span className="text-center text-xs text-[#00306E]/70">
+                    {record.testType}
+                  </span>
+                  <span className="text-center text-xs text-[#00306E]/60">
                     {record.assessmentDate}
                   </span>
                 </div>
@@ -223,7 +212,7 @@ export function AssessmentReport({
                 aria-label="Last page"
                 title="Last page"
               >
-                » 
+                »
               </button>
             </div>
           </div>

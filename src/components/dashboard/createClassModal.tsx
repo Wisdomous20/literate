@@ -11,34 +11,21 @@ interface CreateClassModalProps {
     className: string;
     schoolYear: string;
   }) => Promise<{ success: boolean; error?: string }>;
+  schoolYear: string;
 }
-
-function getCurrentSchoolYear(): string {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth(); // 0-indexed (0 = January)
-
-  if (currentMonth >= 7) {
-    // August onwards
-    return `${currentYear}-${currentYear + 1}`;
-  } else {
-    return `${currentYear - 1}-${currentYear}`;
-  }
-}
-
 export function CreateClassModal({
   isOpen,
   onClose,
   onCreateClass,
+  schoolYear,
 }: CreateClassModalProps) {
   const [className, setClassName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const schoolYear = getCurrentSchoolYear(); // Auto-filled and read-only
   const backdropRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  const MAX_CLASS_NAME_LENGTH = 50;
 
-  // Handle body scroll lock
   useEffect(() => {
     if (!isOpen) return;
 
@@ -63,18 +50,19 @@ export function CreateClassModal({
       e.preventDefault();
       if (isLoading) return;
 
-      // Validation
       const trimmedName = className.trim();
       if (!trimmedName) {
-        setError("Class name is required.");
+        setError("Class name is required");
         return;
       }
       if (trimmedName.length < 2) {
         setError("Class name must be at least 2 characters.");
         return;
       }
-      if (trimmedName.length > 50) {
-        setError("Class name must be less than 50 characters.");
+      if (trimmedName.length > MAX_CLASS_NAME_LENGTH) {
+        setError(
+          `Class name must be less than ${MAX_CLASS_NAME_LENGTH} characters.`,
+        );
         return;
       }
       if (!/^[a-zA-Z0-9 _-]+$/.test(trimmedName)) {
@@ -83,7 +71,6 @@ export function CreateClassModal({
         );
         return;
       }
-
       setIsLoading(true);
       setError(null);
 
@@ -108,25 +95,21 @@ export function CreateClassModal({
     [className, schoolYear, onCreateClass, onClose, isLoading],
   );
 
-  // Don't render on server or when closed
   if (typeof window === "undefined" || !isOpen) return null;
 
   const modalContent = (
     <div className="fixed inset-0 z-99999 flex items-center justify-center">
-      {/* Backdrop */}
       <div
         ref={backdropRef}
         onClick={onClose}
         className="absolute inset-0 animate-in fade-in duration-300 bg-black/40 backdrop-blur-[10px]"
       />
 
-      {/* Modal */}
       <div
         ref={modalRef}
         className="relative animate-in fade-in zoom-in-95 duration-300"
       >
         <div className="w-125 rounded-[30px] bg-white p-8 shadow-[0px_10px_60px_rgba(0,48,110,0.25)]">
-          {/* Close button */}
           <button
             type="button"
             onClick={onClose}
@@ -138,7 +121,6 @@ export function CreateClassModal({
             <X className="h-5 w-5" />
           </button>
 
-          {/* Header */}
           <div className="mb-8">
             <h2 className="text-[28px] font-bold leading-tight text-[#31318A]">
               Create Class
@@ -148,7 +130,6 @@ export function CreateClassModal({
             </p>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
@@ -156,7 +137,6 @@ export function CreateClassModal({
               </div>
             )}
 
-            {/* Class Name */}
             <div className="flex items-center gap-6">
               <label
                 htmlFor="className"
@@ -164,17 +144,22 @@ export function CreateClassModal({
               >
                 Class Name
               </label>
-              <input
-                id="className"
-                value={className}
-                onChange={(e) => setClassName(e.target.value)}
-                disabled={isLoading}
-                placeholder="Enter class name"
-                className="flex-1 rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none shadow-[inset_0px_2px_4px_rgba(0,48,110,0.08)] transition-colors focus:border-[#6666FF] disabled:opacity-50"
-              />
+              <div className="flex-1 flex flex-col">
+                <input
+                  id="className"
+                  value={className}
+                  onChange={(e) => setClassName(e.target.value)}
+                  disabled={isLoading}
+                  placeholder="Enter class name"
+                  maxLength={MAX_CLASS_NAME_LENGTH}
+                  className="rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none shadow-[inset_0px_2px_4px_rgba(0,48,110,0.08)] transition-colors focus:border-[#6666FF] disabled:opacity-50"
+                />
+                <span className="text-right text-xs text-gray-500 mt-2">
+                  {className.length}/{MAX_CLASS_NAME_LENGTH}
+                </span>
+              </div>
             </div>
 
-            {/* School Year */}
             <div className="flex items-center gap-6">
               <label
                 htmlFor="schoolYear"
@@ -190,7 +175,6 @@ export function CreateClassModal({
               />
             </div>
 
-            {/* Submit */}
             <div className="flex justify-center pt-4">
               <button
                 type="submit"

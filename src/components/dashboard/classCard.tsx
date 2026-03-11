@@ -114,7 +114,6 @@ export function ClassCard({
   return (
     <>
       <div className="relative">
-        {/* Card */}
         <div
           role="button"
           onClick={onClick}
@@ -152,7 +151,6 @@ export function ClassCard({
           </div>
         </div>
 
-        {/* 3-dot menu */}
         <div className="absolute right-3 top-3 z-20" ref={menuRef}>
           <button
             type="button"
@@ -188,7 +186,6 @@ export function ClassCard({
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="mx-4 w-full max-w-sm rounded-xl bg-white shadow-xl">
@@ -200,7 +197,9 @@ export function ClassCard({
             <div className="px-5 py-4">
               <p className="text-sm text-gray-600">
                 Are you sure you want to delete{" "}
-                <strong className="text-gray-900">{name}</strong>? This cannot
+                <strong className="text-gray-900 block truncate max-w-full">
+                  {name}
+                </strong>{" "}
                 be undone.
               </p>
             </div>
@@ -226,7 +225,6 @@ export function ClassCard({
         </div>
       )}
 
-      {/* Update Modal */}
       <UpdateClassModal
         isOpen={isUpdateModalOpen}
         classId={classId}

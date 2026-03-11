@@ -2,7 +2,16 @@
 
 import { useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ChevronLeft, Search, ChevronUp, ChevronDown, Loader2, X, CheckCircle, XCircle } from "lucide-react";
+import {
+  ChevronLeft,
+  Search,
+  ChevronUp,
+  ChevronDown,
+  Loader2,
+  X,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
 import { ClassListsHeader } from "@/components/class-lists/classListsHeader";
 import { StatCards } from "@/components/class-lists/statCards";
 import {
@@ -46,7 +55,9 @@ function gradeLevelToNumber(gradeLevel: string): number {
   return match ? parseInt(match[0], 10) : 1;
 }
 
-function getAssessmentClassification(assessment: AssessmentData): string | null {
+function getAssessmentClassification(
+  assessment: AssessmentData,
+): string | null {
   switch (assessment.type) {
     case "ORAL_READING":
       return assessment.oralReadingResult?.classificationLevel || null;
@@ -73,7 +84,10 @@ export default function ClassListsPage() {
   const [assessmentType, setAssessmentType] =
     useState<AssessmentTypeFilter>("ALL");
   const [showStats, setShowStats] = useState(true);
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
 
   const {
     data: classData,
@@ -110,7 +124,11 @@ export default function ClassListsPage() {
     if (!classData) return;
     const level = gradeLevelToNumber(data.gradeLevel);
     try {
-      const result = await createStudent(data.studentName, level, classData.name);
+      const result = await createStudent(
+        data.studentName,
+        level,
+        classData.name,
+      );
       if (result.success) {
         await queryClient.invalidateQueries({
           queryKey: ["students", classData.name],
@@ -127,7 +145,6 @@ export default function ClassListsPage() {
   };
 
   const handleDeleteStudent = async (studentId: string) => {
-    if (!confirm("Are you sure you want to delete this student?")) return;
     try {
       const result = await deleteStudent(studentId);
       if (result.success) {
