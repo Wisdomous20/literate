@@ -1,7 +1,6 @@
 import { TranscriptWord, TranscriptResponse } from "@/types/oral-reading";
-import {  protos } from "@google-cloud/speech";
+import { protos } from "@google-cloud/speech";
 import correctWithPassage from "./correctWithPassage";
-
 
 /**
  * Convert Google Speech-to-Text V2 results into the WhisperTranscriptResponse
@@ -50,26 +49,42 @@ export default function convertToTranscriptResponse(
     duration = Math.max(0, (audioBuffer.length - 44) / 32000);
   }
 
-  // Build segments from corrected words (group by result boundaries)
-  let wordOffset = 0;
-  const segments = results.map((result, idx) => {
-    const alt = result.alternatives?.[0];
-    const wordCount = alt?.words?.length ?? 0;
-    const segmentWords = allWords.slice(wordOffset, wordOffset + wordCount);
-    wordOffset += wordCount;
+  // Build segments using time boundaries from original results
+  // (word count may differ after merge/correction, so don't slice by count)
+  const segments = [];
+  let wordIdx = 0;
 
-    const segStart = segmentWords.length > 0 ? segmentWords[0].start : 0;
-    const segEnd =
-      segmentWords.length > 0 ? segmentWords[segmentWords.length - 1].end : 0;
+  for (let rIdx = 0; rIdx < results.length; rIdx++) {
+    const alt = results[rIdx].alternatives?.[0];
+    if (!alt?.words?.length) continue;
 
-    return {
-      id: idx,
+    const resultEndTime = durationToSeconds(
+      alt.words[alt.words.length - 1].endOffset
+    );
+
+    const segmentWords: TranscriptWord[] = [];
+    while (wordIdx < allWords.length && allWords[wordIdx].start <= resultEndTime) {
+      segmentWords.push(allWords[wordIdx]);
+      wordIdx++;
+    }
+
+    segments.push({
+      id: rIdx,
       text: segmentWords.map((w) => w.word).join(" "),
-      start: segStart,
-      end: segEnd,
+      start: segmentWords.length > 0 ? segmentWords[0].start : 0,
+      end: segmentWords.length > 0 ? segmentWords[segmentWords.length - 1].end : 0,
       words: segmentWords,
-    };
-  });
+    });
+  }
+
+  // Assign any remaining words to the last segment
+  if (wordIdx < allWords.length && segments.length > 0) {
+    const remaining = allWords.slice(wordIdx);
+    const lastSeg = segments[segments.length - 1];
+    lastSeg.words.push(...remaining);
+    lastSeg.text = lastSeg.words.map((w) => w.word).join(" ");
+    lastSeg.end = remaining[remaining.length - 1].end;
+  }
 
   return {
     text: fullText,
