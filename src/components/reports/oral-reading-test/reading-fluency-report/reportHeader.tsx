@@ -1,7 +1,8 @@
 "use client";
 
-import { ChevronLeft, LayoutDashboard } from "lucide-react";
+import { ChevronLeft, ChevronRight, LayoutDashboard } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { NavButton } from "@/components/ui/navButton";
 
 interface ReportHeaderProps {
   onExportPdf?: () => void;
@@ -41,13 +42,14 @@ export default function ReportHeader({ onExportPdf }: ReportHeaderProps) {
 
       {/* Previous + Continue to Comprehension */}
       <div className="flex items-center justify-between px-8 pt-2">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-1 text-base font-semibold text-[#31318A] transition-opacity hover:opacity-70"
-        >
-          <ChevronLeft size={18} />
-          Previous
-        </button>
+        <NavButton onClick={() => router.back()}>
+          <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
+          <span>Previous</span>
+        </NavButton>
+        <NavButton onClick={() => router.push("/dashboard/oral-reading-test/comprehension")}>
+          <span>Continue to Comprehension</span>
+          <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
+        </NavButton>
       </div>
     </div>
   );

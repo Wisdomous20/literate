@@ -8,6 +8,7 @@ import MetricCards from "@/components/reports/oral-reading-test/reading-fluency-
 import MiscueAnalysisReport from "@/components/reports/oral-reading-test/reading-fluency-report/miscueAnalysis";
 import AudioPlaybackCard from "@/components/reports/oral-reading-test/reading-fluency-report/audioPlaybackCard";
 import BehaviorChecklist from "@/components/reports/oral-reading-test/reading-fluency-report/readingBehaviorChecklist";
+import ViewMiscuesModal from "@/components/reports/oral-reading-test/reading-fluency-report/viewMiscuesModal";
 import type { MiscueData } from "@/components/reports/oral-reading-test/reading-fluency-report/miscueAnalysis";
 import type { BehaviorItem } from "@/components/reports/oral-reading-test/reading-fluency-report/readingBehaviorChecklist";
 import type {
@@ -134,6 +135,7 @@ function buildBehaviorItems(
 export default function OralReadingReportPage() {
   const session = loadSession();
   const analysis = session.analysisResult;
+  const [showMiscuesModal, setShowMiscuesModal] = useState(false);
 
   const [audioSrc] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
@@ -236,9 +238,18 @@ export default function OralReadingReportPage() {
 
           <BehaviorChecklist behaviors={behaviorItems} />
 
-          <MiscueAnalysisReport miscueData={miscueData} />
+          <MiscueAnalysisReport miscueData={miscueData} onViewMiscues={() => setShowMiscuesModal(true)} />
         </div>
       </main>
+
+      <ViewMiscuesModal
+        open={showMiscuesModal}
+        onClose={() => setShowMiscuesModal(false)}
+        passageContent={session.passageContent || ""}
+        miscues={analysis?.miscues || []}
+        alignedWords={analysis?.alignedWords}
+        passageLevel={session.selectedLevel}
+      />
     </div>
   );
 }

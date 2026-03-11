@@ -14,6 +14,7 @@ export interface MiscueData {
 
 interface MiscueAnalysisProps {
   miscueData: MiscueData;
+  onViewMiscues?: () => void;
 }
 
 const miscueConfig = [
@@ -94,6 +95,7 @@ function getClassificationColorClasses(level: string) {
 
 export default function MiscueAnalysisReport({
   miscueData,
+  onViewMiscues,
 }: MiscueAnalysisProps) {
   const classificationColor = getClassificationColorClasses(
     miscueData.classificationLevel,
@@ -160,6 +162,18 @@ export default function MiscueAnalysisReport({
           </span>
         </div>
       </div>
+
+      {onViewMiscues && (
+        <div className="mt-3 flex justify-center">
+          <button
+            type="button"
+            onClick={onViewMiscues}
+            className="w-full rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90"
+          >
+            View Miscues
+          </button>
+        </div>
+      )}
     </div>
   );
 }
