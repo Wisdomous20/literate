@@ -32,6 +32,8 @@ export function alignWords(
 
   function matchScore(i: number, j: number): number {
     const sim = simMatrix[i][j]
+    // Exact match on short function words gets extra bonus to prevent misalignment
+    if (sim === 1.0 && normExpected[i].length <= 3) return MATCH_SCORE + 1
     return sim > 0.8 ? MATCH_SCORE : sim > 0.4 ? MISMATCH_PENALTY / 2 : MISMATCH_PENALTY
   }
 

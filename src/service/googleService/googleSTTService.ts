@@ -114,6 +114,21 @@ export async function transcribeAudio(
     };
   }
 
+    if (passageText) {
+    const uniqueWords = [
+      ...new Set(passageText.split(/\s+/).filter((w) => w.length > 0)),
+    ];
+    config.adaptation = {
+      phraseSets: [
+        {
+          inlinePhraseSet: {
+            phrases: uniqueWords.map((word) => ({ value: word, boost: 10 })),
+          },
+        },
+      ],
+    };
+  }
+
   // Estimate audio duration
 const estimatedDurationSec = isWav
   ? (audioBuffer.length - 44) / 32000  
