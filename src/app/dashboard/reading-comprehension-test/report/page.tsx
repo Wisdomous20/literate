@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import ReadingComprehensionReportHeader from "@/components/reports/reading-comprehension-test/reportHeader";
@@ -8,7 +8,7 @@ import StudentInfoCard from "@/components/reports/oral-reading-test/reading-flue
 import PassageInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/passageInfoCard";
 import ComprehensionMetricCards from "@/components/reports/oral-reading-test/comprehension-report/comprehensionMetricCards";
 import ComprehensionBreakdownReport from "@/components/reports/oral-reading-test/comprehension-report/comprehensionBreakdownReport";
-import { getAssessmentByIdAction } from "@/app/actions/assessment/getAssessmentById";
+import { useAssessmentById } from "@/lib/hooks/useAssessmentById";
 import { exportComprehensionReportPdf } from "@/lib/exportComprehensionReportPdf";
 
 const SESSION_KEY = "reading-comprehension-session";
@@ -24,8 +24,8 @@ function loadSession(): Partial<SessionState> {
   try {
     const raw = sessionStorage.getItem(SESSION_KEY);
     if (raw) return JSON.parse(raw);
-  } catch {
-    /* empty */
+  } catch (err) {
+    console.error("Failed to load session:", err);
   }
   return {};
 }
@@ -49,101 +49,73 @@ interface ReportData {
 
 export default function ReadingComprehensionReportPage() {
   const router = useRouter();
-  const [reportData, setReportData] = useState<ReportData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const isClient = typeof window !== "undefined";
 
-  useEffect(() => {
-    const fetchReport = async () => {
-      try {
-        const assessmentId = sessionStorage.getItem(
-          "reading-comprehension-assessmentId",
-        );
-        if (!assessmentId) {
-          setError("Assessment not found. Please complete the test first.");
-          setIsLoading(false);
-          return;
-        }
+  const assessmentId = useMemo(() => {
+    if (!isClient) return null;
+    return sessionStorage.getItem("reading-comprehension-assessmentId");
+  }, [isClient]);
 
-        let assessment: Record<string, unknown>;
-        try {
-          assessment = (await getAssessmentByIdAction(
-            assessmentId,
-          )) as Record<string, unknown>;
-        } catch {
-          setError("Failed to load assessment data.");
-          setIsLoading(false);
-          return;
-        }
+  const { data: assessment, isLoading, error: fetchError } = useAssessmentById(assessmentId);
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const test = (assessment as any)?.comprehension;
-        if (!test) {
-          setError("Comprehension test not found for this assessment.");
-          setIsLoading(false);
-          return;
-        }
+  const reportData = useMemo<ReportData | null>(() => {
+    if (!assessment) return null;
 
-        const session = loadSession();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const passage = (assessment as any)?.passage;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const test = (assessment as any)?.comprehension;
+    if (!test) return null;
 
-        const tagBreakdown = {
-          literal: { correct: 0, total: 0 },
-          inferential: { correct: 0, total: 0 },
-          critical: { correct: 0, total: 0 },
-        };
+    const session = loadSession();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const passage = (assessment as any)?.passage;
 
-        for (const answer of test.answers) {
-          const tag = answer.question.tags;
-          if (tag === "Literal") {
-            tagBreakdown.literal.total++;
-            if (answer.isCorrect) tagBreakdown.literal.correct++;
-          } else if (tag === "Inferential") {
-            tagBreakdown.inferential.total++;
-            if (answer.isCorrect) tagBreakdown.inferential.correct++;
-          } else if (tag === "Critical") {
-            tagBreakdown.critical.total++;
-            if (answer.isCorrect) tagBreakdown.critical.correct++;
-          }
-        }
-
-        const percentage =
-          test.totalItems > 0
-            ? Math.round((test.score / test.totalItems) * 100)
-            : 0;
-
-        setReportData({
-          studentName:
-            session.studentName ||
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (assessment as any)?.student?.name ||
-            "Unknown",
-          gradeLevel: session.gradeLevel || "Unknown",
-          className: session.selectedClassName || "Unknown",
-          passageTitle: passage?.title || "Unknown",
-          passageLevel: String(passage?.level ?? ""),
-          testType: passage?.testType || "Unknown",
-          totalWords:
-            passage?.content?.split(/\s+/).filter(Boolean).length ?? 0,
-          score: test.score,
-          totalItems: test.totalItems,
-          percentage,
-          level: test.classificationLevel,
-          literal: tagBreakdown.literal,
-          inferential: tagBreakdown.inferential,
-          critical: tagBreakdown.critical,
-        });
-      } catch (err) {
-        console.error("Failed to fetch comprehension report:", err);
-        setError("Something went wrong while loading the report.");
-      } finally {
-        setIsLoading(false);
-      }
+    const tagBreakdown = {
+      literal: { correct: 0, total: 0 },
+      inferential: { correct: 0, total: 0 },
+      critical: { correct: 0, total: 0 },
     };
 
-    fetchReport();
-  }, []);
+    for (const answer of test.answers) {
+      const tag = answer.question.tags;
+      if (tag === "Literal") {
+        tagBreakdown.literal.total++;
+        if (answer.isCorrect) tagBreakdown.literal.correct++;
+      } else if (tag === "Inferential") {
+        tagBreakdown.inferential.total++;
+        if (answer.isCorrect) tagBreakdown.inferential.correct++;
+      } else if (tag === "Critical") {
+        tagBreakdown.critical.total++;
+        if (answer.isCorrect) tagBreakdown.critical.correct++;
+      }
+    }
+
+    const percentage =
+      test.totalItems > 0
+        ? Math.round((test.score / test.totalItems) * 100)
+        : 0;
+
+    return {
+      studentName:
+        session.studentName ||
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (assessment as any)?.student?.name ||
+        "Unknown",
+      gradeLevel: session.gradeLevel || "Unknown",
+      className: session.selectedClassName || "Unknown",
+      passageTitle: passage?.title || "Unknown",
+      passageLevel: String(passage?.level ?? ""),
+      testType: passage?.testType || "Unknown",
+      totalWords:
+        passage?.content?.split(/\s+/).filter(Boolean).length ?? 0,
+      score: test.score,
+      totalItems: test.totalItems,
+      percentage,
+      level: test.classificationLevel,
+      literal: tagBreakdown.literal,
+      inferential: tagBreakdown.inferential,
+      critical: tagBreakdown.critical,
+    };
+  }, [assessment]);
 
   if (isLoading) {
     return (
@@ -160,6 +132,14 @@ export default function ReadingComprehensionReportPage() {
       </div>
     );
   }
+
+  const error = fetchError
+    ? "Failed to load assessment data."
+    : !assessmentId
+      ? "Assessment not found. Please complete the test first."
+      : !reportData
+        ? "Comprehension test not found for this assessment."
+        : null;
 
   if (error || !reportData) {
     return (
@@ -213,7 +193,6 @@ export default function ReadingComprehensionReportPage() {
       <ReadingComprehensionReportHeader onExportPdf={handleExportPdf} />
 
       <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth max-w-300 mx-auto px-6 py-6 md:px-8 lg:px-12 space-y-6 w-full">
-        {/* Top row: Student Info + Metric Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-[40%_1fr] gap-4">
           <StudentInfoCard
             studentName={reportData.studentName}
@@ -226,7 +205,6 @@ export default function ReadingComprehensionReportPage() {
           />
         </div>
 
-        {/* Bottom row: Passage Info + Comprehension Breakdown */}
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4">
           <PassageInfoCard
             passageTitle={reportData.passageTitle}
@@ -235,7 +213,6 @@ export default function ReadingComprehensionReportPage() {
             testType={reportData.testType}
             assessmentType="Reading Comprehension Test"
           />
-
           <ComprehensionBreakdownReport
             score={`${reportData.score}/${reportData.totalItems}`}
             literal={`${reportData.literal.correct}/${reportData.literal.total}`}

@@ -10,6 +10,8 @@ import MiscueAnalysisReport from "@/components/reports/oral-reading-test/reading
 import AudioPlaybackCard from "@/components/reports/oral-reading-test/reading-fluency-report/audioPlaybackCard";
 import BehaviorChecklist from "@/components/reports/oral-reading-test/reading-fluency-report/readingBehaviorChecklist";
 import { useAssessmentsByStudent } from "@/lib/hooks/useStudentAssessments";
+import { useClassById } from "@/lib/hooks/useClassById";
+import { exportFluencyReportPdf } from "@/lib/exportFluencyReportPdf";
 import type { BehaviorItem } from "@/components/reports/oral-reading-test/reading-fluency-report/readingBehaviorChecklist";
 import type {
   AssessmentData,
@@ -59,11 +61,14 @@ function buildBehaviorItems(
 export default function ReadingFluencyReportPage() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const classId = params.id as string;
   const studentId = params.studentId as string;
   const assessmentId = searchParams.get("id");
 
   const { data: allAssessments = [], isLoading } =
     useAssessmentsByStudent(studentId);
+
+  const { data: classData } = useClassById(classId);
 
   const assessment = useMemo(
     () =>
@@ -76,7 +81,7 @@ export default function ReadingFluencyReportPage() {
   if (isLoading) return <div>Loading...</div>;
   if (!assessment) return <div>No data found.</div>;
 
-  const miscues: OralFluencyMiscue[] = assessment.oralFluency?.miscues || [];
+  const miscues: OralFluencyMiscue[] = assessment.oralFluency?.miscues ?? [];
   const miscueData = {
     mispronunciation: miscues.filter((m) => m.miscueType === "MISPRONUNCIATION")
       .length,
@@ -94,7 +99,7 @@ export default function ReadingFluencyReportPage() {
     classificationLevel: assessment.oralFluency?.classificationLevel ?? "",
   };
 
-  const studentName = assessment.student?.name || "";
+  const studentName = assessment.student?.name ?? "";
   const gradeLevel = assessment.student?.level
     ? `Grade ${assessment.student.level}`
     : "";
@@ -104,25 +109,46 @@ export default function ReadingFluencyReportPage() {
     : (assessment.oralFluency?.totalWords ?? 0);
 
   const behaviorItems = buildBehaviorItems(
-    assessment.oralFluency?.behaviors || [],
+    assessment.oralFluency?.behaviors ?? [],
   );
 
   const assessmentTypeLabel =
-    assessmentTypeLabels[assessment.type] || assessment.type;
+    assessmentTypeLabels[assessment.type] ?? assessment.type;
 
   const totalWords = assessment.oralFluency?.totalWords ?? numberOfWords;
   const totalMiscues = assessment.oralFluency?.totalMiscues ?? 0;
   const duration = assessment.oralFluency?.duration ?? 0;
   const wordsCorrect = Math.max(0, totalWords - totalMiscues);
   const wcpm = duration > 0 ? Math.round((wordsCorrect / duration) * 60) : 0;
+  const classificationLevel = assessment.oralFluency?.classificationLevel ?? "";
 
-  // Dummy handlers for Export and Delete
   const handleExport = () => {
-    // Implement export logic here
-    alert("Export to PDF clicked!");
+    const safeName = studentName.replace(/[^a-zA-Z0-9]/g, "_");
+    exportFluencyReportPdf(
+      {
+        studentName,
+        gradeLevel,
+        className: classData?.name ?? "\u2014",
+        passageTitle: passage?.title ?? "\u2014",
+        passageLevel: passage?.level ? `Grade ${passage.level}` : "\u2014",
+        numberOfWords,
+        testType: formatTestType(passage?.testType),
+        assessmentType: assessmentTypeLabel,
+        wcpm,
+        readingTimeSeconds: Math.round(duration),
+        classificationLevel,
+        miscueData,
+        behaviors: behaviorItems.map((b) => ({
+          label: b.label,
+          description: b.description,
+          checked: !!b.checked,
+        })),
+      },
+      `Oral_Fluency_Report_${safeName}`,
+    );
   };
+
   const handleDelete = () => {
-    // Implement delete logic here
     alert("Delete clicked!");
   };
 
@@ -156,8 +182,18 @@ export default function ReadingFluencyReportPage() {
             className="flex items-center gap-1.5 rounded-lg mt-6 px-6 py-3 text-base font-semibold text-[#00306E] hover:underline transition"
             type="button"
           >
-            <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            <svg
+              className="h-6 w-6"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
             Previous
           </button>
@@ -170,12 +206,9 @@ export default function ReadingFluencyReportPage() {
           <MetricCards
             wcpm={wcpm}
             readingTimeSeconds={duration}
-            classificationLevel={
-              assessment.oralFluency?.classificationLevel ?? ""
-            }
+            classificationLevel={classificationLevel}
           />
         </div>
-        {/* Bottom row: Passage+Audio | Behavior | Miscue */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Left column */}
           <div className="flex flex-col gap-6">
@@ -188,9 +221,7 @@ export default function ReadingFluencyReportPage() {
             />
             <AudioPlaybackCard audioSrc={assessment.oralFluency?.audioUrl} />
           </div>
-          {/* Center column */}
           <BehaviorChecklist behaviors={behaviorItems} />
-          {/* Right column */}
           <MiscueAnalysisReport miscueData={miscueData} />
         </div>
       </main>
