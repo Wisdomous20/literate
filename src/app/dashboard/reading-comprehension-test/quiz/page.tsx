@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
@@ -16,7 +16,7 @@ import { ComprehensionBreakdown } from "@/components/oral-reading-test/comprehen
 import { ComprehensionInfoBar } from "@/components/reading-comprehension-test/comprehensionInfoBar";
 import { QuestionCard, type QuestionData } from "@/components/reading-comprehension-test/questionCard";
 import { ComprehensionSubmitArea } from "@/components/reading-comprehension-test/comprehensionSubmitArea";
-import { getQuizByPassageAction } from "@/app/actions/comprehension-Test/getQuizByPassage";
+import { useQuizByPassage } from "@/lib/hooks/useQuizByPassage";
 import { createStudent } from "@/app/actions/student/createStudent";
 import { exportComprehensionReportPdf } from "@/lib/exportComprehensionReportPdf";
 
@@ -51,8 +51,8 @@ function loadComprehensionState(): ComprehensionState | null {
   try {
     const raw = sessionStorage.getItem(COMP_STATE_KEY);
     if (raw) return JSON.parse(raw);
-  } catch {
-    /* empty */
+  } catch (err) {
+    console.error("Failed to load comprehension state:", err);
   }
   return null;
 }
@@ -60,18 +60,15 @@ function loadComprehensionState(): ComprehensionState | null {
 function saveComprehensionState(state: ComprehensionState) {
   try {
     sessionStorage.setItem(COMP_STATE_KEY, JSON.stringify(state));
-  } catch {
-    /* empty */
+  } catch (err) {
+    console.error("Failed to save comprehension state:", err);
   }
 }
 
 export default function ReadingComprehensionQuestionsPage() {
   const router = useRouter();
+  const isClient = typeof window !== "undefined";
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [questions, setQuestions] = useState<QuestionData[]>([]);
-  const [quizId, setQuizId] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -84,97 +81,91 @@ export default function ReadingComprehensionQuestionsPage() {
   const [highlightedTag, setHighlightedTag] = useState<
     "literal" | "inferential" | "critical" | null
   >(null);
+  const [sessionError, setSessionError] = useState<string | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const restoredRef = useRef(false);
+
+  // Read passageId from sessionStorage
+  const passageId = useMemo(() => {
+    if (!isClient) return undefined;
+    try {
+      const raw = sessionStorage.getItem(SESSION_KEY);
+      if (!raw) return undefined;
+      const session = JSON.parse(raw);
+      return session.selectedPassage as string | undefined;
+    } catch {
+      return undefined;
+    }
+  }, [isClient]);
+
+  const { data: quiz, isLoading, error: quizError } = useQuizByPassage(passageId);
+
+  const questions = useMemo<QuestionData[]>(() => {
+    if (!quiz?.questions) return [];
+    return quiz.questions.map(
+      (
+        q: {
+          id: string;
+          questionText: string;
+          tags: string | null;
+          type: string;
+          options: unknown;
+        },
+        idx: number,
+      ) => ({
+        id: q.id,
+        questionNumber: idx + 1,
+        questionText: q.questionText,
+        type: q.type as "MULTIPLE_CHOICE" | "ESSAY",
+        tags: q.tags ?? undefined,
+        options: Array.isArray(q.options)
+          ? (q.options as string[])
+          : undefined,
+      }),
+    );
+  }, [quiz]);
+
+  const quizId = (quiz?.id as string) ?? "";
+
+  useEffect(() => {
+    if (!isClient) return;
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    if (!raw) {
+      setSessionError("Session not found. Please go back and start again.");
+      return;
+    }
+    if (!passageId) {
+      setSessionError("No passage selected. Please go back and select a passage.");
+      return;
+    }
+  }, [isClient, passageId]);
+
+  useEffect(() => {
+    if (!passageId || restoredRef.current) return;
+    restoredRef.current = true;
+
+    const saved = loadComprehensionState();
+    if (saved && saved.passageId === passageId) {
+      setAnswers(saved.answers);
+      setElapsedSeconds(saved.elapsedSeconds);
+      if (saved.isSubmitted && saved.comprehensionResult) {
+        setIsSubmitted(true);
+        setComprehensionResult(saved.comprehensionResult);
+        if (saved.comprehensionResult.assessmentId) {
+          sessionStorage.setItem(
+            "reading-comprehension-assessmentId",
+            saved.comprehensionResult.assessmentId,
+          );
+        }
+      }
+    } else if (saved && saved.passageId !== passageId) {
+      sessionStorage.removeItem(COMP_STATE_KEY);
+    }
+  }, [passageId]);
 
   const handleTagClick = (tag: "literal" | "inferential" | "critical") => {
     setHighlightedTag((prev) => (prev === tag ? null : tag));
   };
-
-  useEffect(() => {
-    async function fetchQuestions() {
-      try {
-        const raw = sessionStorage.getItem(SESSION_KEY);
-        if (!raw) {
-          setLoadError("Session not found. Please go back and start again.");
-          setIsLoading(false);
-          return;
-        }
-        const session = JSON.parse(raw);
-        const passageId = session.selectedPassage;
-        if (!passageId) {
-          setLoadError(
-            "No passage selected. Please go back and select a passage.",
-          );
-          setIsLoading(false);
-          return;
-        }
-
-        // Restore saved comprehension progress only if it belongs to the same passage
-        const saved = loadComprehensionState();
-        if (saved && saved.passageId === passageId) {
-          setAnswers(saved.answers);
-          setElapsedSeconds(saved.elapsedSeconds);
-          if (saved.isSubmitted && saved.comprehensionResult) {
-            setIsSubmitted(true);
-            setComprehensionResult(saved.comprehensionResult);
-            if (saved.comprehensionResult.assessmentId) {
-              sessionStorage.setItem(
-                "reading-comprehension-assessmentId",
-                saved.comprehensionResult.assessmentId,
-              );
-            }
-          }
-        } else if (saved && saved.passageId !== passageId) {
-          // Stale state from a different passage — clear it
-          sessionStorage.removeItem(COMP_STATE_KEY);
-        }
-
-        const result = await getQuizByPassageAction(passageId);
-        if (!result.success || !("quiz" in result) || !result.quiz) {
-          setLoadError(
-            ("error" in result && result.error) ||
-              "Failed to load quiz questions.",
-          );
-          setIsLoading(false);
-          return;
-        }
-
-        const { quiz } = result;
-        setQuizId(quiz.id as string);
-
-        const mapped: QuestionData[] = quiz.questions.map(
-          (
-            q: {
-              id: string;
-              questionText: string;
-              tags: string | null;
-              type: string;
-              options: unknown;
-            },
-            idx: number,
-          ) => ({
-            id: q.id,
-            questionNumber: idx + 1,
-            questionText: q.questionText,
-            type: q.type as "MULTIPLE_CHOICE" | "ESSAY",
-            tags: q.tags ?? undefined,
-            options: Array.isArray(q.options)
-              ? (q.options as string[])
-              : undefined,
-          }),
-        );
-
-        setQuestions(mapped);
-      } catch (err) {
-        console.error("Failed to fetch questions:", err);
-        setLoadError("Something went wrong while loading questions.");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchQuestions();
-  }, []);
 
   useEffect(() => {
     if (isSubmitted || isPaused) return;
@@ -185,12 +176,7 @@ export default function ReadingComprehensionQuestionsPage() {
   }, [isSubmitted, isPaused]);
 
   useEffect(() => {
-    if (isLoading) return;
-    const raw = sessionStorage.getItem(SESSION_KEY);
-    if (!raw) return;
-    const session = JSON.parse(raw);
-    const passageId = session.selectedPassage;
-    if (!passageId) return;
+    if (isLoading || !passageId) return;
 
     saveComprehensionState({
       passageId,
@@ -199,7 +185,7 @@ export default function ReadingComprehensionQuestionsPage() {
       isSubmitted,
       comprehensionResult,
     });
-  }, [answers, elapsedSeconds, isSubmitted, comprehensionResult, isLoading]);
+  }, [answers, elapsedSeconds, isSubmitted, comprehensionResult, isLoading, passageId]);
 
   const togglePause = () => {
     if (!isSubmitted) setIsPaused((prev) => !prev);
@@ -249,7 +235,6 @@ export default function ReadingComprehensionQuestionsPage() {
         return;
       }
       const session = JSON.parse(raw);
-      const passageId = session.selectedPassage;
       let studentId = session.selectedStudentId;
 
       if (!passageId) {
@@ -258,7 +243,6 @@ export default function ReadingComprehensionQuestionsPage() {
         return;
       }
 
-      // If no existing student, create one
       if (!studentId) {
         const studentName = session.studentName?.trim();
         const gradeLevel = session.gradeLevel;
@@ -336,7 +320,6 @@ export default function ReadingComprehensionQuestionsPage() {
         return;
       }
 
-      // Compute tag breakdown from graded answers
       let tagBreakdown: TagBreakdown | undefined;
       if (result.answers && Array.isArray(result.answers)) {
         tagBreakdown = {
@@ -400,6 +383,8 @@ export default function ReadingComprehensionQuestionsPage() {
     }
   }, [successToast]);
 
+  const loadError = sessionError || (quizError ? (quizError as Error).message : null);
+
   if (isLoading) {
     return (
       <div className="flex flex-col h-screen overflow-hidden">
@@ -446,6 +431,7 @@ export default function ReadingComprehensionQuestionsPage() {
           <button
             onClick={() => setSuccessToast(false)}
             className="ml-2 text-green-400 hover:text-green-600"
+            aria-label="Close success message"
           >
             <X className="h-3.5 w-3.5" />
           </button>

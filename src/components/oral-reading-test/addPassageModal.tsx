@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { X, ChevronDown, List, LayoutGrid, FileText, Globe, BarChart3, ClipboardList, Search, type LucideIcon } from "lucide-react";
-import { getAllPassagesAction } from "@/app/actions/passage/getAllPassage";
+import { usePassageList } from "@/lib/hooks/usePassageList";
 
 interface Passage {
   id: string;
@@ -16,12 +16,10 @@ interface Passage {
   updatedAt: Date;
 }
 
-// Helper to display level as "Grade X" or "Kindergarten"
 function formatLevel(level: number): string {
   return level === 0 ? "Kindergarten" : `Grade ${level}`;
 }
 
-// Helper to display testType enum as readable string
 function formatTestType(testType: string): string {
   switch (testType) {
     case "PRE_TEST":
@@ -141,37 +139,12 @@ export function AddPassageModal({
     null,
   );
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
-  const [passages, setPassages] = useState<Passage[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  // Fetch passages from the database when modal opens
-  useEffect(() => {
-    if (!isOpen) return;
-
-    async function fetchPassages() {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const result = await getAllPassagesAction();
-        if (result.success && result.passages) {
-          setPassages(result.passages as Passage[]);
-        } else {
-          setError(result.error || "Failed to load passages");
-        }
-      } catch {
-        setError("An error occurred while loading passages");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchPassages();
-  }, [isOpen]);
+  const { data: passages = [], isLoading, error } = usePassageList();
 
   if (!isOpen) return null;
 
-  const filteredPassages = passages.filter((p) => {
+  const filteredPassages = (passages as Passage[]).filter((p) => {
     if (
       selectedLevel !== PASSAGE_LEVELS[0] &&
       formatLevel(p.level) !== selectedLevel
@@ -282,6 +255,8 @@ export function AddPassageModal({
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
+                title="Clear search"
+                aria-label="Clear search"
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[#00306E]/40 hover:text-[#00306E]"
               >
                 <X className="h-3.5 w-3.5" />
@@ -338,7 +313,7 @@ export function AddPassageModal({
               </div>
             ) : error ? (
               <div className="flex h-32 items-center justify-center">
-                <p className="text-sm text-red-500">{error}</p>
+                <p className="text-sm text-red-500">{error instanceof Error ? error.message : "Failed to load passages"}</p>
               </div>
             ) : filteredPassages.length === 0 ? (
               <div className="flex h-32 items-center justify-center">

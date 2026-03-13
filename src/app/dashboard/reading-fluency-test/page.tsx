@@ -17,7 +17,10 @@ import { NavButton } from "@/components/ui/navButton";
 import StudentInfoBar from "@/components/oral-reading-test/studentInfoBar";
 import { PassageFilters } from "@/components/oral-reading-test/passageFilters";
 import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay";
-import { ReadingTimer, AudioPlayer } from "@/components/oral-reading-test/readingTimer";
+import {
+  ReadingTimer,
+  AudioPlayer,
+} from "@/components/oral-reading-test/readingTimer";
 import { MiscueAnalysis } from "@/components/reading-fluency-test/miscueAnalysis";
 import { FullScreenPassage } from "@/components/oral-reading-test/fullScreenPassage";
 import { AddPassageModal } from "@/components/oral-reading-test/addPassageModal";
@@ -27,7 +30,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createStudent } from "@/app/actions/student/createStudent";
 import { convertToWav } from "@/utils/convertToWav";
 import type { OralFluencyAnalysis } from "@/types/oral-reading";
-import { exportFluencyReportPdf, buildFluencyReportData } from "@/lib/exportFluencyReportPdf";
+import {
+  exportFluencyReportPdf,
+  buildFluencyReportData,
+} from "@/lib/exportFluencyReportPdf";
 
 function getCurrentSchoolYear(): string {
   const now = new Date();
@@ -327,14 +333,21 @@ export default function ReadingFluencyTestPage() {
   );
 
   const handleStartReading = useCallback(() => {
-    if (!hasPassage || !studentName.trim() || !gradeLevel || !selectedClassName) return;
+    if (!hasPassage || !studentName.trim() || !gradeLevel || !selectedClassName)
+      return;
     setIsFullScreen(true);
     setHasRecording(false);
     if (recordedAudioURL) {
       URL.revokeObjectURL(recordedAudioURL);
       setRecordedAudioURL(null);
     }
-  }, [hasPassage, studentName, gradeLevel, selectedClassName, recordedAudioURL]);
+  }, [
+    hasPassage,
+    studentName,
+    gradeLevel,
+    selectedClassName,
+    recordedAudioURL,
+  ]);
 
   const handleFullScreenDone = useCallback(
     (
@@ -591,7 +604,11 @@ export default function ReadingFluencyTestPage() {
               <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
               <span>Previous</span>
             </NavButton>
-            <NavButton variant="outlined" onClick={handleStartNew} disabled={!hasPassage}>
+            <NavButton
+              variant="outlined"
+              onClick={handleStartNew}
+              disabled={!hasPassage}
+            >
               <RotateCcw className="h-4 w-4" />
               <span>Start New</span>
             </NavButton>
@@ -604,12 +621,12 @@ export default function ReadingFluencyTestPage() {
           >
             {!passageExpanded && isLoadingClasses && (
               <>
-                <div className="h-[72px] animate-pulse rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] shadow-[0px_1px_20px_rgba(108,164,239,0.37)]" />
+                <div className="h-18 animate-pulse rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] shadow-[0px_1px_20px_rgba(108,164,239,0.37)]" />
                 <div className="flex gap-3">
-                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
-                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
-                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
-                  <div className="h-[42px] w-[140px] shrink-0 animate-pulse rounded-lg bg-[#2E2E68]/30" />
+                  <div className="h-10.5 flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                  <div className="h-10.5 flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                  <div className="h-10.5 flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                  <div className="h-10.5 w-35 shrink-0 animate-pulse rounded-lg bg-[#2E2E68]/30" />
                 </div>
               </>
             )}
@@ -646,7 +663,9 @@ export default function ReadingFluencyTestPage() {
             <PassageDisplay
               content={passageContent}
               miscues={showMiscues ? filteredMiscues : undefined}
-              alignedWords={showMiscues ? analysisResult?.alignedWords : undefined}
+              alignedWords={
+                showMiscues ? analysisResult?.alignedWords : undefined
+              }
               onJumpToTime={handleJumpToTime}
               expanded={passageExpanded}
               onToggleExpand={() => setPassageExpanded((prev) => !prev)}
@@ -655,7 +674,10 @@ export default function ReadingFluencyTestPage() {
 
             {passageExpanded && hasRecording && recordedAudioURL && (
               <div className="mt-2">
-                <AudioPlayer src={recordedAudioURL} externalAudioRef={audioRef} />
+                <AudioPlayer
+                  src={recordedAudioURL}
+                  externalAudioRef={audioRef}
+                />
               </div>
             )}
 
@@ -672,8 +694,16 @@ export default function ReadingFluencyTestPage() {
                     <button
                       type="button"
                       onClick={() => setShowMiscues((prev) => !prev)}
-                      aria-label={showMiscues ? "Show original passage" : "Show miscue highlights"}
-                      title={showMiscues ? "Show original passage" : "Show miscue highlights"}
+                      aria-label={
+                        showMiscues
+                          ? "Show original passage"
+                          : "Show miscue highlights"
+                      }
+                      title={
+                        showMiscues
+                          ? "Show original passage"
+                          : "Show miscue highlights"
+                      }
                       className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
                         showMiscues ? "bg-[#6666FF]" : "bg-[#C4C4FF]"
                       }`}
@@ -710,7 +740,9 @@ export default function ReadingFluencyTestPage() {
             {!passageExpanded && (
               <ReadingTimer
                 hasPassage={hasPassage}
-                hasStudentInfo={!!(studentName.trim() && gradeLevel && selectedClassName)}
+                hasStudentInfo={
+                  !!(studentName.trim() && gradeLevel && selectedClassName)
+                }
                 onStartReading={handleStartReading}
                 hasRecording={hasRecording}
                 recordedSeconds={recordedSeconds}
@@ -817,7 +849,10 @@ export default function ReadingFluencyTestPage() {
                   recordedSeconds,
                   analysisResult,
                 });
-                exportFluencyReportPdf(data, `Oral_Fluency_Report_${studentName.replace(/[^a-zA-Z0-9]/g, "_")}`);
+                exportFluencyReportPdf(
+                  data,
+                  `Oral_Fluency_Report_${studentName.replace(/[^a-zA-Z0-9]/g, "_")}`,
+                );
               }}
             />
           </div>
