@@ -4,10 +4,20 @@ import { createOralReadingService } from "@/service/oral-reading/createOralReadi
 
 export const maxDuration = 60;
 
+interface SubmitAnswer {
+  questionId: string;
+  answer: string;
+}
+
+interface SubmitComprehensionInput {
+  assessmentId: string;
+  answers: SubmitAnswer[];
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { assessmentId, answers } = body;
+    const { assessmentId, answers } = body as SubmitComprehensionInput;
 
     if (!assessmentId || !Array.isArray(answers) || answers.length === 0) {
       return NextResponse.json(
@@ -24,7 +34,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Now compute the oral reading level (needs both fluency & comprehension in DB)
-    const oralReadingResult = await createOralReadingService(assessmentId);
+    const oralReadingResult = await createOralReadingService(
+      assessmentId, result.level
+    );
 
     if (!oralReadingResult.success) {
       return NextResponse.json({ error: oralReadingResult.error }, { status: 500 });

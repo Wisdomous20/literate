@@ -12,7 +12,9 @@ interface SubmitComprehensionInput {
   answers: SubmitAnswer[];
 }
 
-export async function submitComprehensionService(input: SubmitComprehensionInput) {
+export async function submitComprehensionService(
+  input: SubmitComprehensionInput,
+) {
   const { assessmentId, answers } = input;
 
   try {

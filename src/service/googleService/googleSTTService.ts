@@ -1,14 +1,16 @@
 import { v2, protos } from "@google-cloud/speech";
-import { Storage } from "@google-cloud/storage";
-import { TranscriptResponse} from "@/types/oral-reading";
-import { randomUUID } from "crypto";
+import { storage, GCS_BUCKET } from "@/lib/gcs";
+import { TranscriptResponse } from "@/types/oral-reading";
 import convertToTranscriptResponse from "./convertToTranscriptResponse";
 
 const LOCATION = "us-central1";
 
 const credentials = {
   client_email: process.env.GOOGLE_CLOUD_CLIENT_EMAIL ?? "",
-  private_key: (process.env.GOOGLE_CLOUD_PRIVATE_KEY ?? "").replace(/\\n/g, "\n"),
+  private_key: (process.env.GOOGLE_CLOUD_PRIVATE_KEY ?? "").replace(
+    /\\n/g,
+    "\n",
+  ),
 };
 
 const speechClient = new v2.SpeechClient({
@@ -17,20 +19,16 @@ const speechClient = new v2.SpeechClient({
   credentials,
 });
 
-const storage = new Storage({
-  projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
-  credentials,
-});
-
 const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT_ID ?? "";
-const GCS_BUCKET = process.env.GOOGLE_CLOUD_STORAGE_BUCKET ?? "cpuliterate";
 
-/**
- * Maps passage language field to Google Speech BCP-47 language code.
- */
+const WAV_HEADER_BYTES = 44;
+const BYTES_PER_SECOND = 32000; // 16kHz, 16-bit, mono
+const CHUNK_DURATION_SEC = 50;
+const CHUNK_BYTE_SIZE = CHUNK_DURATION_SEC * BYTES_PER_SECOND;
+const INLINE_DURATION_LIMIT_SEC = 55;
+
 function getGoogleLanguageCode(language: string): string {
   const normalized = language.toLowerCase().trim();
-
   const languageMap: Record<string, string> = {
     english: "en-US",
     en: "en-US",
@@ -39,154 +37,169 @@ function getGoogleLanguageCode(language: string): string {
     filipino: "fil-PH",
     fil: "fil-PH",
   };
-
   return languageMap[normalized] ?? "en-US";
 }
 
-/**
- * Upload audio buffer to GCS and return the gs:// URI.
- * Deletes automatically after transcription.
- */
-async function uploadToGCS(
-  audioBuffer: Buffer,
-  fileName: string
-): Promise<string> {
-  const gcsFileName = `speech-temp/${randomUUID()}-${fileName}`;
-  const bucket = storage.bucket(GCS_BUCKET);
-  const file = bucket.file(gcsFileName);
-
-  await file.save(audioBuffer, {
-    resumable: false,
-    contentType: fileName.endsWith(".wav") ? "audio/wav" : "audio/webm",
-  });
-
-  return `gs://${GCS_BUCKET}/${gcsFileName}`;
-}
-
-/**
- * Delete a temporary file from GCS.
- */
-async function deleteFromGCS(gcsUri: string): Promise<void> {
-  try {
-    const path = gcsUri.replace(`gs://${GCS_BUCKET}/`, "");
-    await storage.bucket(GCS_BUCKET).file(path).delete();
-  } catch {
-    // Ignore deletion errors — file may already be gone
-  }
-}
-
-export async function transcribeAudio(
-  audioBuffer: Buffer,
-  fileName: string,
-  language: string,
-  passageText?: string
-): Promise<TranscriptResponse> {
-  const languageCode = getGoogleLanguageCode(language);
-  const isWav = fileName.toLowerCase().endsWith(".wav");
-
-  const recognizer = `projects/${PROJECT_ID}/locations/${LOCATION}/recognizers/_`;
-
+function buildConfig(
+  languageCode: string,
+  passageText?: string,
+): protos.google.cloud.speech.v2.IRecognitionConfig {
   const config: protos.google.cloud.speech.v2.IRecognitionConfig = {
     model: "chirp_2",
     languageCodes: [languageCode],
+    autoDecodingConfig: {},
     features: {
       enableWordTimeOffsets: true,
-      enableAutomaticPunctuation: false, // disable punctuation to avoid merging/dropping words
-      enableWordConfidence: true, // helps debug which words are uncertain
+      enableAutomaticPunctuation: false,
+      enableWordConfidence: true,
     },
   };
 
-  if (isWav) {
-    config.autoDecodingConfig = {};
-  } else {
-    config.explicitDecodingConfig = {
-      encoding: "WEBM_OPUS" as unknown as protos.google.cloud.speech.v2.ExplicitDecodingConfig.AudioEncoding,
-      sampleRateHertz: 48000,
-      audioChannelCount: 1,
-    };
-  }
-
-    if (passageText) {
+  if (passageText) {
     const uniqueWords = [
-      ...new Set(passageText.split(/\s+/).filter((w) => w.length > 0)),
-    ];
+      ...new Set(passageText.split(/\s+/).filter((w) => w.length > 3)),
+    ].slice(0, 200);
+
     config.adaptation = {
       phraseSets: [
         {
           inlinePhraseSet: {
-            phrases: uniqueWords.map((word) => ({ value: word, boost: 10 })),
+            phrases: [
+              ...uniqueWords.map((word) => ({ value: word, boost: 5 })),
+              { value: passageText.slice(0, 500), boost: 20 },
+            ],
           },
         },
       ],
     };
   }
 
-  // Estimate audio duration
-const estimatedDurationSec = isWav
-  ? (audioBuffer.length - 44) / 32000  
-  : audioBuffer.length / 6000;   
+  return config;
+}
+
+async function transcribeChunk(
+  chunk: Buffer,
+  config: protos.google.cloud.speech.v2.IRecognitionConfig,
+  recognizer: string,
+  timeOffsetSec: number,
+): Promise<protos.google.cloud.speech.v2.ISpeechRecognitionResult[]> {
+  const [response] = await speechClient.recognize({
+    recognizer,
+    config,
+    content: chunk,
+  });
+
+  const results = (response.results ??
+    []) as protos.google.cloud.speech.v2.ISpeechRecognitionResult[];
+
+  if (timeOffsetSec === 0) return results;
+
+  return results.map((result) => ({
+    ...result,
+    alternatives: result.alternatives?.map((alt) => ({
+      ...alt,
+      words: alt.words?.map((word) => ({
+        ...word,
+        startOffset: word.startOffset
+          ? {
+              seconds: Number(word.startOffset.seconds ?? 0) + timeOffsetSec,
+              nanos: word.startOffset.nanos ?? 0,
+            }
+          : word.startOffset,
+        endOffset: word.endOffset
+          ? {
+              seconds: Number(word.endOffset.seconds ?? 0) + timeOffsetSec,
+              nanos: word.endOffset.nanos ?? 0,
+            }
+          : word.endOffset,
+      })),
+    })),
+  }));
+}
+
+export async function transcribeAudio(
+  audioBuffer: Buffer,
+  fileName: string,
+  language: string,
+  passageText?: string,
+): Promise<TranscriptResponse> {
+  const languageCode = getGoogleLanguageCode(language);
+  const recognizer = `projects/${PROJECT_ID}/locations/${LOCATION}/recognizers/_`;
+  const config = buildConfig(languageCode, passageText);
+
+  const estimatedDurationSec =
+    (audioBuffer.length - WAV_HEADER_BYTES) / BYTES_PER_SECOND;
+
+  const isLong = estimatedDurationSec > INLINE_DURATION_LIMIT_SEC;
+
+  console.log(
+    `[STT] Buffer: ${(audioBuffer.length / 1024).toFixed(1)}KB, ` +
+      `duration: ~${estimatedDurationSec.toFixed(1)}s, ` +
+      `strategy: ${isLong ? "chunked-parallel" : "inline"}`,
+  );
 
   let allResults: protos.google.cloud.speech.v2.ISpeechRecognitionResult[];
 
-  if (estimatedDurationSec <= 55) {
-    // Short audio: synchronous inline recognize
-    const [response] = await speechClient.recognize({
-      recognizer,
-      config,
-      content: audioBuffer,
-    });
-    allResults = (response.results ?? []) as protos.google.cloud.speech.v2.ISpeechRecognitionResult[];
+  if (!isLong) {
+    allResults = await transcribeChunk(audioBuffer, config, recognizer, 0);
   } else {
-    // Long audio: upload to GCS → batchRecognize → clean up
-    const gcsUri = await uploadToGCS(audioBuffer, fileName);
+    const header = audioBuffer.subarray(0, WAV_HEADER_BYTES);
+    const audioData = audioBuffer.subarray(WAV_HEADER_BYTES);
 
-    try {
-      const [operation] = await speechClient.batchRecognize({
-        recognizer,
-        config,
-        files: [
-          {
-            uri: gcsUri,
-          },
-        ],
-        recognitionOutputConfig: {
-          inlineResponseConfig: {},
-        },
-       processingStrategy: "DYNAMIC_BATCHING" as unknown as protos.google.cloud.speech.v2.BatchRecognizeRequest.ProcessingStrategy,
+    const chunks: Buffer[] = [];
+    const timeOffsets: number[] = [];
 
-      });
-
-      const [response] = await operation.promise();
-
-      // batchRecognize returns results keyed by GCS URI
-      allResults = [];
-      const batchResults = response.results ?? {};
-      for (const key of Object.keys(batchResults)) {
-        const fileResult = batchResults[key];
-        if (fileResult?.transcript?.results) {
-          allResults.push(
-            ...(fileResult.transcript.results as protos.google.cloud.speech.v2.ISpeechRecognitionResult[])
-          );
-        }
-      }
-    } finally {
-      await deleteFromGCS(gcsUri);
+    for (let offset = 0; offset < audioData.length; offset += CHUNK_BYTE_SIZE) {
+      chunks.push(
+        Buffer.concat([
+          header,
+          audioData.subarray(offset, offset + CHUNK_BYTE_SIZE),
+        ]),
+      );
+      timeOffsets.push(offset / BYTES_PER_SECOND);
     }
+
+    console.log(
+      `[STT] Splitting into ${chunks.length} parallel chunks (~${CHUNK_DURATION_SEC}s each)`,
+    );
+    const t0 = performance.now();
+
+    const chunkResults = await Promise.all(
+      chunks.map((chunk, i) =>
+        transcribeChunk(chunk, config, recognizer, timeOffsets[i]),
+      ),
+    );
+
+    console.log(
+      `[STT] All chunks done in ${(performance.now() - t0).toFixed(0)}ms`,
+    );
+    allResults = chunkResults.flat();
   }
 
-  // Log raw transcription for debugging omissions
   const rawText = allResults
     .map((r) => r.alternatives?.[0]?.transcript ?? "")
     .join(" ")
     .trim();
-  console.log(`[STT] Raw transcription (${allResults.length} results, ~${Math.round(estimatedDurationSec)}s): "${rawText}"`);
-  console.log(`[STT] Buffer size: ${(audioBuffer.length / 1024).toFixed(1)}KB, estimated duration: ${estimatedDurationSec.toFixed(1)}s, using: ${estimatedDurationSec <= 55 ? "inline" : "batch"}`);
+
+  console.log(
+    `[STT] Raw transcription (${allResults.length} results): "${rawText}"`,
+  );
+
   if (passageText) {
     const passageWordCount = passageText.split(/\s+/).length;
-    const transcribedWordCount = rawText.split(/\s+/).filter(w => w.length > 0).length;
-    console.log(`[STT] Passage words: ${passageWordCount}, Transcribed words: ${transcribedWordCount} (${Math.round(transcribedWordCount / passageWordCount * 100)}% coverage)`);
+    const transcribedWordCount = rawText
+      .split(/\s+/)
+      .filter((w) => w.length > 0).length;
+    console.log(
+      `[STT] Passage: ${passageWordCount} words, Transcribed: ${transcribedWordCount} words ` +
+        `(${Math.round((transcribedWordCount / passageWordCount) * 100)}% coverage)`,
+    );
   }
 
-  return convertToTranscriptResponse(allResults, audioBuffer, isWav, passageText);
+  return convertToTranscriptResponse(
+    allResults,
+    audioBuffer,
+    true,
+    passageText,
+  );
 }
-
