@@ -1,4 +1,4 @@
-import { AlignedWord, MiscueResult } from "@/types/oral-reading"
+import type { AlignedWord, MiscueResult } from "@/types/oral-reading"
 import { similarityRatio, isSimilarForRepetition, isReversal, normalizeWord} from "@/utils/textUtils";
 import detectSelfCorrections from "./detectSelfCorrections"
 import detectTranspositions from "./detectTranspositions"
@@ -14,6 +14,12 @@ export function detectMiscues(
   const repetitionIndices = detectRepetitions(alignedWords);
   const selfCorrectedIndices = detectSelfCorrections(alignedWords, repetitionIndices);
   const transposedIndices = detectTranspositions(alignedWords);
+
+  // const { data1, data2, data3 } = await Promise.all([
+  //   function1(),
+  //   function2(),
+  //   function3()
+  // ]);
 
   // Build a set of insertion indices that should be suppressed because they
   // are part of a repeated phrase (adjacent to or between repetition words)

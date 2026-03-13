@@ -12,11 +12,12 @@ interface SubmitComprehensionInput {
   answers: SubmitAnswer[];
 }
 
-export async function submitComprehensionService(input: SubmitComprehensionInput) {
+export async function submitComprehensionService(
+  input: SubmitComprehensionInput,
+) {
   const { assessmentId, answers } = input;
 
   try {
-    // Only fetch what we need — use select to reduce data transfer
     const assessment = await prisma.assessment.findUnique({
       where: { id: assessmentId },
       select: {
@@ -42,24 +43,23 @@ export async function submitComprehensionService(input: SubmitComprehensionInput
       },
     });
 
-    if (!assessment) {
-      return { success: false, error: "Assessment not found." };
+    if (!assessment?.passage?.quiz) {
+      return { success: false, error: "Assessment, passage, or quiz not found." };
     }
 
-    const passage = assessment.passage;
-    if (!passage) {
-      return { success: false, error: "Passage not found." };
-    }
+    const { passage } = assessment;
+    const { quiz } = passage;
 
-    const quiz = passage.quiz;
-    if (!quiz) {
-      return { success: false, error: "Quiz not found for this passage." };
-    }
+     if (!passage || !quiz) {
+        return { success: false, error: "Assessment, passage, or quiz not found." };
+      }
+    const questionMap = new Map(quiz.questions.map((q) => [q.id, q]));
 
-    const questions = quiz.questions;
-    const questionMap = new Map(questions.map((q) => [q.id, q]));
+    
 
-    // Separate MC and essay answers — grade MC synchronously, essay in parallel
+    // Truncate passage once — reused across all essay grading calls
+    const passageExcerpt = passage.content.slice(0, 1000);
+
     const mcResults: { questionId: string; answer: string; isCorrect: boolean }[] = [];
     const essayPromises: Promise<{ questionId: string; answer: string; isCorrect: boolean }>[] = [];
 
@@ -76,31 +76,28 @@ export async function submitComprehensionService(input: SubmitComprehensionInput
           a.answer.trim().toLowerCase();
         mcResults.push({ ...a, isCorrect });
       } else {
-        // Fire off all essay grading calls concurrently
         essayPromises.push(
           gradeEssayAnswer({
             questionText: question.questionText,
             correctAnswer: question.correctAnswer,
-            passageContent: passage.content,
+            passageContent: passageExcerpt, 
             studentAnswer: a.answer,
-          }).then((essayResult) => ({
+          }).then((result) => ({
             ...a,
-            isCorrect: essayResult.isCorrect,
+            isCorrect: result.isCorrect,
           }))
         );
       }
     }
 
-    // All essay grades run in TRUE parallel (not sequential)
     const essayResults = await Promise.all(essayPromises);
     const gradedAnswers = [...mcResults, ...essayResults];
 
-    const totalItems = questions.length;
-    const score = gradedAnswers.filter((a) => a.isCorrect === true).length;
+    const totalItems = quiz.questions.length;
+    const score = gradedAnswers.filter((a) => a.isCorrect).length;
     const percentage = totalItems > 0 ? (score / totalItems) * 100 : 0;
     const level = classifyComprehensionLevel(percentage);
 
-    // Create ComprehensionTest + ComprehensionAnswers
     const comprehensionTest = await prisma.comprehensionTest.create({
       data: {
         assessmentId,
@@ -116,9 +113,7 @@ export async function submitComprehensionService(input: SubmitComprehensionInput
           })),
         },
       },
-      include: {
-        answers: { include: { question: true } },
-      },
+      select: { id: true },
     });
 
     return {
@@ -129,7 +124,6 @@ export async function submitComprehensionService(input: SubmitComprehensionInput
       totalItems,
       percentage: Math.round(percentage),
       level,
-      answers: comprehensionTest.answers,
     };
   } catch (error) {
     console.error("Error submitting comprehension test:", error);

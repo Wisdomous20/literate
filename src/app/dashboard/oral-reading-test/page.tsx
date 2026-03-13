@@ -488,26 +488,26 @@ export default function OralReadingTestPage() {
 
     setIsSubmitting(true);
     try {
-      const { uploadAudioToSupabase } = await import("@/utils/uploadAudioToSupabase")
+      const { uploadAudio } = await import("@/utils/uploadAudio")
       const wavBlob = await convertToWav(recordedAudioBlob)
 
-      const supabaseAudioUrl = await uploadAudioToSupabase(
+      const AudioUrl = await uploadAudio(
         wavBlob,
         studentId,
         selectedPassage,
       );
 
-      if (!supabaseAudioUrl) {
+      if (!AudioUrl) {
         console.error("Audio upload failed");
         return;
       }
 
-      console.log("Audio uploaded to:", supabaseAudioUrl);
+      console.log("Audio uploaded to:", AudioUrl);
 
       const formData = new FormData()
       formData.append("studentId", studentId)
       formData.append("passageId", selectedPassage)
-      formData.append("audioUrl", supabaseAudioUrl)
+      formData.append("audioUrl", AudioUrl)
       formData.append("audio", wavBlob, "recording.wav")
 
       console.log("Sending to API:", `/api/oral-reading/${selectedPassage}`);
