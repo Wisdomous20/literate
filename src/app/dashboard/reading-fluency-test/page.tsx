@@ -34,6 +34,7 @@ import {
   exportFluencyReportPdf,
   buildFluencyReportData,
 } from "@/lib/exportFluencyReportPdf";
+import { uploadAudio } from "@/utils/uploadAudio";
 
 function getCurrentSchoolYear(): string {
   const now = new Date();
@@ -462,24 +463,24 @@ export default function ReadingFluencyTestPage() {
 
     setIsSubmitting(true);
     try {
-      const { uploadAudioToSupabase } =
-        await import("@/utils/uploadAudioToSupabase");
+      const { uploadAudio } = await import("@/utils/uploadAudio");
       const wavBlob = await convertToWav(recordedAudioBlob);
 
-      const supabaseAudioUrl = await uploadAudioToSupabase(
+      const AudioUrl = await uploadAudio(
         wavBlob,
         studentId,
         selectedPassage,
       );
 
-      if (!supabaseAudioUrl) {
+      if (!AudioUrl) {
+        console.error("Audio upload failed");
         return;
       }
 
       const formData = new FormData();
       formData.append("studentId", studentId);
       formData.append("passageId", selectedPassage);
-      formData.append("audioUrl", supabaseAudioUrl);
+      formData.append("audioUrl", AudioUrl);
       formData.append("audio", wavBlob, "recording.wav");
 
       const response = await fetch(`/api/fluency-reading/${selectedPassage}`, {

@@ -82,9 +82,9 @@ export function alignWords(
         endTimestamp: spokenWords[j - 1].end,
         confidence: null,
         match: normExpected[i - 1] === normSpoken[j - 1] ? "EXACT" : "MISMATCH",
-      })
-      i--
-      j--
+      });
+      i--;
+      j--;
     } else if (i > 0 && trace[i][j] === 1) {
       aligned.unshift({
         expected: passageWords[i - 1],
