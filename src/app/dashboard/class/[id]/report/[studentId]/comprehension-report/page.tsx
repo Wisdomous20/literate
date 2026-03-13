@@ -8,6 +8,8 @@ import PassageInfoCard from "@/components/reports/oral-reading-test/reading-flue
 import ComprehensionMetricCards from "@/components/reports/oral-reading-test/comprehension-report/comprehensionMetricCards";
 import ComprehensionBreakdownReport from "@/components/reports/oral-reading-test/comprehension-report/comprehensionBreakdownReport";
 import { useAssessmentsByStudent } from "@/lib/hooks/useStudentAssessments";
+import { useClassById } from "@/lib/hooks/useClassById";
+import { exportComprehensionReportPdf } from "@/lib/exportComprehensionReportPdf";
 import type { AssessmentData, ComprehensionAnswer } from "@/types/assessment";
 
 const assessmentTypeLabels: Record<string, string> = {
@@ -24,11 +26,14 @@ function formatTestType(testType?: string): string {
 export default function ReadingComprehensionReportPage() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const classId = params.id as string;
   const studentId = params.studentId as string;
   const assessmentId = searchParams.get("id");
 
   const { data: allAssessments = [], isLoading } =
     useAssessmentsByStudent(studentId);
+
+  const { data: classData } = useClassById(classId);
 
   const assessment = useMemo(
     () =>
@@ -41,7 +46,7 @@ export default function ReadingComprehensionReportPage() {
   if (isLoading) return <div>Loading...</div>;
   if (!assessment) return <div>No data found.</div>;
 
-  const studentName = assessment.student?.name || "";
+  const studentName = assessment.student?.name ?? "";
   const gradeLevel = assessment.student?.level
     ? `Grade ${assessment.student.level}`
     : "";
@@ -51,16 +56,21 @@ export default function ReadingComprehensionReportPage() {
     ? passage.content.split(/\s+/).filter(Boolean).length
     : 0;
 
-  const answers: ComprehensionAnswer[] = comprehension?.answers || [];
-  const literalCorrect = answers.filter(
-    (a) => a.question?.tags === "Literal" && a.isCorrect,
+  const answers: ComprehensionAnswer[] = comprehension?.answers ?? [];
+
+  const literalAnswers = answers.filter((a) => a.question?.tags === "Literal");
+  const inferentialAnswers = answers.filter(
+    (a) => a.question?.tags === "Inferential",
+  );
+  const criticalAnswers = answers.filter(
+    (a) => a.question?.tags === "Critical",
+  );
+
+  const literalCorrect = literalAnswers.filter((a) => a.isCorrect).length;
+  const inferentialCorrect = inferentialAnswers.filter(
+    (a) => a.isCorrect,
   ).length;
-  const inferentialCorrect = answers.filter(
-    (a) => a.question?.tags === "Inferential" && a.isCorrect,
-  ).length;
-  const criticalCorrect = answers.filter(
-    (a) => a.question?.tags === "Critical" && a.isCorrect,
-  ).length;
+  const criticalCorrect = criticalAnswers.filter((a) => a.isCorrect).length;
   const totalCorrect = answers.filter((a) => a.isCorrect).length;
   const totalItems = comprehension?.totalItems ?? answers.length;
   const mistakes = totalItems - totalCorrect;
@@ -68,12 +78,35 @@ export default function ReadingComprehensionReportPage() {
     totalItems > 0 ? Math.round((totalCorrect / totalItems) * 100) : 0;
 
   const assessmentTypeLabel =
-    assessmentTypeLabels[assessment.type] || assessment.type;
+    assessmentTypeLabels[assessment.type] ?? assessment.type;
 
-  // Dummy handlers for Export and Delete
   const handleExport = () => {
-    alert("Export to PDF clicked!");
+    const safeName = studentName.replace(/[^a-zA-Z0-9]/g, "_");
+    exportComprehensionReportPdf(
+      {
+        studentName,
+        gradeLevel,
+        className: classData?.name ?? "\u2014",
+        passageTitle: passage?.title ?? "\u2014",
+        passageLevel: passage?.level ? `Grade ${passage.level}` : "\u2014",
+        numberOfWords,
+        testType: formatTestType(passage?.testType),
+        assessmentType: assessmentTypeLabel,
+        score: totalCorrect,
+        totalItems,
+        percentage: percentageGrade,
+        classificationLevel: comprehension?.classificationLevel ?? "",
+        literal: { correct: literalCorrect, total: literalAnswers.length },
+        inferential: {
+          correct: inferentialCorrect,
+          total: inferentialAnswers.length,
+        },
+        critical: { correct: criticalCorrect, total: criticalAnswers.length },
+      },
+      `Comprehension_Report_${safeName}`,
+    );
   };
+
   const handleDelete = () => {
     alert("Delete clicked!");
   };
@@ -108,8 +141,18 @@ export default function ReadingComprehensionReportPage() {
             className="flex items-center gap-1.5 rounded-lg mt-6 px-6 py-3 text-base font-semibold text-[#00306E] hover:underline transition"
             type="button"
           >
-            <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            <svg
+              className="h-6 w-6"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
             Previous
           </button>
@@ -118,7 +161,10 @@ export default function ReadingComprehensionReportPage() {
       <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth max-w-6xl mx-auto px-6 py-6 md:px-8 lg:px-12 space-y-6 w-full bg-[#f0f4ff]">
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto]">
           <div className="min-w-0">
-            <StudentInfoCard studentName={studentName} gradeLevel={gradeLevel} />
+            <StudentInfoCard
+              studentName={studentName}
+              gradeLevel={gradeLevel}
+            />
           </div>
           <div className="min-w-0">
             <ComprehensionMetricCards

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useRef } from "react"
 import { ChevronDown, Plus, Search, X, CheckCircle, XCircle } from "lucide-react"
 import { createClass } from "@/app/actions/class/createClass"
 import { createStudent } from "@/app/actions/student/createStudent"
@@ -12,14 +12,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { getStudentsByClassName } from "@/app/actions/student/getAllStudentByClass"
-
-interface StudentOption {
-  id: string
-  name: string
-  level: number
-  className: string
-}
+import { useAllStudentsByClasses } from "@/lib/hooks/useAllStudentByClass"
+import { useQueryClient } from "@tanstack/react-query"
 
 interface StudentInfoBarProps {
   studentName: string
@@ -46,11 +40,13 @@ export default function StudentInfoBar({
   onClassChange,
   onClear,
 }: StudentInfoBarProps) {
+  const queryClient = useQueryClient()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [newClassName, setNewClassName] = useState("")
   const [selectedClass, setSelectedClass] = useState(selectedClassName ?? "")
-  const [allStudents, setAllStudents] = useState<StudentOption[]>([])
-  const [isLoadingStudents, setIsLoadingStudents] = useState(false)
+
+  // TanStack Query cached student fetch for all classes
+  const { data: allStudents, isLoading: isLoadingStudents } = useAllStudentsByClasses(classes)
 
   // Sync internal state when parent resets selectedClassName (e.g. Start New)
   useEffect(() => {
@@ -71,49 +67,6 @@ export default function StudentInfoBar({
   const gradeButtonRef = useRef<HTMLButtonElement>(null)
   const classDropdownRef = useRef<HTMLDivElement>(null)
   const classButtonRef = useRef<HTMLButtonElement>(null)
-  const fetchedClassesRef = useRef<string>("")
-
-  // Fetch students from ALL classes - skip if classes haven't changed
-  const fetchAllStudents = useCallback(async () => {
-    if (classes.length === 0) {
-      setAllStudents([])
-      fetchedClassesRef.current = ""
-      return
-    }
-
-    // Skip re-fetch if the same classes
-    const classesKey = classes.slice().sort().join("|")
-    if (classesKey === fetchedClassesRef.current) return
-    fetchedClassesRef.current = classesKey
-
-    setIsLoadingStudents(true)
-    try {
-      const results = await Promise.all(
-        classes.map(async (cls) => {
-          const result = await getStudentsByClassName(cls)
-          if (result.success && "students" in result && result.students) {
-            return result.students.map((s) => ({
-              id: s.id,
-              name: s.name,
-              level: s.level ?? 0,
-              className: cls,
-            }))
-          }
-          return []
-        }),
-      )
-      setAllStudents(results.flat())
-    } catch (error) {
-      console.error("Failed to fetch students:", error)
-      setAllStudents([])
-    } finally {
-      setIsLoadingStudents(false)
-    }
-  }, [classes])
-
-  useEffect(() => {
-    fetchAllStudents()
-  }, [fetchAllStudents])
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -174,7 +127,7 @@ export default function StudentInfoBar({
     clearAutoFill()
   }
 
-  const handleStudentSelect = (student: StudentOption) => {
+  const handleStudentSelect = (student: { id: string; name: string; level: number; className: string }) => {
     setSelectedStudentId(student.id)
     onStudentNameChange(student.name)
     onGradeLevelChange(String(student.level))
@@ -215,7 +168,8 @@ export default function StudentInfoBar({
       } else {
         setToast({ message: result.error || "Failed to create class.", type: "error" })
       }
-    } catch {
+    } catch (err) {
+      console.error("Failed to create class:", err)
       setToast({ message: "Something went wrong. Please try again.", type: "error" })
     } finally {
       setIsCreatingClass(false)
@@ -261,21 +215,14 @@ export default function StudentInfoBar({
         onStudentSelected(result.student.id)
         onStudentNameChange(result.student.name)
         setIsStudentInputFocused(false)
-        // Add the new student to local list so it appears immediately
-        setAllStudents((prev) => [
-          ...prev,
-          {
-            id: result.student!.id,
-            name: result.student!.name,
-            level: Number(gradeLevel),
-            className: selectedClass,
-          },
-        ])
+        // Invalidate TanStack cache so new student appears on next fetch
+        queryClient.invalidateQueries({ queryKey: ["students", selectedClass] })
         setToast({ message: `Student "${trimmedName}" created successfully!`, type: "success" })
       } else {
         setToast({ message: result.error || "Failed to create student.", type: "error" })
       }
-    } catch {
+    } catch (err) {
+      console.error("Failed to create student:", err)
       setToast({ message: "Something went wrong. Please try again.", type: "error" })
     } finally {
       setIsCreatingStudent(false)

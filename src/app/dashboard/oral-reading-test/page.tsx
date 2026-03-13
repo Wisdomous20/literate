@@ -13,13 +13,14 @@ import { AddPassageModal } from "@/components/oral-reading-test/addPassageModal"
 import { ToastNotification } from "@/components/oral-reading-test/toastNotification";
 import { CountdownToggle } from "@/components/oral-reading-test/countdownToggle";
 import { OralReadingNavRow } from "@/components/oral-reading-test/oralReadingNavRow";
-import { getClassListBySchoolYear } from "@/app/actions/class/getClassList";
 import { ReadinessCheckButton } from "@/components/oral-reading-test/readinessCheck";
+import { useClassList } from "@/lib/hooks/useClassList";
+import { useQueryClient } from "@tanstack/react-query";
 import { createStudent } from "@/app/actions/student/createStudent";
 import type { OralFluencyAnalysis } from "@/types/oral-reading";
 import { convertToWav } from "@/utils/convertToWav"
 import { exportFluencyReportPdf, buildFluencyReportData } from "@/lib/exportFluencyReportPdf"
-// Helper to get current school year
+
 function getCurrentSchoolYear(): string {
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -30,11 +31,6 @@ function getCurrentSchoolYear(): string {
   } else {
     return `${currentYear - 1}-${currentYear}`;
   }
-}
-
-interface ClassItem {
-  id: string;
-  name: string;
 }
 
 const STORAGE_KEY = "oral-reading-session";
@@ -72,8 +68,6 @@ function loadSession(): Partial<SessionState> {
 function saveSession(state: SessionState) {
   if (typeof window === "undefined") return;
   try {
-    // Merge with existing session data to preserve fields added by other pages
-    // (e.g. comprehensionResult, oralReadingLevel set by the comprehension page)
     const existing = sessionStorage.getItem(STORAGE_KEY);
     const merged = existing ? { ...JSON.parse(existing), ...state } : state;
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
@@ -103,9 +97,18 @@ function base64ToBlob(base64: string): Blob {
 
 export default function OralReadingTestPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const isRestoredRef = useRef(true);
 
-  // Initialize with defaults (matches server render)
+  const schoolYear = getCurrentSchoolYear();
+  const { data: classListData = [], isLoading: isLoadingClasses } =
+    useClassList(schoolYear);
+
+  const classes = useMemo(
+    () => classListData.map((c) => ({ id: c.id, name: c.name })),
+    [classListData],
+  );
+
   const [passageContent, setPassageContent] = useState("");
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [recordedSeconds, setRecordedSeconds] = useState(0);
@@ -126,9 +129,6 @@ export default function OralReadingTestPage() {
   const [selectedPassage, setSelectedPassage] = useState<string | undefined>();
   const [studentName, setStudentName] = useState("");
   const [gradeLevel, setGradeLevel] = useState("");
-  const [classes, setClasses] = useState<ClassItem[]>([]);
-  const [isLoadingClasses, setIsLoadingClasses] = useState(true);
-  const [classLoadError, setClassLoadError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [selectedClassName, setSelectedClassName] = useState<string>("");
@@ -167,7 +167,6 @@ export default function OralReadingTestPage() {
     });
   }, []);
 
-  // Filter miscues for passage display based on highlighted types
   const filteredMiscues = useMemo(() => {
     if (!analysisResult?.miscues) return undefined;
     if (highlightedTypes.size === 0) return analysisResult.miscues;
@@ -176,7 +175,6 @@ export default function OralReadingTestPage() {
     );
   }, [analysisResult?.miscues, highlightedTypes]);
 
-  // Restore session from sessionStorage AFTER hydration (avoids SSR mismatch)
   useEffect(() => {
     const loaded = loadSession();
 
@@ -209,7 +207,6 @@ export default function OralReadingTestPage() {
     if (loaded.sessionId) setSessionId(loaded.sessionId);
     if (loaded.assessmentId) setAssessmentId(loaded.assessmentId);
 
-    // Restore audio blob
     try {
       const audioBase64 = sessionStorage.getItem(AUDIO_STORAGE_KEY);
       if (audioBase64 && loaded.hasRecording) {
@@ -222,10 +219,8 @@ export default function OralReadingTestPage() {
       console.error("Failed to restore audio:", err);
     }
 
-    // Mark hydration complete — this allows the save effects to start working
     setIsHydrated(true);
 
-    // Mark restore as complete after a short delay (for auto-submit guard)
     const timer = setTimeout(() => {
       isRestoredRef.current = false;
     }, 500);
@@ -233,7 +228,6 @@ export default function OralReadingTestPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Save audio to sessionStorage when it changes (only after hydration)
   useEffect(() => {
     if (!isHydrated) return;
     if (recordedAudioBlob) {
@@ -249,7 +243,6 @@ export default function OralReadingTestPage() {
     }
   }, [recordedAudioBlob, isHydrated]);
 
-  // Persist session state on every change (only after hydration)
   useEffect(() => {
     if (!isHydrated) return;
     saveSession({
@@ -291,36 +284,6 @@ export default function OralReadingTestPage() {
     sessionId,
     assessmentId,
   ]);
-
-  // Fetch classes on mount
-  useEffect(() => {
-    async function fetchClasses() {
-      setIsLoadingClasses(true);
-      setClassLoadError(false);
-      try {
-        const schoolYear = getCurrentSchoolYear();
-        const result = await getClassListBySchoolYear(schoolYear);
-
-        if (result.success && result.classes) {
-          const mappedClasses: ClassItem[] = result.classes.map((c) => ({
-            id: c.id,
-            name: c.name,
-          }));
-          setClasses(mappedClasses);
-        } else {
-          setClassLoadError(true);
-          setClasses([]);
-        }
-      } catch {
-        setClassLoadError(true);
-        setClasses([]);
-      } finally {
-        setIsLoadingClasses(false);
-      }
-    }
-
-    fetchClasses();
-  }, []);
 
   const hasPassage = passageContent.length > 0;
 
@@ -397,11 +360,9 @@ export default function OralReadingTestPage() {
   }, [recordedAudioURL]);
 
   const handleStartNew = useCallback(() => {
-    // Revoke audio URL to free memory
     if (recordedAudioURL) {
       URL.revokeObjectURL(recordedAudioURL);
     }
-    // Reset all state to initial values
     setStudentName("");
     setGradeLevel("");
     setSelectedStudentId("");
@@ -420,7 +381,6 @@ export default function OralReadingTestPage() {
     setCountdownSeconds(3);
     setAnalysisResult(null);
     setSessionId("");
-    // Clear sessionStorage
     sessionStorage.removeItem(STORAGE_KEY);
     sessionStorage.removeItem(AUDIO_STORAGE_KEY);
     sessionStorage.removeItem("oral-reading-assessmentId");
@@ -428,7 +388,6 @@ export default function OralReadingTestPage() {
     sessionStorage.removeItem("oral-reading-comprehensionTestId");
   }, [recordedAudioURL]);
 
-  // Auto-dismiss toast after 4 seconds
   useEffect(() => {
     if (toast) {
       const timer = setTimeout(() => setToast(null), 4000);
@@ -445,7 +404,6 @@ export default function OralReadingTestPage() {
       });
       return;
     }
-    // If no existing student selected, auto-create a new student
     let studentId = selectedStudentId;
     if (!studentId) {
       if (!studentName.trim() || !gradeLevel || !selectedClassName) {
@@ -550,7 +508,6 @@ export default function OralReadingTestPage() {
         } catch {}
       }
 
-      // Store analysis result for MiscueAnalysis and report
       if (result.analysis) {
         setAnalysisResult(result.analysis as OralFluencyAnalysis);
       }
@@ -579,7 +536,6 @@ export default function OralReadingTestPage() {
     selectedClassName,
   ]);
 
-  // Auto-submit only for FRESH recordings, not restored ones
   const canSubmit =
     hasRecording &&
     recordedAudioBlob &&
@@ -640,9 +596,7 @@ export default function OralReadingTestPage() {
           />
         )}
 
-        {/* Two-column layout: left content + right MiscueAnalysis */}
         <div className="flex min-h-0 flex-1 gap-4">
-          {/* Left column: student info, filters, passage, timer */}
           <div
             className={`flex min-h-0 flex-1 flex-col overflow-y-auto ${
               passageExpanded ? "gap-0" : "gap-3 px-2"
@@ -650,42 +604,17 @@ export default function OralReadingTestPage() {
           >
             {!passageExpanded && isLoadingClasses && (
               <>
-                <div className="h-[72px] animate-pulse rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] shadow-[0px_1px_20px_rgba(108,164,239,0.37)]" />
+                <div className="h-18 animate-pulse rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] shadow-[0px_1px_20px_rgba(108,164,239,0.37)]" />
                 <div className="flex gap-3">
-                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
-                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
-                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
-                  <div className="h-[42px] w-[140px] shrink-0 animate-pulse rounded-lg bg-[#2E2E68]/30" />
+                  <div className="h-10.5 flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                  <div className="h-10.5 flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                  <div className="h-10.5 flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                  <div className="h-10.5 w-35 shrink-0 animate-pulse rounded-lg bg-[#2E2E68]/30" />
                 </div>
               </>
             )}
 
-            {!passageExpanded && classLoadError && !isLoadingClasses && (
-              <div className="flex items-center justify-between rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] px-6 py-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)]">
-                <span className="text-sm font-medium text-red-500">Failed to load classes.</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setClassLoadError(false);
-                    setIsLoadingClasses(true);
-                    const schoolYear = getCurrentSchoolYear();
-                    getClassListBySchoolYear(schoolYear).then((result) => {
-                      if (result.success && result.classes) {
-                        setClasses(result.classes.map((c) => ({ id: c.id, name: c.name })));
-                      } else {
-                        setClassLoadError(true);
-                      }
-                    }).catch(() => setClassLoadError(true))
-                      .finally(() => setIsLoadingClasses(false));
-                  }}
-                  className="text-xs font-semibold text-[#6666FF] hover:underline"
-                >
-                  Retry
-                </button>
-              </div>
-            )}
-
-            {!passageExpanded && !isLoadingClasses && !classLoadError && (
+            {!passageExpanded && !isLoadingClasses && (
               <StudentInfoBar
                 studentName={studentName}
                 gradeLevel={gradeLevel}
@@ -693,11 +622,10 @@ export default function OralReadingTestPage() {
                 selectedClassName={selectedClassName}
                 onStudentNameChange={setStudentName}
                 onGradeLevelChange={setGradeLevel}
-                onClassCreated={(newClass) => {
-                  setClasses((prev) => [
-                    ...prev,
-                    { id: newClass, name: newClass },
-                  ]);
+                onClassCreated={() => {
+                  queryClient.invalidateQueries({
+                    queryKey: ["classes", schoolYear],
+                  });
                 }}
                 onStudentSelected={(studentId: string) =>
                   setSelectedStudentId(studentId)
