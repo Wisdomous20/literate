@@ -75,14 +75,6 @@ async function deleteFromGCS(gcsUri: string): Promise<void> {
   }
 }
 
-/**
- * Transcribe audio using Google Cloud Speech-to-Text V2 (Chirp model).
- *
- * - Short audio (<=55s): inline content with synchronous recognize()
- * - Long audio (>55s): upload to GCS, use batchRecognize(), then clean up
- *
- * No chunking needed — GCS-based recognition handles the full audio natively.
- */
 export async function transcribeAudio(
   audioBuffer: Buffer,
   fileName: string,
@@ -188,6 +180,7 @@ const estimatedDurationSec = isWav
     .join(" ")
     .trim();
   console.log(`[STT] Raw transcription (${allResults.length} results, ~${Math.round(estimatedDurationSec)}s): "${rawText}"`);
+  console.log(`[STT] Buffer size: ${(audioBuffer.length / 1024).toFixed(1)}KB, estimated duration: ${estimatedDurationSec.toFixed(1)}s, using: ${estimatedDurationSec <= 55 ? "inline" : "batch"}`);
   if (passageText) {
     const passageWordCount = passageText.split(/\s+/).length;
     const transcribedWordCount = rawText.split(/\s+/).filter(w => w.length > 0).length;

@@ -4,10 +4,8 @@ export async function getQuizByPassageService(passageId: string) {
   try {
     const quiz = await prisma.quiz.findUnique({
       where: { passageId },
-      include: {
-        passage: {
-          select: { id: true, title: true, content: true, language: true, level: true },
-        },
+      select:{
+        id:true,
         questions: {
           orderBy: { createdAt: "asc" },
           select: {

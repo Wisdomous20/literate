@@ -169,119 +169,118 @@ export default function OralReadingComprehensionPage() {
   // Fetch questions on mount + restore saved state
   useEffect(() => {
 
-        async function fetchQuestions() {
-      try {
-        const currentAssessmentId = sessionStorage.getItem("oral-reading-assessmentId");
-        const raw = sessionStorage.getItem("oral-reading-session");
+    async function fetchQuestions() {
+  try {
+    const currentAssessmentId = sessionStorage.getItem("oral-reading-assessmentId");
+    const raw = sessionStorage.getItem("oral-reading-session");
 
-        // Restore saved comprehension progress only if it belongs to the current assessment
-        const saved = loadComprehensionState();
-        if (saved && saved.assessmentId === currentAssessmentId) {
-          setAnswers(saved.answers);
-          setElapsedSeconds(saved.elapsedSeconds);
-          if (saved.isSubmitted && saved.comprehensionResult) {
-            setIsSubmitted(true);
-            setComprehensionResult(saved.comprehensionResult);
-          }
-        } else if (saved && saved.assessmentId !== currentAssessmentId) {
-          // Stale state from a different assessment — clear it
-          sessionStorage.removeItem(COMP_STORAGE_KEY);
-        }
-
-        // If not already submitted from saved state, check DB for existing submission
-        const isRestoredSubmitted =
-          saved?.assessmentId === currentAssessmentId && saved?.isSubmitted;
-        if (!isRestoredSubmitted && currentAssessmentId) {
-          try {
-            const res = await getAssessmentComprehension(currentAssessmentId);
-            if (res.success && "assessment" in res && res.assessment?.comprehension) {
-              const { result: restoredResult, restoredAnswers } =
-                buildResultFromAssessment(res.assessment as Parameters<typeof buildResultFromAssessment>[0]);
-
-              setComprehensionResult(restoredResult);
-              setIsSubmitted(true);
-              setAnswers(restoredAnswers);
-
-              if (restoredResult.comprehensionTestId) {
-                sessionStorage.setItem(
-                  "oral-reading-comprehensionTestId",
-                  restoredResult.comprehensionTestId,
-                );
-              }
-              saveComprehensionState({
-                assessmentId: currentAssessmentId,
-                answers: restoredAnswers,
-                elapsedSeconds: saved?.elapsedSeconds ?? 0,
-                isSubmitted: true,
-                comprehensionResult: restoredResult,
-              });
-
-              const fluencyClassification =
-                res.assessment?.oralFluency?.classificationLevel;
-              syncMainSession(restoredResult, fluencyClassification);
-            }
-          } catch {
-            // Assessment not found or error — continue to load questions
-          }
-        }
-        
-         if (!raw) {
-          setLoadError("Session not found. Please go back and start again.");
-          setIsLoading(false);
-          return;
-        }
-        const session = JSON.parse(raw);
-        const passageId = session.selectedPassage;
-        if (!passageId) {
-          setLoadError(
-            "No passage selected. Please go back and select a passage.",
-          );
-          setIsLoading(false);
-          return;
-        }
-
-        const result = await getQuizByPassageAction(passageId);
-        if (!result.success || !("quiz" in result) || !result.quiz) {
-          setLoadError(
-            ("error" in result && result.error) ||
-              "Failed to load quiz questions.",
-          );
-          setIsLoading(false);
-          return;
-        }
-
-        const { quiz } = result;
-
-        const mapped: QuestionData[] = quiz.questions.map(
-          (
-            q: {
-              id: string;
-              questionText: string;
-              tags: string | null;
-              type: string;
-              options: unknown;
-            },
-            idx: number,
-          ) => ({
-            id: q.id,
-            questionNumber: idx + 1,
-            questionText: q.questionText,
-            type: q.type as "MULTIPLE_CHOICE" | "ESSAY",
-            tags: q.tags ?? undefined,
-            options: Array.isArray(q.options)
-              ? (q.options as string[])
-              : undefined,
-          }),
-        );
-
-        setQuestions(mapped);
-      } catch (err) {
-        console.error("Failed to fetch questions:", err);
-        setLoadError("Something went wrong while loading questions.");
-      } finally {
-        setIsLoading(false);
-      }
+    if (!raw) {
+      setLoadError("Session not found. Please go back and start again.");
+      setIsLoading(false);
+      return;
     }
+
+    const session = JSON.parse(raw);
+    const passageId = session.selectedPassage;
+
+    if (!passageId) {
+      setLoadError("No passage selected. Please go back and select a passage.");
+      setIsLoading(false);
+      return;
+    }
+
+    // Restore saved comprehension progress only if it belongs to the current assessment
+    const saved = loadComprehensionState();
+    if (saved && saved.assessmentId === currentAssessmentId) {
+      setAnswers(saved.answers);
+      setElapsedSeconds(saved.elapsedSeconds);
+      if (saved.isSubmitted && saved.comprehensionResult) {
+        setIsSubmitted(true);
+        setComprehensionResult(saved.comprehensionResult);
+      }
+    } else if (saved && saved.assessmentId !== currentAssessmentId) {
+      sessionStorage.removeItem(COMP_STORAGE_KEY);
+    }
+
+    const isRestoredSubmitted =
+      saved?.assessmentId === currentAssessmentId && saved?.isSubmitted;
+
+    const [existingRes, quizResult] = await Promise.all([
+      !isRestoredSubmitted && currentAssessmentId
+        ? getAssessmentComprehension(currentAssessmentId)
+        : Promise.resolve(null),
+      getQuizByPassageAction(passageId),
+    ]);
+
+    // Handle existing comprehension result from DB
+    if (existingRes && existingRes.success && "assessment" in existingRes && existingRes.assessment?.comprehension) {
+      const { result: restoredResult, restoredAnswers } =
+        buildResultFromAssessment(existingRes.assessment as Parameters<typeof buildResultFromAssessment>[0]);
+
+      setComprehensionResult(restoredResult);
+      setIsSubmitted(true);
+      setAnswers(restoredAnswers);
+
+      if (restoredResult.comprehensionTestId) {
+        sessionStorage.setItem(
+          "oral-reading-comprehensionTestId",
+          restoredResult.comprehensionTestId,
+        );
+      }
+
+      saveComprehensionState({
+        assessmentId: currentAssessmentId!,
+        answers: restoredAnswers,
+        elapsedSeconds: saved?.elapsedSeconds ?? 0,
+        isSubmitted: true,
+        comprehensionResult: restoredResult,
+      });
+
+      const fluencyClassification =
+        existingRes.assessment?.oralFluency?.classificationLevel;
+      syncMainSession(restoredResult, fluencyClassification);
+    }
+
+    // Handle quiz questions result
+    if (!quizResult.success || !("quiz" in quizResult) || !quizResult.quiz) {
+      setLoadError(
+        ("error" in quizResult && quizResult.error) ||
+          "Failed to load quiz questions.",
+      );
+      setIsLoading(false);
+      return;
+    }
+
+    const { quiz } = quizResult;
+
+    const mapped: QuestionData[] = quiz.questions.map(
+      (
+        q: {
+          id: string;
+          questionText: string;
+          tags: string | null;
+          type: string;
+          options: unknown;
+        },
+        idx: number,
+      ) => ({
+        id: q.id,
+        questionNumber: idx + 1,
+        questionText: q.questionText,
+        type: q.type as "MULTIPLE_CHOICE" | "ESSAY",
+        tags: q.tags ?? undefined,
+        options: Array.isArray(q.options) ? (q.options as string[]) : undefined,
+      }),
+    );
+
+    setQuestions(mapped);
+  } catch (err) {
+    console.error("Failed to fetch questions:", err);
+    setLoadError("Something went wrong while loading questions.");
+  } finally {
+    setIsLoading(false);
+  }
+}
 
     fetchQuestions();
   }, []);
