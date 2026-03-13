@@ -47,15 +47,15 @@ export function AssessmentTypeFilterDropdown({
       <button
         type="button"
         onClick={() => setIsOpen((v) => !v)}
-        className="flex items-center gap-2 rounded-lg border border-[#6666FF]/25 bg-[#6666FF]/8 px-4 py-2 text-xs font-medium text-[#6666FF] transition-all hover:bg-[#EEEEFF] min-w-40"
+        className="flex items-center gap-2 rounded-xl border border-[#9999FF]/40 bg-white/90 px-4 py-2.5 text-xs font-bold text-[#6666FF] transition-all hover:bg-white hover:shadow-[0_6px_20px_rgba(102,102,255,0.15)] focus:outline-none focus:ring-1 focus:ring-[#6666FF]/20 shadow-[0_4px_16px_rgba(102,102,255,0.12)] backdrop-blur-sm min-w-56"
       >
         <span className="flex-1 text-left">{selectedLabel}</span>
         <ChevronDown
-          className={`h-3.5 w-3.5 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          className={`h-4 w-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
       {isOpen && (
-        <div className="absolute right-0 top-full z-50 mt-1 min-w-40 rounded-lg border border-[#6666FF]/20 bg-white py-1 shadow-lg">
+        <div className="absolute right-0 top-full z-50 mt-2 min-w-56 rounded-2xl border border-[#9999FF]/25 bg-white/95 py-2 shadow-[0_12px_40px_rgba(102,102,255,0.25)] backdrop-blur-sm">
           {assessmentTypeOptions.map((opt) => (
             <button
               key={opt.value}
@@ -65,10 +65,10 @@ export function AssessmentTypeFilterDropdown({
                 setIsOpen(false);
                 onFilterChange?.(opt.value);
               }}
-              className={`w-full px-3 py-2 text-left text-xs transition-colors hover:bg-[#E4F4FF] ${
+              className={`w-full px-4 py-2.5 text-left text-xs font-semibold transition-all ${
                 selectedFilter === opt.value
-                  ? "font-semibold text-[#6666FF] bg-[#EEEEFF]"
-                  : "text-[#00306E]"
+                  ? "text-[#6666FF] bg-gradient-to-r from-[#EEF0FF] to-[#F5F7FF]"
+                  : "text-[#00306E] hover:bg-[#F8F9FF]"
               }`}
             >
               {opt.label}
