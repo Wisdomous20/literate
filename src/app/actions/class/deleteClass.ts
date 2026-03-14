@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/authOptions";
 import { deleteClassService } from "@/service/class/deleteClassService";
 import { revalidatePath } from "next/cache";
 
-export async function deleteClass(classId: string) {
+export async function deleteClass(classRoomId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return { success: false, error: "Unauthorized" };
@@ -13,7 +13,7 @@ export async function deleteClass(classId: string) {
 
   const result = await deleteClassService({
     userId: session.user.id,
-    classId,
+    classRoomId,
   });
 
   if (result.success) {

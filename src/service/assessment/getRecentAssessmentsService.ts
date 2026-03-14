@@ -23,7 +23,7 @@ export async function getRecentAssessmentsService(
       where: {
         student: {
           deletedAt: null,
-          class: {
+          classRoom: {
             userId,
             schoolYear,
             archived: false,

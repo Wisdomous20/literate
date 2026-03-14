@@ -34,9 +34,7 @@ export async function getAssessmentsByStudentService(
         },
         comprehension: {
           include: {
-            answers: {
-              include: { question: true },
-            },
+            answers: true,
           },
         },
         oralReadingResult: true,

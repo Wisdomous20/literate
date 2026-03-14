@@ -24,7 +24,7 @@ model User {
   isVerified        Boolean             @default(false)
   accounts          Account[]
   sessions          Session[]
-  class             Class[]
+  classRoom         ClassRoom[]
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
   verificationToken VerificationToken[]
@@ -52,7 +52,7 @@ model Account {
   @@map("accounts")
 }
 
-model Class {
+model ClassRoom {
   id         String    @id @default(uuid())
   name       String
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -67,8 +67,8 @@ model Student {
   id          String       @id @default(uuid())
   name        String
   level       Int
-  class       Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
-  classId     String
+  classRoom       ClassRoom        @relation(fields: [classRoomId], references: [id], onDelete: Cascade)
+  classRoomId     String
   assessments Assessment[]
   deletedAt   DateTime?
 }
@@ -200,8 +200,8 @@ model ComprehensionAnswer {
   id                  String            @id @default(uuid())
   comprehensionTestId String
   comprehensionTest   ComprehensionTest @relation(fields: [comprehensionTestId], references: [id], onDelete: Cascade)
-  questionId          String
-  question            Question          @relation(fields: [questionId], references: [id])
+  question            String
+  tag                Tags
   answer              String
   isCorrect           Boolean?
   createdAt           DateTime          @default(now())
@@ -227,7 +227,6 @@ model Question {
   type          QuestionType
   options       Json?
   correctAnswer String?
-  answers       ComprehensionAnswer[]
   createdAt     DateTime              @default(now())
   updatedAt     DateTime              @updatedAt
 }
