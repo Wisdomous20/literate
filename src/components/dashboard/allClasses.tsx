@@ -58,8 +58,8 @@ export default function AllClassesPage({
   const latestClasses = allClasses.slice(0, 3);
   const oldClasses = allClasses.slice(3);
 
-  const handleClassClick = (classId: string) => {
-    router.push(`/dashboard/class/${classId}`);
+  const handleClassClick = (classRoomId: string) => {
+    router.push(`/dashboard/class/${classRoomId}`);
     if (showToast) showToast("Navigated to class details.", "success");
   };
 
@@ -173,7 +173,7 @@ export default function AllClassesPage({
                   {latestClasses.map((c, idx) => (
                     <ClassCard
                       key={c.id}
-                      classId={c.id}
+                      classRoomId={c.id}
                       name={c.name}
                       studentCount={c.studentCount}
                       variant={getVariant(idx)}
@@ -200,7 +200,7 @@ export default function AllClassesPage({
                     {oldClasses.map((c, idx) => (
                       <ClassCard
                         key={c.id}
-                        classId={c.id}
+                        classRoomId={c.id}
                         name={c.name}
                         studentCount={c.studentCount}
                         variant={getVariant(idx + latestClasses.length)}

@@ -10,7 +10,6 @@ interface UpdateComprehensionAnswerResult {
   success: boolean;
   answer?: {
     id: string;
-    questionId: string;
     answer: string;
     isCorrect: boolean | null;
   };
@@ -60,7 +59,7 @@ export async function updateComprehensionAnswerService(
     const updatedAnswer = await prisma.comprehensionAnswer.update({
       where: { id: comprehensionAnswerId },
       data: { isCorrect },
-      select: { id: true, questionId: true, answer: true, isCorrect: true },
+      select: { id: true, answer: true, isCorrect: true },
     });
 
     // Recalculate score for the comprehension test

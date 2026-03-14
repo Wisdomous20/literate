@@ -55,7 +55,7 @@ export function StudentTable({
 }: StudentTableProps) {
   const params = useParams();
   const router = useRouter();
-  const classId = params.id as string;
+  const classRoomId = params.id as string;
 
   const [currentPage, setCurrentPage] = useState(1);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -113,7 +113,7 @@ export function StudentTable({
 
   const handleViewReport = (studentId: string, assessmentType: string) => {
     router.push(
-      `/dashboard/class/${classId}/report/${studentId}?assessmentType=${encodeURIComponent(assessmentType)}`,
+      `/dashboard/class/${classRoomId}/report/${studentId}?assessmentType=${encodeURIComponent(assessmentType)}`,
     );
   };
 

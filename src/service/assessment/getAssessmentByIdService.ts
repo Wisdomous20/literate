@@ -32,7 +32,7 @@ export async function getAssessmentByIdService(
         },
         comprehension: {
           include: {
-            answers: { include: { question: true } },
+            answers:true,
           },
         },
         student: { select: { id: true, name: true } },

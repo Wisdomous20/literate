@@ -35,7 +35,7 @@ export async function getOralReadingResultsByStudentService(
             },
             comprehension: {
               include: {
-                answers: { include: { question: true } },
+                answers: true,
               },
             },
           },

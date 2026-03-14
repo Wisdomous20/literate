@@ -530,7 +530,7 @@ export default function ReadingComprehensionTestPage() {
           critical: { correct: 0, total: 0 },
         };
         for (const a of result.answers) {
-          const tag = a.question?.tags;
+          const tag = a.tag;
           if (tag === "Literal") {
             tagBreakdown.literal.total++;
             if (a.isCorrect) tagBreakdown.literal.correct++;

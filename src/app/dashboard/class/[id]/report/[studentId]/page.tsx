@@ -22,7 +22,7 @@ export default function AssessmentReportPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const classId = params.id as string;
+  const classRoomId = params.id as string;
   const studentId = params.studentId as string;
   const assessmentTypeParam = searchParams.get("assessmentType");
   const assessmentTypeLabel = assessmentTypeParam
@@ -75,15 +75,15 @@ export default function AssessmentReportPage() {
   const handleRowClick = (assessment: { id: string; type: string }) => {
     if (assessment.type === "ORAL_READING") {
       router.push(
-        `/dashboard/class/${classId}/report/${studentId}/summary?id=${assessment.id}`,
+        `/dashboard/class/${classRoomId}/report/${studentId}/summary?id=${assessment.id}`,
       );
     } else if (assessment.type === "READING_FLUENCY") {
       router.push(
-        `/dashboard/class/${classId}/report/${studentId}/reading-fluency-report?id=${assessment.id}`,
+        `/dashboard/class/${classRoomId}/report/${studentId}/reading-fluency-report?id=${assessment.id}`,
       );
     } else if (assessment.type === "COMPREHENSION") {
       router.push(
-        `/dashboard/class/${classId}/report/${studentId}/comprehension-report?id=${assessment.id}`,
+        `/dashboard/class/${classRoomId}/report/${studentId}/comprehension-report?id=${assessment.id}`,
       );
     }
   };

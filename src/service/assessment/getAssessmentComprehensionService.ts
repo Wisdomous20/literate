@@ -18,10 +18,10 @@ export async function getAssessmentComprehensionService(assessmentId: string) {
             classificationLevel: true,
             answers: {
               select: {
-                questionId: true,
+                question:true,
                 answer: true,
                 isCorrect: true,
-                question: { select: { tags: true } },
+                tag: true,
               },
             },
           },
