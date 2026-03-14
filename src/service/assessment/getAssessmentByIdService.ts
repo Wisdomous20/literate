@@ -32,7 +32,6 @@ export async function getAssessmentByIdService(
         },
         comprehension: {
           include: {
-            quiz: true,
             answers: { include: { question: true } },
           },
         },

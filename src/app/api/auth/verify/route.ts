@@ -21,6 +21,6 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.redirect(
-    new URL("/auth/login?verified=true", req.url)
+    new URL("/dashboard", req.url)
   );
 }
