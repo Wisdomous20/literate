@@ -189,13 +189,12 @@ model ComprehensionTest {
   id                  String                @id @default(uuid())
   assessmentId        String                @unique
   assessment          Assessment            @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
-  quizId              String
-  quiz                Quiz                  @relation(fields: [quizId], references: [id])
   score               Int
   totalItems          Int
   classificationLevel LevelClassification
   answers             ComprehensionAnswer[]
 }
+
 
 model ComprehensionAnswer {
   id                  String            @id @default(uuid())
@@ -213,7 +212,6 @@ model Quiz {
   passageId          String              @unique
   passage            Passage             @relation(fields: [passageId], references: [id], onDelete: Cascade)
   questions          Question[]
-  comprehensionTests ComprehensionTest[]
   totalScore         Int
   totalNumber        Int
   createdAt          DateTime            @default(now())

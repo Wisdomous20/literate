@@ -101,7 +101,6 @@ export async function submitComprehensionService(
     const comprehensionTest = await prisma.comprehensionTest.create({
       data: {
         assessmentId,
-        quizId: quiz.id,
         score,
         totalItems,
         classificationLevel: level,
