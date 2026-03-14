@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import ReportHeader from "@/components/reports/oral-reading-test/reading-fluency-report/reportHeader";
@@ -26,7 +26,7 @@ const AUDIO_STORAGE_KEY = "oral-reading-audio";
 function base64ToBlob(base64: string): Blob {
   const [meta, data] = base64.split(",");
   const mimeMatch = meta.match(/:(.*?);/);
-  const mime = mimeMatch ? mimeMatch[1] : "audio/wa";
+  const mime = mimeMatch ? mimeMatch[1] : "audio/wav";
   const binary = atob(data);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
@@ -54,7 +54,9 @@ function loadSession(): Partial<SessionState> {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
-  } catch {}
+  } catch (err) {
+    console.error("Failed to load session:", err);
+  }
   return {};
 }
 
@@ -134,31 +136,24 @@ function buildBehaviorItems(
 
 export default function OralReadingReportPage() {
   const router = useRouter();
-  const [isHydrated, setIsHydrated] = useState(false);
   const [showMiscuesModal, setShowMiscuesModal] = useState(false);
 
-  useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect -- Intentional mount-time hydration flag for SSR */
-    setIsHydrated(true);
-    /* eslint-enable react-hooks/set-state-in-effect */
-  }, []);
+  const isClient = typeof window !== "undefined";
 
-  const session = loadSession();
+  const session = useMemo(() => (isClient ? loadSession() : {}), [isClient]);
   const analysis = session.analysisResult;
 
-  // Load recorded audio from sessionStorage (no setState inside effect body)
-  const [audioSrc] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
+  const audioSrc = useMemo(() => {
+    if (!isClient) return null;
     try {
       const audioBase64 = sessionStorage.getItem(AUDIO_STORAGE_KEY);
       if (!audioBase64) return null;
       const blob = base64ToBlob(audioBase64);
       return URL.createObjectURL(blob);
-    } catch (err) {
-      console.error("Failed to load audio from sessionStorage:", err);
+    } catch {
       return null;
     }
-  });
+  }, [isClient]);
 
   useEffect(() => {
     return () => {
@@ -167,69 +162,43 @@ export default function OralReadingReportPage() {
   }, [audioSrc]);
 
   const studentName = session.studentName || "—";
-
-  // Loading state — wait for client hydration before reading from sessionStorage
-  if (!isHydrated) {
-    return (
-      <div className="flex flex-col h-screen overflow-hidden">
-        <ReportHeader />
-        <div className="flex flex-1 items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-[#6666FF]" />
-            <span className="text-[#00306E] font-medium">Loading report...</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state — no session or analysis data found
-  if (!analysis) {
-    return (
-      <div className="flex flex-col h-screen overflow-hidden">
-        <ReportHeader />
-        <div className="flex flex-1 items-center justify-center">
-          <div className="flex flex-col items-center gap-4 text-center px-4">
-            <p className="text-[#00306E] font-semibold text-lg">No report data found.</p>
-            <p className="text-[#00306E]/60 text-sm">Please complete an oral reading session first.</p>
-            <button
-              onClick={() => router.back()}
-              className="rounded-lg bg-[#6666FF] px-6 py-2 text-sm font-semibold text-white hover:bg-[#5555EE] transition-colors"
-            >
-              Go Back
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const gradeLevel = session.gradeLevel ? `Grade ${session.gradeLevel}` : "—";
+  const gradeLevel = useMemo(
+    () => (session.gradeLevel ? `Grade ${session.gradeLevel}` : "—"),
+    [session.gradeLevel],
+  );
   const studentClass = session.selectedClassName || "—";
   const passageTitle = session.selectedTitle || "—";
   const passageLevel = session.selectedLevel || "—";
   const testType = session.selectedTestType || "—";
-  const totalWords = session.passageContent
-    ? session.passageContent.split(/\s+/).filter(Boolean).length
-    : 0;
-  // Use analysis duration (from actual recording) if available, fall back to session timer
-  const readingTimeSeconds = Math.round(
-    analysis?.duration ?? session.recordedSeconds ?? 0,
+
+  const totalWords = useMemo(
+    () =>
+      session.passageContent
+        ? session.passageContent.split(/\s+/).filter(Boolean).length
+        : 0,
+    [session.passageContent],
   );
 
-  // WCPM = (totalWords - totalMiscues) / duration * 60
+  const readingTimeSeconds = useMemo(
+    () => Math.round(analysis?.duration ?? session.recordedSeconds ?? 0),
+    [analysis?.duration, session.recordedSeconds],
+  );
+
   const totalMiscues = analysis?.totalMiscues ?? 0;
   const wordsCorrect = Math.max(0, totalWords - totalMiscues);
-  const wcpm =
-    readingTimeSeconds > 0
-      ? Math.round((wordsCorrect / readingTimeSeconds) * 60)
-      : 0;
+  const wcpm = useMemo(
+    () =>
+      readingTimeSeconds > 0
+        ? Math.round((wordsCorrect / readingTimeSeconds) * 60)
+        : 0,
+    [wordsCorrect, readingTimeSeconds],
+  );
 
   const classification = analysis?.classificationLevel || "—";
-  const miscueData = buildMiscueData(analysis);
-  const behaviorItems = buildBehaviorItems(analysis);
+  const miscueData = useMemo(() => buildMiscueData(analysis), [analysis]);
+  const behaviorItems = useMemo(() => buildBehaviorItems(analysis), [analysis]);
 
-  const handleExportPdf = () => {
+  const handleExportPdf = useCallback(() => {
     const safeName = studentName.replace(/[^a-zA-Z0-9]/g, "_");
     exportFluencyReportPdf(
       {
@@ -253,7 +222,60 @@ export default function OralReadingReportPage() {
       },
       `Oral_Fluency_Report_${safeName}`,
     );
-  };
+  }, [
+    studentName,
+    gradeLevel,
+    studentClass,
+    passageTitle,
+    passageLevel,
+    totalWords,
+    testType,
+    wcpm,
+    readingTimeSeconds,
+    classification,
+    miscueData,
+    behaviorItems,
+  ]);
+
+  if (!isClient) {
+    return (
+      <div className="flex flex-col h-screen overflow-hidden">
+        <ReportHeader />
+        <div className="flex flex-1 items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-[#6666FF]" />
+            <span className="text-[#00306E] font-medium">
+              Loading report...
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!analysis) {
+    return (
+      <div className="flex flex-col h-screen overflow-hidden">
+        <ReportHeader />
+        <div className="flex flex-1 items-center justify-center">
+          <div className="flex flex-col items-center gap-4 text-center px-4">
+            <p className="text-[#00306E] font-semibold text-lg">
+              No report data found.
+            </p>
+            <p className="text-[#00306E]/60 text-sm">
+              Please complete an oral reading session first.
+            </p>
+            <button
+              onClick={() => router.back()}
+              className="rounded-lg bg-[#6666FF] px-6 py-2 text-sm font-semibold text-white hover:bg-[#5555EE] transition-colors"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
@@ -274,7 +296,6 @@ export default function OralReadingReportPage() {
           />
         </div>
 
-        {/* Bottom row: Passage+Audio | Behavior | Miscue */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Left column */}
           <div className="flex flex-col gap-6">
@@ -288,11 +309,12 @@ export default function OralReadingReportPage() {
             <AudioPlaybackCard audioSrc={audioSrc} />
           </div>
 
-          {/* Center column */}
           <BehaviorChecklist behaviors={behaviorItems} />
 
-          {/* Right column */}
-          <MiscueAnalysisReport miscueData={miscueData} onViewMiscues={() => setShowMiscuesModal(true)} />
+          <MiscueAnalysisReport
+            miscueData={miscueData}
+            onViewMiscues={() => setShowMiscuesModal(true)}
+          />
         </div>
       </main>
 

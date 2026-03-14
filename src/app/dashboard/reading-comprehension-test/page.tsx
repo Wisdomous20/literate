@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
@@ -24,7 +24,8 @@ import {
   type QuestionData,
 } from "@/components/reading-comprehension-test/questionCard";
 import { ComprehensionSubmitArea } from "@/components/reading-comprehension-test/comprehensionSubmitArea";
-import { getClassListBySchoolYear } from "@/app/actions/class/getClassList";
+import { useClassList } from "@/lib/hooks/useClassList";
+import { useQueryClient } from "@tanstack/react-query";
 import { getQuizByPassageAction } from "@/app/actions/comprehension-Test/getQuizByPassage";
 import { createStudent } from "@/app/actions/student/createStudent";
 
@@ -37,11 +38,6 @@ function getCurrentSchoolYear(): string {
   } else {
     return `${currentYear - 1}-${currentYear}`;
   }
-}
-
-interface ClassItem {
-  id: string;
-  name: string;
 }
 
 const STORAGE_KEY = "reading-comprehension-session";
@@ -124,13 +120,21 @@ function saveComprehensionState(state: ComprehensionState) {
 
 export default function ReadingComprehensionTestPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+
+  // ── TanStack-cached class list ──
+  const schoolYear = getCurrentSchoolYear();
+  const { data: classListData = [], isLoading: isLoadingClasses } =
+    useClassList(schoolYear);
+
+  const classes = useMemo(
+    () => classListData.map((c) => ({ id: c.id, name: c.name })),
+    [classListData],
+  );
 
   // ── Student & passage state ──
   const [studentName, setStudentName] = useState("");
   const [gradeLevel, setGradeLevel] = useState("");
-  const [classes, setClasses] = useState<ClassItem[]>([]);
-  const [isLoadingClasses, setIsLoadingClasses] = useState(true);
-  const [classLoadError, setClassLoadError] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [selectedClassName, setSelectedClassName] = useState<string>("");
 
@@ -265,24 +269,6 @@ export default function ReadingComprehensionTestPage() {
     isSubmitted,
     comprehensionResult,
   ]);
-
-  // ── Fetch classes ──
-  useEffect(() => {
-    async function fetchClasses() {
-      setIsLoadingClasses(true);
-      const schoolYear = getCurrentSchoolYear();
-      const result = await getClassListBySchoolYear(schoolYear);
-      if (result.success && result.classes) {
-        setClasses(result.classes.map((c) => ({ id: c.id, name: c.name })));
-        setClassLoadError(false);
-      } else {
-        setClasses([]);
-        setClassLoadError(true);
-      }
-      setIsLoadingClasses(false);
-    }
-    fetchClasses();
-  }, []);
 
   // ── Fetch questions when showQuestions becomes true ──
   useEffect(() => {
@@ -652,51 +638,17 @@ export default function ReadingComprehensionTestPage() {
           >
             {!passageExpanded && isLoadingClasses && (
               <>
-                <div className="h-[72px] animate-pulse rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] shadow-[0px_1px_20px_rgba(108,164,239,0.37)]" />
+                <div className="h-18 animate-pulse rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] shadow-[0px_1px_20px_rgba(108,164,239,0.37)]" />
                 <div className="flex gap-3">
-                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
-                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
-                  <div className="h-[42px] flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
-                  <div className="h-[42px] w-[140px] shrink-0 animate-pulse rounded-lg bg-[#2E2E68]/30" />
+                  <div className="h-10.5 flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                  <div className="h-10.5 flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                  <div className="h-10.5 flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
+                  <div className="h-10.5 w-35 shrink-0 animate-pulse rounded-lg bg-[#2E2E68]/30" />
                 </div>
               </>
             )}
 
-            {!passageExpanded && classLoadError && !isLoadingClasses && (
-              <div className="flex items-center justify-between rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] px-6 py-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)]">
-                <span className="text-sm font-medium text-red-500">
-                  Failed to load classes.
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setClassLoadError(false);
-                    setIsLoadingClasses(true);
-                    getClassListBySchoolYear(getCurrentSchoolYear()).then(
-                      (result) => {
-                        if (result.success && result.classes) {
-                          setClasses(
-                            result.classes.map((c) => ({
-                              id: c.id,
-                              name: c.name,
-                            })),
-                          );
-                          setClassLoadError(false);
-                        } else {
-                          setClassLoadError(true);
-                        }
-                        setIsLoadingClasses(false);
-                      },
-                    );
-                  }}
-                  className="text-xs font-semibold text-[#6666FF] hover:underline"
-                >
-                  Retry
-                </button>
-              </div>
-            )}
-
-            {!passageExpanded && !isLoadingClasses && !classLoadError && (
+            {!passageExpanded && !isLoadingClasses && (
               <StudentInfoBar
                 studentName={studentName}
                 gradeLevel={gradeLevel}
@@ -704,11 +656,10 @@ export default function ReadingComprehensionTestPage() {
                 selectedClassName={selectedClassName}
                 onStudentNameChange={setStudentName}
                 onGradeLevelChange={setGradeLevel}
-                onClassCreated={(newClass) => {
-                  setClasses((prev) => [
-                    ...prev,
-                    { id: newClass, name: newClass },
-                  ]);
+                onClassCreated={() => {
+                  queryClient.invalidateQueries({
+                    queryKey: ["classes", schoolYear],
+                  });
                 }}
                 onStudentSelected={(studentId: string) =>
                   setSelectedStudentId(studentId)
