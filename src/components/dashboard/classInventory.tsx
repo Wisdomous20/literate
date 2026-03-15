@@ -148,7 +148,7 @@ export function ClassInventory({
           <button
             type="button"
             onClick={() => router.push("/dashboard/class/all")}
-            className="rounded-full border border-[#6666FF] bg-transparent px-3 py-1 text-[11px] font-medium text-[#6666ff] ml-1 h-7 min-w-0 hover:bg-[#6666FF]/10 transition-colors"
+            className="rounded-full border border-[#6666FF] bg-[#6666FF] px-3 py-1 text-[11px] font-medium text-white ml-1 h-7 min-w-0 hover:bg-[#7A7AFB] transition-colors"
           >
             View All
           </button>
