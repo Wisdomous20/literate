@@ -22,7 +22,7 @@ export async function getRecentAssessmentsService(
     const recentAssessments = await prisma.assessment.findMany({
       where: {
         student: {
-          deletedAt: null,
+          archived: false,
           classRoom: {
             userId,
             schoolYear,

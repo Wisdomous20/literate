@@ -43,13 +43,13 @@ export async function getClassByIdService(
         archived: true,
         createdAt: true,
         students: {
-          where: { deletedAt: null }, 
+          where: { archived: false }, 
           select: {
             id: true,
             name: true,
             level: true,
             classRoomId: true,
-            deletedAt: true,
+            archived: true,
           },
         },
       },

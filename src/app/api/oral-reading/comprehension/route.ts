@@ -5,7 +5,7 @@ import { createOralReadingService } from "@/service/oral-reading/createOralReadi
 export const maxDuration = 60;
 
 interface SubmitAnswer {
-  questionId: string;
+  question: string;
   answer: string;
 }
 

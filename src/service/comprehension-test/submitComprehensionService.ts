@@ -4,7 +4,7 @@ import classifyComprehensionLevel from "./classifyComprehensionLevel";
 import { Tags } from "@/generated/prisma/enums";
 
 interface SubmitAnswer {
-  questionId: string;
+  question: string;
   answer: string;
 }
 
@@ -61,11 +61,11 @@ export async function submitComprehensionService(
 
     const passageExcerpt = passage.content.slice(0, 1000);
 
-    const mcResults: { questionId: string; answer: string; isCorrect: boolean; tag: string }[] = [];
-    const essayPromises: Promise<{ questionId: string; answer: string; isCorrect: boolean; tag: string }>[] = [];
+    const mcResults: { question: string; answer: string; isCorrect: boolean; tag: string }[] = [];
+    const essayPromises: Promise<{ question: string; answer: string; isCorrect: boolean; tag: string }>[] = [];
 
     for (const a of answers) {
-      const question = questionMap.get(a.questionId);
+      const question = questionMap.get(a.question);
       if (!question) {
         mcResults.push({ ...a, isCorrect: false, tag: "Literal" });
         continue;
@@ -108,7 +108,7 @@ export async function submitComprehensionService(
         classificationLevel: level,
         answers: {
           create: gradedAnswers.map((a) => ({
-            question: a.questionId, 
+            question: a.question, 
             tag: a.tag as Tags,           
             answer: a.answer,
             isCorrect: a.isCorrect,
