@@ -13,7 +13,7 @@ export default function ReportHeader({ onExportPdf }: ReportHeaderProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Top bar with Export & Delete buttons */}
+      {/* Top bar with Export button */}
       <div className="flex items-center justify-between px-8 py-5 border-b border-[#8D8DEC] shadow-[0_4px_4px_#54A4FF]">
         <div className="flex items-center gap-3">
           <LayoutDashboard size={24} className="text-[#00306E]" />
@@ -22,22 +22,14 @@ export default function ReportHeader({ onExportPdf }: ReportHeaderProps) {
           </h1>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => onExportPdf?.()}
-            disabled={!onExportPdf}
-            className="px-5 py-2 bg-[#297CEC] text-white text-xs font-medium rounded-lg border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#297CEC]/90 transition-colors disabled:opacity-50 disabled:pointer-events-none"
-          >
-            Export to PDF
-          </button>
-          <button
-            type="button"
-            className="px-5 py-2 bg-[#DE3B40] text-white text-xs font-medium rounded-lg border border-[#DE3B40] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#DE3B40]/90 transition-colors"
-          >
-            Delete
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => onExportPdf?.()}
+          disabled={!onExportPdf}
+          className="px-5 py-2 bg-[#297CEC] text-white text-xs font-medium rounded-lg border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#297CEC]/90 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+        >
+          Export to PDF
+        </button>
       </div>
 
       {/* Previous + Continue to Comprehension */}

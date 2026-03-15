@@ -12,7 +12,7 @@ import {
   ClipboardList,
   Settings,
   LogOut,
-  ChevronDown,
+  Menu,
 } from "lucide-react";
 
 function getCurrentSchoolYear(): string {
@@ -76,14 +76,9 @@ export function Sidebar() {
         onClick={() => setCollapsed(!collapsed)}
         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        className="absolute -right-3 top-8 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-white text-[#6666FF] shadow-md transition-transform hover:bg-gray-100"
+        className="absolute -right-3 top-1/2 -translate-y-1/2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-lg ring-2 ring-white hover:bg-[#5555ee] transition-colors"
       >
-        <ChevronDown
-          className={cn(
-            "h-4 w-4 transition-transform duration-300",
-            collapsed ? "-rotate-90" : "rotate-90",
-          )}
-        />
+        <Menu className="h-4 w-4" />
       </button>
 
       <div
