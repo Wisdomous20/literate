@@ -58,7 +58,6 @@ export function UpdateQuestionForm({
       JSON.stringify(options) !==
         JSON.stringify(question.options || ["", "", "", ""]);
     const hasAnswerChanged =
-      question.type === "MULTIPLE_CHOICE" &&
       correctAnswer !== (question.correctAnswer || "");
 
     setHasChanges(
@@ -103,7 +102,7 @@ export function UpdateQuestionForm({
           type: type as "MULTIPLE_CHOICE" | "ESSAY",
           options:
             type === "MULTIPLE_CHOICE" ? options.filter(Boolean) : undefined,
-          correctAnswer: type === "MULTIPLE_CHOICE" ? correctAnswer : undefined,
+          correctAnswer: correctAnswer || undefined,
         });
 
         await queryClient.invalidateQueries({ queryKey: ["questions"] });
@@ -257,6 +256,24 @@ export function UpdateQuestionForm({
             </div>
           </div>
 
+          {type === "ESSAY" && (
+            <div>
+              <label className="block mb-1 font-semibold text-[#00306E] text-[15px]">
+                Expected Answer
+              </label>
+              <textarea
+                value={correctAnswer}
+                onChange={(e) => setCorrectAnswer(e.target.value)}
+                rows={3}
+                className="w-full rounded-lg border border-[#E4F4FF] bg-white px-3 py-2 text-sm text-[#00306E] outline-none shadow-sm focus:border-[#6666FF] transition"
+                placeholder="Enter the expected answer or key points for AI grading..."
+                disabled={isLoading}
+              />
+              <p className="mt-1 text-xs text-[#00306E]/50">
+                This will be used as a basis for AI grading of student responses.
+              </p>
+            </div>
+          )}
           {type === "MULTIPLE_CHOICE" && (
             <>
               <div>
