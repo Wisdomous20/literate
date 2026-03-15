@@ -84,7 +84,6 @@ export function ClassInventory({
     }),
   );
 
-  // --- Scrollbar Indicator Logic ---
   const [swiperProgress, setSwiperProgress] = useState(0);
   const [slidesPerView, setSlidesPerView] = useState(2);
 
