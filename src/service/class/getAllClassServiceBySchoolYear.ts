@@ -102,7 +102,7 @@ export async function getAllClassServiceBySchoolYear(
           select: {
             students: {
               where: {
-                deletedAt: null
+                archived: false
               }
             }
           }

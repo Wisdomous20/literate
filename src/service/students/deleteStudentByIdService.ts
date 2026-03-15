@@ -12,7 +12,7 @@ interface DeleteStudentResult {
     name: string;
     classRoomId: string;
     level?: number;
-    deletedAt?: Date | null;
+    archived: boolean;
   };
   error?: string;
   code?: "VALIDATION_ERROR" | "STUDENT_NOT_FOUND" | "INTERNAL_ERROR";
@@ -58,13 +58,13 @@ export async function deleteStudentByIdService(
 
     const student = await prisma.student.update({
       where: { id: studentId },
-      data: { deletedAt: new Date() },
+      data: { archived: true },
       select: {
         id: true,
         name: true,
         level: true,
         classRoomId: true,
-        deletedAt: true,
+        archived: true,
       },
     });
 

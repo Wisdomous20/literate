@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import StudentInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/studentInfoCard";
@@ -9,6 +9,7 @@ import MetricCards from "@/components/reports/oral-reading-test/reading-fluency-
 import MiscueAnalysisReport from "@/components/reports/oral-reading-test/reading-fluency-report/miscueAnalysis";
 import AudioPlaybackCard from "@/components/reports/oral-reading-test/reading-fluency-report/audioPlaybackCard";
 import BehaviorChecklist from "@/components/reports/oral-reading-test/reading-fluency-report/readingBehaviorChecklist";
+import ViewMiscuesModal from "@/components/reports/oral-reading-test/reading-fluency-report/viewMiscuesModal";
 import { useAssessmentsByStudent } from "@/lib/hooks/useStudentAssessments";
 import { useClassById } from "@/lib/hooks/useClassById";
 import { exportFluencyReportPdf } from "@/lib/exportFluencyReportPdf";
@@ -18,6 +19,7 @@ import type {
   OralFluencyMiscue,
   OralFluencyBehaviorData,
 } from "@/types/assessment";
+import type { MiscueResult } from "@/types/oral-reading";
 
 const assessmentTypeLabels: Record<string, string> = {
   ORAL_READING: "Oral Reading Test",
@@ -61,14 +63,16 @@ function buildBehaviorItems(
 export default function ReadingFluencyReportPage() {
   const params = useParams();
   const searchParams = useSearchParams();
-  const classRoomId = params.id as string;
+  const classId = params.id as string;
   const studentId = params.studentId as string;
   const assessmentId = searchParams.get("id");
+
+  const [showMiscuesModal, setShowMiscuesModal] = useState(false);
 
   const { data: allAssessments = [], isLoading } =
     useAssessmentsByStudent(studentId);
 
-  const { data: classData } = useClassById(classRoomId);
+  const { data: classData } = useClassById(classId);
 
   const assessment = useMemo(
     () =>
@@ -82,6 +86,27 @@ export default function ReadingFluencyReportPage() {
   if (!assessment) return <div>No data found.</div>;
 
   const miscues: OralFluencyMiscue[] = assessment.oralFluency?.miscues ?? [];
+
+  // Convert OralFluencyMiscue to MiscueResult (add timestamp)
+  const miscuesWithTimestamp: MiscueResult[] = miscues.map((m) => ({
+    miscueType: m.miscueType,
+    expectedWord: m.expectedWord,
+    spokenWord: m.spokenWord ?? null,
+    wordIndex: m.wordIndex,
+    timestamp: null,
+    isSelfCorrected: m.isSelfCorrected,
+  }));
+
+  const totalWords = assessment.oralFluency?.totalWords ?? 0;
+  const totalMiscues = assessment.oralFluency?.totalMiscues ?? 0;
+  const duration = assessment.oralFluency?.duration ?? 0;
+  const wordsCorrect = Math.max(0, totalWords - totalMiscues);
+  const wcpm = duration > 0 ? Math.round((wordsCorrect / duration) * 60) : 0;
+
+  const oralFluencyPercentage = Math.round(
+    assessment.oralFluency?.oralFluencyScore ?? 0,
+  );
+
   const miscueData = {
     mispronunciation: miscues.filter((m) => m.miscueType === "MISPRONUNCIATION")
       .length,
@@ -95,7 +120,7 @@ export default function ReadingFluencyReportPage() {
     selfCorrection: miscues.filter((m) => m.miscueType === "SELF_CORRECTION")
       .length,
     totalMiscue: assessment.oralFluency?.totalMiscues ?? miscues.length,
-    oralFluencyScore: `${Math.round(assessment.oralFluency?.oralFluencyScore ?? 0)}%`,
+    oralFluencyScore: `${oralFluencyPercentage}%`,
     classificationLevel: assessment.oralFluency?.classificationLevel ?? "",
   };
 
@@ -115,11 +140,6 @@ export default function ReadingFluencyReportPage() {
   const assessmentTypeLabel =
     assessmentTypeLabels[assessment.type] ?? assessment.type;
 
-  const totalWords = assessment.oralFluency?.totalWords ?? numberOfWords;
-  const totalMiscues = assessment.oralFluency?.totalMiscues ?? 0;
-  const duration = assessment.oralFluency?.duration ?? 0;
-  const wordsCorrect = Math.max(0, totalWords - totalMiscues);
-  const wcpm = duration > 0 ? Math.round((wordsCorrect / duration) * 60) : 0;
   const classificationLevel = assessment.oralFluency?.classificationLevel ?? "";
 
   const handleExport = () => {
@@ -128,9 +148,9 @@ export default function ReadingFluencyReportPage() {
       {
         studentName,
         gradeLevel,
-        className: classData?.name ?? "\u2014",
-        passageTitle: passage?.title ?? "\u2014",
-        passageLevel: passage?.level ? `Grade ${passage.level}` : "\u2014",
+        className: classData?.name ?? "—",
+        passageTitle: passage?.title ?? "—",
+        passageLevel: passage?.level ? `Grade ${passage.level}` : "—",
         numberOfWords,
         testType: formatTestType(passage?.testType),
         assessmentType: assessmentTypeLabel,
@@ -179,7 +199,7 @@ export default function ReadingFluencyReportPage() {
         <div className="mb-4 max-w-6xl mx-auto">
           <button
             onClick={() => window.history.back()}
-            className="flex items-center gap-1.5 rounded-lg mt-6 px-6 py-3 text-base font-semibold text-[#00306E] hover:underline transition"
+            className="mt-6 flex items-center gap-1.5 rounded-lg px-6 py-3 text-base font-semibold text-[#00306E] transition hover:underline"
             type="button"
           >
             <svg
@@ -199,32 +219,51 @@ export default function ReadingFluencyReportPage() {
           </button>
         </div>
       </div>
-      <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth max-w-6xl mx-auto px-6 py-6 md:px-8 lg:px-12 space-y-6 w-full">
-        {/* Top row: Student Info + Metric Cards */}
+
+      <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth max-w-300 mx-auto px-6 py-6 md:px-8 lg:px-12 space-y-6 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-          <StudentInfoCard studentName={studentName} gradeLevel={gradeLevel} />
+          <StudentInfoCard
+            studentName={studentName}
+            gradeLevel={gradeLevel}
+            className={classData?.name}
+          />
           <MetricCards
             wcpm={wcpm}
-            readingTimeSeconds={duration}
+            readingTimeSeconds={Math.round(duration)}
             classificationLevel={classificationLevel}
           />
         </div>
+
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Left column */}
           <div className="flex flex-col gap-6">
             <PassageInfoCard
-              passageTitle={passage?.title ?? ""}
-              passageLevel={passage?.level ? `Grade ${passage.level}` : ""}
+              passageTitle={passage?.title ?? "—"}
+              passageLevel={passage?.level ? `Grade ${passage.level}` : "—"}
               numberOfWords={numberOfWords}
               testType={formatTestType(passage?.testType)}
               assessmentType={assessmentTypeLabel}
             />
             <AudioPlaybackCard audioSrc={assessment.oralFluency?.audioUrl} />
           </div>
+
           <BehaviorChecklist behaviors={behaviorItems} />
-          <MiscueAnalysisReport miscueData={miscueData} />
+
+          <MiscueAnalysisReport
+            miscueData={miscueData}
+            onViewMiscues={() => setShowMiscuesModal(true)}
+          />
         </div>
       </main>
+
+      <ViewMiscuesModal
+        open={showMiscuesModal}
+        onClose={() => setShowMiscuesModal(false)}
+        passageContent={passage?.content ?? ""}
+        miscues={miscuesWithTimestamp}
+        alignedWords={undefined}
+        passageLevel={passage?.level ? `Grade ${passage.level}` : undefined}
+      />
     </div>
   );
 }
