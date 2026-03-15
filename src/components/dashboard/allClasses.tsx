@@ -1,8 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, ArrowLeft, ChevronDown } from "lucide-react";
+import {
+  Loader2,
+  ArrowLeft,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { ClassCard } from "@/components/dashboard/classCard";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 
@@ -34,8 +40,10 @@ interface AllClassesPageProps {
   nextYear?: string;
   isNextYearDisabled?: boolean;
   showToast?: (message: string, type: "success" | "error") => void;
-  currentYear?: string; 
+  currentYear?: string;
 }
+
+const CLASSES_PER_PAGE = 15; 
 
 export default function AllClassesPage({
   allClasses,
@@ -52,16 +60,27 @@ export default function AllClassesPage({
   currentYear,
 }: AllClassesPageProps) {
   const router = useRouter();
-  const [showLatest, setShowLatest] = useState(true);
-  const [showOld, setShowOld] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const latestClasses = allClasses.slice(0, 3);
-  const oldClasses = allClasses.slice(3);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const handleClassClick = (classRoomId: string) => {
-    router.push(`/dashboard/class/${classRoomId}`);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(allClasses.length / CLASSES_PER_PAGE),
+  );
+
+  const paginatedClasses = useMemo(() => {
+    const start = (currentPage - 1) * CLASSES_PER_PAGE;
+    return allClasses.slice(start, start + CLASSES_PER_PAGE);
+  }, [allClasses, currentPage]);
+
+  const handleClassClick = (classId: string) => {
+    router.push(`/dashboard/class/${classId}`);
     if (showToast) showToast("Navigated to class details.", "success");
   };
+
+  const handlePrevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
+  const handleNextPage = () =>
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
 
   return (
     <div className="flex min-h-full flex-col overflow-y-auto">
@@ -106,13 +125,16 @@ export default function AllClassesPage({
                           if (!disabled) {
                             onYearChange(year);
                             setDropdownOpen(false);
+                            setCurrentPage(1);
                           }
                         }}
                         disabled={disabled}
                         className={`w-full px-4 py-2 text-left text-sm transition-colors
-                          ${year === selectedYear
-                            ? "font-semibold text-[#6666FF] bg-gray-100"
-                            : "text-[#00306E] hover:bg-[#E4F4FF]"}
+                          ${
+                            year === selectedYear
+                              ? "font-semibold text-[#6666FF] bg-gray-100"
+                              : "text-[#00306E] hover:bg-[#E4F4FF]"
+                          }
                           ${disabled ? "cursor-not-allowed opacity-60" : ""}
                         `}
                       >
@@ -157,62 +179,50 @@ export default function AllClassesPage({
         )}
 
         {!isLoading && !error && allClasses.length > 0 && (
-          <div className="space-y-8">
-            <div>
-              <button
-                className="flex items-center gap-2 mb-2 text-lg font-semibold text-[#00306E] focus:outline-none"
-                onClick={() => setShowLatest((v) => !v)}
-              >
-                Latest Classes
-                <ChevronDown
-                  className={`h-5 w-5 transition-transform ${showLatest ? "rotate-180" : ""}`}
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+              {paginatedClasses.map((c, idx) => (
+                <ClassCard
+                  key={c.id}
+                  classRoomId={c.id}
+                  name={c.name}
+                  studentCount={c.studentCount}
+                  variant={getVariant(idx)}
+                  onClick={() => handleClassClick(c.id)}
+                  onClassUpdated={refetch || (() => {})}
                 />
-              </button>
-              {showLatest && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
-                  {latestClasses.map((c, idx) => (
-                    <ClassCard
-                      key={c.id}
-                      classRoomId={c.id}
-                      name={c.name}
-                      studentCount={c.studentCount}
-                      variant={getVariant(idx)}
-                      onClick={() => handleClassClick(c.id)}
-                      onClassUpdated={refetch || (() => {})}
-                    />
-                  ))}
-                </div>
-              )}
+              ))}
             </div>
-            {oldClasses.length > 0 && (
-              <div>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between border-t border-[#6666FF]/10 pt-6 mt-6">
                 <button
-                  className="flex items-center gap-2 mb-2 text-lg font-semibold text-[#00306E] focus:outline-none"
-                  onClick={() => setShowOld((v) => !v)}
+                  onClick={handlePrevPage}
+                  disabled={currentPage === 1}
+                  className="flex items-center gap-2 rounded-lg border border-[#6666FF]/25 bg-white px-4 py-2 text-sm font-semibold text-[#6666FF] transition-all disabled:cursor-not-allowed disabled:opacity-50 hover:enabled:bg-[#F8F9FF]"
+                  type="button"
+                  aria-label="Previous page"
+                  title="Previous page"
                 >
-                  Old Classes
-                  <ChevronDown
-                    className={`h-5 w-5 transition-transform ${showOld ? "rotate-180" : ""}`}
-                  />
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
                 </button>
-                {showOld && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
-                    {oldClasses.map((c, idx) => (
-                      <ClassCard
-                        key={c.id}
-                        classRoomId={c.id}
-                        name={c.name}
-                        studentCount={c.studentCount}
-                        variant={getVariant(idx + latestClasses.length)}
-                        onClick={() => handleClassClick(c.id)}
-                        onClassUpdated={refetch || (() => {})}
-                      />
-                    ))}
-                  </div>
-                )}
+                <span className="text-sm text-[#00306E]">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages}
+                  className="flex items-center gap-2 rounded-lg border border-[#6666FF]/25 bg-white px-4 py-2 text-sm font-semibold text-[#6666FF] transition-all disabled:cursor-not-allowed disabled:opacity-50 hover:enabled:bg-[#F8F9FF]"
+                  type="button"
+                  aria-label="Next page"
+                  title="Next page"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </button>
               </div>
             )}
-          </div>
+          </>
         )}
       </div>
     </div>

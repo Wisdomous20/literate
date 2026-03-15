@@ -5,8 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import {
   ChevronLeft,
   Search,
-  ChevronUp,
-  ChevronDown,
   Loader2,
   X,
   CheckCircle,
@@ -83,7 +81,6 @@ export default function ClassListsPage() {
   >("nameAsc");
   const [assessmentType, setAssessmentType] =
     useState<AssessmentTypeFilter>("ALL");
-  const [showStats, setShowStats] = useState(true);
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
@@ -188,7 +185,6 @@ export default function ClassListsPage() {
 
   const handleAssessmentFilterChange = (type: AssessmentTypeFilter) => {
     setAssessmentType(type);
-    setShowStats(true);
   };
 
   const transformStudentsForTable = (
@@ -270,7 +266,7 @@ export default function ClassListsPage() {
 
   if (loading && !classData) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-white via-[#F8F9FF] to-[#EEF0FF]">
         <Loader2 className="h-12 w-12 animate-spin text-[#6666FF]" />
       </div>
     );
@@ -279,12 +275,12 @@ export default function ClassListsPage() {
   if (fetchError || !classData) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
-        <div className="text-base text-red-500">
+        <div className="text-base font-semibold text-red-500">
           {fetchError || "Class not found"}
         </div>
         <button
           onClick={() => router.back()}
-          className="text-sm text-[#31318A] hover:underline"
+          className="text-sm font-semibold text-[#31318A] hover:underline transition-all"
         >
           Go back
         </button>
@@ -311,21 +307,21 @@ export default function ClassListsPage() {
   });
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex h-screen flex-col bg-gradient-to-br from-white via-[#F8F9FF] to-[#EEF0FF]">
       <ClassListsHeader onCreateStudent={() => setIsModalOpen(true)} />
 
       {toast && (
         <div
-          className={`fixed top-6 right-6 z-50 flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium shadow-lg transition-all duration-300 ${
+          className={`fixed top-6 right-6 z-50 flex items-center gap-3 rounded-2xl px-5 py-3 text-sm font-semibold shadow-[0_8px_24px_rgba(0,48,110,0.2)] transition-all duration-300 border backdrop-blur-sm ${
             toast.type === "success"
-              ? "bg-green-50 border border-green-200 text-green-800"
-              : "bg-red-50 border border-red-200 text-red-800"
+              ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+              : "bg-red-50 border-red-200 text-red-800"
           }`}
         >
           {toast.type === "success" ? (
-            <CheckCircle className="h-4 w-4 shrink-0 text-green-500" />
+            <CheckCircle className="h-5 w-5 shrink-0 text-emerald-500" />
           ) : (
-            <XCircle className="h-4 w-4 shrink-0 text-red-500" />
+            <XCircle className="h-5 w-5 shrink-0 text-red-500" />
           )}
           <span className="flex-1">{toast.message}</span>
           <button
@@ -333,56 +329,40 @@ export default function ClassListsPage() {
             onClick={() => setToast(null)}
             aria-label="Close notification"
             title="Close notification"
-            className="ml-1 rounded-full p-0.5 transition-colors hover:bg-gray-200"
+            className="ml-2 rounded-full p-0.5 transition-colors hover:bg-black/10"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
       )}
 
-      <main className="flex-1 flex flex-col gap-3 px-6 py-4 lg:px-8 min-h-0 overflow-y-auto">
+      <main className="flex-1 flex flex-col gap-6 px-4 sm:px-6 lg:px-8 py-6 min-h-0 overflow-y-auto">
         {loading && (
-          <div className="absolute right-3 top-3 z-50 text-xs text-blue-500">
+          <div className="absolute right-6 top-24 z-50 text-xs font-bold text-blue-500 flex items-center gap-2">
+            <Loader2 className="h-3 w-3 animate-spin" />
             Updating…
           </div>
         )}
 
-        {/* Row 1: Previous + Statistics toggle + Assessment filter dropdown */}
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center justify-between gap-4">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-1.5 text-sm font-semibold text-[#31318A] transition-opacity hover:opacity-70"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-[#31318A] transition-all hover:bg-white hover:shadow-[0_4px_12px_rgba(102,102,255,0.1)] active:scale-95"
           >
-            <ChevronLeft className="h-4 w-4" />
-            Previous
+            <ChevronLeft className="h-5 w-5" />
+            Back
           </button>
 
-          <div className="flex items-center gap-3">
-            {assessmentType !== "ALL" && (
-              <button
-                type="button"
-                className="flex items-center gap-1.5 text-xs font-semibold text-[#00306E] focus:outline-none"
-                onClick={() => setShowStats((v) => !v)}
-                aria-expanded={showStats}
-                aria-controls="stat-cards-panel"
-              >
-                <span>{assessmentTypeLabels[assessmentType]} Statistics</span>
-                {showStats ? (
-                  <ChevronUp className="h-3 w-3" />
-                ) : (
-                  <ChevronDown className="h-3 w-3" />
-                )}
-              </button>
-            )}
-            <AssessmentTypeFilterDropdown
-              onFilterChange={handleAssessmentFilterChange}
-            />
-          </div>
+          <AssessmentTypeFilterDropdown
+            onFilterChange={handleAssessmentFilterChange}
+          />
         </div>
 
-        {/* Stat Cards (collapsible, only when filtered) */}
-        {assessmentType !== "ALL" && showStats && (
-          <div id="stat-cards-panel">
+        {assessmentType !== "ALL" && (
+          <div className="rounded-3xl bg-gradient-to-br from-[#EEF0FF] via-[#F5F7FF] to-[#FAFBFF] p-6 border border-[#6666FF]/15 shadow-[0_4px_16px_rgba(102,102,255,0.08)]">
+            <h3 className="text-xs font-bold text-[#6666FF] mb-4 uppercase tracking-widest">
+              {assessmentTypeLabels[assessmentType]} Statistics
+            </h3>
             <StatCards
               assessedCount={stats.assessed}
               independentCount={stats.independent}
@@ -392,47 +372,58 @@ export default function ClassListsPage() {
           </div>
         )}
 
-        {/* Row 2: Class info + Search + Sort */}
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <ClassInfo
-            className={classData.name}
-            schoolYear={classData.schoolYear}
-          />
-
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 rounded-full border border-[rgba(84,164,255,0.35)] bg-[#F4FCFD] px-3 py-1">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#E4F4FF]">
-                <Search className="h-3 w-3 text-[#162DB0]" />
-              </div>
-              <input
-                type="text"
-                placeholder="Search students…"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-44 bg-transparent text-xs text-[#00306E] outline-none placeholder:text-[#00306E]/40"
+        <div className="rounded-3xl bg-gradient-to-r from-[#E8E5FF]/70 via-[#F0ECFF]/70 to-[#F8F6FF]/70 p-6 border border-[#B8B3FF]/25 shadow-[0_4px_20px_rgba(102,102,255,0.1)] backdrop-blur-sm">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+            {/* Class Info */}
+            <div>
+              <ClassInfo
+                className={classData.name}
+                schoolYear={classData.schoolYear}
               />
             </div>
 
-            <select
-              value={sortOption}
-              onChange={(e) =>
-                setSortOption(
-                  e.target.value as
-                    | "nameAsc"
-                    | "nameDesc"
-                    | "gradeAsc"
-                    | "gradeDesc",
-                )
-              }
-              className="rounded-lg border border-[#54A4FF]/40 bg-[#E4F4FF] px-2.5 py-1 text-[11px] text-[#03438D]"
-              aria-label="Sort students"
-              title="Sort students"
-            >
-              <option value="nameAsc">Name: A → Z</option>
-              <option value="nameDesc">Name: Z → A</option>
-              <option value="gradeAsc">Grade: Ascending</option>
-              <option value="gradeDesc">Grade: Descending</option>
-            </select>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+              {/* Search Input */}
+              <div className="flex items-center gap-3 rounded-2xl border border-[#9999FF]/40 bg-white/90 px-4 py-2.5 shadow-[0_4px_16px_rgba(102,102,255,0.12)] backdrop-blur-sm flex-1 sm:flex-none transition-all hover:shadow-[0_6px_20px_rgba(102,102,255,0.15)]">
+                <Search className="h-4 w-4 text-[#6666FF]/70 shrink-0" />
+                <input
+                  type="text"
+                  placeholder="Search students…"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 bg-transparent text-sm text-[#00306E] outline-none placeholder:text-[#00306E]/40 font-medium"
+                />
+              </div>
+
+              <select
+                value={sortOption}
+                onChange={(e) =>
+                  setSortOption(
+                    e.target.value as
+                      | "nameAsc"
+                      | "nameDesc"
+                      | "gradeAsc"
+                      | "gradeDesc",
+                  )
+                }
+                className="rounded-xl border border-[#9999FF]/40 bg-white/90 px-4 py-2.5 text-xs font-bold text-[#6666FF] outline-none transition-all hover:bg-white hover:shadow-[0_4px_12px_rgba(102,102,255,0.15)] focus:border-[#6666FF]/50 focus:ring-1 focus:ring-[#6666FF]/20 shadow-[0_2px_8px_rgba(102,102,255,0.08)] backdrop-blur-sm"
+                aria-label="Sort students"
+                title="Sort students"
+              >
+                <option value="nameAsc">Name: A → Z</option>
+                <option value="nameDesc">Name: Z → A</option>
+                <option value="gradeAsc">Grade: ↑</option>
+                <option value="gradeDesc">Grade: ↓</option>
+              </select>
+
+              <button
+                onClick={() => setIsModalOpen(true)}
+                type="button"
+                className="rounded-xl border border-[#7A7AFB] bg-gradient-to-r from-[#6666FF] via-[#7270FF] to-[#7A7AFB] px-5 py-2.5 text-xs font-bold text-white shadow-[0_4px_16px_rgba(102,102,255,0.3)] transition-all hover:shadow-[0_8px_24px_rgba(102,102,255,0.4)] active:scale-95 whitespace-nowrap"
+              >
+                + Create Student
+              </button>
+            </div>
           </div>
         </div>
 

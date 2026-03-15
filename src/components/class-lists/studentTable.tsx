@@ -10,7 +10,10 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
-  Eye,
+  GraduationCap,
+  CheckCircle2,
+  Calendar,
+  User,
 } from "lucide-react";
 import type { AssessmentData, StudentTableItem } from "@/types/assessment";
 
@@ -40,15 +43,43 @@ const gradeLevels = [
 ];
 
 const assessmentTypeLabels: Record<string, string> = {
-  ORAL_READING: "Oral Reading",
-  COMPREHENSION: "Comprehension",
-  READING_FLUENCY: "Reading Fluency",
+  ORAL_READING: "Oral Reading Test",
+  COMPREHENSION: "Comprehension Test",
+  READING_FLUENCY: "Reading Fluency Test",
   "Awaiting Assessment": "—",
 };
 
+const cardColors = [
+  {
+    bg: "from-blue-50 to-blue-100",
+    border: "border-blue-300",
+    iconBg: "bg-blue-100",
+  },
+  {
+    bg: "from-pink-50 to-pink-100",
+    border: "border-pink-300",
+    iconBg: "bg-pink-100",
+  },
+  {
+    bg: "from-green-50 to-green-100",
+    border: "border-green-300",
+    iconBg: "bg-green-100",
+  },
+  {
+    bg: "from-yellow-50 to-yellow-100",
+    border: "border-yellow-300",
+    iconBg: "bg-yellow-100",
+  },
+  {
+    bg: "from-purple-50 to-purple-100",
+    border: "border-purple-300",
+    iconBg: "bg-purple-100",
+  },
+];
+
 export function StudentTable({
   students,
-  totalStudents,
+  // totalStudents,
   studentAssessments,
   onDeleteStudent,
   onUpdateStudent,
@@ -65,32 +96,38 @@ export function StudentTable({
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  const studentsPerPage = 10;
+  const cardsPerPage = 10;
 
   useEffect(() => {
     setCurrentPage(1);
   }, [students]);
 
-  const totalPages = Math.max(1, Math.ceil(students.length / studentsPerPage));
+  const totalPages = Math.max(1, Math.ceil(students.length / cardsPerPage));
 
   const paginatedStudents = students.slice(
-    (currentPage - 1) * studentsPerPage,
-    currentPage * studentsPerPage,
+    (currentPage - 1) * cardsPerPage,
+    currentPage * cardsPerPage,
   );
 
-  const handleEdit = (student: StudentTableItem) => {
+  const handleEdit = (e: React.MouseEvent, student: StudentTableItem) => {
+    e.stopPropagation();
     setEditingId(student.id);
     setEditName(student.name);
     setEditGradeLevel(student.gradeLevel);
   };
 
-  const handleCancelEdit = () => {
+  const handleCancelEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setEditingId(null);
     setEditName("");
     setEditGradeLevel("");
   };
 
-  const handleSaveEdit = async (studentId: string) => {
+  const handleSaveEdit = async (
+    e: React.MouseEvent,
+    studentId: string,
+  ) => {
+    e.stopPropagation();
     if (!onUpdateStudent || !editName.trim()) return;
     try {
       setIsUpdating(true);
@@ -101,7 +138,11 @@ export function StudentTable({
     }
   };
 
-  const handleDelete = async (studentId: string) => {
+  const handleDelete = async (
+    e: React.MouseEvent,
+    studentId: string,
+  ) => {
+    e.stopPropagation();
     if (!onDeleteStudent) return;
     try {
       setIsDeleting(studentId);
@@ -111,288 +152,261 @@ export function StudentTable({
     }
   };
 
-  const handleViewReport = (studentId: string, assessmentType: string) => {
-    router.push(
-      `/dashboard/class/${classRoomId}/report/${studentId}?assessmentType=${encodeURIComponent(assessmentType)}`,
-    );
-  };
+  const handleCardClick = (student: StudentTableItem) => {
+  const hasAssessment = (studentAssessments[student.id] || []).length > 0;
+  if (!hasAssessment) return;
+
+  router.push(
+    `/dashboard/class/${classRoomId}/report/${student.id}?assessmentType=${encodeURIComponent(student.assessmentType)}`
+  );
+};
+
+  const getCardColor = (index: number) => cardColors[index % cardColors.length];
 
   return (
-    <div className="flex flex-col">
-      <div className="mb-1.5 flex items-center justify-between">
-        <span className="text-[11px] font-medium text-[#00306E]/60">
-          Showing {paginatedStudents.length} of {totalStudents} students
-        </span>
-      </div>
-
-      <div className="overflow-x-auto min-h-125 max-h-125 rounded-xl border border-[#6666FF]/10 bg-white shadow-[0_4px_24px_0_rgba(102,102,255,0.12)]">
-        {" "}
-        <div className="grid grid-cols-[1.5fr_1fr_1.2fr_1fr_130px] border-b border-[#6666FF]/15 bg-linear-to-r from-[#8585faed] to-[#b8c2f7] px-4 py-2.5">
-          <span className="text-[11px] font-bold tracking-wide text-white">
-            Name
-          </span>
-          <span className="text-[11px] font-bold tracking-wide text-white">
-            Grade Level
-          </span>
-          <span className="text-[11px] font-bold tracking-wide text-white">
-            Latest Assessment
-          </span>
-          <span className="text-[11px] font-bold tracking-wide text-white">
-            Last Date
-          </span>
-          <span className="text-[11px] font-bold tracking-wide text-white">
-            Actions
+    <div className="flex flex-col gap-8 w-full">
+      {/* Cards Grid */}
+      {paginatedStudents.length === 0 ? (
+        <div className="col-span-full flex items-center justify-center rounded-3xl border-2 border-dashed border-[#6666FF]/20 bg-linear-to-br from-[#F8F9FF] to-[#EEF0FF] py-20 px-4">
+          <span className="text-sm font-medium text-[#00306E]/50">
+            No students found
           </span>
         </div>
-        <div className="divide-y divide-[#6666FF]/5">
-          {paginatedStudents.length === 0 ? (
-            <div className="px-4 py-6 text-center text-xs text-[#00306E]/50">
-              No students found
-            </div>
-          ) : (
-            <>
-              {paginatedStudents.map((student, idx) => {
-                const hasAssessment =
-                  (studentAssessments[student.id] || []).length > 0;
-                return (
+      ) : (
+        <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 w-full">
+          {paginatedStudents.map((student, index) => {
+            const hasAssessment =
+              (studentAssessments[student.id] || []).length > 0;
+            const colorScheme = getCardColor(index);
+
+            return (
+              <div
+                key={student.id}
+                className={`relative h-full rounded-2xl border-2 ${colorScheme.border} bg-linear-to-br ${colorScheme.bg} shadow-[0_4px_16px_rgba(102,102,255,0.08)] transition-all duration-300`}
+              >
+                {editingId === student.id ? (
+                  // Edit Mode
+                  <div className="h-full p-4 flex flex-col gap-3">
+                    <div>
+                      <label className="text-xs font-bold text-[#00306E] mb-1.5 block uppercase tracking-wide">
+                        Name
+                      </label>
+                      <input
+                        aria-label="Edit student name"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        maxLength={50}
+                        disabled={isUpdating}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full rounded-lg border border-[#6666FF]/30 bg-white/80 px-2.5 py-2 text-xs font-semibold text-[#00306E] placeholder:text-[#00306E]/40 focus:border-[#6666FF]/50 focus:outline-none focus:ring-1 focus:ring-[#6666FF]/20 disabled:opacity-50 transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-[#00306E] mb-1.5 block uppercase tracking-wide">
+                        Grade
+                      </label>
+                      <select
+                        aria-label="Edit grade level"
+                        value={editGradeLevel}
+                        onChange={(e) => setEditGradeLevel(e.target.value)}
+                        disabled={isUpdating}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full rounded-lg border border-[#6666FF]/30 bg-white/80 px-2.5 py-2 text-xs font-semibold text-[#00306E] focus:border-[#6666FF]/50 focus:outline-none focus:ring-1 focus:ring-[#6666FF]/20 disabled:opacity-50 transition-all"
+                      >
+                        {gradeLevels.map((level) => (
+                          <option key={level} value={level}>
+                            {level}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex gap-2 pt-2 justify-center">
+                      <button
+                        onClick={(e) => handleSaveEdit(e, student.id)}
+                        disabled={isUpdating}
+                        className="flex items-center justify-center rounded-full bg-linear-to-r from-[#6666FF] to-[#7A7AFB] w-8 h-8 text-white transition-all hover:shadow-lg disabled:opacity-50"
+                        aria-label="Save changes"
+                        title="Save changes"
+                      >
+                        {isUpdating ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Check className="h-4 w-4" />
+                        )}
+                      </button>
+                      <button
+                        onClick={handleCancelEdit}
+                        disabled={isUpdating}
+                        className="flex items-center justify-center rounded-full border border-[#6666FF]/30 bg-white/80 w-8 h-8 text-[#6666FF] transition-all hover:bg-white/90 disabled:opacity-50"
+                        aria-label="Cancel editing"
+                        title="Cancel editing"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  // View Mode
                   <div
-                    key={student.id}
-                    className={`grid grid-cols-[1.5fr_1fr_1.2fr_1fr_130px] items-center px-4 py-2 transition-colors hover:bg-[#EEF0FF] ${
-                      idx % 2 === 0 ? "bg-white" : "bg-[#F8F9FF]"
+                    onClick={() => handleCardClick(student)}
+                    className={`h-full p-4 flex flex-col gap-3 cursor-${hasAssessment ? "pointer" : "default"} ${
+                      hasAssessment
+                        ? "hover:shadow-[0_12px_32px_rgba(102,102,255,0.18)] hover:border-[#6666FF]/40 hover:-translate-y-1"
+                        : "opacity-70"
                     }`}
                   >
-                    {editingId === student.id ? (
-                      <>
-                        <input
-                          aria-label="Edit student name"
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
-                          maxLength={50}
-                          disabled={isUpdating}
-                          className="mr-2 rounded border border-[#162DB0]/30 px-2 py-0.5 text-[11px]"
-                        />
-
-                        <select
-                          aria-label="Edit grade level"
-                          value={editGradeLevel}
-                          onChange={(e) => setEditGradeLevel(e.target.value)}
-                          disabled={isUpdating}
-                          className="mr-2 rounded border border-[#162DB0]/30 px-2 py-0.5 text-[11px]"
-                        >
-                          {gradeLevels.map((level) => (
-                            <option key={level} value={level}>
-                              {level}
-                            </option>
-                          ))}
-                        </select>
-                        <span className="text-[11px] text-[#00306E]/60">
-                          {assessmentTypeLabels[student.assessmentType] ??
-                            student.assessmentType}
-                        </span>
-                        <span className="text-[11px] text-[#00306E]/60">
-                          {student.lastAssessment ?? "—"}
-                        </span>
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => handleSaveEdit(student.id)}
-                            disabled={isUpdating}
-                            className="flex h-6 w-6 items-center justify-center rounded-md bg-[#162DB0] text-white disabled:opacity-50"
-                            aria-label="Save changes"
-                            title="Save changes"
-                          >
-                            {isUpdating ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              <Check className="h-3 w-3" />
-                            )}
-                          </button>
-                          <button
-                            onClick={handleCancelEdit}
-                            disabled={isUpdating}
-                            className="flex h-6 w-6 items-center justify-center rounded-md bg-gray-200 disabled:opacity-50"
-                            aria-label="Cancel editing"
-                            title="Cancel editing"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <span className="truncate pr-2 text-xs font-medium text-[#00306E]">
-                          {student.name}
-                        </span>
-                        <span className="text-[11px] text-[#00306E]/80">
-                          {student.gradeLevel}
-                        </span>
-                        <span className="text-[11px] text-[#00306E]/70">
-                          {assessmentTypeLabels[student.assessmentType] ??
-                            student.assessmentType}
-                        </span>
-                        <span className="text-[11px]">
-                          {student.lastAssessment ? (
-                            <span className="text-emerald-700">
-                              {student.lastAssessment}
-                            </span>
-                          ) : (
-                            <span className="text-[#00306E]/40">—</span>
-                          )}
-                        </span>
+                    <div className="flex items-center gap-2">
+                      <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${colorScheme.iconBg} shadow-sm`}>
+                        <User className="h-4 w-4 text-[#6666FF]" />
+                      </div>
+                      <h3 className="text-sm font-bold text-[#00306E] truncate group-hover:text-[#31318A] transition-colors">
+                        {student.name}
+                      </h3>
+                    </div>
+                    <div className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-white/60 backdrop-blur-sm">
+                      <GraduationCap className="h-4 w-4 text-[#6666FF] shrink-0" />
+                      <span className="text-xs font-semibold text-[#6666FF] truncate">
+                        {student.gradeLevel}
+                      </span>
+                    </div>
+                    {/* Info Details with Titles */}
+                    <div className="flex flex-col gap-3 mt-2">
+                      <div>
+                        <div className="text-[11px] font-bold text-[#6666FF] mb-0.5">Assessment Type</div>
                         <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => handleEdit(student)}
-                            className="flex h-6 w-6 items-center justify-center rounded-md bg-[#E4F4FF] text-[#162DB0] transition-colors hover:bg-[#d0e8ff]"
-                            aria-label={`Edit ${student.name}`}
-                            title="Edit"
-                          >
-                            <Edit2 size={11} />
-                          </button>
-                          <button
-                            onClick={() => setDeleteConfirmId(student.id)}
-                            disabled={isDeleting === student.id}
-                            className="flex h-6 w-6 items-center justify-center rounded-md bg-red-50 text-red-500 transition-colors hover:bg-red-100 disabled:opacity-50"
-                            aria-label={`Delete ${student.name}`}
-                            title="Delete"
-                          >
-                            {isDeleting === student.id ? (
-                              <Loader2 size={11} className="animate-spin" />
-                            ) : (
-                              <Trash2 size={11} />
-                            )}
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleViewReport(
-                                student.id,
-                                student.assessmentType,
-                              )
-                            }
-                            disabled={!hasAssessment}
-                            className={`flex h-6 items-center gap-1 rounded-md border border-[#6666FF] px-1.5 text-[10px] font-medium transition-colors ${
-                              hasAssessment
-                                ? "bg-transparent text-[#6666FF] hover:bg-[#6666FF]/10"
-                                : "cursor-not-allowed border-gray-300 bg-transparent text-gray-400"
-                            }`}
-                            title="View report"
-                          >
-                            <Eye size={10} />
-                            View
-                          </button>
+                          <CheckCircle2 className="h-4 w-4 text-[#6666FF] shrink-0" />
+                          <span className="text-xs font-semibold text-[#00306E] truncate">
+                            {assessmentTypeLabels[student.assessmentType] ?? student.assessmentType}
+                          </span>
                         </div>
-                      </>
+                      </div>
+                      <div>
+                        <div className="text-[11px] font-bold text-[#6666FF] mb-0.5">Last Date</div>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4 text-[#6666FF] shrink-0" />
+                          <span className="text-xs font-semibold text-[#00306E]">
+                            {student.lastAssessment ? (
+                              <span className="text-emerald-600">
+                                {student.lastAssessment}
+                              </span>
+                            ) : (
+                              <span className="text-[#00306E]/40">—</span>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 pt-2 justify-center">
+                      <button
+                        onClick={(e) => handleEdit(e, student)}
+                        className="flex items-center justify-center rounded-full bg-white/80 border border-[#6666FF]/20 w-8 h-8 text-[#162DB0] text-xs font-bold transition-all hover:bg-white active:scale-95 shadow"
+                        aria-label={`Edit ${student.name}`}
+                        title="Edit"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteConfirmId(student.id);
+                        }}
+                        disabled={isDeleting === student.id}
+                        className="flex items-center justify-center rounded-full bg-red-50/80 border border-red-200/40 w-8 h-8 text-red-500 text-xs font-bold transition-all hover:bg-red-100/80 disabled:opacity-50 active:scale-95 shadow"
+                        aria-label={`Delete ${student.name}`}
+                        title="Delete"
+                      >
+                        {isDeleting === student.id ? (
+                          <Loader2 size={16} className="animate-spin" />
+                        ) : (
+                          <Trash2 size={16} />
+                        )}
+                      </button>
+                    </div>
+                    {hasAssessment && (
+                      <div className="text-center text-xs text-[#6666FF]/60 font-semibold pt-1">
+                        Click to view
+                      </div>
                     )}
                   </div>
-                );
-              })}
-              {/* Fill empty rows to always show 10 rows */}
-              {Array.from({
-                length: studentsPerPage - paginatedStudents.length,
-              }).map((_, i) => (
-                <div
-                  key={`empty-row-${i}`}
-                  className={`grid grid-cols-[1.5fr_1fr_1.2fr_1fr_130px] items-center px-4 py-2 ${
-                    (paginatedStudents.length + i) % 2 === 0
-                      ? "bg-white"
-                      : "bg-[#F8F9FF]"
-                  }`}
-                  aria-hidden="true"
-                >
-                  <span>&nbsp;</span>
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </div>
-              ))}
-            </>
-          )}
-        </div>
-      </div>
+                )}
 
-      {totalPages > 1 && (
-        <div className="mt-2 flex items-center justify-between">
-          <span className="text-[11px] text-[#00306E]/60">
-            Page {currentPage} of {totalPages}
-          </span>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="flex h-6 w-6 items-center justify-center rounded-md border border-[#162DB0]/20 text-[#162DB0] transition-colors hover:bg-[#E4F4FF] disabled:opacity-30"
-              aria-label="Previous page"
-              title="Previous page"
-            >
-              <ChevronLeft className="h-3 w-3" />
-            </button>
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              const page = i + 1;
-              return (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`flex h-6 w-6 items-center justify-center rounded-md border text-[11px] font-medium transition-colors ${
-                    currentPage === page
-                      ? "border-[#6666FF] bg-[#6666FF] text-white"
-                      : "border-[#162DB0]/20 text-[#162DB0] hover:bg-[#E4F4FF]"
-                  }`}
-                >
-                  {page}
-                </button>
-              );
-            })}
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="flex h-6 w-6 items-center justify-center rounded-md border border-[#162DB0]/20 text-[#162DB0] transition-colors hover:bg-[#E4F4FF] disabled:opacity-30"
-              aria-label="Next page"
-              title="Next page"
-            >
-              <ChevronRight className="h-3 w-3" />
-            </button>
-          </div>
+                {/* Delete Confirmation Modal */}
+                {deleteConfirmId === student.id && (
+                  <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+                    <div
+                      className="absolute inset-0 bg-black/30 backdrop-blur-md"
+                      onClick={() => setDeleteConfirmId(null)}
+                    />
+                    <div className="relative bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,48,110,0.3)] p-5 max-w-sm w-full">
+                      <h3 className="text-base font-bold text-[#00306E] mb-1.5">
+                        Delete Student?
+                      </h3>
+                      <p className="text-xs text-[#00306E]/70 mb-5">
+                        Delete{" "}
+                        <span className="font-semibold">{student.name}</span>?
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={(e) => {
+                            handleDelete(e, student.id);
+                            setDeleteConfirmId(null);
+                          }}
+                          className="flex-1 rounded-lg bg-red-500 text-white text-xs font-bold py-2 transition-all hover:bg-red-600 active:scale-95 shadow"
+                        >
+                          Delete
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirmId(null)}
+                          className="flex-1 rounded-lg border border-[#6666FF]/30 bg-[#F8F9FF] text-[#6666FF] text-xs font-bold py-2 transition-all hover:bg-[#EEEEFF] active:scale-95"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 w-85 border border-[#E4F4FF] flex flex-col items-center">
-            {/* Optional: Soft warning icon */}
-            <div className="mb-3 flex items-center justify-center w-12 h-12 rounded-full bg-[#FFF4F4]">
-              <Trash2 className="text-red-400" size={28} />
-            </div>
-            <h3 className="text-xl font-semibold mb-1 text-[#31318A] text-center">
-              Delete Student?
-            </h3>
-            <p className="text-sm text-[#00306E]/70 mb-6 text-center">
-              Are you sure you want to delete this student? <br />
-              <span className="text-[#E57373]">
-                This action cannot be undone.
-              </span>
-            </p>
-            <div className="flex w-full justify-end gap-2">
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3 pt-4">
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="flex items-center gap-1.5 rounded-lg border border-[#6666FF]/25 bg-white px-3.5 py-2 text-xs font-bold text-[#6666FF] transition-all hover:bg-linear-to-r hover:from-[#F8F9FF] hover:to-[#EEF0FF] hover:shadow-lg hover:border-[#6666FF]/40 disabled:opacity-50 disabled:cursor-not-allowed shadow"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+            Prev
+          </button>
+
+          <div className="flex items-center gap-1.5">
+            {Array.from({ length: totalPages }).map((_, i) => (
               <button
-                onClick={() => setDeleteConfirmId(null)}
-                className="px-5 py-2 rounded-lg bg-[#F4F8FF] text-[#31318A] font-medium hover:bg-[#e6edfa] transition"
+                key={i + 1}
+                onClick={() => setCurrentPage(i + 1)}
+                className={`w-8 h-8 rounded-lg font-bold text-xs transition-all ${
+                  currentPage === i + 1
+                    ? "bg-linear-to-r from-[#6666FF] to-[#7A7AFB] text-white shadow"
+                    : "bg-white text-[#6666FF] border border-[#6666FF]/25 hover:bg-linear-to-r hover:from-[#F8F9FF] hover:to-[#EEF0FF] hover:shadow"
+                }`}
               >
-                Cancel
+                {i + 1}
               </button>
-              <button
-                onClick={async () => {
-                  setIsDeleting(deleteConfirmId);
-                  await handleDelete(deleteConfirmId);
-                  setDeleteConfirmId(null);
-                }}
-                className="px-5 py-2 rounded-lg bg-[#FF6B6B] text-white font-semibold shadow-sm hover:bg-[#ff8787] transition"
-                disabled={isDeleting === deleteConfirmId}
-              >
-                {isDeleting === deleteConfirmId ? (
-                  <Loader2 size={18} className="inline animate-spin" />
-                ) : (
-                  "Delete"
-                )}
-              </button>
-            </div>
+            ))}
           </div>
+
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="flex items-center gap-1.5 rounded-lg border border-[#6666FF]/25 bg-white px-3.5 py-2 text-xs font-bold text-[#6666FF] transition-all hover:bg-linear-to-r hover:from-[#F8F9FF] hover:to-[#EEF0FF] hover:shadow-lg hover:border-[#6666FF]/40 disabled:opacity-50 disabled:cursor-not-allowed shadow"
+          >
+            Next
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
         </div>
       )}
     </div>

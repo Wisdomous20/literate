@@ -76,7 +76,6 @@ export default function AssessmentSummaryPage() {
       });
     }
 
-    // Final overall classification
     let level = "";
     if (found.oralReadingResult) {
       level = found.oralReadingResult.classificationLevel || "";
@@ -92,7 +91,6 @@ export default function AssessmentSummaryPage() {
 
   const handleViewReport = (cardId: string) => {
     if (!assessmentId) return;
-    // Don't navigate if sub-test wasn't taken
     if (cardId === "reading-fluency-report" && !found?.oralFluency) return;
     if (cardId === "comprehension-report" && !found?.comprehension) return;
 
