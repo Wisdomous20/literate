@@ -1,3 +1,4 @@
+
 import { prisma } from "@/lib/prisma";
 import { Tags, QuestionType } from "@/generated/prisma/enums";
 
@@ -6,8 +7,8 @@ interface AddQuestionInput {
   questionText: string;
   tags: "Literal" | "Inferential" | "Critical";
   type: "MULTIPLE_CHOICE" | "ESSAY";
-  options?: string[]; // Only for MULTIPLE_CHOICE
-  correctAnswer?: string; // Only for MULTIPLE_CHOICE
+  options?: string[]; 
+  correctAnswer?: string; 
 }
 
 interface AddQuestionResult {
@@ -26,7 +27,14 @@ interface AddQuestionResult {
 export async function addQuestionService(
   input: AddQuestionInput
 ): Promise<AddQuestionResult> {
-  const { passageId, questionText, tags, type, options, correctAnswer } = input;
+  const {
+    passageId,
+    questionText,
+    tags,
+    type,
+    options,
+    correctAnswer,
+  } = input;
 
   // Validate input
   if (!passageId || !questionText || !tags || !type) {
@@ -37,10 +45,22 @@ export async function addQuestionService(
     };
   }
 
-  if (type === "MULTIPLE_CHOICE" && (!options || options.length < 2 || !correctAnswer)) {
+  if (
+    type === "MULTIPLE_CHOICE" &&
+    (!options || options.length < 2 || !correctAnswer)
+  ) {
     return {
       success: false,
-      error: "Options and correct answer are required for multiple choice questions.",
+      error:
+        "Options and correct answer are required for multiple choice questions.",
+      code: "VALIDATION_ERROR",
+    };
+  }
+
+  if (type === "ESSAY" && !correctAnswer?.trim()) {
+    return {
+      success: false,
+      error: "Expected answer/key points are required for essay questions.",
       code: "VALIDATION_ERROR",
     };
   }
@@ -70,7 +90,7 @@ export async function addQuestionService(
         tags: tags as typeof Tags[keyof typeof Tags],
         type: type as typeof QuestionType[keyof typeof QuestionType],
         options: type === "MULTIPLE_CHOICE" ? options : undefined,
-        correctAnswer: correctAnswer ||  undefined,
+        correctAnswer: correctAnswer?.trim(), // Save as correctAnswer for both types
       },
     });
 
@@ -98,7 +118,7 @@ export async function addQuestionService(
     console.error("Error adding question:", error);
     return {
       success: false,
-      error: "An internal error occurred while adding the question.",
+      error: "Failed to add question to the database.",
       code: "INTERNAL_ERROR",
     };
   }
