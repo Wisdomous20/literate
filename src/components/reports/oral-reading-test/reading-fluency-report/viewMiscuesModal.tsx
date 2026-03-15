@@ -133,6 +133,7 @@ export default function ViewMiscuesModal({
   const [highlightedTypes, setHighlightedTypes] = useState<Set<string>>(
     new Set(),
   );
+  const [showMiscues, setShowMiscues] = useState(true);
   const [popup, setPopup] = useState<PopupState | null>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -296,6 +297,7 @@ export default function ViewMiscuesModal({
   useEffect(() => {
     if (!open) {
       setHighlightedTypes(new Set());
+      setShowMiscues(true);
       setPopup(null);
     }
   }, [open]);
@@ -504,8 +506,31 @@ export default function ViewMiscuesModal({
               className="whitespace-pre-wrap text-center leading-relaxed text-[#00306E]"
               style={passageLevel ? passageTextStyle : undefined}
             >
-              {hasMiscues ? renderHighlightedContent() : passageContent}
+              {hasMiscues && showMiscues ? renderHighlightedContent() : passageContent}
             </p>
+          </div>
+          {/* Original / Miscues toggle — bottom right */}
+          <div className="mt-2 flex justify-end">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-[#31318A]">
+                {showMiscues ? "Miscues" : "Original"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowMiscues((prev) => !prev)}
+                aria-label={showMiscues ? "Show original passage" : "Show miscue highlights"}
+                title={showMiscues ? "Show original passage" : "Show miscue highlights"}
+                className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+                  showMiscues ? "bg-[#6666FF]" : "bg-[#C4C4FF]"
+                }`}
+              >
+                <span
+                  className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+                    showMiscues ? "translate-x-4.25" : "translate-x-0.75"
+                  }`}
+                />
+              </button>
+            </div>
           </div>
 
           {/* Word detail popup */}

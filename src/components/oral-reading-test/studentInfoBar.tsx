@@ -198,14 +198,17 @@ export default function StudentInfoBar({
 
   const displayStudents = allStudents.filter((s) => {
     if (!hasFilters && !hasSearchQuery) return false
-    if (hasSearchQuery) return s.name.toLowerCase().startsWith(searchQuery)
+    if (hasSearchQuery) {
+      if (!s.name.toLowerCase().startsWith(searchQuery)) return false
+      if (selectedClass && s.className !== selectedClass) return false
+      if (gradeLevel && String(s.level) !== gradeLevel) return false
+      return true
+    }
     if (selectedClass && s.className !== selectedClass) return false
     if (gradeLevel && String(s.level) !== gradeLevel) return false
     return true
   })
 
-  // Show "Create Student" when name is typed and no student selected.
-  // Hide only when grade+class are set AND an exact name+grade+class match already exists.
   const exactMatches = hasSearchQuery
     ? allStudents.filter((s) => s.name.toLowerCase() === searchQuery)
     : []

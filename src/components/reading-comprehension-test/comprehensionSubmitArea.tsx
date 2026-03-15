@@ -19,12 +19,21 @@ export function ComprehensionSubmitArea({
         <p className="text-red-600 text-sm font-medium">{submitError}</p>
       )}
       {isSubmitted ? (
-        <button
-          onClick={onTryAgain}
-          className="w-56.25 h-15.75 bg-[#2E2E68] border border-[#7A7AFB] rounded-lg shadow-[0px_1px_20px_rgba(65,155,180,0.47)] text-white font-semibold text-xl hover:bg-[#2E2E68]/90 transition-colors"
-        >
-          Try Again
-        </button>
+        onTryAgain ? (
+          <button
+            onClick={onTryAgain}
+            className="w-56.25 h-15.75 bg-[#2E2E68] border border-[#7A7AFB] rounded-lg shadow-[0px_1px_20px_rgba(65,155,180,0.47)] text-white font-semibold text-xl hover:bg-[#2E2E68]/90 transition-colors"
+          >
+            Try Again
+          </button>
+        ) : (
+          <button
+            disabled
+            className="w-56.25 h-15.75 bg-[#2E2E68] border border-[#7A7AFB] rounded-lg shadow-[0px_1px_20px_rgba(65,155,180,0.47)] text-white font-semibold text-xl transition-colors disabled:opacity-60"
+          >
+            Submitted
+          </button>
+        )
       ) : (
         <button
           onClick={onSubmit}
