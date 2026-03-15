@@ -167,6 +167,10 @@ export default function OralReadingTestPage() {
     });
   }, []);
 
+  const resetHighlightTypes = useCallback(() => {
+    setHighlightedTypes(new Set());
+  }, []);
+
   const filteredMiscues = useMemo(() => {
     if (!analysisResult?.miscues) return undefined;
     if (highlightedTypes.size === 0) return analysisResult.miscues;
@@ -718,6 +722,7 @@ export default function OralReadingTestPage() {
                 recordedSeconds={recordedSeconds}
                 recordedAudioURL={recordedAudioURL}
                 onTryAgain={handleTryAgain}
+                onStartOver={handleStartNew}
                 audioRef={audioRef}
               />
             )}
@@ -752,6 +757,7 @@ export default function OralReadingTestPage() {
               classificationLevel={analysisResult?.classificationLevel}
               highlightedTypes={highlightedTypes}
               onToggleHighlight={toggleHighlightType}
+              onResetHighlight={resetHighlightTypes}
               onExportPdf={() => {
                 if (!analysisResult) return;
                 const data = buildFluencyReportData({

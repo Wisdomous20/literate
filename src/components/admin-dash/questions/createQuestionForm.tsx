@@ -143,8 +143,7 @@ export function CreateQuestionForm({
               q.type === "MULTIPLE_CHOICE"
                 ? q.options.filter(Boolean)
                 : undefined,
-            correctAnswer:
-              q.type === "MULTIPLE_CHOICE" ? q.correctAnswer : undefined,
+            correctAnswer: q.correctAnswer || undefined,
           });
         }
         await queryClient.invalidateQueries({ queryKey: ["questions"] });
@@ -267,6 +266,26 @@ export function CreateQuestionForm({
                 ))}
               </div>
             </div>
+            {q.type === "ESSAY" && (
+              <div>
+                <label className="block mb-1 font-semibold text-[#00306E] text-[15px]">
+                  Expected Answer
+                </label>
+                <textarea
+                  value={q.correctAnswer}
+                  onChange={(e) =>
+                    handleQuestionChange(idx, "correctAnswer", e.target.value)
+                  }
+                  rows={3}
+                  className="w-full rounded-lg border border-[#E4F4FF] bg-white px-3 py-2 text-sm text-[#00306E] outline-none shadow-sm focus:border-[#6666FF] transition"
+                  placeholder="Enter the expected answer or key points for AI grading..."
+                  disabled={isLoading}
+                />
+                <p className="mt-1 text-xs text-[#00306E]/50">
+                  This will be used as a basis for AI grading of student responses.
+                </p>
+              </div>
+            )}
             {q.type === "MULTIPLE_CHOICE" && (
               <>
                 <div>

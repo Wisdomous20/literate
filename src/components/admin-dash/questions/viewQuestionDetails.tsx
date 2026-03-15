@@ -76,8 +76,17 @@ export function ViewQuestionDetails({
           </div>
         )}
         {question.type === "ESSAY" && (
-          <div className="mb-2 text-[#00306E]/70 italic">
-            Essay question (no options)
+          <div className="mb-2">
+            <span className="font-semibold text-[#00306E]">Expected Answer:</span>
+            {question.correctAnswer ? (
+              <div className="mt-1 rounded-lg bg-[#E4F4FF]/60 px-3 py-2 text-sm text-[#00306E]">
+                {question.correctAnswer}
+              </div>
+            ) : (
+              <div className="mt-1 text-[#00306E]/50 italic text-sm">
+                No expected answer provided
+              </div>
+            )}
           </div>
         )}
 

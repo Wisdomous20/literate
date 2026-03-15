@@ -287,7 +287,7 @@ export default function ReadingComprehensionQuestionsPage() {
       const formattedAnswers = questions
         .filter((q) => answers[q.id] !== undefined && answers[q.id] !== "")
         .map((q) => ({
-          questionId: q.id,
+          question: q.id,
           answer: answers[q.id],
         }));
 

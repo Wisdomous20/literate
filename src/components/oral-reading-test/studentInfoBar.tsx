@@ -301,7 +301,7 @@ export default function StudentInfoBar({
               onChange={(e) => handleStudentNameInput(e.target.value)}
               onFocus={() => setIsStudentInputFocused(true)}
               placeholder="Search or type student name"
-              className="w-full rounded-lg border border-[#54A4FF] bg-[#EFFDFF] py-1.5 pl-8 pr-3 text-sm text-[#00306E] shadow-[0px_1px_10px_rgba(108,164,239,0.25)] outline-none placeholder:text-[#00306E]/40"
+              className="w-full rounded-lg border border-[#54A4FF] bg-[#EFFDFF] py-1.5 pl-8 pr-3 text-sm text-[#00306E] shadow-[0px_1px_10px_rgba(108,164,239,0.25)] outline-none placeholder:text-[#00306E]/40 transition-all duration-200 focus:border-[#6666FF] focus:ring-2 focus:ring-[#6666FF]/30"
             />
           </div>
 
@@ -317,7 +317,7 @@ export default function StudentInfoBar({
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={handleCreateStudent}
                     disabled={isCreatingStudent}
-                    className="flex w-full items-center gap-1.5 px-3 py-1.5 text-left text-sm font-semibold text-[#6666FF] hover:bg-[#E4F4FF] disabled:opacity-50"
+                    className="flex w-full items-center gap-1.5 px-3 py-1.5 text-left text-sm font-semibold text-[#6666FF] transition-colors duration-150 hover:bg-[#E4F4FF] disabled:opacity-50"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     {isCreatingStudent ? "Creating..." : `Create Student "${studentName.trim()}"`}
@@ -333,7 +333,7 @@ export default function StudentInfoBar({
                   type="button"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => handleStudentSelect(s)}
-                  className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm text-[#00306E] hover:bg-[#E4F4FF]"
+                  className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm text-[#00306E] transition-colors duration-150 hover:bg-[#E4F4FF]"
                 >
                   <span className="truncate font-medium">{s.name}</span>
                   <span className="shrink-0 text-xs text-[#54A4FF]">
@@ -396,7 +396,7 @@ export default function StudentInfoBar({
                         clearAutoFill()
                         setIsGradeDropdownOpen(false)
                       }}
-                      className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm hover:bg-[#EEEEFF] ${
+                      className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm transition-colors duration-150 hover:bg-[#EEEEFF] ${
                         isActive ? "bg-[#EEEEFF] font-semibold text-[#6666FF]" : "text-[#00306E]"
                       }`}
                     >
@@ -449,7 +449,7 @@ export default function StudentInfoBar({
                   <button
                     type="button"
                     onClick={() => handleClassChange("create-new")}
-                    className="flex w-full items-center gap-1.5 border-b border-[#EEEEFF] px-3 py-1.5 text-left text-sm font-semibold text-[#6666FF] hover:bg-[#EEEEFF]"
+                    className="flex w-full items-center gap-1.5 border-b border-[#EEEEFF] px-3 py-1.5 text-left text-sm font-semibold text-[#6666FF] transition-colors duration-150 hover:bg-[#EEEEFF]"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Create New Class
@@ -471,7 +471,7 @@ export default function StudentInfoBar({
                             handleClassChange(cls)
                           }
                         }}
-                        className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm hover:bg-[#EEEEFF] ${
+                        className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm transition-colors duration-150 hover:bg-[#EEEEFF] ${
                           isActive ? "bg-[#EEEEFF] font-semibold text-[#6666FF]" : "text-[#00306E]"
                         }`}
                       >

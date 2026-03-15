@@ -28,7 +28,7 @@ export function CountdownToggle({
           countdownEnabled ? "Disable countdown" : "Enable countdown"
         }
         title={countdownEnabled ? "Disable countdown" : "Enable countdown"}
-        className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors hover:opacity-90 ${
           countdownEnabled ? "bg-[#6666FF]" : "bg-[#C4C4FF]"
         }`}
       >

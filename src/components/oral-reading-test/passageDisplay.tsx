@@ -282,6 +282,19 @@ export function PassageDisplay({
     return () => cancelAnimationFrame(raf);
   }, [popup]);
 
+  // Collect expectedWords from TRANSPOSITION miscues so we can suppress
+  // insertion-based repetitions that are actually the other half of a transposition.
+  const transpositionExpectedWords = useMemo(() => {
+    if (!miscues) return new Set<string>();
+    const set = new Set<string>();
+    for (const m of miscues) {
+      if (m.miscueType === "TRANSPOSITION" && m.expectedWord) {
+        set.add(normalizeWord(m.expectedWord));
+      }
+    }
+    return set;
+  }, [miscues]);
+
   // Map passage word index → inline inserted words (REPETITION and INSERTION miscues)
   const inlineInsertions = useMemo(() => {
     if (!miscues || !alignedWords?.length) return null;
@@ -290,7 +303,9 @@ export function PassageDisplay({
     const insertedMiscues = miscues.filter(
       (m) =>
         (m.miscueType === "INSERTION" || (m.miscueType === "REPETITION" && !m.expectedWord)) &&
-        m.spokenWord,
+        m.spokenWord &&
+        // Suppress repetitions that are actually the insertion half of a transposition
+        !(m.miscueType === "REPETITION" && !m.expectedWord && transpositionExpectedWords.has(normalizeWord(m.spokenWord!))),
     );
     if (insertedMiscues.length === 0) return null;
 
@@ -334,7 +349,7 @@ export function PassageDisplay({
     }
 
     return map.size > 0 ? map : null;
-  }, [miscues, alignedWords]);
+  }, [miscues, alignedWords, transpositionExpectedWords]);
 
   // Build a map from wordIndex → miscue type for O(1) lookup
   const miscueMap = useMemo(() => {
@@ -348,8 +363,40 @@ export function PassageDisplay({
         map.set(m.wordIndex, m);
       }
     }
+
+    // For TRANSPOSITION miscues, also highlight the adjacent swap-partner word.
+    // The alignment may classify one word as OMISSION→TRANSPOSITION while the
+    // partner aligns as EXACT and stays un-highlighted.
+    if (alignedWords) {
+      for (const m of miscues) {
+        if (m.miscueType !== "TRANSPOSITION") continue;
+        const idx = m.wordIndex;
+        const hasPartnerNext = map.get(idx + 1)?.miscueType === "TRANSPOSITION";
+        const hasPartnerPrev = map.get(idx - 1)?.miscueType === "TRANSPOSITION";
+        if (hasPartnerNext || hasPartnerPrev) continue;
+
+        for (const partner of [idx + 1, idx - 1]) {
+          if (partner < 0 || map.has(partner)) continue;
+          const partnerAligned = alignedWords.find(
+            (aw) => aw.expectedIndex === partner
+          );
+          if (partnerAligned?.match === "EXACT" && partnerAligned.expected) {
+            map.set(partner, {
+              miscueType: "TRANSPOSITION",
+              expectedWord: partnerAligned.expected,
+              spokenWord: partnerAligned.spoken,
+              wordIndex: partner,
+              timestamp: partnerAligned.timestamp,
+              isSelfCorrected: false,
+            });
+            break;
+          }
+        }
+      }
+    }
+
     return map;
-  }, [miscues]);
+  }, [miscues, alignedWords]);
 
   const hasMiscues =
     (miscueMap !== null && miscueMap.size > 0) ||
