@@ -81,13 +81,30 @@ if (
     // The reader misread, paused, then re-read the word correctly
     if (
       current.match === "MISMATCH" &&
-      next.match === "EXACT" &&
       current.spoken &&
       current.expected
     ) {
-      indices.add(i);
+      // Case A: next word is EXACT and is the same expected word (direct re-read)
+      if (next.match === "EXACT" && next.expected) {
+        const rereadSameWord = normalizeWord(next.expected) === normalizeWord(current.expected);
+        if (rereadSameWord) {
+          indices.add(i);
+          continue;
+        }
+      }
+
+      // Case B: next word is INSERTION and the spoken word matches the misread expected word
+      if (next.match === "INSERTION" && next.spoken) {
+        const sim = similarityRatio(
+          normalizeWord(next.spoken),
+          normalizeWord(current.expected)
+        );
+        if (sim > 0.8) {
+          indices.add(i);
+          continue;
+        }
+      }
     }
   }
-
   return indices;
 }
