@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import ReportHeader from "@/components/reports/oral-reading-test/reading-fluency-report/reportHeader";
@@ -137,8 +137,11 @@ function buildBehaviorItems(
 export default function OralReadingReportPage() {
   const router = useRouter();
   const [showMiscuesModal, setShowMiscuesModal] = useState(false);
-
-  const isClient = typeof window !== "undefined";
+  const isClient = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   const session = useMemo(() => (isClient ? loadSession() : {}), [isClient]);
   const analysis = session.analysisResult;

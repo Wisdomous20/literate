@@ -290,14 +290,14 @@ export default function OralReadingComprehensionPage() {
     fetchQuestions();
   }, []);
 
-  // Timer — stops when submitted or paused
+  // Timer — stops when submitted, submitting, or paused
   useEffect(() => {
-    if (isSubmitted || isPaused) return;
+    if (isSubmitted || isSubmitting || isPaused) return;
     const interval = setInterval(() => {
       setElapsedSeconds((prev) => prev + 1);
     }, 1000);
     return () => clearInterval(interval);
-  }, [isSubmitted, isPaused]);
+  }, [isSubmitted, isSubmitting, isPaused]);
 
   // Persist comprehension state to sessionStorage on every change
   useEffect(() => {
@@ -394,7 +394,7 @@ export default function OralReadingComprehensionPage() {
       const formattedAnswers = questions
         .filter((q) => answers[q.id] !== undefined && answers[q.id] !== "")
         .map((q) => ({
-          questionId: q.id,
+          question: q.id,
           answer: answers[q.id],
         }));
 
@@ -491,6 +491,17 @@ export default function OralReadingComprehensionPage() {
     }
   };
 
+  const handleTryAgain = useCallback(() => {
+    setAnswers({});
+    setElapsedSeconds(0);
+    setIsSubmitted(false);
+    setIsSubmitting(false);
+    setSubmitError(null);
+    setComprehensionResult(null);
+    setHighlightedTag(null);
+    sessionStorage.removeItem(COMP_STORAGE_KEY);
+  }, []);
+
   const handleGoBack = () => {
     router.back();
   };
@@ -585,6 +596,7 @@ export default function OralReadingComprehensionPage() {
                 isSubmitting={isSubmitting}
                 isSubmitted={isSubmitted}
                 onSubmit={handleSubmit}
+                onTryAgain={handleTryAgain}
               />
             </div>
           </div>

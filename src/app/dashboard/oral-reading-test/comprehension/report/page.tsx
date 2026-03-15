@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useSyncExternalStore } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import ComprehensionReportHeader from "@/components/reports/oral-reading-test/comprehension-report/reportHeader"
@@ -49,7 +49,11 @@ interface ReportData {
 
 export default function ComprehensionReportPage() {
   const router = useRouter()
-  const isClient = typeof window !== "undefined"
+  const isClient = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  )
 
   const assessmentId = useMemo(() => {
     if (!isClient) return null
