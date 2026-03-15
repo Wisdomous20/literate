@@ -79,7 +79,7 @@ function FilterDropdown({
         onClick={() => setIsOpen(!isOpen)}
         aria-label={label}
         title={label}
-        className={`flex w-full items-center gap-2 rounded-[10px] border px-3 py-2 text-sm font-medium shadow-[0px_1px_20px_rgba(108,164,239,0.37)] ${
+        className={`flex w-full items-center gap-2 rounded-[10px] border px-3 py-2 text-sm font-medium shadow-[0px_1px_20px_rgba(108,164,239,0.37)] transition-colors duration-150 hover:border-[#6666FF] ${
           isFiltered
             ? "border-[#6666FF] bg-[#EEEEFF] text-[#31318A]"
             : "border-[#54A4FF] bg-[#EFFDFF] text-[#00306E]"
@@ -198,7 +198,7 @@ export function AddPassageModal({
                 type="button"
                 onClick={() => setViewMode("list")}
                 className={`flex h-9 w-10 items-center justify-center transition-colors ${
-                  viewMode === "list" ? "bg-[#5D5DFB]" : "bg-[#EFFDFF]"
+                  viewMode === "list" ? "bg-[#5D5DFB]" : "bg-[#EFFDFF] hover:bg-[#E4F4FF]"
                 }`}
                 title="List view"
                 aria-label="List view"
@@ -214,7 +214,7 @@ export function AddPassageModal({
                 type="button"
                 onClick={() => setViewMode("grid")}
                 className={`flex h-9 w-10 items-center justify-center transition-colors ${
-                  viewMode === "grid" ? "bg-[#5D5DFB]" : "bg-[#EFFDFF]"
+                  viewMode === "grid" ? "bg-[#5D5DFB]" : "bg-[#EFFDFF] hover:bg-[#E4F4FF]"
                 }`}
                 title="Grid view"
                 aria-label="Grid view"
@@ -329,7 +329,7 @@ export function AddPassageModal({
                     className={`flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors ${
                       selectedPassageId === passage.id
                         ? "border-[#5D5DFB] bg-[rgba(93,93,251,0.1)]"
-                        : "border-[rgba(84,164,255,0.3)] bg-white"
+                        : "border-[rgba(84,164,255,0.3)] bg-white hover:border-[#5D5DFB]/50 hover:bg-[rgba(93,93,251,0.05)]"
                     }`}
                   >
                     <FileText className="h-5 w-5 shrink-0 text-[#5D5DFB]" />
@@ -355,7 +355,7 @@ export function AddPassageModal({
                     className={`flex flex-col items-center gap-2 rounded-lg border px-4 py-4 text-center transition-colors ${
                       selectedPassageId === passage.id
                         ? "border-[#5D5DFB] bg-[rgba(93,93,251,0.1)]"
-                        : "border-[rgba(84,164,255,0.3)] bg-white"
+                        : "border-[rgba(84,164,255,0.3)] bg-white hover:border-[#5D5DFB]/50 hover:bg-[rgba(93,93,251,0.05)]"
                     }`}
                   >
                     <FileText className="h-6 w-6 text-[#5D5DFB]" />

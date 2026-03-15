@@ -240,7 +240,7 @@ export function ReadingTimer({
             className={`flex items-center justify-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold text-white transition-all duration-200 disabled:cursor-not-allowed md:px-8 lg:px-10 ${
               isDisabled
                 ? "bg-[rgba(102,102,255,0.3)] opacity-60 shadow-none"
-                : "bg-[#6666FF] opacity-100 shadow-[0px_1px_20px_rgba(102,102,255,0.4)]"
+                : "bg-[#6666FF] opacity-100 shadow-[0px_1px_20px_rgba(102,102,255,0.4)] hover:bg-[#5555EE] hover:shadow-[0px_1px_24px_rgba(102,102,255,0.55)]"
             }`}
             title={disabledReason}
           >

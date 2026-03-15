@@ -191,7 +191,7 @@ export function MiscueAnalysis({
                   <button
                     type="button"
                     className={`flex w-full items-center justify-between rounded-md px-1.5 py-1.5 transition-colors ${
-                      isActive ? item.activeClass : "bg-transparent"
+                      isActive ? item.activeClass : "bg-transparent hover:bg-[rgba(102,102,255,0.07)]"
                     }`}
                     onClick={() => onToggleHighlight?.(item.key)}
                   >
