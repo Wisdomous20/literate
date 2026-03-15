@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useRef, useEffect } from "react"
 import { Loader2, Download } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type { MiscueResult } from "@/types/oral-reading"
@@ -12,6 +12,7 @@ const MISCUE_CONFIG = [
     color: "rgba(253, 182, 210, 0.44)",
     textColor: "#C41048",
     colorClass: "bg-[rgba(253,182,210,0.44)]",
+    activeClass: "bg-[rgba(253,182,210,0.18)]",
     textClass: "text-[#C41048]",
   },
   {
@@ -20,6 +21,7 @@ const MISCUE_CONFIG = [
     color: "rgba(180, 170, 240, 0.4)",
     textColor: "#4B3BA3",
     colorClass: "bg-[rgba(180,170,240,0.4)]",
+    activeClass: "bg-[rgba(180,170,240,0.18)]",
     textClass: "text-[#4B3BA3]",
   },
   {
@@ -28,6 +30,7 @@ const MISCUE_CONFIG = [
     color: "rgba(160, 200, 255, 0.4)",
     textColor: "#1A5FB4",
     colorClass: "bg-[rgba(160,200,255,0.4)]",
+    activeClass: "bg-[rgba(160,200,255,0.18)]",
     textClass: "text-[#1A5FB4]",
   },
   {
@@ -36,6 +39,7 @@ const MISCUE_CONFIG = [
     color: "rgba(220, 120, 220, 0.4)",
     textColor: "#8B008B",
     colorClass: "bg-[rgba(220,120,220,0.4)]",
+    activeClass: "bg-[rgba(220,120,220,0.18)]",
     textClass: "text-[#8B008B]",
   },
   {
@@ -44,6 +48,7 @@ const MISCUE_CONFIG = [
     color: "rgba(200, 165, 130, 0.35)",
     textColor: "#6E4023",
     colorClass: "bg-[rgba(200,165,130,0.35)]",
+    activeClass: "bg-[rgba(200,165,130,0.18)]",
     textClass: "text-[#6E4023]",
   },
   {
@@ -52,6 +57,7 @@ const MISCUE_CONFIG = [
     color: "rgba(140, 220, 160, 0.4)",
     textColor: "#1E7A35",
     colorClass: "bg-[rgba(140,220,160,0.4)]",
+    activeClass: "bg-[rgba(140,220,160,0.18)]",
     textClass: "text-[#1E7A35]",
   },
   {
@@ -60,6 +66,7 @@ const MISCUE_CONFIG = [
     color: "rgba(255, 200, 140, 0.45)",
     textColor: "#B85C00",
     colorClass: "bg-[rgba(255,200,140,0.45)]",
+    activeClass: "bg-[rgba(255,200,140,0.18)]",
     textClass: "text-[#B85C00]",
   },
   {
@@ -68,6 +75,7 @@ const MISCUE_CONFIG = [
     color: "rgba(250, 230, 140, 0.45)",
     textColor: "#8A6D00",
     colorClass: "bg-[rgba(250,230,140,0.45)]",
+    activeClass: "bg-[rgba(250,230,140,0.18)]",
     textClass: "text-[#8A6D00]",
   },
 ] as const
@@ -81,6 +89,7 @@ interface MiscueAnalysisProps {
   disabled?: boolean
   highlightedTypes?: Set<string>
   onToggleHighlight?: (miscueType: string) => void
+  onResetHighlight?: () => void
   onExportPdf?: () => void
 }
 
@@ -93,9 +102,22 @@ export function MiscueAnalysis({
   disabled = false,
   highlightedTypes = new Set(),
   onToggleHighlight,
+  onResetHighlight,
   onExportPdf,
 }: MiscueAnalysisProps) {
   const router = useRouter()
+  const cardRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (highlightedTypes.size === 0 || !onResetHighlight) return
+    const handleMouseDown = (e: MouseEvent) => {
+      if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
+        onResetHighlight()
+      }
+    }
+    document.addEventListener("mousedown", handleMouseDown)
+    return () => document.removeEventListener("mousedown", handleMouseDown)
+  }, [highlightedTypes.size, onResetHighlight])
 
   const miscueCounts = useMemo(() => {
     const counts: Record<string, number> = {}
@@ -143,6 +165,7 @@ export function MiscueAnalysis({
 
   return (
     <div
+      ref={cardRef}
       className={`flex h-full flex-col rounded-[10px] border border-[#54A4FF] bg-[#EFFDFF] px-5 py-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)] transition-opacity duration-300 ${
         disabled && !isAnalyzing ? "pointer-events-none opacity-60" : "opacity-100"
       }`}
@@ -174,14 +197,13 @@ export function MiscueAnalysis({
             {MISCUE_CONFIG.map((item, index) => {
               const isActive = highlightedTypes.has(item.key)
               const count = miscueCounts[item.key] || 0
-              const activeBgClass = item.colorClass.replace(/\]$/, ",0.18)]")
 
               return (
                 <div key={item.key}>
                   <button
                     type="button"
                     className={`flex w-full items-center justify-between rounded-md px-1.5 py-1.5 transition-colors ${
-                      isActive ? activeBgClass : "bg-transparent"
+                      isActive ? item.activeClass : "bg-transparent"
                     }`}
                     onClick={() => onToggleHighlight?.(item.key)}
                   >

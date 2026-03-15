@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Mic, Play, Pause, Download, ChevronDown } from "lucide-react"
+import { Mic, Play, Pause, Download, ChevronDown, RotateCcw } from "lucide-react"
 
 import { convertToWav } from "@/utils/convertToWav"
 
@@ -13,6 +13,7 @@ interface ReadingTimerProps {
   recordedSeconds: number
   recordedAudioURL: string | null
   onTryAgain: () => void
+  onStartOver?: () => void
   audioRef?: React.RefObject<HTMLAudioElement | null>
 }
 
@@ -203,6 +204,7 @@ export function ReadingTimer({
   recordedSeconds,
   recordedAudioURL,
   onTryAgain,
+  onStartOver,
   audioRef,
 }: ReadingTimerProps) {
   const formatTime = (totalSeconds: number) => {
@@ -254,6 +256,17 @@ export function ReadingTimer({
             className="rounded-lg border border-[#0C1A6D] bg-[#2E2E68] px-6 py-2.5 text-sm font-semibold text-white shadow-[0px_1px_20px_rgba(65,155,180,0.47)] transition-colors hover:opacity-90 md:px-8 lg:px-10"
           >
             Try Again
+          </button>
+        )}
+
+        {hasRecording && onStartOver && (
+          <button
+            type="button"
+            onClick={onStartOver}
+            className="flex items-center gap-1.5 rounded-lg border border-[#6666FF]/30 bg-[rgba(102,102,255,0.06)] px-6 py-2.5 text-sm font-semibold text-[#6666FF] transition-all duration-300 hover:bg-[rgba(102,102,255,0.12)] md:px-8 lg:px-10"
+          >
+            <RotateCcw className="h-4 w-4" />
+            Start Over
           </button>
         )}
       </div>
