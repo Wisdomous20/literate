@@ -15,11 +15,6 @@ export function detectMiscues(
   const selfCorrectedIndices = detectSelfCorrections(alignedWords, repetitionIndices);
   const transposedIndices = detectTranspositions(alignedWords);
 
-  // const { data1, data2, data3 } = await Promise.all([
-  //   function1(),
-  //   function2(),
-  //   function3()
-  // ]);
 
   // Build a set of insertion indices that should be suppressed because they
   // are part of a repeated phrase (adjacent to or between repetition words)

@@ -23,7 +23,7 @@ export async function getStudentsByClassNameService(
           name: className,
           userId,
         },
-        archived: false, // Only fetch students who are not archived
+        archived: false, 
       },
       select: {
         id: true,
