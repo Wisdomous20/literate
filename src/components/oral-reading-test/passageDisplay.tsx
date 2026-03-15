@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback, Fragment, type CSSProperties } from "react";
 import { Maximize2, Minimize2, Play, GripHorizontal } from "lucide-react";
 import type { MiscueResult, AlignedWord } from "@/types/oral-reading";
+import { normalizeWord } from "@/utils/textUtils";
 
 type MiscueColor = {
   bg: string;
@@ -290,15 +291,33 @@ export function PassageDisplay({
     const map = new Map<number, InlineInsertion[]>();
     let lastExpectedIndex = -1;
 
-    for (const aw of alignedWords) {
+    for (let idx = 0; idx < alignedWords.length; idx++) {
+      const aw = alignedWords[idx];
       if (aw.expectedIndex != null) lastExpectedIndex = aw.expectedIndex;
 
       if (aw.match === "INSERTION" && aw.spokenIndex != null) {
         const miscue = bySpokenIdx.get(aw.spokenIndex);
         if (miscue && lastExpectedIndex >= 0) {
-          const list = map.get(lastExpectedIndex) || [];
+          let placement = lastExpectedIndex;
+
+          // For repetitions that precede the word they repeat (INSERTION → EXACT),
+          // place the inline insertion after the matching passage word instead
+          if (miscue.miscueType === "REPETITION" && miscue.spokenWord) {
+            const spokenNorm = normalizeWord(miscue.spokenWord);
+            for (let k = idx + 1; k < alignedWords.length && k <= idx + 3; k++) {
+              const next = alignedWords[k];
+              if (next.expectedIndex != null && next.expected) {
+                if (normalizeWord(next.expected) === spokenNorm) {
+                  placement = next.expectedIndex;
+                }
+                break;
+              }
+            }
+          }
+
+          const list = map.get(placement) || [];
           list.push({ spokenWord: miscue.spokenWord!, miscue });
-          map.set(lastExpectedIndex, list);
+          map.set(placement, list);
           bySpokenIdx.delete(aw.spokenIndex);
         }
       }

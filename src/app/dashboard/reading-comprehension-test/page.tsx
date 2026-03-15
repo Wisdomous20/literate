@@ -321,7 +321,7 @@ export default function ReadingComprehensionTestPage() {
   }, [showQuestions, selectedPassage, questions.length]);
 
   // ── Timer ──
-  const timerActive = showQuestions && !isSubmitted && !isPaused && !isLoadingQuestions && questions.length > 0;
+  const timerActive = showQuestions && !isSubmitted && !isSubmitting && !isPaused && !isLoadingQuestions && questions.length > 0;
   useEffect(() => {
     if (!timerActive) return;
     const interval = setInterval(() => {
@@ -436,6 +436,18 @@ export default function ReadingComprehensionTestPage() {
   const handleTagClick = (tag: "literal" | "inferential" | "critical") => {
     setHighlightedTag((prev) => (prev === tag ? null : tag));
   };
+
+  const handleTryAgain = useCallback(() => {
+    setAnswers({});
+    setElapsedSeconds(0);
+    setIsSubmitted(false);
+    setIsSubmitting(false);
+    setSubmitError(null);
+    setComprehensionResult(null);
+    setHighlightedTag(null);
+    sessionStorage.removeItem(COMP_STATE_KEY);
+    sessionStorage.removeItem("reading-comprehension-assessmentId");
+  }, []);
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -790,6 +802,7 @@ export default function ReadingComprehensionTestPage() {
                       isSubmitted={isSubmitted}
                       submitError={submitError}
                       onSubmit={handleSubmit}
+                      onTryAgain={handleTryAgain}
                     />
                   </>
                 )}
