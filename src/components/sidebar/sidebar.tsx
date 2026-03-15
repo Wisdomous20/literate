@@ -12,7 +12,8 @@ import {
   ClipboardList,
   Settings,
   LogOut,
-  Menu,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 
 function getCurrentSchoolYear(): string {
@@ -78,7 +79,7 @@ export function Sidebar() {
         title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         className="absolute -right-3 top-1/2 -translate-y-1/2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-lg ring-2 ring-white hover:bg-[#5555ee] transition-colors"
       >
-        <Menu className="h-4 w-4" />
+        {collapsed ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
       </button>
 
       <div
