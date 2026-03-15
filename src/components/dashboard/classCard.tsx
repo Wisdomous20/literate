@@ -6,6 +6,7 @@ import { useState, useRef, useEffect } from "react";
 import { deleteClass } from "@/app/actions/class/deleteClass";
 import { useRouter } from "next/navigation";
 import { UpdateClassModal } from "./updateClassModal";
+import { createPortal } from "react-dom"; // <-- Add this import
 
 type ClassCardVariant = "blue" | "yellow" | "cyan";
 
@@ -186,44 +187,47 @@ export function ClassCard({
         </div>
       </div>
 
-      {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="mx-4 w-full max-w-sm rounded-xl bg-white shadow-xl">
-            <div className="border-b border-gray-100 px-5 py-4">
-              <h2 className="text-sm font-semibold text-gray-900">
-                Delete Class
-              </h2>
+      {isDeleteModalOpen &&
+        typeof window !== "undefined" &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="mx-4 w-full max-w-sm rounded-xl bg-white shadow-xl">
+              <div className="border-b border-gray-100 px-5 py-4">
+                <h2 className="text-sm font-semibold text-gray-900">
+                  Delete Class
+                </h2>
+              </div>
+              <div className="px-5 py-4">
+                <p className="text-sm text-gray-600">
+                  Are you sure you want to delete{" "}
+                  <strong className="text-gray-900 block truncate max-w-full">
+                    {name}
+                  </strong>{" "}
+                  be undone.
+                </p>
+              </div>
+              <div className="flex justify-end gap-2 border-t border-gray-100 px-5 py-3">
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  disabled={isDeleting}
+                  className="rounded-lg bg-gray-100 px-4 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-200 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="rounded-lg bg-red-600 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+                >
+                  {isDeleting ? "Deleting…" : "Delete"}
+                </button>
+              </div>
             </div>
-            <div className="px-5 py-4">
-              <p className="text-sm text-gray-600">
-                Are you sure you want to delete{" "}
-                <strong className="text-gray-900 block truncate max-w-full">
-                  {name}
-                </strong>{" "}
-                be undone.
-              </p>
-            </div>
-            <div className="flex justify-end gap-2 border-t border-gray-100 px-5 py-3">
-              <button
-                type="button"
-                onClick={() => setIsDeleteModalOpen(false)}
-                disabled={isDeleting}
-                className="rounded-lg bg-gray-100 px-4 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-200 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="rounded-lg bg-red-600 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
-              >
-                {isDeleting ? "Deleting…" : "Delete"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
 
       <UpdateClassModal
         isOpen={isUpdateModalOpen}

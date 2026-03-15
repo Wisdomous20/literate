@@ -171,3 +171,26 @@ input::-ms-clear {
 .swiper-button-prev::after {
   font-size: 1.5rem;
 }
+.swiper-scrollbar-purple {
+  overflow-x: auto;
+}
+
+.swiper-scrollbar-purple::-webkit-scrollbar {
+  height: 8px;
+  background: #F0F2FF;
+}
+
+.swiper-scrollbar-purple::-webkit-scrollbar-thumb {
+  background: #7A7AFB;
+  border-radius: 4px;
+}
+
+.swiper-scrollbar {
+  background: #F0F2FF;
+  height: 8px;
+  border-radius: 4px;
+}
+.swiper-scrollbar-drag {
+  background: #7A7AFB;
+  border-radius: 4px;
+}
