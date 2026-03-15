@@ -4,6 +4,7 @@ import { useState, useMemo, useRef, useEffect, useCallback, Fragment } from "rea
 import { X, Play } from "lucide-react";
 import type { MiscueResult, AlignedWord } from "@/types/oral-reading";
 import { getPassageTextStyle } from "@/components/oral-reading-test/passageDisplay";
+import { normalizeWord } from "@/utils/textUtils";
 
 const MISCUE_CONFIG = [
   {
@@ -132,6 +133,7 @@ export default function ViewMiscuesModal({
   const [highlightedTypes, setHighlightedTypes] = useState<Set<string>>(
     new Set(),
   );
+  const [showMiscues, setShowMiscues] = useState(true);
   const [popup, setPopup] = useState<PopupState | null>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -178,15 +180,33 @@ export default function ViewMiscuesModal({
     const map = new Map<number, { spokenWord: string; miscue: MiscueResult }[]>();
     let lastExpectedIndex = -1;
 
-    for (const aw of alignedWords) {
+    for (let idx = 0; idx < alignedWords.length; idx++) {
+      const aw = alignedWords[idx];
       if (aw.expectedIndex != null) lastExpectedIndex = aw.expectedIndex;
 
       if (aw.match === "INSERTION" && aw.spokenIndex != null) {
         const miscue = bySpokenIdx.get(aw.spokenIndex);
         if (miscue && lastExpectedIndex >= 0) {
-          const list = map.get(lastExpectedIndex) || [];
+          let placement = lastExpectedIndex;
+
+          // For repetitions that precede the word they repeat (INSERTION → EXACT),
+          // place the inline insertion after the matching passage word instead
+          if (miscue.miscueType === "REPETITION" && miscue.spokenWord) {
+            const spokenNorm = normalizeWord(miscue.spokenWord);
+            for (let k = idx + 1; k < alignedWords.length && k <= idx + 3; k++) {
+              const next = alignedWords[k];
+              if (next.expectedIndex != null && next.expected) {
+                if (normalizeWord(next.expected) === spokenNorm) {
+                  placement = next.expectedIndex;
+                }
+                break;
+              }
+            }
+          }
+
+          const list = map.get(placement) || [];
           list.push({ spokenWord: miscue.spokenWord!, miscue });
-          map.set(lastExpectedIndex, list);
+          map.set(placement, list);
           bySpokenIdx.delete(aw.spokenIndex);
         }
       }
@@ -277,6 +297,7 @@ export default function ViewMiscuesModal({
   useEffect(() => {
     if (!open) {
       setHighlightedTypes(new Set());
+      setShowMiscues(true);
       setPopup(null);
     }
   }, [open]);
@@ -485,8 +506,31 @@ export default function ViewMiscuesModal({
               className="whitespace-pre-wrap text-center leading-relaxed text-[#00306E]"
               style={passageLevel ? passageTextStyle : undefined}
             >
-              {hasMiscues ? renderHighlightedContent() : passageContent}
+              {hasMiscues && showMiscues ? renderHighlightedContent() : passageContent}
             </p>
+          </div>
+          {/* Original / Miscues toggle — bottom right */}
+          <div className="mt-2 flex justify-end">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-[#31318A]">
+                {showMiscues ? "Miscues" : "Original"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowMiscues((prev) => !prev)}
+                aria-label={showMiscues ? "Show original passage" : "Show miscue highlights"}
+                title={showMiscues ? "Show original passage" : "Show miscue highlights"}
+                className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+                  showMiscues ? "bg-[#6666FF]" : "bg-[#C4C4FF]"
+                }`}
+              >
+                <span
+                  className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+                    showMiscues ? "translate-x-4.25" : "translate-x-0.75"
+                  }`}
+                />
+              </button>
+            </div>
           </div>
 
           {/* Word detail popup */}

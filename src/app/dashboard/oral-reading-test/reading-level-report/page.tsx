@@ -238,7 +238,7 @@ export default function ReadingLevelReportPage() {
                 <FileText size={22} className="text-[#1A6673]" />
               </div>
               <h2 className="text-lg font-bold text-[#003366] leading-tight">
-                Oral Fluency
+                Reading Fluency
                 <br />
                 Test Report
               </h2>
@@ -326,7 +326,7 @@ export default function ReadingLevelReportPage() {
             {/* Text content */}
             <div className="flex flex-col">
               <h3 className="text-lg font-bold text-[#003366] leading-tight">
-                Oral Reading Level
+                Reading Level
               </h3>
               <p
                 className={`text-[30px] font-bold leading-11.25 ${overallStyle.text}`}

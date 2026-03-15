@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef, useCallback, Fragment, type CSSProperties } from "react";
-import { Maximize2, Minimize2, Play, GripHorizontal } from "lucide-react";
+import { Maximize2, Minimize2, Play, GripHorizontal, ChevronDown } from "lucide-react";
 import type { MiscueResult, AlignedWord } from "@/types/oral-reading";
+import { normalizeWord } from "@/utils/textUtils";
 
 type MiscueColor = {
   bg: string;
@@ -133,6 +134,11 @@ interface PassageDisplayProps {
   onToggleExpand?: () => void;
   passageLevel?: string;
   resizable?: boolean;
+  collapsible?: boolean;
+  collapsed?: boolean;
+  onToggleCollapsed?: () => void;
+  passageTitle?: string;
+  initialHeight?: number;
 }
 
 export function getPassageTextStyle(passageLevel?: string): CSSProperties {
@@ -172,6 +178,11 @@ export function PassageDisplay({
   onToggleExpand,
   passageLevel,
   resizable = true,
+  collapsible = false,
+  collapsed = false,
+  onToggleCollapsed,
+  passageTitle,
+  initialHeight,
 }: PassageDisplayProps) {
   const passageTextStyle = getPassageTextStyle(passageLevel);
   const [popup, setPopup] = useState<PopupState | null>(null);
@@ -194,7 +205,7 @@ export function PassageDisplay({
 
     const onMove = (ev: MouseEvent) => {
       if (!isDragging.current) return;
-      const delta = ev.clientY - dragStartY.current;
+      const delta = Math.max(0, ev.clientY - dragStartY.current);
       setDragHeight(Math.max(120, dragStartH.current + delta));
     };
     const onUp = () => {
@@ -290,15 +301,33 @@ export function PassageDisplay({
     const map = new Map<number, InlineInsertion[]>();
     let lastExpectedIndex = -1;
 
-    for (const aw of alignedWords) {
+    for (let idx = 0; idx < alignedWords.length; idx++) {
+      const aw = alignedWords[idx];
       if (aw.expectedIndex != null) lastExpectedIndex = aw.expectedIndex;
 
       if (aw.match === "INSERTION" && aw.spokenIndex != null) {
         const miscue = bySpokenIdx.get(aw.spokenIndex);
         if (miscue && lastExpectedIndex >= 0) {
-          const list = map.get(lastExpectedIndex) || [];
+          let placement = lastExpectedIndex;
+
+          // For repetitions that precede the word they repeat (INSERTION → EXACT),
+          // place the inline insertion after the matching passage word instead
+          if (miscue.miscueType === "REPETITION" && miscue.spokenWord) {
+            const spokenNorm = normalizeWord(miscue.spokenWord);
+            for (let k = idx + 1; k < alignedWords.length && k <= idx + 3; k++) {
+              const next = alignedWords[k];
+              if (next.expectedIndex != null && next.expected) {
+                if (normalizeWord(next.expected) === spokenNorm) {
+                  placement = next.expectedIndex;
+                }
+                break;
+              }
+            }
+          }
+
+          const list = map.get(placement) || [];
           list.push({ spokenWord: miscue.spokenWord!, miscue });
-          map.set(lastExpectedIndex, list);
+          map.set(placement, list);
           bySpokenIdx.delete(aw.spokenIndex);
         }
       }
@@ -456,16 +485,51 @@ export function PassageDisplay({
     if (expanded) setDragHeight(null);
   }, [expanded]);
 
+  // When uncollapsing, restore to the initial height (captured before quiz mode)
+  useEffect(() => {
+    if (collapsible && !collapsed) {
+      setDragHeight(initialHeight ?? null);
+    }
+  }, [collapsed, collapsible, initialHeight]);
+
+  // When collapsible and collapsed, render the container itself as a clickable bar
+  if (collapsible && collapsed) {
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onToggleCollapsed}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onToggleCollapsed?.(); }}
+        className="flex w-full cursor-pointer items-center justify-center rounded-[10px] border border-[#54A4FF] bg-[#EFFDFF] py-2 shadow-[0px_1px_20px_rgba(108,164,239,0.37)] transition-colors hover:bg-[#DDE8FF]"
+      >
+        <ChevronDown className="h-5 w-5 rotate-0 text-[#1A5FB4]" />
+      </div>
+    );
+  }
+
   return (
     <div
       ref={outerRef}
       className={`relative flex min-h-30 flex-col ${dragHeight && !expanded ? "flex-none" : "flex-1"}`}
     >
+      {/* Collapsible header inside the passage — clicking collapses back */}
+      {collapsible && !expanded && onToggleCollapsed && passageTitle && (
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={onToggleCollapsed}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onToggleCollapsed?.(); }}
+          className="flex w-full cursor-pointer items-center justify-center rounded-t-[10px] border border-b-0 border-[#54A4FF] bg-[#EFFDFF] py-2 transition-colors hover:bg-[#DDE8FF]"
+        >
+          <ChevronDown className="h-5 w-5 rotate-180 text-[#1A5FB4]" />
+        </div>
+      )}
+
       {content && onToggleExpand && (
         <button
           type="button"
           onClick={onToggleExpand}
-          className="absolute right-4 top-4 z-20 flex h-7 w-7 items-center justify-center rounded-md bg-[rgba(84,164,255,0.15)] transition-colors hover:opacity-80 md:right-5 md:top-5"
+          className={`absolute right-4 z-20 flex h-7 w-7 items-center justify-center rounded-md bg-[rgba(84,164,255,0.15)] transition-colors hover:opacity-80 md:right-5 ${collapsible && !collapsed ? "top-12 md:top-13" : "top-4 md:top-5"}`}
           title={expanded ? "Collapse passage" : "Expand passage"}
         >
           {expanded ? (
@@ -478,7 +542,7 @@ export function PassageDisplay({
 
       <div
         ref={containerRef}
-        className="oral-reading-scroll relative flex-1 overflow-auto rounded-[10px] border border-[#54A4FF] bg-[#EFFDFF] p-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)] md:p-5"
+        className={`oral-reading-scroll relative flex-1 overflow-auto rounded-[10px] border border-[#54A4FF] bg-[#EFFDFF] p-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)] md:p-5 ${collapsible && !collapsed && !expanded ? "rounded-t-none border-t-0" : ""}`}
       >
         {content ? (
           <p className="whitespace-pre-wrap text-center leading-relaxed text-[#00306E]" style={passageLevel ? passageTextStyle : undefined}>

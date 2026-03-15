@@ -1,15 +1,27 @@
 import { TranscriptWord } from "@/types/oral-reading";
 import { normalizeWord, similarityRatio } from "@/utils/textUtils";
 import mergeSplitWords from "./mergeSplitWords";
+
+const MORPHOLOGICAL_SUFFIXES = ["s", "es", "ed", "ing", "er", "est", "ly", "d"];
+
+function isMorphologicalVariant(transcribedNorm: string, passageNorm: string): boolean {
+  return MORPHOLOGICAL_SUFFIXES.some(
+    (suffix) =>
+      transcribedNorm === passageNorm + suffix ||
+      passageNorm === transcribedNorm + suffix
+  );
+}
+
 /**
  * Passage-guided correction using Smith-Waterman-style local alignment.
+ * Only corrects obvious STT noise — preserves real miscues including
+ * morphological variants (e.g. "understands" vs "understand").
  */
 export default function correctWithPassage(
   transcribedWords: TranscriptWord[],
   passageText: string,
   similarityThreshold = 0.55
 ): TranscriptWord[] {
-  
   const expandedPassageText = passageText.replace(
     /(\p{L})-(\p{L})/gu,
     "$1 $2"
@@ -21,17 +33,15 @@ export default function correctWithPassage(
   if (passageWords.length === 0 || transcribedWords.length === 0) {
     return transcribedWords;
   }
-  transcribedWords = mergeSplitWords(transcribedWords, passageWords);
 
+  transcribedWords = mergeSplitWords(transcribedWords, passageWords);
 
   const tLen = transcribedWords.length;
   const pLen = passageWords.length;
 
-  // Pre-compute normalized words
   const normTranscribed = transcribedWords.map((w) => normalizeWord(w.word));
   const normPassage = passageWords.map(normalizeWord);
 
-  // Pre-compute similarity matrix
   const simMatrix: number[][] = Array.from({ length: tLen }, () => Array(pLen).fill(0));
   for (let i = 0; i < tLen; i++) {
     for (let j = 0; j < pLen; j++) {
@@ -49,7 +59,6 @@ export default function correctWithPassage(
   const trace: Uint8Array[] = Array.from({ length: tLen + 1 }, () =>
     new Uint8Array(pLen + 1)
   );
-  // 0 = zero/reset, 1 = diagonal, 2 = up, 3 = left
 
   let bestScore = 0;
   let bestI = 0;
@@ -86,37 +95,38 @@ export default function correctWithPassage(
     }
   }
 
-  // Traceback to find matched pairs
   const corrections = new Map<number, string>();
   let ci = bestI;
   let cj = bestJ;
 
-while (ci > 0 && cj > 0 && dp[ci][cj] > 0) {
-  if (trace[ci][cj] === 1) {
-    const sim = simMatrix[ci - 1][cj - 1];
-    const transcribedNorm = normTranscribed[ci - 1];
-    const passageNorm = normPassage[cj - 1];
-    
-    // Only correct if:
-    // 1. Similar enough to be the intended word
-    // 2. Not already an exact match (don't fix what isn't broken)
-    // 3. The passage word is more similar than the transcribed word itself
-    if (
-      sim > similarityThreshold &&
-      transcribedNorm !== passageNorm  // ← skip if already exact
-    ) {
-      corrections.set(ci - 1, passageWords[cj - 1]);
+  while (ci > 0 && cj > 0 && dp[ci][cj] > 0) {
+    if (trace[ci][cj] === 1) {
+      const sim = simMatrix[ci - 1][cj - 1];
+      const transcribedNorm = normTranscribed[ci - 1];
+      const passageNorm = normPassage[cj - 1];
+
+            if (
+        sim > similarityThreshold &&
+        transcribedNorm !== passageNorm
+      ) {
+        const isMorph = isMorphologicalVariant(transcribedNorm, passageNorm);
+        console.log(`[correction] "${transcribedNorm}" → "${passageNorm}" | sim: ${sim.toFixed(2)} | isMorph: ${isMorph}`);
+        
+        if (!isMorph) {
+          corrections.set(ci - 1, passageWords[cj - 1]);
+        }
+      }
+
+      ci--;
+      cj--;
+    } else if (trace[ci][cj] === 2) {
+      ci--;
+    } else if (trace[ci][cj] === 3) {
+      cj--;
+    } else {
+      break;
     }
-    ci--;
-    cj--;
-  } else if (trace[ci][cj] === 2) {
-    ci--;
-  } else if (trace[ci][cj] === 3) {
-    cj--;
-  } else {
-    break;
   }
-}
 
   return transcribedWords.map((w, idx) => {
     const corrected = corrections.get(idx);
