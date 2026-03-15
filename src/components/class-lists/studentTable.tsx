@@ -79,14 +79,14 @@ const cardColors = [
 
 export function StudentTable({
   students,
-  totalStudents,
+  // totalStudents,
   studentAssessments,
   onDeleteStudent,
   onUpdateStudent,
 }: StudentTableProps) {
   const params = useParams();
   const router = useRouter();
-  const classId = params.id as string;
+  const classRoomId = params.id as string;
 
   const [currentPage, setCurrentPage] = useState(1);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -153,14 +153,13 @@ export function StudentTable({
   };
 
   const handleCardClick = (student: StudentTableItem) => {
-    const hasAssessment =
-      (studentAssessments[student.id] || []).length > 0;
-    if (!hasAssessment) return;
+  const hasAssessment = (studentAssessments[student.id] || []).length > 0;
+  if (!hasAssessment) return;
 
-    router.push(
-      `/dashboard/class/${classId}/report/${student.id}?assessmentType=${encodeURIComponent(student.assessmentType)}`,
-    );
-  };
+  router.push(
+    `/dashboard/class/${classRoomId}/report/${student.id}?assessmentType=${encodeURIComponent(student.assessmentType)}`
+  );
+};
 
   const getCardColor = (index: number) => cardColors[index % cardColors.length];
 
@@ -168,7 +167,7 @@ export function StudentTable({
     <div className="flex flex-col gap-8 w-full">
       {/* Cards Grid */}
       {paginatedStudents.length === 0 ? (
-        <div className="col-span-full flex items-center justify-center rounded-3xl border-2 border-dashed border-[#6666FF]/20 bg-gradient-to-br from-[#F8F9FF] to-[#EEF0FF] py-20 px-4">
+        <div className="col-span-full flex items-center justify-center rounded-3xl border-2 border-dashed border-[#6666FF]/20 bg-linear-to-br from-[#F8F9FF] to-[#EEF0FF] py-20 px-4">
           <span className="text-sm font-medium text-[#00306E]/50">
             No students found
           </span>
@@ -183,7 +182,7 @@ export function StudentTable({
             return (
               <div
                 key={student.id}
-                className={`relative h-full rounded-2xl border-2 ${colorScheme.border} bg-gradient-to-br ${colorScheme.bg} shadow-[0_4px_16px_rgba(102,102,255,0.08)] transition-all duration-300`}
+                className={`relative h-full rounded-2xl border-2 ${colorScheme.border} bg-linear-to-br ${colorScheme.bg} shadow-[0_4px_16px_rgba(102,102,255,0.08)] transition-all duration-300`}
               >
                 {editingId === student.id ? (
                   // Edit Mode
@@ -225,7 +224,7 @@ export function StudentTable({
                       <button
                         onClick={(e) => handleSaveEdit(e, student.id)}
                         disabled={isUpdating}
-                        className="flex items-center justify-center rounded-full bg-gradient-to-r from-[#6666FF] to-[#7A7AFB] w-8 h-8 text-white transition-all hover:shadow-lg disabled:opacity-50"
+                        className="flex items-center justify-center rounded-full bg-linear-to-r from-[#6666FF] to-[#7A7AFB] w-8 h-8 text-white transition-all hover:shadow-lg disabled:opacity-50"
                         aria-label="Save changes"
                         title="Save changes"
                       >
@@ -378,7 +377,7 @@ export function StudentTable({
           <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="flex items-center gap-1.5 rounded-lg border border-[#6666FF]/25 bg-white px-3.5 py-2 text-xs font-bold text-[#6666FF] transition-all hover:bg-gradient-to-r hover:from-[#F8F9FF] hover:to-[#EEF0FF] hover:shadow-lg hover:border-[#6666FF]/40 disabled:opacity-50 disabled:cursor-not-allowed shadow"
+            className="flex items-center gap-1.5 rounded-lg border border-[#6666FF]/25 bg-white px-3.5 py-2 text-xs font-bold text-[#6666FF] transition-all hover:bg-linear-to-r hover:from-[#F8F9FF] hover:to-[#EEF0FF] hover:shadow-lg hover:border-[#6666FF]/40 disabled:opacity-50 disabled:cursor-not-allowed shadow"
           >
             <ChevronLeft className="h-3.5 w-3.5" />
             Prev
@@ -391,8 +390,8 @@ export function StudentTable({
                 onClick={() => setCurrentPage(i + 1)}
                 className={`w-8 h-8 rounded-lg font-bold text-xs transition-all ${
                   currentPage === i + 1
-                    ? "bg-gradient-to-r from-[#6666FF] to-[#7A7AFB] text-white shadow"
-                    : "bg-white text-[#6666FF] border border-[#6666FF]/25 hover:bg-gradient-to-r hover:from-[#F8F9FF] hover:to-[#EEF0FF] hover:shadow"
+                    ? "bg-linear-to-r from-[#6666FF] to-[#7A7AFB] text-white shadow"
+                    : "bg-white text-[#6666FF] border border-[#6666FF]/25 hover:bg-linear-to-r hover:from-[#F8F9FF] hover:to-[#EEF0FF] hover:shadow"
                 }`}
               >
                 {i + 1}
@@ -403,7 +402,7 @@ export function StudentTable({
           <button
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
-            className="flex items-center gap-1.5 rounded-lg border border-[#6666FF]/25 bg-white px-3.5 py-2 text-xs font-bold text-[#6666FF] transition-all hover:bg-gradient-to-r hover:from-[#F8F9FF] hover:to-[#EEF0FF] hover:shadow-lg hover:border-[#6666FF]/40 disabled:opacity-50 disabled:cursor-not-allowed shadow"
+            className="flex items-center gap-1.5 rounded-lg border border-[#6666FF]/25 bg-white px-3.5 py-2 text-xs font-bold text-[#6666FF] transition-all hover:bg-linear-to-r hover:from-[#F8F9FF] hover:to-[#EEF0FF] hover:shadow-lg hover:border-[#6666FF]/40 disabled:opacity-50 disabled:cursor-not-allowed shadow"
           >
             Next
             <ChevronRight className="h-3.5 w-3.5" />

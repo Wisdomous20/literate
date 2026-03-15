@@ -58,7 +58,7 @@ function saveComprehensionState(state: ComprehensionState) {
 }
 
 function computeTagBreakdown(
-  answers: { isCorrect: boolean | null; question: { tags: string } }[],
+  answers: { isCorrect: boolean | null; tag: string }[],
 ): TagBreakdown {
   const breakdown: TagBreakdown = {
     literal: { correct: 0, total: 0 },
@@ -66,7 +66,7 @@ function computeTagBreakdown(
     critical: { correct: 0, total: 0 },
   };
   for (const a of answers) {
-    const tag = a.question.tags;
+    const tag = a.tag;
     if (tag === "Literal") {
       breakdown.literal.total++;
       if (a.isCorrect) breakdown.literal.correct++;
@@ -87,7 +87,12 @@ function buildResultFromAssessment(assessment: {
     score: number;
     totalItems: number;
     classificationLevel: string | null;
-    answers: { questionId: string; answer: string; isCorrect: boolean | null; question: { tags: string } }[];
+    answers: {
+      question: string;
+      tag: string;
+      answer: string;
+      isCorrect: boolean | null;
+    }[];
   };
 }): { result: ComprehensionResult; restoredAnswers: Record<string, string> } {
   const comp = assessment.comprehension;
@@ -101,7 +106,7 @@ function buildResultFromAssessment(assessment: {
   };
   const restoredAnswers: Record<string, string> = {};
   for (const a of comp.answers) {
-    restoredAnswers[a.questionId] = a.answer;
+    restoredAnswers[a.question] = a.answer;
   }
   return { result, restoredAnswers };
 }
@@ -335,14 +340,14 @@ export default function OralReadingComprehensionPage() {
   const formattedTime = `${String(Math.floor(elapsedSeconds / 60)).padStart(2, "0")}:${String(elapsedSeconds % 60).padStart(2, "0")}`;
 
   const handleSelectOption = useCallback(
-    (questionId: string, option: string) => {
-      setAnswers((prev) => ({ ...prev, [questionId]: option }));
+    (question: string, option: string) => {
+      setAnswers((prev) => ({ ...prev, [question]: option }));
     },
     [],
   );
 
-  const handleEssayChange = useCallback((questionId: string, value: string) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: value }));
+  const handleEssayChange = useCallback((question: string, value: string) => {
+    setAnswers((prev) => ({ ...prev, [question]: value }));
   }, []);
 
   const handleSubmit = async () => {
@@ -385,7 +390,7 @@ export default function OralReadingComprehensionPage() {
         // Assessment fetch failed — continue with submission
       }
 
-      // Build answers array — { questionId, answer }
+      // Build answers array — { question, answer }
       const formattedAnswers = questions
         .filter((q) => answers[q.id] !== undefined && answers[q.id] !== "")
         .map((q) => ({

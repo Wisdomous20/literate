@@ -14,7 +14,7 @@ interface CreateStudentResult {
     id: string;
     name: string;
     level: number;
-    classId: string;
+    classRoomId: string;
   };
   error?: string;
   code?: "VALIDATION_ERROR" | "CLASS_NOT_FOUND" | "INTERNAL_ERROR";
@@ -58,7 +58,7 @@ export async function createStudentService(
   }
 
   try {
-    const userClass = await prisma.class.findFirst({
+    const userClass = await prisma.classRoom.findFirst({
       where: { userId, name: className.trim(), schoolYear: schoolYear.trim() },
     });
 
@@ -74,7 +74,7 @@ export async function createStudentService(
     const existingStudent = await prisma.student.findFirst({
       where: {
         name: name.trim(),
-        classId: userClass.id,
+        classRoomId: userClass.id,
       },
       select: { id: true },
     });
@@ -91,13 +91,13 @@ export async function createStudentService(
       data: {
         name: name.trim(),
         level,
-        classId: userClass.id,
+        classRoomId: userClass.id,
       },
       select: {
         id: true,
         name: true,
         level: true,
-        classId: true,
+        classRoomId: true,
       },
     });
 

@@ -13,16 +13,7 @@ export async function getAllComprehensionTestsByStudentIdService(studentId: stri
           passage: true,
         },
       },
-      quiz: {
-        include: {
-          questions: true,
-        },
-      },
-      answers: {
-        include: {
-          question: true,
-        },
-      },
+      answers: true,
     },
     orderBy: {
       assessment: {

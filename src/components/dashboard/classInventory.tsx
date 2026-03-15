@@ -447,7 +447,7 @@ export function ClassInventory({
             {classes.map((classItem) => (
               <SwiperSlide key={classItem.id}>
                 <ClassCard
-                  classId={classItem.id}
+                  classRoomId={classItem.id}
                   name={classItem.name}
                   studentCount={classItem.studentCount}
                   variant={classItem.variant}

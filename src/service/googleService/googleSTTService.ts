@@ -1,5 +1,4 @@
 import { v2, protos } from "@google-cloud/speech";
-import { storage, GCS_BUCKET } from "@/lib/gcs";
 import { TranscriptResponse } from "@/types/oral-reading";
 import convertToTranscriptResponse from "./convertToTranscriptResponse";
 

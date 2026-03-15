@@ -5,7 +5,7 @@ interface GetStudentResult {
   student?: {
     id: string;
     name: string;
-    classId: string;
+    classRoomId: string;
     level?: number;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     assessments?: any[];
@@ -22,12 +22,12 @@ export async function getStudentServiceById(
     const student = await prisma.student.findFirst({
       where: {
         id: studentId,
-        class: { userId },
+        classRoom: { userId },
       },
       select: {
         id: true,
         name: true,
-        classId: true,
+        classRoomId: true,
         assessments: true,
         level: true,
       },

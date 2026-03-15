@@ -32,7 +32,7 @@ interface StudentData {
   id: string;
   name: string;
   level?: number;
-  classId: string;
+  classRoomId: string;
   deletedAt?: Date | null;
 }
 
@@ -71,7 +71,7 @@ function getAssessmentClassification(
 export default function ClassListsPage() {
   const params = useParams();
   const router = useRouter();
-  const classId = params.id as string;
+  const classRoomId = params.id as string;
   const queryClient = useQueryClient();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -90,7 +90,7 @@ export default function ClassListsPage() {
     data: classData,
     isLoading: classLoading,
     error: classError,
-  } = useClassById(classId);
+  } = useClassById(classRoomId);
 
   const {
     data: students = [],

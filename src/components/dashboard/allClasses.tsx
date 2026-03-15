@@ -258,7 +258,7 @@ interface AllClassesPageProps {
   currentYear?: string;
 }
 
-const CLASSES_PER_PAGE = 9; // 3x3 grid
+const CLASSES_PER_PAGE = 9;
 
 export default function AllClassesPage({
   allClasses,
@@ -278,15 +278,11 @@ export default function AllClassesPage({
   const [currentPage, setCurrentPage] = useState(1);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  // Organize classes: "All Classes" first, then current year, then next year
   const organizedClasses = useMemo(() => {
-    const all = allClasses.map((c, idx) => ({
+    return allClasses.map((c, idx) => ({
       ...c,
       variant: getVariant(idx),
     }));
-
-    // Return all for current page selection
-    return all;
   }, [allClasses]);
 
   const totalPages = Math.max(
@@ -299,24 +295,17 @@ export default function AllClassesPage({
     return organizedClasses.slice(start, start + CLASSES_PER_PAGE);
   }, [organizedClasses, currentPage]);
 
-  const handleClassClick = (classId: string) => {
-    router.push(`/dashboard/class/${classId}`);
-  };
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-      // Scroll to top
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
+  const handleClassClick = (classRoomId: string) => {
+    router.push(`/dashboard/class/${classRoomId}`);
+    if (showToast) showToast("Navigated to class details.", "success");
   };
 
   const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-      // Scroll to top
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   };
 
   return (
@@ -331,6 +320,7 @@ export default function AllClassesPage({
               onClick={() => router.push("/dashboard")}
               className="inline-flex items-center gap-2 rounded-full p-2 transition-colors hover:bg-gray-100"
               aria-label="Back to Dashboard"
+              title="Back to Dashboard"
               type="button"
             >
               <ArrowLeft className="h-5 w-5 text-[#00306E]" />
@@ -346,6 +336,8 @@ export default function AllClassesPage({
               type="button"
               onClick={() => setDropdownOpen((open) => !open)}
               className="flex h-10 min-w-32 items-center justify-between gap-2 rounded-lg border border-[#6666FF]/25 bg-[#6666FF]/8 px-5 text-sm font-medium text-[#6666FF] transition-colors hover:bg-[#6666FF]/15"
+              aria-label="Select school year"
+              title="Select school year"
             >
               {selectedYear}
               <ChevronDown className="h-4 w-4" />
@@ -353,24 +345,36 @@ export default function AllClassesPage({
 
             {dropdownOpen && (
               <div className="absolute right-0 top-full z-10 mt-2 w-36 rounded-lg border border-[#5D5DFB]/30 bg-white py-1 shadow-lg">
-                {schoolYears.map((year) => (
-                  <button
-                    key={year}
-                    onClick={() => {
-                      onYearChange(year);
-                      setDropdownOpen(false);
-                      setCurrentPage(1);
-                    }}
-                    className={`block w-full px-4 py-2 text-left text-sm font-medium transition-colors ${
-                      selectedYear === year
-                        ? "bg-[#6666FF] text-white"
-                        : "text-[#00306E] hover:bg-[#F0F2FF]"
-                    }`}
-                    type="button"
-                  >
-                    {year}
-                  </button>
-                ))}
+                {schoolYears.map((year) => {
+                  const isCurrent = year === currentYear;
+                  const isNext = nextYear === year;
+                  const disabled = isNext && !!isNextYearDisabled;
+                  return (
+                    <button
+                      key={year}
+                      onClick={() => {
+                        if (!disabled) {
+                          onYearChange(year);
+                          setDropdownOpen(false);
+                          setCurrentPage(1);
+                        }
+                      }}
+                      disabled={disabled}
+                      className={`block w-full px-4 py-2 text-left text-sm font-medium transition-colors ${
+                        selectedYear === year
+                          ? "bg-[#6666FF] text-white"
+                          : "text-[#00306E] hover:bg-[#F0F2FF]"
+                      } ${disabled ? "cursor-not-allowed opacity-60" : ""}`}
+                      type="button"
+                      aria-label={`Select ${year}${isCurrent ? " (Current)" : ""}${isNext && isNextYearDisabled ? " (Upcoming)" : ""}`}
+                      title={`Select ${year}${isCurrent ? " (Current)" : ""}${isNext && isNextYearDisabled ? " (Upcoming)" : ""}`}
+                    >
+                      {year}
+                      {isCurrent && " (Current)"}
+                      {isNext && isNextYearDisabled && " (Upcoming)"}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -395,6 +399,8 @@ export default function AllClassesPage({
                 onClick={onCreateClass}
                 className="mt-4 rounded-lg bg-[#6666FF] px-6 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
                 type="button"
+                aria-label="Create First Class"
+                title="Create First Class"
               >
                 Create First Class
               </button>
@@ -416,9 +422,12 @@ export default function AllClassesPage({
                     }
                   }}
                   className="cursor-pointer"
+                  aria-label={`View class ${classItem.name}`}
+                  title={`View class ${classItem.name}`}
                 >
                   <ClassCard
                     {...classItem}
+                    classRoomId={classItem.id}
                     onClassUpdated={async () => {
                       if (refetch) await refetch();
                     }}
@@ -436,38 +445,21 @@ export default function AllClassesPage({
                   className="flex items-center gap-2 rounded-lg border border-[#6666FF]/25 bg-white px-4 py-2 text-sm font-semibold text-[#6666FF] transition-all disabled:cursor-not-allowed disabled:opacity-50 hover:enabled:bg-[#F8F9FF]"
                   type="button"
                   aria-label="Previous page"
+                  title="Previous page"
                 >
                   <ChevronLeft className="h-4 w-4" />
                   Previous
                 </button>
-
-                <div className="flex items-center gap-2">
-                  {Array.from({ length: totalPages }).map((_, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => {
-                        setCurrentPage(idx + 1);
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
-                      className={`h-9 w-9 rounded-lg font-semibold transition-colors ${
-                        currentPage === idx + 1
-                          ? "bg-[#6666FF] text-white"
-                          : "border border-[#6666FF]/25 bg-white text-[#6666FF] hover:bg-[#F8F9FF]"
-                      }`}
-                      type="button"
-                      aria-label={`Go to page ${idx + 1}`}
-                    >
-                      {idx + 1}
-                    </button>
-                  ))}
-                </div>
-
+                <span className="text-sm text-[#00306E]">
+                  Page {currentPage} of {totalPages}
+                </span>
                 <button
                   onClick={handleNextPage}
                   disabled={currentPage === totalPages}
                   className="flex items-center gap-2 rounded-lg border border-[#6666FF]/25 bg-white px-4 py-2 text-sm font-semibold text-[#6666FF] transition-all disabled:cursor-not-allowed disabled:opacity-50 hover:enabled:bg-[#F8F9FF]"
                   type="button"
                   aria-label="Next page"
+                  title="Next page"
                 >
                   Next
                   <ChevronRight className="h-4 w-4" />

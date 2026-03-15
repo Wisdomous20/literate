@@ -85,7 +85,7 @@ export async function getAllClassServiceBySchoolYear(
   }
 
   try {
-    const classes = await prisma.class.findMany({
+    const classes = await prisma.classRoom.findMany({
       where: { 
         userId, 
         schoolYear, 

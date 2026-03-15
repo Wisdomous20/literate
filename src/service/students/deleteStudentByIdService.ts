@@ -10,7 +10,7 @@ interface DeleteStudentResult {
   student?: {
     id: string;
     name: string;
-    classId: string;
+    classRoomId: string;
     level?: number;
     deletedAt?: Date | null;
   };
@@ -43,7 +43,7 @@ export async function deleteStudentByIdService(
     const existing = await prisma.student.findFirst({
       where: {
         id: studentId,
-        class: { userId },
+        classRoom: { userId },
       },
       select: { id: true },
     });
@@ -63,7 +63,7 @@ export async function deleteStudentByIdService(
         id: true,
         name: true,
         level: true,
-        classId: true,
+        classRoomId: true,
         deletedAt: true,
       },
     });

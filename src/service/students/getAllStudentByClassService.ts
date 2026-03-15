@@ -5,7 +5,7 @@ interface GetStudentsByClassNameResult {
   students?: {
     id: string;
     name: string;
-    classId: string;
+    classRoomId: string;
     level?: number;
   }[];
   error?: string;
@@ -19,7 +19,7 @@ export async function getStudentsByClassNameService(
   try {
     const students = await prisma.student.findMany({
       where: {
-        class: {
+        classRoom: {
           name: className,
           userId,
         },
@@ -28,7 +28,7 @@ export async function getStudentsByClassNameService(
       select: {
         id: true,
         name: true,
-        classId: true,
+        classRoomId: true,
         level: true,
       },
     });

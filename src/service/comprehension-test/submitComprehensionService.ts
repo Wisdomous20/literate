@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { gradeEssayAnswer } from "./gradeEssayService";
 import classifyComprehensionLevel from "./classifyComprehensionLevel";
+import { Tags } from "@/generated/prisma/enums";
 
 interface SubmitAnswer {
   questionId: string;
@@ -34,6 +35,7 @@ export async function submitComprehensionService(
                     type: true,
                     questionText: true,
                     correctAnswer: true,
+                    tags: true, // needed to denormalize onto the answer
                   },
                 },
               },
@@ -50,23 +52,22 @@ export async function submitComprehensionService(
     const { passage } = assessment;
     const { quiz } = passage;
 
-     if (!passage || !quiz) {
-        return { success: false, error: "Assessment, passage, or quiz not found." };
+
+      if (!quiz) {
+        return { success: false, error: "No quiz found for this passage." };
       }
+
     const questionMap = new Map(quiz.questions.map((q) => [q.id, q]));
 
-    
-
-    // Truncate passage once — reused across all essay grading calls
     const passageExcerpt = passage.content.slice(0, 1000);
 
-    const mcResults: { questionId: string; answer: string; isCorrect: boolean }[] = [];
-    const essayPromises: Promise<{ questionId: string; answer: string; isCorrect: boolean }>[] = [];
+    const mcResults: { questionId: string; answer: string; isCorrect: boolean; tag: string }[] = [];
+    const essayPromises: Promise<{ questionId: string; answer: string; isCorrect: boolean; tag: string }>[] = [];
 
     for (const a of answers) {
       const question = questionMap.get(a.questionId);
       if (!question) {
-        mcResults.push({ ...a, isCorrect: false });
+        mcResults.push({ ...a, isCorrect: false, tag: "Literal" });
         continue;
       }
 
@@ -74,17 +75,18 @@ export async function submitComprehensionService(
         const isCorrect =
           question.correctAnswer?.trim().toLowerCase() ===
           a.answer.trim().toLowerCase();
-        mcResults.push({ ...a, isCorrect });
+        mcResults.push({ ...a, isCorrect, tag: question.tags });
       } else {
         essayPromises.push(
           gradeEssayAnswer({
             questionText: question.questionText,
             correctAnswer: question.correctAnswer,
-            passageContent: passageExcerpt, 
+            passageContent: passageExcerpt,
             studentAnswer: a.answer,
           }).then((result) => ({
             ...a,
             isCorrect: result.isCorrect,
+            tag: question.tags, // copy tag at write time
           }))
         );
       }
@@ -101,13 +103,13 @@ export async function submitComprehensionService(
     const comprehensionTest = await prisma.comprehensionTest.create({
       data: {
         assessmentId,
-        quizId: quiz.id,
         score,
         totalItems,
         classificationLevel: level,
         answers: {
           create: gradedAnswers.map((a) => ({
-            questionId: a.questionId,
+            question: a.questionId, 
+            tag: a.tag as Tags,           
             answer: a.answer,
             isCorrect: a.isCorrect,
           })),
@@ -124,6 +126,10 @@ export async function submitComprehensionService(
       totalItems,
       percentage: Math.round(percentage),
       level,
+      answers: gradedAnswers.map((a) => ({
+        tag: a.tag,      
+        isCorrect: a.isCorrect,
+      })),
     };
   } catch (error) {
     console.error("Error submitting comprehension test:", error);

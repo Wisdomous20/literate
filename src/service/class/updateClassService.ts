@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 
 interface UpdateClassInput {
   userId: string;
-  classId: string;
+  classRoomId: string;
   name?: string;
   archived?: boolean;
 }
@@ -23,13 +23,13 @@ interface UpdateClassResult {
 export async function updateClassService(
   input: UpdateClassInput
 ): Promise<UpdateClassResult> {
-  const { userId, classId, name, archived } = input;
+  const { userId, classRoomId, name, archived } = input;
 
   if (!userId) {
     return { success: false, error: "User ID is required", code: "VALIDATION_ERROR" };
   }
 
-  if (!classId) {
+  if (!classRoomId) {
     return { success: false, error: "Class ID is required", code: "VALIDATION_ERROR" };
   }
 
@@ -42,8 +42,8 @@ export async function updateClassService(
   }
 
   try {
-    const existing = await prisma.class.findFirst({
-      where: { id: classId, userId },
+    const existing = await prisma.classRoom.findFirst({
+      where: { id: classRoomId, userId },
       select: { id: true },
     });
 
@@ -55,8 +55,8 @@ export async function updateClassService(
     if (name !== undefined) updateData.name = name.trim();
     if (archived !== undefined) updateData.archived = archived;
 
-    const updated = await prisma.class.update({
-      where: { id: classId },
+    const updated = await prisma.classRoom.update({
+      where: { id: classRoomId },
       data: updateData,
       select: { id: true, name: true, userId: true, schoolYear: true, archived: true },
     });
