@@ -310,7 +310,6 @@ export default function ClassListsPage() {
     <div className="flex h-screen flex-col bg-gradient-to-br from-white via-[#F8F9FF] to-[#EEF0FF]">
       <ClassListsHeader onCreateStudent={() => setIsModalOpen(true)} />
 
-      {/* Toast Notifications */}
       {toast && (
         <div
           className={`fixed top-6 right-6 z-50 flex items-center gap-3 rounded-2xl px-5 py-3 text-sm font-semibold shadow-[0_8px_24px_rgba(0,48,110,0.2)] transition-all duration-300 border backdrop-blur-sm ${
@@ -345,7 +344,6 @@ export default function ClassListsPage() {
           </div>
         )}
 
-        {/* Navigation Row */}
         <div className="flex items-center justify-between gap-4">
           <button
             onClick={() => router.back()}
@@ -360,7 +358,6 @@ export default function ClassListsPage() {
           />
         </div>
 
-        {/* Stats Section */}
         {assessmentType !== "ALL" && (
           <div className="rounded-3xl bg-gradient-to-br from-[#EEF0FF] via-[#F5F7FF] to-[#FAFBFF] p-6 border border-[#6666FF]/15 shadow-[0_4px_16px_rgba(102,102,255,0.08)]">
             <h3 className="text-xs font-bold text-[#6666FF] mb-4 uppercase tracking-widest">
@@ -375,7 +372,6 @@ export default function ClassListsPage() {
           </div>
         )}
 
-        {/* Header Section with Class Info, Search, Sort, and Create */}
         <div className="rounded-3xl bg-gradient-to-r from-[#E8E5FF]/70 via-[#F0ECFF]/70 to-[#F8F6FF]/70 p-6 border border-[#B8B3FF]/25 shadow-[0_4px_20px_rgba(102,102,255,0.1)] backdrop-blur-sm">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
             {/* Class Info */}
@@ -386,7 +382,6 @@ export default function ClassListsPage() {
               />
             </div>
 
-            {/* Search, Sort, and Create Button */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
               {/* Search Input */}
               <div className="flex items-center gap-3 rounded-2xl border border-[#9999FF]/40 bg-white/90 px-4 py-2.5 shadow-[0_4px_16px_rgba(102,102,255,0.12)] backdrop-blur-sm flex-1 sm:flex-none transition-all hover:shadow-[0_6px_20px_rgba(102,102,255,0.15)]">
@@ -400,7 +395,6 @@ export default function ClassListsPage() {
                 />
               </div>
 
-              {/* Sort Select */}
               <select
                 value={sortOption}
                 onChange={(e) =>
@@ -422,7 +416,6 @@ export default function ClassListsPage() {
                 <option value="gradeDesc">Grade: ↓</option>
               </select>
 
-              {/* Create Student Button */}
               <button
                 onClick={() => setIsModalOpen(true)}
                 type="button"
@@ -434,7 +427,6 @@ export default function ClassListsPage() {
           </div>
         </div>
 
-        {/* Student Cards */}
         <StudentTable
           students={sortedStudents}
           totalStudents={sortedStudents.length}

@@ -54,7 +54,6 @@ export function ClassInventory({
 
   const error = fetchError?.message ?? null;
 
-  // Compute available years for dropdown
   const currentYear = getCurrentSchoolYear();
   const nextYear = getNextSchoolYear();
   const now = new Date();
@@ -113,7 +112,6 @@ export function ClassInventory({
     ? swiperProgress * (100 - indicatorWidth)
     : 0;
 
-  // --- End Scrollbar Logic ---
 
   const handleCreateClass = async (data: {
     className: string;

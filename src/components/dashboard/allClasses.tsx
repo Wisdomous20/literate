@@ -43,7 +43,7 @@ interface AllClassesPageProps {
   currentYear?: string;
 }
 
-const CLASSES_PER_PAGE = 15; // 5 per row × 3 rows
+const CLASSES_PER_PAGE = 15; 
 
 export default function AllClassesPage({
   allClasses,

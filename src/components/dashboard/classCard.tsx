@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from "react";
 import { deleteClass } from "@/app/actions/class/deleteClass";
 import { useRouter } from "next/navigation";
 import { UpdateClassModal } from "./updateClassModal";
-import { createPortal } from "react-dom"; // <-- Add this import
+import { createPortal } from "react-dom"; 
 
 type ClassCardVariant = "blue" | "yellow" | "cyan";
 
