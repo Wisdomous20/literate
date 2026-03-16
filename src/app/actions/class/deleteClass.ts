@@ -17,7 +17,7 @@ export async function deleteClass(classRoomId: string) {
   });
 
   if (result.success) {
-    revalidatePath("/classes");
+    revalidatePath("/dashboard/classes");
   }
 
   return result;

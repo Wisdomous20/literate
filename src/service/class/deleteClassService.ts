@@ -18,19 +18,11 @@ export async function deleteClassService(
   const { userId, classRoomId } = input;
 
   if (!userId) {
-    return {
-      success: false,
-      error: "User ID is required",
-      code: "VALIDATION_ERROR",
-    };
+    return { success: false, error: "User ID is required", code: "VALIDATION_ERROR" };
   }
 
   if (!classRoomId) {
-    return {
-      success: false,
-      error: "Class ID is required",
-      code: "VALIDATION_ERROR",
-    };
+    return { success: false, error: "Class ID is required", code: "VALIDATION_ERROR" };
   }
 
   try {
@@ -47,46 +39,15 @@ export async function deleteClassService(
       };
     }
 
-    // Delete in a transaction to handle FK constraints that lack onDelete: Cascade
-    // Chain: Class → Students → Assessments → OralReadingResult (no cascade)
-    const deleted = await prisma.$transaction(async (tx) => {
-      // Find all students in this class
-      const students = await tx.student.findMany({
-        where: { classRoomId },
-        select: { id: true },
-      });
-      const studentIds = students.map((s) => s.id);
-
-      if (studentIds.length > 0) {
-        // Find all assessments for these students
-        const assessments = await tx.assessment.findMany({
-          where: { studentId: { in: studentIds } },
-          select: { id: true },
-        });
-        const assessmentIds = assessments.map((a) => a.id);
-
-        if (assessmentIds.length > 0) {
-          // Delete OralReadingResults (missing cascade in schema)
-          await tx.oralReadingResult.deleteMany({
-            where: { assessmentId: { in: assessmentIds } },
-          });
-        }
-      }
-
-      // Now the class can be deleted — other relations have onDelete: Cascade
-      return tx.classRoom.delete({
-        where: { id: classRoomId },
-        select: { id: true },
-      });
+    const archived = await prisma.classRoom.update({
+      where: { id: classRoomId },
+      data: { archived: true },
+      select: { id: true },
     });
 
-    return { success: true, id: deleted.id };
+    return { success: true, id: archived.id };
   } catch (error) {
-    console.error("Failed to delete class:", error);
-    return {
-      success: false,
-      error: "Failed to delete class",
-      code: "INTERNAL_ERROR",
-    };
+    console.error("Failed to archive class:", error);
+    return { success: false, error: "Failed to archive class", code: "INTERNAL_ERROR" };
   }
 }
