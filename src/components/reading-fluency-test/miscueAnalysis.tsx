@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useRef, useEffect } from "react"
 import { Loader2, Download } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type { MiscueResult } from "@/types/oral-reading"
@@ -73,6 +73,7 @@ interface MiscueAnalysisProps {
   disabled?: boolean
   highlightedTypes?: Set<string>
   onToggleHighlight?: (miscueType: string) => void
+  onResetHighlight?: () => void
   onExportPdf?: () => void
 }
 
@@ -101,9 +102,22 @@ export function MiscueAnalysis({
   disabled = false,
   highlightedTypes = new Set(),
   onToggleHighlight,
+  onResetHighlight,
   onExportPdf,
 }: MiscueAnalysisProps) {
   const router = useRouter()
+  const cardRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (highlightedTypes.size === 0 || !onResetHighlight) return
+    const handleMouseDown = (e: MouseEvent) => {
+      if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
+        onResetHighlight()
+      }
+    }
+    document.addEventListener("mousedown", handleMouseDown)
+    return () => document.removeEventListener("mousedown", handleMouseDown)
+  }, [highlightedTypes.size, onResetHighlight])
 
   const miscueCounts = useMemo(() => {
     const counts: Record<string, number> = {}
@@ -132,6 +146,7 @@ export function MiscueAnalysis({
 
   return (
     <div
+      ref={cardRef}
       className={`flex h-full flex-col rounded-[10px] border border-[#54A4FF] bg-[#EFFDFF] px-5 py-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)] transition-opacity duration-300 ${
         disabled && !isAnalyzing
           ? "pointer-events-none opacity-60"
@@ -176,7 +191,7 @@ export function MiscueAnalysis({
                   <button
                     type="button"
                     className={`flex w-full items-center justify-between rounded-md px-1.5 py-1.5 transition-colors ${
-                      isActive ? item.activeClass : "bg-transparent"
+                      isActive ? item.activeClass : "bg-transparent hover:bg-[rgba(102,102,255,0.07)]"
                     }`}
                     onClick={() => onToggleHighlight?.(item.key)}
                   >
