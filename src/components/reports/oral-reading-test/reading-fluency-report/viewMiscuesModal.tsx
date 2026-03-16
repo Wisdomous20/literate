@@ -157,8 +157,15 @@ export default function ViewMiscuesModal({
 
   const miscueCounts = useMemo(() => {
     const counts: Record<string, number> = {};
+    // Merge INSERTION+OMISSION transposition pairs so they count as one
+    const transMiscues = miscues.filter((m) => m.miscueType === "TRANSPOSITION");
+    const transInsertionCount = transMiscues.filter((m) => !m.expectedWord && m.spokenWord).length;
     for (const m of miscues) {
       counts[m.miscueType] = (counts[m.miscueType] || 0) + 1;
+    }
+    // Subtract the INSERTION-side duplicates from the count
+    if (transInsertionCount > 0 && counts["TRANSPOSITION"]) {
+      counts["TRANSPOSITION"] = Math.max(0, counts["TRANSPOSITION"] - transInsertionCount);
     }
     return counts;
   }, [miscues]);
@@ -217,16 +224,104 @@ export default function ViewMiscuesModal({
 
   const miscueMap = useMemo(() => {
     if (!filteredMiscues || filteredMiscues.length === 0) return null;
+
+    // Merge INSERTION+OMISSION transposition pairs
+    const transMiscues = filteredMiscues.filter((m) => m.miscueType === "TRANSPOSITION");
+    const insertionSide = transMiscues.filter((m) => !m.expectedWord && m.spokenWord);
+    const omissionSide = transMiscues.filter((m) => m.expectedWord && !m.spokenWord);
+
+    const mergedInsertionIndices = new Set<number>();
+    const omissionSpokenFill = new Map<number, { spokenWord: string; timestamp: number | null }>();
+
+    for (const ins of insertionSide) {
+      const spokenNorm = normalizeWord(ins.spokenWord!);
+      const match = omissionSide.find(
+        (om) => normalizeWord(om.expectedWord) === spokenNorm && !omissionSpokenFill.has(om.wordIndex)
+      );
+      if (match) {
+        mergedInsertionIndices.add(ins.wordIndex);
+        omissionSpokenFill.set(match.wordIndex, {
+          spokenWord: ins.spokenWord!,
+          timestamp: ins.timestamp,
+        });
+      }
+    }
+
     const map = new Map<number, MiscueResult>();
     for (const m of filteredMiscues) {
       if (m.miscueType === "INSERTION") continue;
       if (m.miscueType === "REPETITION" && !m.expectedWord) continue;
-      if (!map.has(m.wordIndex)) {
-        map.set(m.wordIndex, m);
+      if (m.miscueType === "TRANSPOSITION" && mergedInsertionIndices.has(m.wordIndex)) continue;
+
+      let miscueToAdd = m;
+      if (m.miscueType === "TRANSPOSITION" && omissionSpokenFill.has(m.wordIndex)) {
+        const fill = omissionSpokenFill.get(m.wordIndex)!;
+        miscueToAdd = {
+          ...m,
+          spokenWord: fill.spokenWord,
+          timestamp: m.timestamp ?? fill.timestamp,
+        };
+      }
+
+      if (!map.has(miscueToAdd.wordIndex)) {
+        map.set(miscueToAdd.wordIndex, miscueToAdd);
       }
     }
+
+    // For TRANSPOSITION miscues, also highlight the swap-partner word.
+    if (alignedWords) {
+      for (const [, m] of map) {
+        if (m.miscueType !== "TRANSPOSITION") continue;
+        const idx = m.wordIndex;
+        const hasPartnerNext = map.get(idx + 1)?.miscueType === "TRANSPOSITION";
+        const hasPartnerPrev = map.get(idx - 1)?.miscueType === "TRANSPOSITION";
+        if (hasPartnerNext || hasPartnerPrev) continue;
+
+        let partnerOrder = [idx + 1, idx - 1];
+        if (omissionSpokenFill.has(idx)) {
+          const omissionAlignIdx = alignedWords.findIndex(
+            (aw) => aw.expectedIndex === idx && aw.match === "OMISSION"
+          );
+          if (omissionAlignIdx >= 0) {
+            const expectedNorm = normalizeWord(m.expectedWord);
+            let insertionAlignIdx = -1;
+            for (let k = Math.max(0, omissionAlignIdx - 6); k <= Math.min(alignedWords.length - 1, omissionAlignIdx + 6); k++) {
+              if (k === omissionAlignIdx) continue;
+              if (alignedWords[k].match === "INSERTION" && alignedWords[k].spoken && normalizeWord(alignedWords[k].spoken!) === expectedNorm) {
+                insertionAlignIdx = k;
+                break;
+              }
+            }
+            if (insertionAlignIdx >= 0) {
+              partnerOrder = insertionAlignIdx < omissionAlignIdx
+                ? [idx - 1, idx + 1]
+                : [idx + 1, idx - 1];
+            }
+          }
+        }
+
+        for (const partner of partnerOrder) {
+          if (partner < 0 || map.has(partner)) continue;
+          const partnerAligned = alignedWords.find(
+            (aw) => aw.expectedIndex === partner
+          );
+          if (partnerAligned?.match === "EXACT" && partnerAligned.expected) {
+            map.set(partner, {
+              miscueType: "TRANSPOSITION",
+              expectedWord: partnerAligned.expected,
+              spokenWord: partnerAligned.spoken,
+              wordIndex: partner,
+              timestamp: partnerAligned.timestamp,
+              isSelfCorrected: false,
+            });
+            break;
+          }
+        }
+      }
+    }
+
     return map;
-  }, [filteredMiscues]);
+  }, [filteredMiscues, alignedWords]);
 
   const hasMiscues =
     (miscueMap !== null && miscueMap.size > 0) ||

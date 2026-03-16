@@ -124,6 +124,13 @@ export function MiscueAnalysis({
     for (const m of miscues) {
       counts[m.miscueType] = (counts[m.miscueType] || 0) + 1
     }
+    // INSERTION+OMISSION transposition pairs produce two entries; deduplicate
+    const transInsertionCount = miscues.filter(
+      (m) => m.miscueType === "TRANSPOSITION" && !m.expectedWord && m.spokenWord
+    ).length
+    if (transInsertionCount > 0 && counts["TRANSPOSITION"]) {
+      counts["TRANSPOSITION"] = Math.max(0, counts["TRANSPOSITION"] - transInsertionCount)
+    }
     return counts
   }, [miscues])
 

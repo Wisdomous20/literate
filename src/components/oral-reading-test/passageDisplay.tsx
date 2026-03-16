@@ -354,13 +354,55 @@ export function PassageDisplay({
   // Build a map from wordIndex → miscue type for O(1) lookup
   const miscueMap = useMemo(() => {
     if (!miscues || miscues.length === 0) return null;
+
+    // For INSERTION+OMISSION transposition pairs from the backend, merge them:
+    // - The INSERTION side has: expectedWord="" , spokenWord="word", wordIndex=<alignment-idx> (wrong)
+    // - The OMISSION side has:  expectedWord="word", spokenWord=null,  wordIndex=<passage-idx> (correct)
+    // We merge by matching: INSERTION (no expectedWord, has spokenWord) ↔ OMISSION (has expectedWord, no spokenWord)
+    const transpositionMiscues = miscues.filter((m) => m.miscueType === "TRANSPOSITION");
+    const insertionSide = transpositionMiscues.filter((m) => !m.expectedWord && m.spokenWord);
+    const omissionSide = transpositionMiscues.filter((m) => m.expectedWord && !m.spokenWord);
+
+    // Build a set of INSERTION-side transpositions to skip (they'll be merged into their OMISSION partner)
+    const mergedInsertionIndices = new Set<number>();
+    // Map from OMISSION wordIndex → spokenWord from matching INSERTION partner
+    const omissionSpokenFill = new Map<number, { spokenWord: string; timestamp: number | null }>();
+
+    for (const ins of insertionSide) {
+      const spokenNorm = normalizeWord(ins.spokenWord!);
+      const match = omissionSide.find(
+        (om) => normalizeWord(om.expectedWord) === spokenNorm && !omissionSpokenFill.has(om.wordIndex)
+      );
+      if (match) {
+        mergedInsertionIndices.add(ins.wordIndex);
+        omissionSpokenFill.set(match.wordIndex, {
+          spokenWord: ins.spokenWord!,
+          timestamp: ins.timestamp,
+        });
+      }
+    }
+
     const map = new Map<number, MiscueResult>();
     for (const m of miscues) {
       // Skip insertion-type miscues — they are rendered as inline inserts
       if (m.miscueType === "INSERTION") continue;
       if (m.miscueType === "REPETITION" && !m.expectedWord) continue;
-      if (!map.has(m.wordIndex)) {
-        map.set(m.wordIndex, m);
+      // Skip the INSERTION-side transposition (merged into OMISSION partner)
+      if (m.miscueType === "TRANSPOSITION" && mergedInsertionIndices.has(m.wordIndex)) continue;
+
+      let miscueToAdd = m;
+      // For OMISSION-side transpositions, fill in the spokenWord from the INSERTION partner
+      if (m.miscueType === "TRANSPOSITION" && omissionSpokenFill.has(m.wordIndex)) {
+        const fill = omissionSpokenFill.get(m.wordIndex)!;
+        miscueToAdd = {
+          ...m,
+          spokenWord: fill.spokenWord,
+          timestamp: m.timestamp ?? fill.timestamp,
+        };
+      }
+
+      if (!map.has(miscueToAdd.wordIndex)) {
+        map.set(miscueToAdd.wordIndex, miscueToAdd);
       }
     if (m.miscueType === "TRANSPOSITION" && m.wordIndexB != null) {
       if (!map.has(m.wordIndexB)) {
@@ -373,14 +415,40 @@ export function PassageDisplay({
     // The alignment may classify one word as OMISSION→TRANSPOSITION while the
     // partner aligns as EXACT and stays un-highlighted.
     if (alignedWords) {
-      for (const m of miscues) {
+      for (const [, m] of map) {
         if (m.miscueType !== "TRANSPOSITION") continue;
         const idx = m.wordIndex;
         const hasPartnerNext = map.get(idx + 1)?.miscueType === "TRANSPOSITION";
         const hasPartnerPrev = map.get(idx - 1)?.miscueType === "TRANSPOSITION";
         if (hasPartnerNext || hasPartnerPrev) continue;
 
-        for (const partner of [idx + 1, idx - 1]) {
+        // For INSERTION+OMISSION transposition pairs, determine the correct
+        // partner direction by finding where the INSERTION sits relative to the
+        // OMISSION in the aligned words array.
+        let partnerOrder = [idx + 1, idx - 1];
+        if (omissionSpokenFill.has(idx)) {
+          const omissionAlignIdx = alignedWords.findIndex(
+            (aw) => aw.expectedIndex === idx && aw.match === "OMISSION"
+          );
+          if (omissionAlignIdx >= 0) {
+            const expectedNorm = normalizeWord(m.expectedWord);
+            let insertionAlignIdx = -1;
+            for (let k = Math.max(0, omissionAlignIdx - 6); k <= Math.min(alignedWords.length - 1, omissionAlignIdx + 6); k++) {
+              if (k === omissionAlignIdx) continue;
+              if (alignedWords[k].match === "INSERTION" && alignedWords[k].spoken && normalizeWord(alignedWords[k].spoken!) === expectedNorm) {
+                insertionAlignIdx = k;
+                break;
+              }
+            }
+            if (insertionAlignIdx >= 0) {
+              partnerOrder = insertionAlignIdx < omissionAlignIdx
+                ? [idx - 1, idx + 1]
+                : [idx + 1, idx - 1];
+            }
+          }
+        }
+
+        for (const partner of partnerOrder) {
           if (partner < 0 || map.has(partner)) continue;
           const partnerAligned = alignedWords.find(
             (aw) => aw.expectedIndex === partner
