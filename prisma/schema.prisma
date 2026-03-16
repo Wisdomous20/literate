@@ -52,7 +52,7 @@ model Account {
 }
 
 model ClassRoom {
-  id         String    @id @default(uuid())
+  id         String    @id @default(cuid())
   name       String
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId     String
@@ -63,7 +63,7 @@ model ClassRoom {
 }
 
 model Student {
-  id          String       @id @default(uuid())
+  id          String       @id @default(cuid())
   name        String
   level       Int
   classRoom   ClassRoom    @relation(fields: [classRoomId], references: [id], onDelete: Cascade)
@@ -73,7 +73,7 @@ model Student {
 }
 
 model Assessment {
-  id        String         @id @default(uuid())
+  id        String         @id @default(cuid())
   studentId String
   student   Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
   passageId String
@@ -87,7 +87,7 @@ model Assessment {
 }
 
 model OralReadingResult {
-  id                  String              @id @default(uuid())
+  id                  String              @id @default(cuid())
   assessmentId        String              @unique
   assessment          Assessment          @relation(fields: [assessmentId], references: [id])
   fluencyLevel        LevelClassification
@@ -172,7 +172,7 @@ model Session {
 }
 
 model Passage {
-  id          String       @id @default(uuid())
+  id          String       @id @default(cuid())
   title       String
   content     String
   language    String
@@ -185,7 +185,7 @@ model Passage {
 }
 
 model ComprehensionTest {
-  id                  String                @id @default(uuid())
+  id                  String                @id @default(cuid())
   assessmentId        String                @unique
   assessment          Assessment            @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
   score               Int
@@ -195,7 +195,7 @@ model ComprehensionTest {
 }
 
 model ComprehensionAnswer {
-  id                  String            @id @default(uuid())
+  id                  String            @id @default(cuid())
   comprehensionTestId String
   comprehensionTest   ComprehensionTest @relation(fields: [comprehensionTestId], references: [id], onDelete: Cascade)
   question            String
@@ -206,7 +206,7 @@ model ComprehensionAnswer {
 }
 
 model Quiz {
-  id          String     @id @default(uuid())
+  id          String     @id @default(cuid())
   passageId   String     @unique
   passage     Passage    @relation(fields: [passageId], references: [id], onDelete: Cascade)
   questions   Question[]
