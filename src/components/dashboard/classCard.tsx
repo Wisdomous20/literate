@@ -201,9 +201,8 @@ export function ClassCard({
                 <p className="text-sm text-gray-600">
                   Are you sure you want to delete{" "}
                   <strong className="text-gray-900 block truncate max-w-full">
-                    {name}
+                    {name}?
                   </strong>{" "}
-                  be undone.
                 </p>
               </div>
               <div className="flex justify-end gap-2 border-t border-gray-100 px-5 py-3">
