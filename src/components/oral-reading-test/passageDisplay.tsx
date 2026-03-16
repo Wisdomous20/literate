@@ -362,6 +362,11 @@ export function PassageDisplay({
       if (!map.has(m.wordIndex)) {
         map.set(m.wordIndex, m);
       }
+    if (m.miscueType === "TRANSPOSITION" && m.wordIndexB != null) {
+      if (!map.has(m.wordIndexB)) {
+        map.set(m.wordIndexB, m); // same miscue record, second index
+      }
+    }
     }
 
     // For TRANSPOSITION miscues, also highlight the adjacent swap-partner word.
