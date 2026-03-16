@@ -4,7 +4,7 @@ import classifyComprehensionLevel from "./classifyComprehensionLevel";
 import { Tags } from "@/generated/prisma/enums";
 
 interface SubmitAnswer {
-  question: string;
+  questionId: string;
   answer: string;
 }
 
@@ -35,7 +35,7 @@ export async function submitComprehensionService(
                     type: true,
                     questionText: true,
                     correctAnswer: true,
-                    tags: true, // needed to denormalize onto the answer
+                    tags: true,
                   },
                 },
               },
@@ -45,29 +45,43 @@ export async function submitComprehensionService(
       },
     });
 
-    if (!assessment?.passage?.quiz) {
-      return { success: false, error: "Assessment, passage, or quiz not found." };
+    if (!assessment?.passage) {
+      return { success: false, error: "Assessment or passage not found." };
     }
 
     const { passage } = assessment;
-    const { quiz } = passage;
+    const quiz = passage.quiz;
 
-
-      if (!quiz) {
-        return { success: false, error: "No quiz found for this passage." };
-      }
+    if (!quiz) {
+      return { success: false, error: "No quiz found for this passage." };
+    }
 
     const questionMap = new Map(quiz.questions.map((q) => [q.id, q]));
-
     const passageExcerpt = passage.content.slice(0, 1000);
 
-    const mcResults: { question: string; answer: string; isCorrect: boolean; tag: string }[] = [];
-    const essayPromises: Promise<{ question: string; answer: string; isCorrect: boolean; tag: string }>[] = [];
+    const mcResults: {
+      questionText: string;
+      answer: string;
+      isCorrect: boolean;
+      tag: Tags;
+    }[] = [];
+
+    const essayPromises: Promise<{
+      questionText: string;
+      answer: string;
+      isCorrect: boolean;
+      tag: Tags;
+    }>[] = [];
 
     for (const a of answers) {
-      const question = questionMap.get(a.question);
+      const question = questionMap.get(a.questionId);
       if (!question) {
-        mcResults.push({ ...a, isCorrect: false, tag: "Literal" });
+        mcResults.push({
+          questionText: a.questionId,
+          answer: a.answer,
+          isCorrect: false,
+          tag: Tags.Literal,
+        });
         continue;
       }
 
@@ -75,7 +89,12 @@ export async function submitComprehensionService(
         const isCorrect =
           question.correctAnswer?.trim().toLowerCase() ===
           a.answer.trim().toLowerCase();
-        mcResults.push({ ...a, isCorrect, tag: question.tags });
+        mcResults.push({
+          questionText: question.questionText,
+          answer: a.answer,
+          isCorrect,
+          tag: question.tags,
+        });
       } else {
         essayPromises.push(
           gradeEssayAnswer({
@@ -84,9 +103,10 @@ export async function submitComprehensionService(
             passageContent: passageExcerpt,
             studentAnswer: a.answer,
           }).then((result) => ({
-            ...a,
+            questionText: question.questionText,
+            answer: a.answer,
             isCorrect: result.isCorrect,
-            tag: question.tags, // copy tag at write time
+            tag: question.tags,
           }))
         );
       }
@@ -108,8 +128,8 @@ export async function submitComprehensionService(
         classificationLevel: level,
         answers: {
           create: gradedAnswers.map((a) => ({
-            question: a.question, 
-            tag: a.tag as Tags,           
+            question: a.questionText,  // stored as plain string per schema
+            tag: a.tag,
             answer: a.answer,
             isCorrect: a.isCorrect,
           })),
@@ -119,18 +139,21 @@ export async function submitComprehensionService(
     });
 
     return {
-      success: true,
-      assessmentId,
-      comprehensionTestId: comprehensionTest.id,
-      score,
-      totalItems,
-      percentage: Math.round(percentage),
-      level,
-      answers: gradedAnswers.map((a) => ({
-        tag: a.tag,      
-        isCorrect: a.isCorrect,
-      })),
+  success: true,
+  assessmentId,
+  comprehensionTestId: comprehensionTest.id,
+  score,
+  totalItems,
+  percentage: Math.round(percentage),
+  level,
+  answers: quiz.questions.map((q) => {
+    const graded = gradedAnswers.find((a) => a.questionText === q.questionText);
+    return {
+      tag: q.tags,
+      isCorrect: graded?.isCorrect ?? false,
     };
+  }),
+};
   } catch (error) {
     console.error("Error submitting comprehension test:", error);
     return { success: false, error: "Failed to submit comprehension test." };

@@ -528,7 +528,6 @@ export default function ReadingComprehensionTestPage() {
         body: JSON.stringify({
           studentId,
           passageId: selectedPassage,
-          quizId,
           answers: formattedAnswers,
         }),
       });

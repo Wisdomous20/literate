@@ -305,7 +305,7 @@ export default function ReadingComprehensionQuestionsPage() {
         body: JSON.stringify({
           studentId,
           passageId,
-          quizId,
+          questions,
           answers: formattedAnswers,
         }),
       });
