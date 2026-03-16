@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 
 interface DeleteClassInput {
   userId: string;
-  classId: string;
+  classRoomId: string;
 }
 
 interface DeleteClassResult {
@@ -15,7 +15,7 @@ interface DeleteClassResult {
 export async function deleteClassService(
   input: DeleteClassInput,
 ): Promise<DeleteClassResult> {
-  const { userId, classId } = input;
+  const { userId, classRoomId } = input;
 
   if (!userId) {
     return {
@@ -25,7 +25,7 @@ export async function deleteClassService(
     };
   }
 
-  if (!classId) {
+  if (!classRoomId) {
     return {
       success: false,
       error: "Class ID is required",
@@ -34,8 +34,8 @@ export async function deleteClassService(
   }
 
   try {
-    const existing = await prisma.class.findFirst({
-      where: { id: classId, userId },
+    const existing = await prisma.classRoom.findFirst({
+      where: { id: classRoomId, userId },
       select: { id: true },
     });
 
@@ -52,7 +52,7 @@ export async function deleteClassService(
     const deleted = await prisma.$transaction(async (tx) => {
       // Find all students in this class
       const students = await tx.student.findMany({
-        where: { classId },
+        where: { classRoomId },
         select: { id: true },
       });
       const studentIds = students.map((s) => s.id);
@@ -74,8 +74,8 @@ export async function deleteClassService(
       }
 
       // Now the class can be deleted — other relations have onDelete: Cascade
-      return tx.class.delete({
-        where: { id: classId },
+      return tx.classRoom.delete({
+        where: { id: classRoomId },
         select: { id: true },
       });
     });

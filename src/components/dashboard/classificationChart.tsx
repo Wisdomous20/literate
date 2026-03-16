@@ -50,7 +50,6 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
   const selectedTypeLabel =
     assessmentTypes.find((t) => t.value === selectedType)?.label || "";
 
-  // Use mock data based on selected assessment type
   const data = mockDataMap[selectedType];
 
   return (

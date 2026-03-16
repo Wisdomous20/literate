@@ -13,13 +13,11 @@ export function detectMiscues(
   const miscues: MiscueResult[] = [];
   const repetitionIndices = detectRepetitions(alignedWords);
   const selfCorrectedIndices = detectSelfCorrections(alignedWords, repetitionIndices);
-  const transposedIndices = detectTranspositions(alignedWords);
+  const handledTranspositions = new Set<number>();
+  const { indices: transposedIndices, pairs: transpositionPairs } = detectTranspositions(alignedWords);
 
-  // const { data1, data2, data3 } = await Promise.all([
-  //   function1(),
-  //   function2(),
-  //   function3()
-  // ]);
+
+
 
   // Build a set of insertion indices that should be suppressed because they
   // are part of a repeated phrase (adjacent to or between repetition words)
@@ -132,16 +130,30 @@ export function detectMiscues(
     }
 
     if (transposedIndices.has(i)) {
-      miscues.push({
-        miscueType: "TRANSPOSITION",
-        expectedWord: aligned.expected ?? "",
-        spokenWord: aligned.spoken,
-        wordIndex: aligned.expectedIndex ?? i,
-        timestamp: aligned.timestamp,
-        isSelfCorrected: false,
-      });
-      continue;
-    }
+  if (handledTranspositions.has(i)) continue;
+
+  const partnerIndex = transpositionPairs.get(i) ?? null; // ✅ exact partner lookup
+
+  const partner = partnerIndex != null ? alignedWords[partnerIndex] : null;
+
+  const expectedWord = aligned.expected ?? partner?.expected ?? "";
+  const spokenWord = aligned.spoken ?? partner?.spoken ?? null;
+  const wordIndex = aligned.expectedIndex ?? partner?.expectedIndex ?? i;
+  const timestamp = aligned.timestamp ?? partner?.timestamp ?? null;
+
+  miscues.push({
+    miscueType: "TRANSPOSITION",
+    expectedWord,
+    spokenWord,
+    wordIndex,
+    timestamp,
+    isSelfCorrected: false,
+  });
+
+  handledTranspositions.add(i);
+  if (partnerIndex != null) handledTranspositions.add(partnerIndex);
+  continue;
+}
 
     if (aligned.match === "EXACT") continue;
 

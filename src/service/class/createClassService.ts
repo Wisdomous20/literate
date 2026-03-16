@@ -43,7 +43,7 @@ export async function createClassService(
   // Determine the school year based on the current date
   const schoolYear = getSchoolYear();
   try {
-    const newClass = await prisma.class.create({
+    const newClass = await prisma.classRoom.create({
       data: {
         name: name.trim(),
         userId: userId,

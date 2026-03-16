@@ -10,16 +10,7 @@ export async function getComprehensionTestByIdService(id: string) {
           passage: true,
         },
       },
-      quiz: {
-        include: {
-          questions: true,
-        },
-      },
-      answers: {
-        include: {
-          question: true,
-        },
-      },
+      answers: true,
     },
   });
 

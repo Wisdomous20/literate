@@ -15,7 +15,7 @@ export default function AssessmentSummaryPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const classId = params.id as string;
+  const classRoomId = params.id as string;
   const studentId = params.studentId as string;
   const assessmentId = searchParams.get("id");
 
@@ -76,7 +76,6 @@ export default function AssessmentSummaryPage() {
       });
     }
 
-    // Final overall classification
     let level = "";
     if (found.oralReadingResult) {
       level = found.oralReadingResult.classificationLevel || "";
@@ -92,17 +91,16 @@ export default function AssessmentSummaryPage() {
 
   const handleViewReport = (cardId: string) => {
     if (!assessmentId) return;
-    // Don't navigate if sub-test wasn't taken
     if (cardId === "reading-fluency-report" && !found?.oralFluency) return;
     if (cardId === "comprehension-report" && !found?.comprehension) return;
 
     if (cardId === "reading-fluency-report") {
       router.push(
-        `/dashboard/class/${classId}/report/${studentId}/reading-fluency-report?id=${assessmentId}`,
+        `/dashboard/class/${classRoomId}/report/${studentId}/reading-fluency-report?id=${assessmentId}`,
       );
     } else if (cardId === "comprehension-report") {
       router.push(
-        `/dashboard/class/${classId}/report/${studentId}/comprehension-report?id=${assessmentId}`,
+        `/dashboard/class/${classRoomId}/report/${studentId}/comprehension-report?id=${assessmentId}`,
       );
     }
   };

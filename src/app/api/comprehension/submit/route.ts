@@ -7,16 +7,15 @@ export const maxDuration = 60;
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { studentId, passageId, quizId, answers } = body;
+    const { studentId, passageId, answers } = body;
 
-    if (!studentId || !passageId || !quizId || !Array.isArray(answers)) {
+    if (!studentId || !passageId || !Array.isArray(answers)) {
       return NextResponse.json(
-        { error: "Missing required fields: studentId, passageId, quizId, answers" },
+        { error: "Missing required fields: studentId, passageId, answers" },
         { status: 400 }
       );
     }
 
-    // 1. Create assessment
     const assessmentResult = await createAssessmentService({
       studentId,
       passageId,
@@ -30,7 +29,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Submit comprehension test (now internally optimized)
     const result = await submitComprehensionService({
       assessmentId: assessmentResult.assessment.id,
       answers,

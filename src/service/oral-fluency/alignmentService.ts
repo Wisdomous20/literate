@@ -14,11 +14,9 @@ export function alignWords(
   const n = passageWords.length
   const m = spokenWords.length
 
-  // Pre-compute normalized words to avoid redundant work in the DP loop
   const normExpected = passageWords.map(normalizeWord)
   const normSpoken = spokenWords.map((w) => normalizeWord(w.word))
 
-  // Pre-compute similarity matrix (only compute once per pair)
   const simMatrix: number[][] = Array.from({ length: n }, () => Array(m).fill(0))
   for (let i = 0; i < n; i++) {
     for (let j = 0; j < m; j++) {
@@ -32,15 +30,25 @@ export function alignWords(
 
   function matchScore(i: number, j: number): number {
     const sim = simMatrix[i][j]
-    // Exact match on short function words gets extra bonus to prevent misalignment
+
+    // Exact match bonus for short function words
     if (sim === 1.0 && normExpected[i].length <= 3) return MATCH_SCORE + 1
-    return sim > 0.8 ? MATCH_SCORE : sim > 0.4 ? MISMATCH_PENALTY / 2 : MISMATCH_PENALTY
+
+    // High similarity → clean match
+    if (sim > 0.8) return MATCH_SCORE
+
+    // Medium-high similarity (0.6–0.8) → slight positive score to keep
+    // morphological variants together e.g. "funs"→"fun", "flower"→"flowers"
+    if (sim > 0.6) return 0.5
+
+    // Medium similarity → small penalty
+    if (sim > 0.4) return MISMATCH_PENALTY / 2
+
+    // Low similarity → full penalty, prefer gap
+    return MISMATCH_PENALTY
   }
 
-  // Use two-row DP + traceback matrix to reduce memory from O(n*m) numbers to O(n*m) bytes
   const trace: Uint8Array[] = Array.from({ length: n + 1 }, () => new Uint8Array(m + 1))
-  // 0 = diagonal, 1 = up (gap in spoken), 2 = left (gap in expected)
-
   const dp: number[][] = Array.from({ length: n + 1 }, () => Array(m + 1).fill(0))
 
   for (let i = 0; i <= n; i++) { dp[i][0] = i * GAP_PENALTY; trace[i][0] = 1; }
@@ -66,7 +74,6 @@ export function alignWords(
     }
   }
 
-  // Traceback using pre-computed trace matrix (no re-computation)
   const aligned: AlignedWord[] = []
   let i = n
   let j = m
@@ -114,6 +121,7 @@ export function alignWords(
 
   return aligned
 }
+
 export function tokenizeForComparison(
   word: string,
   language: string

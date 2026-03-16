@@ -24,7 +24,7 @@ export async function analyzeOralFluency(
   passageText: string,
   language: string
 ): Promise<OralFluencyAnalysis> {
-  // 1. Transcribe with Whisper (language-aware)
+  // 1. Transcribe with googlestt (language-aware)
   const sttResult = await transcribeAudio(audioBuffer, fileName, language, passageText);
 
   // 2. Tokenize passage

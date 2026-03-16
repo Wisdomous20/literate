@@ -6,7 +6,7 @@ import { updateClassService } from "@/service/class/updateClassService";
 import { revalidatePath } from "next/cache";
 
 export async function updateClass(
-  classId: string,
+  classRoomId: string,
   name?: string,
   archived?: boolean
 ) {
@@ -17,7 +17,7 @@ export async function updateClass(
 
   const result = await updateClassService({
     userId: session.user.id,
-    classId,
+    classRoomId,
     name,
     archived,
   });

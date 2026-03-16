@@ -85,7 +85,7 @@ export async function getAllClassServiceBySchoolYear(
   }
 
   try {
-    const classes = await prisma.class.findMany({
+    const classes = await prisma.classRoom.findMany({
       where: { 
         userId, 
         schoolYear, 
@@ -102,7 +102,7 @@ export async function getAllClassServiceBySchoolYear(
           select: {
             students: {
               where: {
-                deletedAt: null
+                archived: false
               }
             }
           }

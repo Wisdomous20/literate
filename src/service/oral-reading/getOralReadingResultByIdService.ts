@@ -31,8 +31,7 @@ export async function getOralReadingResultByIdService(
             },
             comprehension: {
               include: {
-                quiz: true,
-                answers: { include: { question: true } },
+                answers: true,
               },
             },
           },

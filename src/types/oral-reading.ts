@@ -32,6 +32,7 @@ export interface MiscueResult {
   expectedWord: string;
   spokenWord: string | null;
   wordIndex: number;
+  wordIndexB?: number | null; 
   timestamp: number | null;
   isSelfCorrected: boolean;
 }

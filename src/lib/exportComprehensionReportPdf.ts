@@ -11,10 +11,6 @@ import {
   drawClipboardCheckIcon,
 } from "./pdfHelpers";
 
-/* ------------------------------------------------------------------ */
-/*  Public data interface                                              */
-/* ------------------------------------------------------------------ */
-
 export interface ComprehensionReportData {
   studentName: string;
   gradeLevel: string;
@@ -33,9 +29,7 @@ export interface ComprehensionReportData {
   critical: { correct: number; total: number };
 }
 
-/* ------------------------------------------------------------------ */
-/*  Colour palette                                                     */
-/* ------------------------------------------------------------------ */
+// Color Palette
 
 const C = {
   ...PDF_COLORS,
@@ -56,9 +50,6 @@ const BREAKDOWN_CFG: {
   { key: "critical", label: "Critical", color: [196, 16, 72], bg: [254, 225, 237] },
 ];
 
-/* ------------------------------------------------------------------ */
-/*  Main export function                                               */
-/* ------------------------------------------------------------------ */
 
 export function exportComprehensionReportPdf(
   data: ComprehensionReportData,

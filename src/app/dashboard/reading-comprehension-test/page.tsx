@@ -146,6 +146,7 @@ export default function ReadingComprehensionTestPage() {
   const [selectedTitle, setSelectedTitle] = useState<string | undefined>();
   const [selectedPassage, setSelectedPassage] = useState<string | undefined>();
   const [passageExpanded, setPassageExpanded] = useState(false);
+  const [showPassage, setShowPassage] = useState(true);
 
   // ── Comprehension quiz state ──
   const [showQuestions, setShowQuestions] = useState(false);
@@ -175,6 +176,8 @@ export default function ReadingComprehensionTestPage() {
   } | null>(null);
 
   const questionsRef = useRef<HTMLDivElement>(null);
+  const passageRef = useRef<HTMLDivElement>(null);
+  const [passageInitialHeight, setPassageInitialHeight] = useState<number | null>(null);
 
   // ── Session restore ──
   useEffect(() => {
@@ -321,7 +324,7 @@ export default function ReadingComprehensionTestPage() {
   }, [showQuestions, selectedPassage, questions.length]);
 
   // ── Timer ──
-  const timerActive = showQuestions && !isSubmitted && !isPaused && !isLoadingQuestions && questions.length > 0;
+  const timerActive = showQuestions && !isSubmitted && !isSubmitting && !isPaused && !isLoadingQuestions && questions.length > 0;
   useEffect(() => {
     if (!timerActive) return;
     const interval = setInterval(() => {
@@ -384,6 +387,7 @@ export default function ReadingComprehensionTestPage() {
       setComprehensionResult(null);
       setQuestionsLoadError(null);
       sessionStorage.removeItem(COMP_STATE_KEY);
+      setShowPassage(true);
     },
     [],
   );
@@ -412,11 +416,16 @@ export default function ReadingComprehensionTestPage() {
     sessionStorage.removeItem(COMP_STATE_KEY);
     sessionStorage.removeItem("reading-comprehension-assessmentId");
     sessionStorage.removeItem("reading-comprehension-state");
+    setShowPassage(true);
   }, []);
 
   const handleContinueToComprehension = useCallback(() => {
     if (!hasPassage || !studentName.trim() || !gradeLevel || !selectedClassName) return;
+    if (passageRef.current) {
+      setPassageInitialHeight(passageRef.current.getBoundingClientRect().height);
+    }
     setShowQuestions(true);
+    setShowPassage(false);
     setTimeout(() => {
       questionsRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 100);
@@ -436,6 +445,19 @@ export default function ReadingComprehensionTestPage() {
   const handleTagClick = (tag: "literal" | "inferential" | "critical") => {
     setHighlightedTag((prev) => (prev === tag ? null : tag));
   };
+
+  const handleTryAgain = useCallback(() => {
+    setAnswers({});
+    setElapsedSeconds(0);
+    setIsSubmitted(false);
+    setIsSubmitting(false);
+    setSubmitError(null);
+    setComprehensionResult(null);
+    setHighlightedTag(null);
+    setShowPassage(true);
+    sessionStorage.removeItem(COMP_STATE_KEY);
+    sessionStorage.removeItem("reading-comprehension-assessmentId");
+  }, []);
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -506,7 +528,6 @@ export default function ReadingComprehensionTestPage() {
         body: JSON.stringify({
           studentId,
           passageId: selectedPassage,
-          quizId,
           answers: formattedAnswers,
         }),
       });
@@ -530,7 +551,7 @@ export default function ReadingComprehensionTestPage() {
           critical: { correct: 0, total: 0 },
         };
         for (const a of result.answers) {
-          const tag = a.question?.tags;
+          const tag = a.tag;
           if (tag === "Literal") {
             tagBreakdown.literal.total++;
             if (a.isCorrect) tagBreakdown.literal.correct++;
@@ -679,6 +700,23 @@ export default function ReadingComprehensionTestPage() {
               />
             )}
 
+            {showQuestions && (
+            <PassageDisplay
+              content={passageContent}
+              expanded={passageExpanded}
+              onToggleExpand={() => setPassageExpanded((prev) => !prev)}
+              passageLevel={selectedLevel}
+              resizable={true}
+              collapsible={true}
+              collapsed={!showPassage}
+              onToggleCollapsed={() => setShowPassage((p) => !p)}
+              passageTitle={selectedTitle}
+              initialHeight={passageInitialHeight ?? undefined}
+            />
+            )}
+
+            {!showQuestions && (
+            <div ref={passageRef} className="flex min-h-0 flex-1 flex-col">
             <PassageDisplay
               content={passageContent}
               expanded={passageExpanded}
@@ -686,8 +724,10 @@ export default function ReadingComprehensionTestPage() {
               passageLevel={selectedLevel}
               resizable={true}
             />
+            </div>
+            )}
 
-            {!passageExpanded && hasPassage && (
+            {(!showQuestions || showPassage) && !passageExpanded && hasPassage && (
               <div className="mt-2 flex items-center justify-between">
                 <span className="text-xs font-semibold text-[#00306E]">
                   {wordCount} words
@@ -704,7 +744,7 @@ export default function ReadingComprehensionTestPage() {
               </div>
             )}
 
-            {!passageExpanded && hasPassage && (
+            {(!showQuestions || showPassage) && !passageExpanded && hasPassage && (
               <div className="mb-4 flex items-center justify-center">
                 <span className="text-lg font-bold text-[#31318A] md:text-xl">
                   {selectedTitle}
@@ -790,6 +830,7 @@ export default function ReadingComprehensionTestPage() {
                       isSubmitted={isSubmitted}
                       submitError={submitError}
                       onSubmit={handleSubmit}
+                      onTryAgain={handleTryAgain}
                     />
                   </>
                 )}

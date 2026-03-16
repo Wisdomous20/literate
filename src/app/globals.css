@@ -159,3 +159,38 @@ input::-ms-clear {
 .oral-reading-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(102, 102, 255, 0.5);
 }
+
+.swiper-button-next {
+  display: none !important;
+}
+.swiper-button-prev {
+  @apply flex items-center justify-center bg-white rounded-full shadow-lg border border-[#6666FF] text-[#6666FF] w-10 h-10 z-10;
+  left: -2.5rem !important; /* Move arrow outside the carousel if needed */
+  font-size: 1.5rem;
+}
+.swiper-button-prev::after {
+  font-size: 1.5rem;
+}
+.swiper-scrollbar-purple {
+  overflow-x: auto;
+}
+
+.swiper-scrollbar-purple::-webkit-scrollbar {
+  height: 8px;
+  background: #F0F2FF;
+}
+
+.swiper-scrollbar-purple::-webkit-scrollbar-thumb {
+  background: #7A7AFB;
+  border-radius: 4px;
+}
+
+.swiper-scrollbar {
+  background: #F0F2FF;
+  height: 8px;
+  border-radius: 4px;
+}
+.swiper-scrollbar-drag {
+  background: #7A7AFB;
+  border-radius: 4px;
+}

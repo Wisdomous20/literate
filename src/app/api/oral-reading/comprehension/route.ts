@@ -22,7 +22,17 @@ export async function POST(request: NextRequest) {
     if (!assessmentId || !Array.isArray(answers) || answers.length === 0) {
       return NextResponse.json(
         { error: "Missing required fields: assessmentId, answers" },
-        { status: 400 }
+        { status: 400 },
+      );
+    }
+
+    const isValidAnswers = answers.every(
+      (a) => typeof a.questionId === "string" && typeof a.answer === "string",
+    );
+    if (!isValidAnswers) {
+      return NextResponse.json(
+        { error: "Each answer must have questionId and answer fields" },
+        { status: 400 },
       );
     }
 
@@ -35,27 +45,32 @@ export async function POST(request: NextRequest) {
 
     // Now compute the oral reading level (needs both fluency & comprehension in DB)
     const oralReadingResult = await createOralReadingService(
-      assessmentId, result.level
+      assessmentId,
+      result.level,
     );
 
     if (!oralReadingResult.success) {
-      return NextResponse.json({ error: oralReadingResult.error }, { status: 500 });
+      return NextResponse.json(
+        { error: oralReadingResult.error },
+        { status: 500 },
+      );
     }
 
-    return NextResponse.json({
-      success: true,
-      assessmentId,
-      comprehensionTestId: result.comprehensionTestId,
-      score: result.score,
-      totalItems: result.totalItems,
-      level: result.level,
-      oralReadingResult: oralReadingResult ?? null,
-    });
+return NextResponse.json({
+  success: true,
+  assessmentId,
+  comprehensionTestId: result.comprehensionTestId,
+  score: result.score,
+  totalItems: result.totalItems,
+  level: result.level,
+  answers: result.answers, 
+  oralReadingResult: oralReadingResult ?? null,
+});
   } catch (error) {
     console.error("Comprehension submit & oralReading submit error:", error);
     return NextResponse.json(
       { error: "Failed to process comprehension submission" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

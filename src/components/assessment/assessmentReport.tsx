@@ -1,7 +1,8 @@
+
 "use client";
 
 import React, { useState } from "react";
-import { ChevronLeft, User } from "lucide-react";
+import { ChevronLeft, ChevronRight, User } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 
 type Assessment = {
@@ -12,6 +13,7 @@ type Assessment = {
   schoolYear: string;
   id: string;
   type: string;
+  studentClass?: string;
 };
 
 type TestTypeFilter = "All" | "Pre-Test" | "Post-Test";
@@ -19,6 +21,7 @@ type TestTypeFilter = "All" | "Pre-Test" | "Post-Test";
 interface AssessmentReportProps {
   studentName: string;
   studentGrade: string;
+  studentClass?: string;
   assessmentTypeLabel: string;
   assessments: Assessment[];
   loading: boolean;
@@ -31,6 +34,7 @@ const RECORDS_PER_PAGE = 8;
 export function AssessmentReport({
   studentName,
   studentGrade,
+  studentClass,
   assessmentTypeLabel,
   assessments,
   loading,
@@ -57,6 +61,18 @@ export function AssessmentReport({
 
   const testTypeOptions: TestTypeFilter[] = ["All", "Pre-Test", "Post-Test"];
 
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <DashboardHeader title="Assessment Report" />
@@ -79,9 +95,16 @@ export function AssessmentReport({
               <h2 className="text-base font-bold text-[#00306E]">
                 {studentName}
               </h2>
-              <span className="text-xs font-medium text-[#162DB0]">
-                {studentGrade}
-              </span>
+              <div className="flex gap-2">
+                <span className="text-xs font-medium text-[#162DB0]">
+                  {studentGrade}
+                </span>
+                {studentClass && (
+                  <span className="text-xs font-medium text-[#162DB0]">
+                    • {studentClass}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="ml-2 hidden sm:block">
               <span className="rounded-full border border-[#6666FF]/25 bg-[#EEF0FF] px-3 py-1 text-xs font-semibold text-[#6666FF]">
@@ -112,7 +135,7 @@ export function AssessmentReport({
           </div>
         </div>
 
-        <div className="overflow-hidden min-h-125 rounded-2xl border border-[#6666FF]/10 bg-white shadow-sm">
+<div className="overflow-hidden min-h-125 rounded-2xl border border-[#6666FF]/10 bg-white shadow-xl">
           <div className="grid grid-cols-4 border-b border-[#6666FF]/15 bg-linear-to-r from-[#8585faed] to-[#b8c2f7] px-5 py-3">
             <span className="text-center text-xs font-bold text-white">
               Attempt
@@ -140,9 +163,11 @@ export function AssessmentReport({
               paginatedAssessments.map((record, index) => (
                 <div
                   key={`${record.id}-${index}`}
-                  className={`grid grid-cols-4 items-center px-5 py-3 ${
-                    index % 2 === 0 ? "bg-white" : "bg-[#F8F9FF]"
-                  } cursor-pointer transition-colors hover:bg-[#E4F4FF] hover:shadow-md hover:border hover:border-[#6666FF]/30`}
+                  className={`grid grid-cols-4 items-center px-5 py-3 cursor-pointer transition-all ${
+                    index % 2 === 0
+                      ? "bg-white hover:bg-[#F5F5FF]"
+                      : "bg-[#E8ECFF]/40 hover:bg-[#E8ECFF]/80"
+                  }`}
                   onClick={() => onRowClick(record)}
                   tabIndex={0}
                   role="button"
@@ -150,73 +175,54 @@ export function AssessmentReport({
                     if (e.key === "Enter" || e.key === " ") onRowClick(record);
                   }}
                 >
-                  <span className="flex justify-center text-xs font-medium text-[#00306E]">
-                    #{record.attempt}
+                  <span className="text-center text-sm font-semibold text-[#00306E]">
+                    {record.attempt}
                   </span>
-                  <span className="text-center text-xs text-[#00306E]/80">
+                  <span className="text-center text-sm text-[#5d5db6]">
                     {record.assessmentType}
                   </span>
-                  <span className="text-center text-xs text-[#00306E]/70">
+                  <span className="text-center text-sm text-[#5d5db6]">
                     {record.testType}
                   </span>
-                  <span className="text-center text-xs text-[#00306E]/60">
+                  <span className="text-center text-sm text-[#5d5db6]">
                     {record.assessmentDate}
                   </span>
                 </div>
               ))
             )}
           </div>
-        </div>
 
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-[#00306E]/60">
-              Page {currentPage} of {totalPages}
-            </span>
-            <div className="flex items-center gap-1">
+          {/* Pagination controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-[#6666FF]/10 bg-[#F8F9FF]/40 px-5 py-4">
               <button
-                type="button"
+                onClick={handlePrevPage}
                 disabled={currentPage === 1}
-                onClick={() => setCurrentPage(1)}
-                className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#162DB0]/20 text-xs text-[#162DB0] hover:bg-[#E4F4FF] disabled:opacity-30"
-                aria-label="First page"
-                title="First page"
-              >
-                «
-              </button>
-              <button
+                className="flex items-center gap-1 rounded-lg border border-[#6666FF]/25 bg-white px-3 py-2 text-xs font-semibold text-[#6666FF] transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-[#F8F9FF]"
                 type="button"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((p) => p - 1)}
-                className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#162DB0]/20 text-xs text-[#162DB0] hover:bg-[#E4F4FF] disabled:opacity-30"
                 aria-label="Previous page"
-                title="Previous page"
               >
-                ‹
+                <ChevronLeft className="h-4 w-4" />
+                Previous
               </button>
+
+              <span className="text-xs font-medium text-[#00306E]">
+                Page {currentPage} of {totalPages}
+              </span>
+
               <button
-                type="button"
+                onClick={handleNextPage}
                 disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((p) => p + 1)}
-                className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#162DB0]/20 text-xs text-[#162DB0] hover:bg-[#E4F4FF] disabled:opacity-30"
+                className="flex items-center gap-1 rounded-lg border border-[#6666FF]/25 bg-white px-3 py-2 text-xs font-semibold text-[#6666FF] transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-[#F8F9FF]"
+                type="button"
                 aria-label="Next page"
-                title="Next page"
               >
-                ›
-              </button>
-              <button
-                type="button"
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(totalPages)}
-                className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#162DB0]/20 text-xs text-[#162DB0] hover:bg-[#E4F4FF] disabled:opacity-30"
-                aria-label="Last page"
-                title="Last page"
-              >
-                »
+                Next
+                <ChevronRight className="h-4 w-4" />
               </button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </main>
     </div>
   );

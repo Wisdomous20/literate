@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import {
   LayoutDashboard,
@@ -13,6 +13,9 @@ import {
 import type { OralFluencyAnalysis } from "@/types/oral-reading";
 import { DeleteConfirmModal } from "@/components/ui/deleteConfirmModal";
 import { NavButton } from "@/components/ui/navButton";
+import { buildFluencyReportData, exportFluencyReportPdf } from "@/lib/exportFluencyReportPdf";
+import { exportComprehensionReportPdf } from "@/lib/exportComprehensionReportPdf";
+import { useAssessmentById } from "@/lib/hooks/useAssessmentById";
 
 const STORAGE_KEY = "oral-reading-session";
 
@@ -94,6 +97,12 @@ export default function ReadingLevelReportPage() {
   const [isHydrated, setIsHydrated] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  const isClient = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect -- Intentional mount-time hydration flag for SSR */
     setIsHydrated(true);
@@ -101,6 +110,86 @@ export default function ReadingLevelReportPage() {
   }, []);
 
   const session = loadSession();
+
+  // Fetch assessment data for comprehension breakdown
+  const assessmentId = useMemo(() => {
+    if (!isClient) return null;
+    return sessionStorage.getItem("oral-reading-assessmentId");
+  }, [isClient]);
+
+  const { data: assessment } = useAssessmentById(assessmentId);
+
+  const handleExportPdf = useCallback(() => {
+    const safeName = (session.studentName || "Unknown").replace(/[^a-zA-Z0-9]/g, "_");
+
+    // Export fluency report PDF
+    if (session.analysisResult && session.passageContent) {
+      const fluencyData = buildFluencyReportData({
+        studentName: session.studentName || "Unknown",
+        gradeLevel: session.gradeLevel || "",
+        selectedClassName: session.selectedClassName || "",
+        selectedTitle: session.selectedTitle,
+        selectedLevel: session.selectedLevel,
+        selectedTestType: session.selectedTestType,
+        assessmentType: "Oral Reading",
+        passageContent: session.passageContent,
+        recordedSeconds: session.recordedSeconds || 0,
+        analysisResult: session.analysisResult,
+      });
+      exportFluencyReportPdf(fluencyData, `Oral_Fluency_Report_${safeName}`);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const test = (assessment as any)?.comprehension;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const passage = (assessment as any)?.passage;
+    if (test) {
+      const tagBreakdown = {
+        literal: { correct: 0, total: 0 },
+        inferential: { correct: 0, total: 0 },
+        critical: { correct: 0, total: 0 },
+      };
+      for (const answer of test.answers) {
+        const tag = answer.tag;
+        if (tag === "Literal") {
+          tagBreakdown.literal.total++;
+          if (answer.isCorrect) tagBreakdown.literal.correct++;
+        } else if (tag === "Inferential") {
+          tagBreakdown.inferential.total++;
+          if (answer.isCorrect) tagBreakdown.inferential.correct++;
+        } else if (tag === "Critical") {
+          tagBreakdown.critical.total++;
+          if (answer.isCorrect) tagBreakdown.critical.correct++;
+        }
+      }
+      const percentage = test.totalItems > 0
+        ? Math.round((test.score / test.totalItems) * 100)
+        : 0;
+
+      setTimeout(() => {
+        exportComprehensionReportPdf(
+          {
+            studentName: session.studentName || "Unknown",
+            gradeLevel: session.gradeLevel || "Unknown",
+            className: session.selectedClassName || "Unknown",
+            passageTitle: passage?.title || "Unknown",
+            passageLevel: String(passage?.level ?? ""),
+            numberOfWords: passage?.content?.split(/\s+/).filter(Boolean).length ?? 0,
+            testType: passage?.testType || "Unknown",
+            assessmentType: "Oral Reading Test",
+            score: test.score,
+            totalItems: test.totalItems,
+            percentage,
+            classificationLevel: test.classificationLevel,
+            literal: tagBreakdown.literal,
+            inferential: tagBreakdown.inferential,
+            critical: tagBreakdown.critical,
+          },
+          `Comprehension_Report_${safeName}`,
+        );
+      }, 500);
+    }
+  }, [session, assessment]);
 
   // Loading state — wait for client hydration before reading from sessionStorage
   if (!isHydrated) {
@@ -184,6 +273,7 @@ export default function ReadingLevelReportPage() {
         <div className="flex items-center gap-3">
           <button
             type="button"
+            onClick={handleExportPdf}
             className="px-5 py-2 bg-[#297CEC] text-white text-xs font-medium rounded-lg border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#297CEC]/90 transition-colors"
           >
             Export to PDF
@@ -238,7 +328,7 @@ export default function ReadingLevelReportPage() {
                 <FileText size={22} className="text-[#1A6673]" />
               </div>
               <h2 className="text-lg font-bold text-[#003366] leading-tight">
-                Oral Fluency
+                Reading Fluency
                 <br />
                 Test Report
               </h2>
@@ -326,7 +416,7 @@ export default function ReadingLevelReportPage() {
             {/* Text content */}
             <div className="flex flex-col">
               <h3 className="text-lg font-bold text-[#003366] leading-tight">
-                Oral Reading Level
+                Reading Level
               </h3>
               <p
                 className={`text-[30px] font-bold leading-11.25 ${overallStyle.text}`}

@@ -58,7 +58,7 @@ function saveComprehensionState(state: ComprehensionState) {
 }
 
 function computeTagBreakdown(
-  answers: { isCorrect: boolean | null; question: { tags: string } }[],
+  answers: { isCorrect: boolean | null; tag: string }[],
 ): TagBreakdown {
   const breakdown: TagBreakdown = {
     literal: { correct: 0, total: 0 },
@@ -66,7 +66,7 @@ function computeTagBreakdown(
     critical: { correct: 0, total: 0 },
   };
   for (const a of answers) {
-    const tag = a.question.tags;
+    const tag = a.tag;
     if (tag === "Literal") {
       breakdown.literal.total++;
       if (a.isCorrect) breakdown.literal.correct++;
@@ -87,7 +87,12 @@ function buildResultFromAssessment(assessment: {
     score: number;
     totalItems: number;
     classificationLevel: string | null;
-    answers: { questionId: string; answer: string; isCorrect: boolean | null; question: { tags: string } }[];
+    answers: {
+      question: string;
+      tag: string;
+      answer: string;
+      isCorrect: boolean | null;
+    }[];
   };
 }): { result: ComprehensionResult; restoredAnswers: Record<string, string> } {
   const comp = assessment.comprehension;
@@ -101,7 +106,7 @@ function buildResultFromAssessment(assessment: {
   };
   const restoredAnswers: Record<string, string> = {};
   for (const a of comp.answers) {
-    restoredAnswers[a.questionId] = a.answer;
+    restoredAnswers[a.question] = a.answer;
   }
   return { result, restoredAnswers };
 }
@@ -142,7 +147,6 @@ function syncMainSession(
   }
 }
 
-
 export default function OralReadingComprehensionPage() {
   const router = useRouter();
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -168,131 +172,149 @@ export default function OralReadingComprehensionPage() {
 
   // Fetch questions on mount + restore saved state
   useEffect(() => {
-
     async function fetchQuestions() {
-  try {
-    const currentAssessmentId = sessionStorage.getItem("oral-reading-assessmentId");
-    const raw = sessionStorage.getItem("oral-reading-session");
-
-    if (!raw) {
-      setLoadError("Session not found. Please go back and start again.");
-      setIsLoading(false);
-      return;
-    }
-
-    const session = JSON.parse(raw);
-    const passageId = session.selectedPassage;
-
-    if (!passageId) {
-      setLoadError("No passage selected. Please go back and select a passage.");
-      setIsLoading(false);
-      return;
-    }
-
-    // Restore saved comprehension progress only if it belongs to the current assessment
-    const saved = loadComprehensionState();
-    if (saved && saved.assessmentId === currentAssessmentId) {
-      setAnswers(saved.answers);
-      setElapsedSeconds(saved.elapsedSeconds);
-      if (saved.isSubmitted && saved.comprehensionResult) {
-        setIsSubmitted(true);
-        setComprehensionResult(saved.comprehensionResult);
-      }
-    } else if (saved && saved.assessmentId !== currentAssessmentId) {
-      sessionStorage.removeItem(COMP_STORAGE_KEY);
-    }
-
-    const isRestoredSubmitted =
-      saved?.assessmentId === currentAssessmentId && saved?.isSubmitted;
-
-    const [existingRes, quizResult] = await Promise.all([
-      !isRestoredSubmitted && currentAssessmentId
-        ? getAssessmentComprehension(currentAssessmentId)
-        : Promise.resolve(null),
-      getQuizByPassageAction(passageId),
-    ]);
-
-    // Handle existing comprehension result from DB
-    if (existingRes && existingRes.success && "assessment" in existingRes && existingRes.assessment?.comprehension) {
-      const { result: restoredResult, restoredAnswers } =
-        buildResultFromAssessment(existingRes.assessment as Parameters<typeof buildResultFromAssessment>[0]);
-
-      setComprehensionResult(restoredResult);
-      setIsSubmitted(true);
-      setAnswers(restoredAnswers);
-
-      if (restoredResult.comprehensionTestId) {
-        sessionStorage.setItem(
-          "oral-reading-comprehensionTestId",
-          restoredResult.comprehensionTestId,
+      try {
+        const currentAssessmentId = sessionStorage.getItem(
+          "oral-reading-assessmentId",
         );
+        const raw = sessionStorage.getItem("oral-reading-session");
+
+        if (!raw) {
+          setLoadError("Session not found. Please go back and start again.");
+          setIsLoading(false);
+          return;
+        }
+
+        const session = JSON.parse(raw);
+        const passageId = session.selectedPassage;
+
+        if (!passageId) {
+          setLoadError(
+            "No passage selected. Please go back and select a passage.",
+          );
+          setIsLoading(false);
+          return;
+        }
+
+        // Restore saved comprehension progress only if it belongs to the current assessment
+        const saved = loadComprehensionState();
+        if (saved && saved.assessmentId === currentAssessmentId) {
+          setAnswers(saved.answers);
+          setElapsedSeconds(saved.elapsedSeconds);
+          if (saved.isSubmitted && saved.comprehensionResult) {
+            setIsSubmitted(true);
+            setComprehensionResult(saved.comprehensionResult);
+          }
+        } else if (saved && saved.assessmentId !== currentAssessmentId) {
+          sessionStorage.removeItem(COMP_STORAGE_KEY);
+        }
+
+        const isRestoredSubmitted =
+          saved?.assessmentId === currentAssessmentId && saved?.isSubmitted;
+
+        const [existingRes, quizResult] = await Promise.all([
+          !isRestoredSubmitted && currentAssessmentId
+            ? getAssessmentComprehension(currentAssessmentId)
+            : Promise.resolve(null),
+          getQuizByPassageAction(passageId),
+        ]);
+
+        // Handle existing comprehension result from DB
+        if (
+          existingRes &&
+          existingRes.success &&
+          "assessment" in existingRes &&
+          existingRes.assessment?.comprehension
+        ) {
+          const { result: restoredResult, restoredAnswers } =
+            buildResultFromAssessment(
+              existingRes.assessment as Parameters<
+                typeof buildResultFromAssessment
+              >[0],
+            );
+
+          setComprehensionResult(restoredResult);
+          setIsSubmitted(true);
+          setAnswers(restoredAnswers);
+
+          if (restoredResult.comprehensionTestId) {
+            sessionStorage.setItem(
+              "oral-reading-comprehensionTestId",
+              restoredResult.comprehensionTestId,
+            );
+          }
+
+          saveComprehensionState({
+            assessmentId: currentAssessmentId!,
+            answers: restoredAnswers,
+            elapsedSeconds: saved?.elapsedSeconds ?? 0,
+            isSubmitted: true,
+            comprehensionResult: restoredResult,
+          });
+
+          const fluencyClassification =
+            existingRes.assessment?.oralFluency?.classificationLevel;
+          syncMainSession(restoredResult, fluencyClassification);
+        }
+
+        // Handle quiz questions result
+        if (
+          !quizResult.success ||
+          !("quiz" in quizResult) ||
+          !quizResult.quiz
+        ) {
+          setLoadError(
+            ("error" in quizResult && quizResult.error) ||
+              "Failed to load quiz questions.",
+          );
+          setIsLoading(false);
+          return;
+        }
+
+        const { quiz } = quizResult;
+
+        const mapped: QuestionData[] = quiz.questions.map(
+          (
+            q: {
+              id: string;
+              questionText: string;
+              tags: string | null;
+              type: string;
+              options: unknown;
+            },
+            idx: number,
+          ) => ({
+            id: q.id,
+            questionNumber: idx + 1,
+            questionText: q.questionText,
+            type: q.type as "MULTIPLE_CHOICE" | "ESSAY",
+            tags: q.tags ?? undefined,
+            options: Array.isArray(q.options)
+              ? (q.options as string[])
+              : undefined,
+          }),
+        );
+
+        setQuestions(mapped);
+      } catch (err) {
+        console.error("Failed to fetch questions:", err);
+        setLoadError("Something went wrong while loading questions.");
+      } finally {
+        setIsLoading(false);
       }
-
-      saveComprehensionState({
-        assessmentId: currentAssessmentId!,
-        answers: restoredAnswers,
-        elapsedSeconds: saved?.elapsedSeconds ?? 0,
-        isSubmitted: true,
-        comprehensionResult: restoredResult,
-      });
-
-      const fluencyClassification =
-        existingRes.assessment?.oralFluency?.classificationLevel;
-      syncMainSession(restoredResult, fluencyClassification);
     }
-
-    // Handle quiz questions result
-    if (!quizResult.success || !("quiz" in quizResult) || !quizResult.quiz) {
-      setLoadError(
-        ("error" in quizResult && quizResult.error) ||
-          "Failed to load quiz questions.",
-      );
-      setIsLoading(false);
-      return;
-    }
-
-    const { quiz } = quizResult;
-
-    const mapped: QuestionData[] = quiz.questions.map(
-      (
-        q: {
-          id: string;
-          questionText: string;
-          tags: string | null;
-          type: string;
-          options: unknown;
-        },
-        idx: number,
-      ) => ({
-        id: q.id,
-        questionNumber: idx + 1,
-        questionText: q.questionText,
-        type: q.type as "MULTIPLE_CHOICE" | "ESSAY",
-        tags: q.tags ?? undefined,
-        options: Array.isArray(q.options) ? (q.options as string[]) : undefined,
-      }),
-    );
-
-    setQuestions(mapped);
-  } catch (err) {
-    console.error("Failed to fetch questions:", err);
-    setLoadError("Something went wrong while loading questions.");
-  } finally {
-    setIsLoading(false);
-  }
-}
 
     fetchQuestions();
   }, []);
 
-  // Timer — stops when submitted or paused
+  // Timer — stops when submitted, submitting, or paused
   useEffect(() => {
-    if (isSubmitted || isPaused) return;
+    if (isSubmitted || isSubmitting || isPaused) return;
     const interval = setInterval(() => {
       setElapsedSeconds((prev) => prev + 1);
     }, 1000);
     return () => clearInterval(interval);
-  }, [isSubmitted, isPaused]);
+  }, [isSubmitted, isSubmitting, isPaused]);
 
   // Persist comprehension state to sessionStorage on every change
   useEffect(() => {
@@ -334,15 +356,12 @@ export default function OralReadingComprehensionPage() {
 
   const formattedTime = `${String(Math.floor(elapsedSeconds / 60)).padStart(2, "0")}:${String(elapsedSeconds % 60).padStart(2, "0")}`;
 
-  const handleSelectOption = useCallback(
-    (questionId: string, option: string) => {
-      setAnswers((prev) => ({ ...prev, [questionId]: option }));
-    },
-    [],
-  );
+  const handleSelectOption = useCallback((question: string, option: string) => {
+    setAnswers((prev) => ({ ...prev, [question]: option }));
+  }, []);
 
-  const handleEssayChange = useCallback((questionId: string, value: string) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: value }));
+  const handleEssayChange = useCallback((question: string, value: string) => {
+    setAnswers((prev) => ({ ...prev, [question]: value }));
   }, []);
 
   const handleSubmit = async () => {
@@ -362,9 +381,14 @@ export default function OralReadingComprehensionPage() {
       // Check if a comprehension test already exists for this assessment
       try {
         const res = await getAssessmentComprehension(assessmentId);
-        if (res.success && "assessment" in res && res.assessment?.comprehension) {
-          const { result: existingResult } =
-            buildResultFromAssessment(res.assessment as Parameters<typeof buildResultFromAssessment>[0]);
+        if (
+          res.success &&
+          "assessment" in res &&
+          res.assessment?.comprehension
+        ) {
+          const { result: existingResult } = buildResultFromAssessment(
+            res.assessment as Parameters<typeof buildResultFromAssessment>[0],
+          );
 
           setComprehensionResult(existingResult);
           if (existingResult.comprehensionTestId) {
@@ -385,7 +409,7 @@ export default function OralReadingComprehensionPage() {
         // Assessment fetch failed — continue with submission
       }
 
-      // Build answers array — { questionId, answer }
+      // Build answers array — { question, answer }
       const formattedAnswers = questions
         .filter((q) => answers[q.id] !== undefined && answers[q.id] !== "")
         .map((q) => ({
@@ -393,12 +417,14 @@ export default function OralReadingComprehensionPage() {
           answer: answers[q.id],
         }));
 
+      console.log("answers state:", answers);
+      console.log("formattedAnswers:", formattedAnswers);
+      console.log("questions ids:", questions.map(q => q.id));
+
       if (formattedAnswers.length === 0) {
-        setSubmitError(
-          "Please answer at least one question before submitting.",
-        );
+        setSubmitError("Please answer at least one question before submitting.");
         setIsSubmitting(false);
-        return;
+        return;  // ← is this actually returning?
       }
 
       const response = await fetch("/api/oral-reading/comprehension", {
@@ -417,18 +443,26 @@ export default function OralReadingComprehensionPage() {
         return;
       }
 
-      // Fetch the full assessment to get tag breakdown
       let tagBreakdown: TagBreakdown | undefined;
-      try {
-        const res = await getAssessmentComprehension(assessmentId);
-        if (res.success && "assessment" in res && res.assessment?.comprehension) {
-          tagBreakdown = computeTagBreakdown(
-            res.assessment.comprehension.answers as Parameters<typeof computeTagBreakdown>[0],
-          );
-          // fluencyClassification not needed here but available via res.assessment?.oralFluency?.classificationLevel
+      if (result.answers && Array.isArray(result.answers)) {
+        tagBreakdown = {
+          literal: { correct: 0, total: 0 },
+          inferential: { correct: 0, total: 0 },
+          critical: { correct: 0, total: 0 },
+        };
+        for (const a of result.answers) {
+          const tag = a.tag as string;
+          if (tag === "Literal") {
+            tagBreakdown.literal.total++;
+            if (a.isCorrect) tagBreakdown.literal.correct++;
+          } else if (tag === "Inferential") {
+            tagBreakdown.inferential.total++;
+            if (a.isCorrect) tagBreakdown.inferential.correct++;
+          } else if (tag === "Critical") {
+            tagBreakdown.critical.total++;
+            if (a.isCorrect) tagBreakdown.critical.correct++;
+          }
         }
-      } catch {
-        // Failed to fetch tag breakdown — continue without it
       }
 
       const comprehensionData = {
@@ -485,6 +519,17 @@ export default function OralReadingComprehensionPage() {
       setIsSubmitting(false);
     }
   };
+
+  const handleTryAgain = useCallback(() => {
+    setAnswers({});
+    setElapsedSeconds(0);
+    setIsSubmitted(false);
+    setIsSubmitting(false);
+    setSubmitError(null);
+    setComprehensionResult(null);
+    setHighlightedTag(null);
+    sessionStorage.removeItem(COMP_STORAGE_KEY);
+  }, []);
 
   const handleGoBack = () => {
     router.back();
@@ -580,6 +625,7 @@ export default function OralReadingComprehensionPage() {
                 isSubmitting={isSubmitting}
                 isSubmitted={isSubmitted}
                 onSubmit={handleSubmit}
+                onTryAgain={handleTryAgain}
               />
             </div>
           </div>
@@ -595,28 +641,40 @@ export default function OralReadingComprehensionPage() {
               highlightedTag={highlightedTag}
               onTagClick={handleTagClick}
               onExportPdf={() => {
-                if (!comprehensionResult || !comprehensionResult.tagBreakdown) return;
+                if (!comprehensionResult || !comprehensionResult.tagBreakdown)
+                  return;
                 const raw = sessionStorage.getItem("oral-reading-session");
                 const session = raw ? JSON.parse(raw) : {};
                 const totalItems = comprehensionResult.totalItems;
                 const score = comprehensionResult.score;
-                exportComprehensionReportPdf({
-                  studentName: session.studentName || "\u2014",
-                  gradeLevel: session.gradeLevel ? `Grade ${session.gradeLevel}` : "\u2014",
-                  className: session.selectedClassName || "\u2014",
-                  passageTitle: session.selectedTitle || "\u2014",
-                  passageLevel: session.selectedLevel || "\u2014",
-                  numberOfWords: session.passageContent ? session.passageContent.split(/\s+/).filter(Boolean).length : 0,
-                  testType: session.selectedTestType || "\u2014",
-                  assessmentType: "Oral Reading Test",
-                  score,
-                  totalItems,
-                  percentage: totalItems > 0 ? Math.round((score / totalItems) * 100) : 0,
-                  classificationLevel: comprehensionResult.level,
-                  literal: comprehensionResult.tagBreakdown.literal,
-                  inferential: comprehensionResult.tagBreakdown.inferential,
-                  critical: comprehensionResult.tagBreakdown.critical,
-                }, `Comprehension_Report_${(session.studentName || "report").replace(/[^a-zA-Z0-9]/g, "_")}`);
+                exportComprehensionReportPdf(
+                  {
+                    studentName: session.studentName || "\u2014",
+                    gradeLevel: session.gradeLevel
+                      ? `Grade ${session.gradeLevel}`
+                      : "\u2014",
+                    className: session.selectedClassName || "\u2014",
+                    passageTitle: session.selectedTitle || "\u2014",
+                    passageLevel: session.selectedLevel || "\u2014",
+                    numberOfWords: session.passageContent
+                      ? session.passageContent.split(/\s+/).filter(Boolean)
+                          .length
+                      : 0,
+                    testType: session.selectedTestType || "\u2014",
+                    assessmentType: "Oral Reading Test",
+                    score,
+                    totalItems,
+                    percentage:
+                      totalItems > 0
+                        ? Math.round((score / totalItems) * 100)
+                        : 0,
+                    classificationLevel: comprehensionResult.level,
+                    literal: comprehensionResult.tagBreakdown.literal,
+                    inferential: comprehensionResult.tagBreakdown.inferential,
+                    critical: comprehensionResult.tagBreakdown.critical,
+                  },
+                  `Comprehension_Report_${(session.studentName || "report").replace(/[^a-zA-Z0-9]/g, "_")}`,
+                );
               }}
             />
           </div>

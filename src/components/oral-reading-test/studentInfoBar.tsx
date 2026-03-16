@@ -60,6 +60,7 @@ export default function StudentInfoBar({
   const [isCreatingClass, setIsCreatingClass] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
   const [isCreatingStudent, setIsCreatingStudent] = useState(false)
+  const [createStudentNote, setCreateStudentNote] = useState("")
 
   const studentInputRef = useRef<HTMLInputElement>(null)
   const studentDropdownRef = useRef<HTMLDivElement>(null)
@@ -73,11 +74,20 @@ export default function StudentInfoBar({
     function handleClickOutside(e: MouseEvent) {
       const target = e.target as Node
 
+      const clickedGradeArea =
+        (gradeDropdownRef.current && gradeDropdownRef.current.contains(target)) ||
+        (gradeButtonRef.current && gradeButtonRef.current.contains(target))
+      const clickedClassArea =
+        (classDropdownRef.current && classDropdownRef.current.contains(target)) ||
+        (classButtonRef.current && classButtonRef.current.contains(target))
+
       if (
         studentDropdownRef.current &&
         !studentDropdownRef.current.contains(target) &&
         studentInputRef.current &&
-        !studentInputRef.current.contains(target)
+        !studentInputRef.current.contains(target) &&
+        !clickedGradeArea &&
+        !clickedClassArea
       ) {
         setIsStudentInputFocused(false)
       }
@@ -139,10 +149,16 @@ export default function StudentInfoBar({
 
   const handleStudentNameInput = (value: string) => {
     onStudentNameChange(value)
+    setCreateStudentNote("")
     if (selectedStudentId) {
       setSelectedStudentId("")
     }
   }
+
+  // Clear the note when grade or class changes
+  useEffect(() => {
+    setCreateStudentNote("")
+  }, [gradeLevel, selectedClass])
 
   useEffect(() => {
     if (toast) {
@@ -181,31 +197,37 @@ export default function StudentInfoBar({
   const hasSearchQuery = searchQuery.length >= 1
 
   const displayStudents = allStudents.filter((s) => {
+    if (!hasFilters && !hasSearchQuery) return false
+    if (hasSearchQuery) {
+      if (!s.name.toLowerCase().startsWith(searchQuery)) return false
+      if (selectedClass && s.className !== selectedClass) return false
+      if (gradeLevel && String(s.level) !== gradeLevel) return false
+      return true
+    }
     if (selectedClass && s.className !== selectedClass) return false
     if (gradeLevel && String(s.level) !== gradeLevel) return false
-    if (!hasFilters && !hasSearchQuery) return false
-    if (hasSearchQuery) return s.name.toLowerCase().startsWith(searchQuery)
     return true
   })
 
-  // Show "Create Student" when name is typed and either:
-  // 1. No exact match exists at all, or
-  // 2. An exact name match exists but with a different grade/class combination
   const exactMatches = hasSearchQuery
     ? allStudents.filter((s) => s.name.toLowerCase() === searchQuery)
     : []
-  const showCreateStudent =
-    hasSearchQuery &&
-    !selectedStudentId &&
+  const isExactDuplicate =
     !!gradeLevel &&
     !!selectedClass &&
-    !exactMatches.some(
+    exactMatches.some(
       (s) => String(s.level) === gradeLevel && s.className === selectedClass
     )
+  const showCreateStudent =
+    hasSearchQuery && !selectedStudentId && !isExactDuplicate
 
   const handleCreateStudent = async () => {
     const trimmedName = studentName.trim()
-    if (!trimmedName || !gradeLevel || !selectedClass) return
+    if (!trimmedName) return
+    if (!gradeLevel || !selectedClass) {
+      setCreateStudentNote("Select grade and class.")
+      return
+    }
 
     setIsCreatingStudent(true)
     try {
@@ -279,7 +301,7 @@ export default function StudentInfoBar({
               onChange={(e) => handleStudentNameInput(e.target.value)}
               onFocus={() => setIsStudentInputFocused(true)}
               placeholder="Search or type student name"
-              className="w-full rounded-lg border border-[#54A4FF] bg-[#EFFDFF] py-1.5 pl-8 pr-3 text-sm text-[#00306E] shadow-[0px_1px_10px_rgba(108,164,239,0.25)] outline-none placeholder:text-[#00306E]/40"
+              className="w-full rounded-lg border border-[#54A4FF] bg-[#EFFDFF] py-1.5 pl-8 pr-3 text-sm text-[#00306E] shadow-[0px_1px_10px_rgba(108,164,239,0.25)] outline-none placeholder:text-[#00306E]/40 transition-all duration-200 focus:border-[#6666FF] focus:ring-2 focus:ring-[#6666FF]/30"
             />
           </div>
 
@@ -289,16 +311,21 @@ export default function StudentInfoBar({
               className="absolute left-3 right-3 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-lg border border-[#54A4FF] bg-white py-1 shadow-[0px_4px_12px_rgba(84,164,255,0.2)]"
             >
               {showCreateStudent && (
-                <button
-                  type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={handleCreateStudent}
-                  disabled={isCreatingStudent}
-                  className="flex w-full items-center gap-1.5 border-b border-[#EEEEFF] px-3 py-1.5 text-left text-sm font-semibold text-[#6666FF] hover:bg-[#E4F4FF] disabled:opacity-50"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  {isCreatingStudent ? "Creating..." : `Create Student "${studentName.trim()}"`}
-                </button>
+                <div className="border-b border-[#EEEEFF]">
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={handleCreateStudent}
+                    disabled={isCreatingStudent}
+                    className="flex w-full items-center gap-1.5 px-3 py-1.5 text-left text-sm font-semibold text-[#6666FF] transition-colors duration-150 hover:bg-[#E4F4FF] disabled:opacity-50"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    {isCreatingStudent ? "Creating..." : `Create Student "${studentName.trim()}"`}
+                  </button>
+                  {createStudentNote && (
+                    <p className="px-3 pb-1.5 text-xs text-amber-600">{createStudentNote}</p>
+                  )}
+                </div>
               )}
               {displayStudents.map((s) => (
                 <button
@@ -306,7 +333,7 @@ export default function StudentInfoBar({
                   type="button"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => handleStudentSelect(s)}
-                  className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm text-[#00306E] hover:bg-[#E4F4FF]"
+                  className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm text-[#00306E] transition-colors duration-150 hover:bg-[#E4F4FF]"
                 >
                   <span className="truncate font-medium">{s.name}</span>
                   <span className="shrink-0 text-xs text-[#54A4FF]">
@@ -369,7 +396,7 @@ export default function StudentInfoBar({
                         clearAutoFill()
                         setIsGradeDropdownOpen(false)
                       }}
-                      className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm hover:bg-[#EEEEFF] ${
+                      className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm transition-colors duration-150 hover:bg-[#EEEEFF] ${
                         isActive ? "bg-[#EEEEFF] font-semibold text-[#6666FF]" : "text-[#00306E]"
                       }`}
                     >
@@ -422,7 +449,7 @@ export default function StudentInfoBar({
                   <button
                     type="button"
                     onClick={() => handleClassChange("create-new")}
-                    className="flex w-full items-center gap-1.5 border-b border-[#EEEEFF] px-3 py-1.5 text-left text-sm font-semibold text-[#6666FF] hover:bg-[#EEEEFF]"
+                    className="flex w-full items-center gap-1.5 border-b border-[#EEEEFF] px-3 py-1.5 text-left text-sm font-semibold text-[#6666FF] transition-colors duration-150 hover:bg-[#EEEEFF]"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Create New Class
@@ -444,7 +471,7 @@ export default function StudentInfoBar({
                             handleClassChange(cls)
                           }
                         }}
-                        className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm hover:bg-[#EEEEFF] ${
+                        className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm transition-colors duration-150 hover:bg-[#EEEEFF] ${
                           isActive ? "bg-[#EEEEFF] font-semibold text-[#6666FF]" : "text-[#00306E]"
                         }`}
                       >
