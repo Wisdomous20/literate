@@ -24,9 +24,8 @@ export async function analyzeOralFluency(
   passageText: string,
   language:    string,
 ): Promise<OralFluencyAnalysis> {
-  // 1. Run STT and pitch analysis in parallel.
-  //    analyzePitch() is synchronous CPU work (~90ms) wrapped here with STT
-  //    so both kick off together and we only wait as long as STT takes.
+  // 1. Run STT and pitch analysis — pitch is sync (~90ms) so start it first,
+  //    then await STT which takes several seconds.
   const pitchAnalysis = analyzePitch(audioBuffer)
   const sttResult     = await transcribeAudio(audioBuffer, fileName, language, passageText)
 
@@ -36,23 +35,17 @@ export async function analyzeOralFluency(
     `voiced:${pitchAnalysis.voicedFrames}/${pitchAnalysis.totalFrames}`,
   )
 
-  // 2. Tokenize passage — keep originals for behavior detection (punctuation intact)
+  // 2. Tokenize — keep originals (with punctuation) for behavior detection
   const originalPassageWords   = passageText.split(/\s+/).filter(w => w.length > 0)
   const normalizedPassageWords = originalPassageWords.map(normalizeWord)
 
   // 3. Normalize and post-correct spoken words
-  const spokenWords = sttResult.words.map(w => ({
-    word:  normalizeWord(w.word),
-    start: w.start,
-    end:   w.end,
-  }))
-
   const corrected = postCorrectTranscription(
-    spokenWords,
+    sttResult.words.map(w => ({ word: normalizeWord(w.word), start: w.start, end: w.end })),
     normalizedPassageWords,
   )
 
-  // 4. Align passage ↔ spoken
+  // 4. Align
   const alignedWords = alignWords(
     normalizedPassageWords,
     corrected.map(w => ({ word: w.word, start: w.start, end: w.end })),
@@ -61,10 +54,15 @@ export async function analyzeOralFluency(
   // 5. Detect miscues
   const miscues = detectMiscues(alignedWords, language)
 
-  // 6. Detect behaviors — pass originalPassageWords and pitchAnalysis
-  const behaviors = detectBehaviors(alignedWords, originalPassageWords, pitchAnalysis)
+  // 6. Detect behaviors — pass audioBuffer so ! and ? can use per-word pitch
+  const behaviors = detectBehaviors(
+    alignedWords,
+    originalPassageWords,
+    pitchAnalysis,
+    audioBuffer,      // ← needed for ! and ? intonation check
+  )
 
-  // 7. Compute metrics
+  // 7. Metrics
   const duration        = sttResult.duration
   const totalWords      = originalPassageWords.length
   const exactMatches    = alignedWords.filter(w => w.match === "EXACT").length

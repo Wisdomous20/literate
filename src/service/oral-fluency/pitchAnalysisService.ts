@@ -36,6 +36,7 @@ function wavToFloat32(wavBuffer: Buffer): Float32Array {
 /**
  * Analyze pitch statistics from a WAV audio buffer using the YIN algorithm.
  *
+ * Pure JavaScript — no external binaries, works on all platforms.
  * Input must be a 16kHz mono 16-bit PCM WAV (the output of convertToWav()).
  */
 export function analyzePitch(audioBuffer: Buffer): PitchAnalysis {
@@ -94,6 +95,7 @@ export function analyzePitch(audioBuffer: Buffer): PitchAnalysis {
   }
 }
 
+/** Convenience: is this pitch analysis monotonous? */
 export function isMonotonousPitch(pitch: PitchAnalysis | null): boolean {
   if (!pitch || pitch.error) return false
   if (pitch.voicedFrames < 5)  return false
