@@ -24,15 +24,15 @@ export async function analyzeOralFluency(
   passageText: string,
   language: string
 ): Promise<OralFluencyAnalysis> {
-  // 1. Transcribe with googlestt (language-aware)
+  // 1. Transcribe
   const sttResult = await transcribeAudio(audioBuffer, fileName, language, passageText);
 
-  // 2. Tokenize passage
-  const passageWords = passageText
+  // 2. Tokenize passage — keep BOTH original (with punctuation) and normalized forms
+  const originalPassageWords = passageText
     .split(/\s+/)
     .filter((w) => w.length > 0);
 
-  const normalizedPassageWords = passageWords.map(normalizeWord);
+  const normalizedPassageWords = originalPassageWords.map(normalizeWord);
 
   const spokenWords = sttResult.words.map((w) => ({
     word: normalizeWord(w.word),
@@ -46,21 +46,21 @@ export async function analyzeOralFluency(
     normalizedPassageWords
   );
 
-  // 3. Align passage ↔ spoken words
+  // 3. Align
   const alignedWords = alignWords(
     normalizedPassageWords,
     correctedWords.map((w) => ({ word: w.word, start: w.start, end: w.end }))
   );
-  
-  // 4. Detect miscues (language-aware for edit distance)
+
+  // 4. Detect miscues
   const miscues = detectMiscues(alignedWords, language);
 
-  // 5. Detect behaviors (timing-based, language-independent)
-  const behaviors = detectBehaviors(alignedWords);
+  // 5. Detect behaviors — pass originalPassageWords so punctuation is accessible
+  const behaviors = detectBehaviors(alignedWords, originalPassageWords);
 
-  // 6. Calculate metrics
+  // 6. Metrics
   const duration = sttResult.duration;
-  const totalWords = passageWords.length;
+  const totalWords = originalPassageWords.length;
   const exactMatches = alignedWords.filter((w) => w.match === "EXACT").length;
   const countedMiscues = miscues.filter((m) => !m.isSelfCorrected).length;
   const accuracy = totalWords > 0 ? (exactMatches / totalWords) * 100 : 0;
