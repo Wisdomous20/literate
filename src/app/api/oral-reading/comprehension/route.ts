@@ -43,31 +43,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    // Now compute the oral reading level (needs both fluency & comprehension in DB)
-    const oralReadingResult = await createOralReadingService(
-      assessmentId,
-      result.level,
-    );
-
-    if (!oralReadingResult.success) {
-      return NextResponse.json(
-        { error: oralReadingResult.error },
-        { status: 500 },
+    // Try to compute the oral reading level (needs both fluency & comprehension in DB)
+    // If fluency is not ready yet (still transcribing), this will fail gracefully
+    let oralReadingResult = null;
+    try {
+      const oralReadingResponse = await createOralReadingService(
+        assessmentId,
+        result.level,
       );
+
+      if (oralReadingResponse.success) {
+        oralReadingResult = oralReadingResponse;
+      } else {
+        console.log("Oral reading result not created yet:", oralReadingResponse.error);
+        console.log("This is expected if transcription is still processing");
+      }
+    } catch (error) {
+      console.log("Could not create oral reading result (transcription may still be processing):", error);
     }
 
-return NextResponse.json({
-  success: true,
-  assessmentId,
-  comprehensionTestId: result.comprehensionTestId,
-  score: result.score,
-  totalItems: result.totalItems,
-  level: result.level,
-  answers: result.answers, 
-  oralReadingResult: oralReadingResult ?? null,
-});
+    return NextResponse.json({
+      success: true,
+      assessmentId,
+      comprehensionTestId: result.comprehensionTestId,
+      score: result.score,
+      totalItems: result.totalItems,
+      level: result.level,
+      answers: result.answers,
+      oralReadingResult: oralReadingResult ?? null,
+      transcriptionPending: oralReadingResult === null,
+    });
   } catch (error) {
-    console.error("Comprehension submit & oralReading submit error:", error);
+    console.error("Comprehension submit error:", error);
     return NextResponse.json(
       { error: "Failed to process comprehension submission" },
       { status: 500 },

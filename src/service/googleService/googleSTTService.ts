@@ -2,7 +2,7 @@ import { v2, protos } from "@google-cloud/speech";
 import { TranscriptResponse } from "@/types/oral-reading";
 import convertToTranscriptResponse from "./convertToTranscriptResponse";
 
-const LOCATION = "us-central1";
+const LOCATION = "asia-southeast1";
 
 const credentials = {
   client_email: process.env.GOOGLE_CLOUD_CLIENT_EMAIL ?? "",
