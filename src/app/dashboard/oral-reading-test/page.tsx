@@ -6,7 +6,10 @@ import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import StudentInfoBar from "@/components/oral-reading-test/studentInfoBar";
 import { PassageFilters } from "@/components/oral-reading-test/passageFilters";
 import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay";
-import { ReadingTimer, AudioPlayer } from "@/components/oral-reading-test/readingTimer";
+import {
+  ReadingTimer,
+  AudioPlayer,
+} from "@/components/oral-reading-test/readingTimer";
 import { MiscueAnalysis } from "@/components/oral-reading-test/miscueAnalysis";
 import { FullScreenPassage } from "@/components/oral-reading-test/fullScreenPassage";
 import { AddPassageModal } from "@/components/oral-reading-test/addPassageModal";
@@ -18,8 +21,11 @@ import { useClassList } from "@/lib/hooks/useClassList";
 import { useQueryClient } from "@tanstack/react-query";
 import { createStudent } from "@/app/actions/student/createStudent";
 import type { OralFluencyAnalysis } from "@/types/oral-reading";
-import { convertToWav } from "@/utils/convertToWav"
-import { exportFluencyReportPdf, buildFluencyReportData } from "@/lib/exportFluencyReportPdf"
+import { convertToWav } from "@/utils/convertToWav";
+import {
+  exportFluencyReportPdf,
+  buildFluencyReportData,
+} from "@/lib/exportFluencyReportPdf";
 
 function getCurrentSchoolYear(): string {
   const now = new Date();
@@ -147,6 +153,66 @@ export default function OralReadingTestPage() {
   const [passageExpanded, setPassageExpanded] = useState(false);
   const [showMiscues, setShowMiscues] = useState(true);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  const startTranscriptionInBackground = async (
+  assessmentId: string,
+  audioBlob: Blob,
+  studentId: string,
+  passageId: string,
+) => {
+  try {
+    console.log("Starting transcription in background...");
+    
+    const { uploadAudio } = await import("@/utils/uploadAudio");
+    const { convertToWav } = await import("@/utils/convertToWav");
+    
+    const wavBlob = await convertToWav(audioBlob);
+    const audioUrl = await uploadAudio(wavBlob, studentId, passageId);
+
+    if (!audioUrl) {
+      console.error("Background audio upload failed");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("assessmentId", assessmentId);
+    formData.append("audioUrl", audioUrl);
+    formData.append("audio", wavBlob, "recording.wav");
+
+    const response = await fetch("/api/oral-reading/transcribe", {
+      method: "POST",
+      body: formData,
+    });
+
+    const result = await response.json();
+
+    if (response.ok && result.analysis) {
+      console.log("Transcription completed in background");
+      setAnalysisResult(result.analysis as OralFluencyAnalysis);
+      if (result.sessionId) {
+        setSessionId(result.sessionId);
+      }
+
+      // CRITICAL FIX: Update sessionStorage so fluency results persist
+      try {
+        const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
+        if (sessionRaw) {
+          const session = JSON.parse(sessionRaw);
+          session.analysisResult = result.analysis;
+          session.sessionId = result.sessionId;
+          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+          console.log("Session updated with fluency results");
+        }
+      } catch (err) {
+        console.error("Failed to update session storage:", err);
+      }
+    } else {
+      console.error("Transcription failed:", result.error);
+    }
+  } catch (err) {
+    console.error("Background transcription error:", err);
+  }
+};
 
   const handleJumpToTime = useCallback((timestamp: number) => {
     const audio = audioRef.current;
@@ -323,17 +389,24 @@ export default function OralReadingTestPage() {
   );
 
   const handleStartReading = useCallback(() => {
-    if (!hasPassage || !studentName.trim() || !gradeLevel || !selectedClassName) return;
+    if (!hasPassage || !studentName.trim() || !gradeLevel || !selectedClassName)
+      return;
     setIsFullScreen(true);
     setHasRecording(false);
     if (recordedAudioURL) {
       URL.revokeObjectURL(recordedAudioURL);
       setRecordedAudioURL(null);
     }
-  }, [hasPassage, studentName, gradeLevel, selectedClassName, recordedAudioURL]);
+  }, [
+    hasPassage,
+    studentName,
+    gradeLevel,
+    selectedClassName,
+    recordedAudioURL,
+  ]);
 
   const handleFullScreenDone = useCallback(
-    (
+    async (
       elapsedSeconds: number,
       audioURL: string | null,
       audioBlob: Blob | null,
@@ -344,8 +417,99 @@ export default function OralReadingTestPage() {
       setRecordedAudioBlob(audioBlob);
       setIsFullScreen(false);
       setHasRecording(true);
+
+      // Create assessment immediately when recording is done
+      try {
+        let studentId = selectedStudentId;
+
+        // Create student if needed
+        if (
+          !studentId &&
+          studentName.trim() &&
+          gradeLevel &&
+          selectedClassName
+        ) {
+          const result = await createStudent(
+            studentName.trim(),
+            Number(gradeLevel),
+            selectedClassName,
+          );
+
+          if (result.success && "student" in result && result.student) {
+            studentId = result.student.id;
+            setSelectedStudentId(studentId);
+          } else {
+            console.error("Failed to create student:", result.error);
+            setToast({
+              message: result.error || "Failed to create student.",
+              type: "error",
+            });
+            return;
+          }
+        }
+
+        // Create assessment immediately
+        if (studentId && selectedPassage) {
+          console.log("Creating assessment immediately...");
+
+          const response = await fetch("/api/assessment/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              studentId,
+              passageId: selectedPassage,
+              type: "ORAL_READING",
+            }),
+          });
+
+          const result = await response.json();
+
+          if (result.success && result.assessment) {
+            const assessmentId = result.assessment.id;
+
+            sessionStorage.setItem("oral-reading-assessmentId", assessmentId);
+            setAssessmentId(assessmentId);
+
+            console.log("Assessment created:", assessmentId);
+
+            setToast({
+              message:
+                "Recording complete! You can now proceed to comprehension test.",
+              type: "success",
+            });
+
+            // Start transcription in background
+            if (audioBlob) {
+              startTranscriptionInBackground(
+                assessmentId,
+                audioBlob,
+                studentId,
+                selectedPassage,
+              );
+            }
+          } else {
+            console.error("Failed to create assessment:", result.error);
+            setToast({
+              message: "Recording saved, but assessment creation failed.",
+              type: "error",
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Error creating assessment:", err);
+        setToast({
+          message: "Recording saved, but there was an error.",
+          type: "error",
+        });
+      }
     },
-    [],
+    [
+      selectedStudentId,
+      studentName,
+      gradeLevel,
+      selectedClassName,
+      selectedPassage,
+    ],
   );
 
   const handleFullScreenClose = useCallback(() => {
@@ -403,78 +567,66 @@ export default function OralReadingTestPage() {
     if (!recordedAudioBlob || !selectedPassage) {
       console.log("Submit blocked - missing:", {
         hasBlob: !!recordedAudioBlob,
-        selectedPassage,
-        selectedStudentId,
+        hasPassage: !!selectedPassage,
       });
       return;
     }
+
+    // Get the assessment ID that was already created in handleFullScreenDone
+    const existingAssessmentId = sessionStorage.getItem(
+      "oral-reading-assessmentId",
+    );
+
+    if (!existingAssessmentId) {
+      console.error(
+        "No assessment ID found - this should have been created when recording finished",
+      );
+      setToast({
+        message: "Error: Assessment not found. Please try recording again.",
+        type: "error",
+      });
+      return;
+    }
+
+    console.log(" Using existing assessment ID:", existingAssessmentId);
+
     let studentId = selectedStudentId;
     if (!studentId) {
-      if (!studentName.trim() || !gradeLevel || !selectedClassName) {
-        setToast({
-          message:
-            "Please enter a student name, select a grade level, and select a class.",
-          type: "error",
-        });
-        return;
-      }
-
-      try {
-        const result = await createStudent(
-          studentName.trim(),
-          Number(gradeLevel),
-          selectedClassName,
-        );
-        if (!result.success || !("student" in result) || !result.student) {
-          setToast({
-            message: result.error || "Failed to create student.",
-            type: "error",
-          });
-          return;
-        }
-        studentId = result.student.id;
-        setSelectedStudentId(studentId);
-        setToast({
-          message: `Student "${studentName.trim()}" created successfully!`,
-          type: "success",
-        });
-      } catch (err) {
-        console.error("Failed to create student:", err);
-        setToast({
-          message: "Something went wrong creating the student.",
-          type: "error",
-        });
-        return;
-      }
+      // Get student ID from session if it was just created
+      const session = loadSession();
+      studentId = session.selectedStudentId || "";
     }
 
     setIsSubmitting(true);
     try {
-      const { uploadAudio } = await import("@/utils/uploadAudio")
-      const wavBlob = await convertToWav(recordedAudioBlob)
+      const { uploadAudio } = await import("@/utils/uploadAudio");
+      const wavBlob = await convertToWav(recordedAudioBlob);
 
-      const AudioUrl = await uploadAudio(
-        wavBlob,
-        studentId,
-        selectedPassage,
-      );
+      const AudioUrl = await uploadAudio(wavBlob, studentId, selectedPassage);
 
       if (!AudioUrl) {
         console.error("Audio upload failed");
+        setToast({
+          message: "Audio upload failed. Please try again.",
+          type: "error",
+        });
+        setIsSubmitting(false);
         return;
       }
 
       console.log("Audio uploaded to:", AudioUrl);
 
-      const formData = new FormData()
-      formData.append("studentId", studentId)
-      formData.append("passageId", selectedPassage)
-      formData.append("audioUrl", AudioUrl)
-      formData.append("audio", wavBlob, "recording.wav")
+      const formData = new FormData();
+      formData.append("assessmentId", existingAssessmentId); //  Pass existing assessment ID
+      formData.append("audioUrl", AudioUrl);
+      formData.append("audio", wavBlob, "recording.wav");
 
-      console.log("Sending to API:", `/api/oral-reading/${selectedPassage}`);
+      console.log(
+        "Sending to transcription API with assessment ID:",
+        existingAssessmentId,
+      );
 
-      const response = await fetch(`/api/oral-reading/${selectedPassage}`, {
+      const response = await fetch(`/api/oral-reading/transcribe`, {
         method: "POST",
         body: formData,
       });
@@ -491,68 +643,50 @@ export default function OralReadingTestPage() {
           response.status,
           responseText,
         );
+        setToast({
+          message:
+            "Transcription started in background. You can proceed to comprehension test.",
+          type: "success",
+        });
+        setIsSubmitting(false);
         return;
       }
 
       if (!response.ok) {
-        console.error("Analysis API error:", response.status, result);
+        console.error("Transcription API error:", response.status, result);
+        setToast({
+          message:
+            "Transcription is processing in background. You can proceed to comprehension test.",
+          type: "success",
+        });
+        setIsSubmitting(false);
         return;
       }
 
-      console.log("Session created:", result.sessionId);
-      console.log("Assessment created:", result.assessmentId);
-
-      // Store assessmentId for the comprehension page
-      if (result.assessmentId) {
-        try {
-          sessionStorage.setItem(
-            "oral-reading-assessmentId",
-            result.assessmentId,
-          );
-        } catch {}
+      // Success - store analysis if available
+      if (result.sessionId) {
+        setSessionId(result.sessionId);
       }
 
       if (result.analysis) {
         setAnalysisResult(result.analysis as OralFluencyAnalysis);
       }
-      if (result.sessionId) {
-        setSessionId(result.sessionId);
-      }
-      if (result.assessmentId) {
-        setAssessmentId(result.assessmentId);
-      }
 
       setToast({
-        message: "Reading Fluency Session Successful!",
+        message: "Transcription complete!",
         type: "success",
       });
     } catch (err) {
       console.error("Submit error:", err);
+      setToast({
+        message:
+          "Transcription started. You can proceed to comprehension test.",
+        type: "success",
+      });
     } finally {
       setIsSubmitting(false);
     }
-  }, [
-    recordedAudioBlob,
-    selectedPassage,
-    selectedStudentId,
-    studentName,
-    gradeLevel,
-    selectedClassName,
-  ]);
-
-  const canSubmit =
-    hasRecording &&
-    recordedAudioBlob &&
-    selectedPassage &&
-    (selectedStudentId ||
-      (studentName.trim() && gradeLevel && selectedClassName));
-  useEffect(() => {
-    if (isRestoredRef.current) return;
-    if (canSubmit) {
-      console.log("Submitting recording...");
-      handleSubmitRecording();
-    }
-  }, [canSubmit, handleSubmitRecording]);
+  }, [recordedAudioBlob, selectedPassage, selectedStudentId]);
 
   if (isFullScreen) {
     return (
@@ -593,10 +727,15 @@ export default function OralReadingTestPage() {
             onGoBack={() => router.back()}
             onContinue={() =>
               hasRecording &&
-              studentName.trim() && gradeLevel && selectedClassName &&
+              studentName.trim() &&
+              gradeLevel &&
+              selectedClassName &&
               router.push("/dashboard/oral-reading-test/comprehension")
             }
-            continueEnabled={hasRecording && !!(studentName.trim() && gradeLevel && selectedClassName)}
+            continueEnabled={
+              hasRecording &&
+              !!(studentName.trim() && gradeLevel && selectedClassName)
+            }
           />
         )}
 
@@ -652,7 +791,9 @@ export default function OralReadingTestPage() {
             <PassageDisplay
               content={passageContent}
               miscues={showMiscues ? filteredMiscues : undefined}
-              alignedWords={showMiscues ? analysisResult?.alignedWords : undefined}
+              alignedWords={
+                showMiscues ? analysisResult?.alignedWords : undefined
+              }
               onJumpToTime={handleJumpToTime}
               expanded={passageExpanded}
               onToggleExpand={() => setPassageExpanded((prev) => !prev)}
@@ -661,7 +802,10 @@ export default function OralReadingTestPage() {
 
             {passageExpanded && hasRecording && recordedAudioURL && (
               <div className="mt-2">
-                <AudioPlayer src={recordedAudioURL} externalAudioRef={audioRef} />
+                <AudioPlayer
+                  src={recordedAudioURL}
+                  externalAudioRef={audioRef}
+                />
               </div>
             )}
 
@@ -678,8 +822,16 @@ export default function OralReadingTestPage() {
                     <button
                       type="button"
                       onClick={() => setShowMiscues((prev) => !prev)}
-                      aria-label={showMiscues ? "Show original passage" : "Show miscue highlights"}
-                      title={showMiscues ? "Show original passage" : "Show miscue highlights"}
+                      aria-label={
+                        showMiscues
+                          ? "Show original passage"
+                          : "Show miscue highlights"
+                      }
+                      title={
+                        showMiscues
+                          ? "Show original passage"
+                          : "Show miscue highlights"
+                      }
                       className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
                         showMiscues ? "bg-[#6666FF]" : "bg-[#C4C4FF]"
                       }`}
@@ -716,7 +868,9 @@ export default function OralReadingTestPage() {
             {!passageExpanded && (
               <ReadingTimer
                 hasPassage={hasPassage}
-                hasStudentInfo={!!(studentName.trim() && gradeLevel && selectedClassName)}
+                hasStudentInfo={
+                  !!(studentName.trim() && gradeLevel && selectedClassName)
+                }
                 onStartReading={handleStartReading}
                 hasRecording={hasRecording}
                 recordedSeconds={recordedSeconds}
@@ -772,7 +926,10 @@ export default function OralReadingTestPage() {
                   recordedSeconds,
                   analysisResult,
                 });
-                exportFluencyReportPdf(data, `Oral_Fluency_Report_${studentName.replace(/[^a-zA-Z0-9]/g, "_")}`);
+                exportFluencyReportPdf(
+                  data,
+                  `Oral_Fluency_Report_${studentName.replace(/[^a-zA-Z0-9]/g, "_")}`,
+                );
               }}
             />
           </div>
