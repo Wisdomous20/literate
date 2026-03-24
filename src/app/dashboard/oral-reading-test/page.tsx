@@ -136,6 +136,7 @@ export default function OralReadingTestPage() {
   const [studentName, setStudentName] = useState("");
   const [gradeLevel, setGradeLevel] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false); // NEW: tracks background transcription
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [selectedClassName, setSelectedClassName] = useState<string>("");
   const [isHydrated, setIsHydrated] = useState(false);
@@ -154,65 +155,71 @@ export default function OralReadingTestPage() {
   const [showMiscues, setShowMiscues] = useState(true);
   const audioRef = useRef<HTMLAudioElement>(null);
 
+  // Derived: true while transcription is running and results haven't arrived yet
+  const isAnalyzingFluency = isTranscribing || (hasRecording && !analysisResult && !!assessmentId);
+
   const startTranscriptionInBackground = async (
-  assessmentId: string,
-  audioBlob: Blob,
-  studentId: string,
-  passageId: string,
-) => {
-  try {
-    console.log("Starting transcription in background...");
-    
-    const { uploadAudio } = await import("@/utils/uploadAudio");
-    const { convertToWav } = await import("@/utils/convertToWav");
-    
-    const wavBlob = await convertToWav(audioBlob);
-    const audioUrl = await uploadAudio(wavBlob, studentId, passageId);
+    assessmentId: string,
+    audioBlob: Blob,
+    studentId: string,
+    passageId: string,
+  ) => {
+    setIsTranscribing(true); // START tracking transcription
+    try {
+      console.log("Starting transcription in background...");
 
-    if (!audioUrl) {
-      console.error("Background audio upload failed");
-      return;
-    }
+      const { uploadAudio } = await import("@/utils/uploadAudio");
+      const { convertToWav } = await import("@/utils/convertToWav");
 
-    const formData = new FormData();
-    formData.append("assessmentId", assessmentId);
-    formData.append("audioUrl", audioUrl);
-    formData.append("audio", wavBlob, "recording.wav");
+      const wavBlob = await convertToWav(audioBlob);
+      const audioUrl = await uploadAudio(wavBlob, studentId, passageId);
 
-    const response = await fetch("/api/oral-reading/transcribe", {
-      method: "POST",
-      body: formData,
-    });
-
-    const result = await response.json();
-
-    if (response.ok && result.analysis) {
-      console.log("Transcription completed in background");
-      setAnalysisResult(result.analysis as OralFluencyAnalysis);
-      if (result.sessionId) {
-        setSessionId(result.sessionId);
+      if (!audioUrl) {
+        console.error("Background audio upload failed");
+        return;
       }
 
-      // CRITICAL FIX: Update sessionStorage so fluency results persist
-      try {
-        const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
-        if (sessionRaw) {
-          const session = JSON.parse(sessionRaw);
-          session.analysisResult = result.analysis;
-          session.sessionId = result.sessionId;
-          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-          console.log("Session updated with fluency results");
+      const formData = new FormData();
+      formData.append("assessmentId", assessmentId);
+      formData.append("audioUrl", audioUrl);
+      formData.append("audio", wavBlob, "recording.wav");
+
+      const response = await fetch("/api/oral-reading/transcribe", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.analysis) {
+        console.log("Transcription completed in background");
+        setAnalysisResult(result.analysis as OralFluencyAnalysis);
+        if (result.sessionId) {
+          setSessionId(result.sessionId);
         }
-      } catch (err) {
-        console.error("Failed to update session storage:", err);
+
+        // CRITICAL FIX: Update sessionStorage so fluency results persist
+        try {
+          const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
+          if (sessionRaw) {
+            const session = JSON.parse(sessionRaw);
+            session.analysisResult = result.analysis;
+            session.sessionId = result.sessionId;
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+            console.log("Session updated with fluency results");
+          }
+        } catch (err) {
+          console.error("Failed to update session storage:", err);
+        }
+      } else {
+        console.error("Transcription failed:", result.error);
       }
-    } else {
-      console.error("Transcription failed:", result.error);
+    } catch (err) {
+      console.error("Background transcription error:", err);
+    } finally {
+      setIsTranscribing(false); // STOP tracking transcription
     }
-  } catch (err) {
-    console.error("Background transcription error:", err);
-  }
-};
+  };
 
   const handleJumpToTime = useCallback((timestamp: number) => {
     const audio = audioRef.current;
@@ -380,6 +387,7 @@ export default function OralReadingTestPage() {
       setRecordedAudioBlob(null);
       setAnalysisResult(null);
       setSessionId("");
+      setIsTranscribing(false); // Reset transcription state
       if (recordedAudioURL) {
         URL.revokeObjectURL(recordedAudioURL);
         setRecordedAudioURL(null);
@@ -521,6 +529,7 @@ export default function OralReadingTestPage() {
     setRecordedSeconds(0);
     setAnalysisResult(null);
     setSessionId("");
+    setIsTranscribing(false); // Reset transcription state
     if (recordedAudioURL) {
       URL.revokeObjectURL(recordedAudioURL);
       setRecordedAudioURL(null);
@@ -549,6 +558,7 @@ export default function OralReadingTestPage() {
     setCountdownSeconds(3);
     setAnalysisResult(null);
     setSessionId("");
+    setIsTranscribing(false); // Reset transcription state
     sessionStorage.removeItem(STORAGE_KEY);
     sessionStorage.removeItem(AUDIO_STORAGE_KEY);
     sessionStorage.removeItem("oral-reading-assessmentId");
@@ -878,6 +888,7 @@ export default function OralReadingTestPage() {
                 onTryAgain={handleTryAgain}
                 onStartOver={handleStartNew}
                 audioRef={audioRef}
+                isAnalyzing={isAnalyzingFluency}
               />
             )}
 
@@ -903,8 +914,8 @@ export default function OralReadingTestPage() {
           {/* Right column: MiscueAnalysis — responsive width */}
           <div className="w-60 shrink-0 self-stretch md:w-67.5 lg:w-75 xl:w-[320px]">
             <MiscueAnalysis
+              isAnalyzing={isAnalyzingFluency}
               disabled={!hasRecording}
-              isAnalyzing={isSubmitting}
               miscues={analysisResult?.miscues}
               totalMiscue={analysisResult?.totalMiscues}
               oralFluencyScore={analysisResult?.oralFluencyScore}
