@@ -19,6 +19,8 @@ import type {
   BehaviorResult,
 } from "@/types/oral-reading";
 import { exportFluencyReportPdf } from "@/lib/exportFluencyReportPdf";
+import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay";
+import { useEditMiscues } from "@/components/oral-reading-test/useEditMiscues";
 
 const STORAGE_KEY = "oral-reading-session";
 const AUDIO_STORAGE_KEY = "oral-reading-audio";
@@ -137,6 +139,8 @@ function buildBehaviorItems(
 export default function OralReadingReportPage() {
   const router = useRouter();
   const [showMiscuesModal, setShowMiscuesModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [localAnalysis, setLocalAnalysis] = useState<OralFluencyAnalysis | null>(null);
   const isClient = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -144,7 +148,7 @@ export default function OralReadingReportPage() {
   );
 
   const session = useMemo(() => (isClient ? loadSession() : {}), [isClient]);
-  const analysis = session.analysisResult;
+  const analysis = localAnalysis ?? session.analysisResult;
 
   const audioSrc = useMemo(() => {
     if (!isClient) return null;
@@ -200,6 +204,38 @@ export default function OralReadingReportPage() {
   const classification = analysis?.classificationLevel || "—";
   const miscueData = useMemo(() => buildMiscueData(analysis), [analysis]);
   const behaviorItems = useMemo(() => buildBehaviorItems(analysis), [analysis]);
+
+  const editMiscues = useEditMiscues({
+    originalMiscues: analysis?.miscues ?? [],
+    totalWords,
+    sessionId: session.sessionId ?? undefined,
+    onSave: (editedMiscues, metrics) => {
+      setLocalAnalysis((prev) => {
+        const base = prev ?? (analysis as OralFluencyAnalysis);
+        return {
+          ...base,
+          miscues: editedMiscues,
+          totalMiscues: metrics.totalMiscues,
+          oralFluencyScore: metrics.oralFluencyScore,
+          classificationLevel: metrics.classificationLevel as OralFluencyAnalysis["classificationLevel"],
+        };
+      });
+      // Persist to sessionStorage
+      try {
+        const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
+        if (sessionRaw) {
+          const s = JSON.parse(sessionRaw);
+          if (s.analysisResult) {
+            s.analysisResult.miscues = editedMiscues;
+            s.analysisResult.totalMiscues = metrics.totalMiscues;
+            s.analysisResult.oralFluencyScore = metrics.oralFluencyScore;
+            s.analysisResult.classificationLevel = metrics.classificationLevel;
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+          }
+        }
+      } catch {}
+    },
+  });
 
   const handleExportPdf = useCallback(() => {
     const safeName = studentName.replace(/[^a-zA-Z0-9]/g, "_");
@@ -317,6 +353,7 @@ export default function OralReadingReportPage() {
           <MiscueAnalysisReport
             miscueData={miscueData}
             onViewMiscues={() => setShowMiscuesModal(true)}
+            onEditMiscues={() => setShowEditModal(true)}
           />
         </div>
       </main>
@@ -329,6 +366,52 @@ export default function OralReadingReportPage() {
         alignedWords={analysis?.alignedWords}
         passageLevel={session.selectedLevel}
       />
+
+      {/* Edit Miscues Modal */}
+      {showEditModal && analysis && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="relative flex h-[80vh] w-[90vw] max-w-4xl flex-col rounded-2xl bg-white p-6 shadow-2xl">
+            <h2 className="mb-4 text-lg font-bold text-[#003366]">
+              Edit Miscues
+            </h2>
+            <div className="flex-1 overflow-auto">
+              <PassageDisplay
+                content={session.passageContent || ""}
+                miscues={
+                  editMiscues.isEditing
+                    ? editMiscues.editedMiscues
+                    : analysis?.miscues
+                }
+                alignedWords={analysis?.alignedWords}
+                passageLevel={session.selectedLevel}
+                expanded
+                resizable={false}
+                editMode={editMiscues}
+              />
+            </div>
+            {!editMiscues.isEditing && (
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    editMiscues.enterEditMode();
+                  }}
+                  className="rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white hover:bg-[#5555EE]"
+                >
+                  Start Editing
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-200"
+                >
+                  Close
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

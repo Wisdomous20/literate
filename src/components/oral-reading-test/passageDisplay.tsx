@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef, useCallback, Fragment, type CSSProperties } from "react";
-import { Maximize2, Minimize2, Play, GripHorizontal, ChevronDown } from "lucide-react";
+import { Maximize2, Minimize2, Play, GripHorizontal, ChevronDown, Pencil } from "lucide-react";
 import type { MiscueResult, AlignedWord } from "@/types/oral-reading";
 import { normalizeWord } from "@/utils/textUtils";
+import type { EditableMiscueResult, EditTool, ClickResult, MiscueType } from "./useEditMiscues";
+import { MiscueToolbar } from "./miscueToolbar";
+import { TextInputPopover, RepetitionPopover, ContextMenuPopover } from "./miscueEditPopover";
 
 type MiscueColor = {
   bg: string;
@@ -125,6 +128,27 @@ interface InlineInsertion {
   miscue: MiscueResult;
 }
 
+export interface EditModeCallbacks {
+  isEditing: boolean;
+  editedMiscues: EditableMiscueResult[];
+  activeTool: EditTool;
+  transpositionFirst: number | null;
+  undoStack: { miscues: EditableMiscueResult[] }[];
+  redoStack: { miscues: EditableMiscueResult[] }[];
+  isSaving: boolean;
+  setActiveTool: (tool: EditTool) => void;
+  enterEditMode: () => void;
+  cancelEdit: () => void;
+  resetAll: () => void;
+  saveEdit: () => Promise<void>;
+  undo: () => void;
+  redo: () => void;
+  handleWordClick: (wordIndex: number, expectedWord: string) => ClickResult;
+  confirmTextMiscue: (wordIndex: number, expectedWord: string, spokenWord: string) => void;
+  confirmRepetitionMiscue: (wordIndex: number, expectedWord: string, count: number) => void;
+  removeMiscue: (index: number) => void;
+}
+
 interface PassageDisplayProps {
   content: string;
   miscues?: MiscueResult[];
@@ -139,6 +163,7 @@ interface PassageDisplayProps {
   onToggleCollapsed?: () => void;
   passageTitle?: string;
   initialHeight?: number;
+  editMode?: EditModeCallbacks;
 }
 
 export function getPassageTextStyle(passageLevel?: string): CSSProperties {
@@ -183,6 +208,7 @@ export function PassageDisplay({
   onToggleCollapsed,
   passageTitle,
   initialHeight,
+  editMode,
 }: PassageDisplayProps) {
   const passageTextStyle = getPassageTextStyle(passageLevel);
   const [popup, setPopup] = useState<PopupState | null>(null);
@@ -195,6 +221,32 @@ export function PassageDisplay({
   const isDragging = useRef(false);
   const dragStartY = useRef(0);
   const dragStartH = useRef(0);
+
+  // ─── Edit mode state ───
+  const isEditing = editMode?.isEditing ?? false;
+  const [textPopover, setTextPopover] = useState<{
+    wordIndex: number;
+    expectedWord: string;
+    miscueType: MiscueType;
+    anchorEl: HTMLElement;
+  } | null>(null);
+  const [repetitionPopover, setRepetitionPopover] = useState<{
+    wordIndex: number;
+    expectedWord: string;
+    anchorEl: HTMLElement;
+  } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    miscueIndex: number;
+  } | null>(null);
+
+  // Close popovers when tool changes or edit mode ends
+  useEffect(() => {
+    setTextPopover(null);
+    setRepetitionPopover(null);
+    setContextMenu(null);
+  }, [isEditing, editMode?.activeTool]);
 
   const handleDragStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -403,9 +455,24 @@ export function PassageDisplay({
     return map;
   }, [miscues, alignedWords]);
 
+  // Map wordIndex → user-added insertion miscues (INSERTION with empty expectedWord)
+  const userAddedInsertions = useMemo(() => {
+    if (!miscues?.length) return null;
+    const map = new Map<number, MiscueResult[]>();
+    for (const m of miscues) {
+      if (m.miscueType === "INSERTION" && m.expectedWord === "" && m.spokenWord) {
+        const list = map.get(m.wordIndex) || [];
+        list.push(m);
+        map.set(m.wordIndex, list);
+      }
+    }
+    return map.size > 0 ? map : null;
+  }, [miscues]);
+
   const hasMiscues =
     (miscueMap !== null && miscueMap.size > 0) ||
-    (inlineInsertions !== null && inlineInsertions.size > 0);
+    (inlineInsertions !== null && inlineInsertions.size > 0) ||
+    (userAddedInsertions !== null && userAddedInsertions.size > 0);
 
   const words = useMemo(() => {
     if (!content) return [];
@@ -414,7 +481,6 @@ export function PassageDisplay({
 
   const openPopup = useCallback(
     (e: React.MouseEvent, miscue: MiscueResult) => {
-      if (miscue.timestamp == null || !onJumpToTime) return;
       const rect = (e.target as HTMLElement).getBoundingClientRect();
       const container = containerRef.current;
       if (!container) return;
@@ -450,7 +516,7 @@ export function PassageDisplay({
         hAlign,
       });
     },
-    [onJumpToTime],
+    [],
   );
 
   const renderHighlightedContent = () => {
@@ -458,6 +524,28 @@ export function PassageDisplay({
     return words.map((token, i) => {
       const isSpace = /^\s+$/.test(token);
       if (isSpace) {
+        const precedingWordIndex = wordIndex - 1;
+        if (isEditing && editMode?.activeTool === "INSERTION" && precedingWordIndex >= 0) {
+          return (
+            <span
+              key={i}
+              className="relative cursor-pointer"
+              onClick={(e) => {
+                setTextPopover({
+                  wordIndex: precedingWordIndex,
+                  expectedWord: "",
+                  miscueType: "INSERTION" as MiscueType,
+                  anchorEl: e.target as HTMLElement,
+                });
+              }}
+            >
+              {token}
+              <span className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 flex items-center">
+                <span className="h-5 w-0.5 rounded-full bg-[#1E7A35]/40" />
+              </span>
+            </span>
+          );
+        }
         return <span key={i}>{token}</span>;
       }
       const currentWordIndex = wordIndex;
@@ -465,6 +553,44 @@ export function PassageDisplay({
 
       const miscue = miscueMap?.get(currentWordIndex);
       const insertions = inlineInsertions?.get(currentWordIndex);
+
+      // Edit mode word click handler — tool-based word interaction
+      const handleEditClick = (e: React.MouseEvent) => {
+        if (!editMode || !isEditing) return;
+        const result = editMode.handleWordClick(currentWordIndex, token);
+        if (result?.action === "needsText") {
+          setTextPopover({
+            wordIndex: currentWordIndex,
+            expectedWord: token,
+            miscueType: editMode.activeTool as MiscueType,
+            anchorEl: e.target as HTMLElement,
+          });
+        } else if (result?.action === "needsRepetition") {
+          setRepetitionPopover({
+            wordIndex: currentWordIndex,
+            expectedWord: token,
+            anchorEl: e.target as HTMLElement,
+          });
+        }
+      };
+
+      // Right-click to remove existing miscue
+      const handleEditContextMenu = (e: React.MouseEvent) => {
+        if (!editMode || !isEditing || !miscue) return;
+        e.preventDefault();
+        const idx = editMode.editedMiscues.findIndex(
+          (m) => m.wordIndex === currentWordIndex,
+        );
+        if (idx === -1) return;
+        const container = containerRef.current;
+        if (!container) return;
+        const containerRect = container.getBoundingClientRect();
+        setContextMenu({
+          x: e.clientX - containerRect.left + container.scrollLeft,
+          y: e.clientY - containerRect.top + container.scrollTop,
+          miscueIndex: idx,
+        });
+      };
 
       // Build the word element (highlighted or plain)
       let wordEl: React.ReactNode;
@@ -477,27 +603,43 @@ export function PassageDisplay({
             key={`w-${i}`}
             title={`${miscue.miscueType.replace(/_/g, " ")}${miscue.spokenWord ? ` — spoken: "${miscue.spokenWord}"` : ""}${hasTimestamp ? " (click to jump)" : ""}`}
             className={`relative inline-block rounded-sm px-0.5 font-semibold transition-all ${colors.bgClass} ${colors.textClass} ${colors.borderBottomClass} ${
-              hasTimestamp && onJumpToTime
+              isEditing
                 ? "cursor-pointer hover:brightness-90"
-                : "cursor-help"
+                : hasTimestamp && onJumpToTime
+                  ? "cursor-pointer hover:brightness-90"
+                  : "cursor-help"
             }`}
-            onClick={(e) => openPopup(e, miscue)}
+            onClick={(e) =>
+              isEditing ? handleEditClick(e) : openPopup(e, miscue)
+            }
+            onContextMenu={isEditing ? handleEditContextMenu : undefined}
           >
             {token}
           </span>
         );
       } else {
-        wordEl = <span key={`w-${i}`}>{token}</span>;
+        wordEl = (
+          <span
+            key={`w-${i}`}
+            className={isEditing ? "cursor-pointer rounded-sm px-0.5 transition-colors hover:bg-[#DAE6FF]/40" : ""}
+            onClick={isEditing ? handleEditClick : undefined}
+          >
+            {token}
+          </span>
+        );
       }
 
-      // If no inline insertions follow, return just the word
-      if (!insertions || insertions.length === 0) return wordEl;
+      // Get user-added insertions for this word position
+      const userIns = userAddedInsertions?.get(currentWordIndex);
 
-      // Render word + inline inserted/repeated words
+      // If no inline insertions AND no user insertions follow, return just the word
+      if ((!insertions || insertions.length === 0) && (!userIns || userIns.length === 0)) return wordEl;
+
+      // Render word + inline inserted/repeated words + user-added insertions
       return (
         <Fragment key={i}>
           {wordEl}
-          {insertions.map((ins, j) => {
+          {insertions?.map((ins, j) => {
             const hasTs = ins.miscue.timestamp != null;
             const isRepetition = ins.miscue.miscueType === "REPETITION";
             const colors = MISCUE_COLORS[ins.miscue.miscueType] || FALLBACK_COLOR;
@@ -515,6 +657,35 @@ export function PassageDisplay({
                       : "cursor-help"
                   }`}
                   onClick={(e) => openPopup(e, ins.miscue)}
+                >
+                  {ins.spokenWord}
+                </span>
+              </span>
+            );
+          })}
+          {userIns?.map((ins, j) => {
+            const colors = MISCUE_COLORS["INSERTION"] || FALLBACK_COLOR;
+            return (
+              <span key={`uins-${i}-${j}`}>
+                {" "}
+                <span
+                  title={`INSERTION — inserted: "${ins.spokenWord}"`}
+                  className={`relative inline-block rounded-sm px-0.5 font-semibold italic transition-all ${colors.bgClass} ${colors.textClass} border-b-2 border-dashed ${colors.borderBottomClass.replace("border-b-2 ", "")} ${
+                    isEditing ? "cursor-pointer hover:brightness-90" : "cursor-help"
+                  }`}
+                  onContextMenu={isEditing ? (e) => {
+                    e.preventDefault();
+                    const idx = editMode!.editedMiscues.findIndex((m) => m === ins);
+                    if (idx === -1) return;
+                    const container = containerRef.current;
+                    if (!container) return;
+                    const containerRect = container.getBoundingClientRect();
+                    setContextMenu({
+                      x: e.clientX - containerRect.left + container.scrollLeft,
+                      y: e.clientY - containerRect.top + container.scrollTop,
+                      miscueIndex: idx,
+                    });
+                  } : undefined}
                 >
                   {ins.spokenWord}
                 </span>
@@ -592,6 +763,35 @@ export function PassageDisplay({
         </button>
       )}
 
+      {/* Edit pencil button */}
+      {editMode && !isEditing && content && hasMiscues && (
+        <button
+          type="button"
+          onClick={editMode.enterEditMode}
+          className={`absolute right-13 z-20 flex h-7 w-7 items-center justify-center rounded-md bg-[rgba(84,164,255,0.15)] transition-colors hover:opacity-80 md:right-14 ${collapsible && !collapsed ? "top-12 md:top-13" : "top-4 md:top-5"}`}
+          title="Edit miscues"
+        >
+          <Pencil className="h-3.5 w-3.5 text-[#1A5FB4]" />
+        </button>
+      )}
+
+      {/* Edit toolbar */}
+      {editMode && isEditing && (
+        <MiscueToolbar
+          activeTool={editMode.activeTool}
+          onSelectTool={editMode.setActiveTool}
+          canUndo={editMode.undoStack.length > 0}
+          canRedo={editMode.redoStack.length > 0}
+          onUndo={editMode.undo}
+          onRedo={editMode.redo}
+          onSave={editMode.saveEdit}
+          onCancel={editMode.cancelEdit}
+          onResetAll={editMode.resetAll}
+          isSaving={editMode.isSaving}
+          transpositionFirst={editMode.transpositionFirst}
+        />
+      )}
+
       <div
         ref={containerRef}
         className={`oral-reading-scroll relative flex-1 overflow-auto rounded-[10px] border border-[#54A4FF] bg-[#EFFDFF] p-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)] md:p-5 ${collapsible && !collapsed && !expanded ? "rounded-t-none border-t-0" : ""}`}
@@ -610,7 +810,6 @@ export function PassageDisplay({
         )}
 
         {popup &&
-          popup.miscue.timestamp !== null &&
           (() => {
             const colors =
               MISCUE_COLORS[popup.miscue.miscueType] || FALLBACK_COLOR;
@@ -620,6 +819,9 @@ export function PassageDisplay({
                 : popup.hAlign === "right"
                   ? "mr-4 self-end"
                   : "self-center";
+            const hasTimestamp =
+              popup.miscue.timestamp !== null &&
+              popup.miscue.timestamp !== undefined;
 
             return (
               <div
@@ -647,17 +849,19 @@ export function PassageDisplay({
                       </div>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onJumpToTime?.(popup.miscue.timestamp!);
-                      setPopup(null);
-                    }}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-md bg-[#6666FF] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:brightness-110"
-                  >
-                    <Play className="h-3 w-3" />
-                    Jump to Word ({formatTimestamp(popup.miscue.timestamp!)})
-                  </button>
+                  {hasTimestamp && onJumpToTime && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onJumpToTime(popup.miscue.timestamp!);
+                        setPopup(null);
+                      }}
+                      className="flex w-full items-center justify-center gap-1.5 rounded-md bg-[#6666FF] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:brightness-110"
+                    >
+                      <Play className="h-3 w-3" />
+                      Jump to Word ({formatTimestamp(popup.miscue.timestamp!)})
+                    </button>
+                  )}
                 </div>
 
                 {!popup.flipped && (
@@ -668,6 +872,42 @@ export function PassageDisplay({
               </div>
             );
           })()}
+
+        {/* Text input popover for substitution/mispronunciation/reversal/insertion */}
+        {isEditing && editMode && textPopover && (
+          <TextInputPopover
+            wordIndex={textPopover.wordIndex}
+            expectedWord={textPopover.expectedWord}
+            miscueType={textPopover.miscueType}
+            anchorEl={textPopover.anchorEl}
+            containerEl={containerRef.current}
+            onConfirm={editMode.confirmTextMiscue}
+            onCancel={() => setTextPopover(null)}
+          />
+        )}
+
+        {/* Repetition popover */}
+        {isEditing && editMode && repetitionPopover && (
+          <RepetitionPopover
+            wordIndex={repetitionPopover.wordIndex}
+            expectedWord={repetitionPopover.expectedWord}
+            anchorEl={repetitionPopover.anchorEl}
+            containerEl={containerRef.current}
+            onConfirm={editMode.confirmRepetitionMiscue}
+            onCancel={() => setRepetitionPopover(null)}
+          />
+        )}
+
+        {/* Right-click context menu to remove a miscue */}
+        {isEditing && editMode && contextMenu && (
+          <ContextMenuPopover
+            x={contextMenu.x}
+            y={contextMenu.y}
+            miscueIndex={contextMenu.miscueIndex}
+            onRemove={editMode.removeMiscue}
+            onClose={() => setContextMenu(null)}
+          />
+        )}
       </div>
 
       {!expanded && resizable && (
