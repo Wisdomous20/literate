@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, type CSSProperties } from "react";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Minus, Plus, Trash2, Check, X, Loader2 } from "lucide-react";
 import type { MiscueType } from "./useEditMiscues";
 
 // ─── Position helpers ───
@@ -254,6 +254,123 @@ export function ContextMenuPopover({
         <Trash2 className="h-3 w-3" />
         Remove Miscue
       </button>
+    </div>
+  );
+}
+
+// ─── Miscue Action Popover (approve / change type on system-generated miscues) ───
+
+const TYPE_OPTIONS: { type: MiscueType; label: string; color: string; bg: string }[] = [
+  { type: "OMISSION", label: "Omission", color: "#4B3BA3", bg: "rgba(180,170,240,0.18)" },
+  { type: "INSERTION", label: "Insertion", color: "#1E7A35", bg: "rgba(140,220,160,0.18)" },
+  { type: "MISPRONUNCIATION", label: "Mispronunciation", color: "#C41048", bg: "rgba(253,182,210,0.2)" },
+  { type: "SUBSTITUTION", label: "Substitution", color: "#1A5FB4", bg: "rgba(160,200,255,0.18)" },
+  { type: "REVERSAL", label: "Reversal", color: "#6E4023", bg: "rgba(200,165,130,0.15)" },
+  { type: "TRANSPOSITION", label: "Transposition", color: "#8B008B", bg: "rgba(220,120,220,0.18)" },
+  { type: "REPETITION", label: "Repetition", color: "#B85C00", bg: "rgba(255,200,140,0.2)" },
+  { type: "SELF_CORRECTION", label: "Self-Correction", color: "#8A6D00", bg: "rgba(250,230,140,0.2)" },
+];
+
+interface MiscueActionPopoverProps {
+  miscueType: MiscueType;
+  spokenWord?: string | null;
+  isLoading: boolean;
+  onApprove: () => void;
+  onDisapprove: () => void;
+  onChangeType: (newType: MiscueType) => void;
+  onClose: () => void;
+}
+
+export function MiscueActionPopover({
+  miscueType,
+  spokenWord,
+  isLoading,
+  onApprove,
+  onDisapprove,
+  onChangeType,
+  onClose,
+}: MiscueActionPopoverProps) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [onClose]);
+
+  const color = MISCUE_TEXT_COLORS[miscueType] || "#31318A";
+
+  return (
+    <div ref={ref} className="w-56 rounded-lg border border-[#54A4FF] bg-white p-2.5 shadow-lg">
+      {/* Current type */}
+      <div className="mb-1.5 text-center">
+        <span
+          className="text-[10px] font-bold uppercase tracking-wide"
+          style={{ color }}
+        >
+          {miscueType.replace(/_/g, " ")}
+        </span>
+        {spokenWord && (
+          <div className="text-[10px] text-[#31318A]/70">
+            Spoken: &ldquo;{spokenWord}&rdquo;
+          </div>
+        )}
+      </div>
+
+      {/* Approve / Disapprove buttons */}
+      <div className="mb-2 flex gap-1.5">
+        <button
+          type="button"
+          disabled={isLoading}
+          onClick={onApprove}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-[#1E7A35] px-2 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#166B2B] disabled:opacity-50"
+        >
+          {isLoading ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <Check className="h-3 w-3" />
+          )}
+          Approve
+        </button>
+        <button
+          type="button"
+          disabled={isLoading}
+          onClick={onDisapprove}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-[#C41048] px-2 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#A30D3B] disabled:opacity-50"
+        >
+          {isLoading ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <X className="h-3 w-3" />
+          )}
+          Disapprove
+        </button>
+      </div>
+
+      {/* Change type */}
+      <div className="mb-1 text-[10px] font-semibold text-[#31318A]/60">
+        Change type:
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {TYPE_OPTIONS.filter((t) => t.type !== miscueType).map(
+          (opt) => (
+            <button
+              key={opt.type}
+              type="button"
+              disabled={isLoading}
+              onClick={() => onChangeType(opt.type)}
+              className="rounded-md px-1.5 py-0.5 text-[10px] font-bold transition-all hover:brightness-90 disabled:opacity-50"
+              style={{ color: opt.color, backgroundColor: opt.bg }}
+            >
+              {opt.label}
+            </button>
+          ),
+        )}
+      </div>
     </div>
   );
 }

@@ -6,7 +6,7 @@ import type { MiscueResult, AlignedWord } from "@/types/oral-reading";
 import { normalizeWord } from "@/utils/textUtils";
 import type { EditableMiscueResult, EditTool, ClickResult, MiscueType } from "./useEditMiscues";
 import { MiscueToolbar } from "./miscueToolbar";
-import { TextInputPopover, RepetitionPopover, ContextMenuPopover } from "./miscueEditPopover";
+import { TextInputPopover, RepetitionPopover, ContextMenuPopover, MiscueActionPopover } from "./miscueEditPopover";
 
 type MiscueColor = {
   bg: string;
@@ -164,6 +164,8 @@ interface PassageDisplayProps {
   passageTitle?: string;
   initialHeight?: number;
   editMode?: EditModeCallbacks;
+  onApproveMiscue?: (miscue: MiscueResult) => Promise<void>;
+  onUpdateMiscueType?: (miscue: MiscueResult, newType: MiscueResult["miscueType"]) => Promise<void>;
 }
 
 export function getPassageTextStyle(passageLevel?: string): CSSProperties {
@@ -209,6 +211,8 @@ export function PassageDisplay({
   passageTitle,
   initialHeight,
   editMode,
+  onApproveMiscue,
+  onUpdateMiscueType,
 }: PassageDisplayProps) {
   const passageTextStyle = getPassageTextStyle(passageLevel);
   const [popup, setPopup] = useState<PopupState | null>(null);
@@ -247,6 +251,9 @@ export function PassageDisplay({
     setRepetitionPopover(null);
     setContextMenu(null);
   }, [isEditing, editMode?.activeTool]);
+
+  // ─── Approve/update action state ───
+  const [actionLoading, setActionLoading] = useState(false);
 
   const handleDragStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -822,6 +829,7 @@ export function PassageDisplay({
             const hasTimestamp =
               popup.miscue.timestamp !== null &&
               popup.miscue.timestamp !== undefined;
+            const hasActions = !!(onApproveMiscue || onUpdateMiscueType);
 
             return (
               <div
@@ -834,35 +842,65 @@ export function PassageDisplay({
                   />
                 )}
 
-                <div
-                  className={`rounded-lg border bg-white px-3 py-2 shadow-[0_4px_16px_rgba(0,0,0,0.12)] ${colors.popupBorderClass}`}
-                >
-                  <div className="mb-1.5 text-center">
-                    <span
-                      className={`text-[10px] font-bold uppercase tracking-wide ${colors.textClass}`}
-                    >
-                      {popup.miscue.miscueType.replace(/_/g, " ")}
-                    </span>
-                    {popup.miscue.spokenWord && (
-                      <div className="text-[10px] text-[#31318A]/70">
-                        Spoken: &ldquo;{popup.miscue.spokenWord}&rdquo;
-                      </div>
+                {hasActions ? (
+                  <MiscueActionPopover
+                    miscueType={popup.miscue.miscueType}
+                    spokenWord={popup.miscue.spokenWord}
+                    isLoading={actionLoading}
+                    onApprove={() => setPopup(null)}
+                    onDisapprove={async () => {
+                      if (!onApproveMiscue) return;
+                      setActionLoading(true);
+                      try {
+                        await onApproveMiscue(popup.miscue);
+                        setPopup(null);
+                      } finally {
+                        setActionLoading(false);
+                      }
+                    }}
+                    onChangeType={async (newType) => {
+                      if (!onUpdateMiscueType) return;
+                      setActionLoading(true);
+                      try {
+                        await onUpdateMiscueType(popup.miscue, newType);
+                        setPopup(null);
+                      } finally {
+                        setActionLoading(false);
+                      }
+                    }}
+                    onClose={() => setPopup(null)}
+                  />
+                ) : (
+                  <div
+                    className={`rounded-lg border bg-white px-3 py-2 shadow-[0_4px_16px_rgba(0,0,0,0.12)] ${colors.popupBorderClass}`}
+                  >
+                    <div className="mb-1.5 text-center">
+                      <span
+                        className={`text-[10px] font-bold uppercase tracking-wide ${colors.textClass}`}
+                      >
+                        {popup.miscue.miscueType.replace(/_/g, " ")}
+                      </span>
+                      {popup.miscue.spokenWord && (
+                        <div className="text-[10px] text-[#31318A]/70">
+                          Spoken: &ldquo;{popup.miscue.spokenWord}&rdquo;
+                        </div>
+                      )}
+                    </div>
+                    {hasTimestamp && onJumpToTime && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onJumpToTime(popup.miscue.timestamp!);
+                          setPopup(null);
+                        }}
+                        className="flex w-full items-center justify-center gap-1.5 rounded-md bg-[#6666FF] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:brightness-110"
+                      >
+                        <Play className="h-3 w-3" />
+                        Jump to Word ({formatTimestamp(popup.miscue.timestamp!)})
+                      </button>
                     )}
                   </div>
-                  {hasTimestamp && onJumpToTime && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onJumpToTime(popup.miscue.timestamp!);
-                        setPopup(null);
-                      }}
-                      className="flex w-full items-center justify-center gap-1.5 rounded-md bg-[#6666FF] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:brightness-110"
-                    >
-                      <Play className="h-3 w-3" />
-                      Jump to Word ({formatTimestamp(popup.miscue.timestamp!)})
-                    </button>
-                  )}
-                </div>
+                )}
 
                 {!popup.flipped && (
                   <div

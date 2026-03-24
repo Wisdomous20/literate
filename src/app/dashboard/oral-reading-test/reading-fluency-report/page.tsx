@@ -21,6 +21,8 @@ import type {
 import { exportFluencyReportPdf } from "@/lib/exportFluencyReportPdf";
 import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay";
 import { useEditMiscues } from "@/components/oral-reading-test/useEditMiscues";
+import { fetchOralFluencyMiscues } from "@/app/actions/oral-fluency/getMiscues";
+import { updateMiscueAction } from "@/app/actions/oral-fluency/updateMiscue";
 
 const STORAGE_KEY = "oral-reading-session";
 const AUDIO_STORAGE_KEY = "oral-reading-audio";
@@ -237,6 +239,112 @@ export default function OralReadingReportPage() {
     },
   });
 
+  const reportSessionId = session.sessionId;
+
+  const handleApproveMiscue = useCallback(
+    async (miscue: MiscueResult) => {
+      if (!reportSessionId) return;
+      const dbResult = await fetchOralFluencyMiscues(reportSessionId);
+      if (!dbResult.success || !dbResult.data) return;
+      const match = dbResult.data.find(
+        (m) =>
+          m.wordIndex === miscue.wordIndex &&
+          m.miscueType === miscue.miscueType &&
+          m.expectedWord === miscue.expectedWord
+      );
+      if (!match?.id) return;
+      const result = await updateMiscueAction({
+        miscueId: match.id,
+        action: "approve",
+      });
+      if (!result.success) return;
+      setLocalAnalysis((prev) => {
+        const base = prev ?? (analysis as OralFluencyAnalysis);
+        const updated = {
+          ...base,
+          miscues: base.miscues.filter(
+            (m) =>
+              !(
+                m.wordIndex === miscue.wordIndex &&
+                m.miscueType === miscue.miscueType &&
+                m.expectedWord === miscue.expectedWord
+              )
+          ),
+          totalMiscues: result.updatedMetrics!.totalMiscues,
+          oralFluencyScore: result.updatedMetrics!.oralFluencyScore,
+          classificationLevel: result.updatedMetrics!.classificationLevel as OralFluencyAnalysis["classificationLevel"],
+        };
+        try {
+          const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
+          if (sessionRaw) {
+            const s = JSON.parse(sessionRaw);
+            if (s.analysisResult) {
+              s.analysisResult.miscues = updated.miscues;
+              s.analysisResult.totalMiscues = updated.totalMiscues;
+              s.analysisResult.oralFluencyScore = updated.oralFluencyScore;
+              s.analysisResult.classificationLevel = updated.classificationLevel;
+              sessionStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+            }
+          }
+        } catch {}
+        return updated;
+      });
+    },
+    [reportSessionId, analysis]
+  );
+
+  const handleUpdateMiscueType = useCallback(
+    async (miscue: MiscueResult, newType: MiscueResult["miscueType"]) => {
+      if (!reportSessionId) return;
+      const dbResult = await fetchOralFluencyMiscues(reportSessionId);
+      if (!dbResult.success || !dbResult.data) return;
+      const match = dbResult.data.find(
+        (m) =>
+          m.wordIndex === miscue.wordIndex &&
+          m.miscueType === miscue.miscueType &&
+          m.expectedWord === miscue.expectedWord
+      );
+      if (!match?.id) return;
+      const result = await updateMiscueAction({
+        miscueId: match.id,
+        action: "update",
+        newMiscueType: newType,
+      });
+      if (!result.success) return;
+      setLocalAnalysis((prev) => {
+        const base = prev ?? (analysis as OralFluencyAnalysis);
+        const updated = {
+          ...base,
+          miscues: base.miscues.map((m) =>
+            m.wordIndex === miscue.wordIndex &&
+            m.miscueType === miscue.miscueType &&
+            m.expectedWord === miscue.expectedWord
+              ? { ...m, miscueType: newType }
+              : m
+          ),
+          totalMiscues: result.updatedMetrics!.totalMiscues,
+          oralFluencyScore: result.updatedMetrics!.oralFluencyScore,
+          classificationLevel: result.updatedMetrics!.classificationLevel as OralFluencyAnalysis["classificationLevel"],
+        };
+        try {
+          const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
+          if (sessionRaw) {
+            const s = JSON.parse(sessionRaw);
+            if (s.analysisResult) {
+              s.analysisResult.miscues = updated.miscues;
+              s.analysisResult.totalMiscues = updated.totalMiscues;
+              s.analysisResult.oralFluencyScore = updated.oralFluencyScore;
+              s.analysisResult.classificationLevel = updated.classificationLevel;
+              sessionStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+            }
+          }
+        } catch {}
+        return updated;
+      });
+    },
+    [reportSessionId, analysis]
+  );
+
   const handleExportPdf = useCallback(() => {
     const safeName = studentName.replace(/[^a-zA-Z0-9]/g, "_");
     exportFluencyReportPdf(
@@ -387,6 +495,8 @@ export default function OralReadingReportPage() {
                 expanded
                 resizable={false}
                 editMode={editMiscues}
+                onApproveMiscue={reportSessionId ? handleApproveMiscue : undefined}
+                onUpdateMiscueType={reportSessionId ? handleUpdateMiscueType : undefined}
               />
             </div>
             {!editMiscues.isEditing && (
