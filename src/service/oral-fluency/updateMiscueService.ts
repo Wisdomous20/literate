@@ -1,0 +1,157 @@
+import { prisma } from "@/lib/prisma";
+import { MiscueType, LevelClassification } from "@/generated/prisma/enums";
+
+
+function computeOralFluencyScore(
+  totalWords: number,
+  totalMiscues: number,
+): number {
+  if (totalWords <= 0) return 0;
+  const score = ((totalWords - totalMiscues) / totalWords) * 100;
+  return Math.round(score * 10) / 10;
+}
+
+function classifyReadingLevel(
+  oralFluencyScore: number,
+): LevelClassification {
+  if (oralFluencyScore >= 97) return "INDEPENDENT";
+  if (oralFluencyScore >= 90) return "INSTRUCTIONAL";
+  return "FRUSTRATION";
+}
+
+// ─── Types ───
+
+export interface UpdateMiscueInput {
+  /** The ID of the miscue to update */
+  miscueId: string;
+  /** "approve" = mark as not a miscue (delete it), "update" = change its type */
+  action: "approve" | "update";
+  /** Required when action is "update" — the new miscue type */
+  newMiscueType?: MiscueType;
+}
+
+export interface UpdateMiscueResult {
+  success: boolean;
+  error?: string;
+  code?: "VALIDATION_ERROR" | "NOT_FOUND" | "INTERNAL_ERROR";
+  /** The recalculated session-level metrics after the change */
+  updatedMetrics?: {
+    totalMiscues: number;
+    oralFluencyScore: number;
+    classificationLevel: LevelClassification;
+    accuracy: number;
+  };
+}
+
+// ─── Service ───
+
+export async function updateMiscueService(
+  input: UpdateMiscueInput,
+): Promise<UpdateMiscueResult> {
+  const { miscueId, action, newMiscueType } = input;
+
+  if (!miscueId) {
+    return {
+      success: false,
+      error: "miscueId is required.",
+      code: "VALIDATION_ERROR",
+    };
+  }
+
+  if (action !== "approve" && action !== "update") {
+    return {
+      success: false,
+      error: 'action must be "approve" or "update".',
+      code: "VALIDATION_ERROR",
+    };
+  }
+
+  if (action === "update" && !newMiscueType) {
+    return {
+      success: false,
+      error: "newMiscueType is required when action is 'update'.",
+      code: "VALIDATION_ERROR",
+    };
+  }
+
+  // 1. Find the miscue and its parent session
+  const miscue = await prisma.oralFluencyMiscue.findUnique({
+    where: { id: miscueId },
+    include: { session: true },
+  });
+
+  if (!miscue) {
+    return { success: false, error: "Miscue not found.", code: "NOT_FOUND" };
+  }
+
+  const sessionId = miscue.sessionId;
+
+  try {
+    // 2. Perform the action + recalculate in a single transaction
+    const updatedMetrics = await prisma.$transaction(async (tx) => {
+      if (action === "approve") {
+        // User says this word was read correctly → remove the miscue
+        await tx.oralFluencyMiscue.delete({
+          where: { id: miscueId },
+        });
+      } else {
+        // User wants to change the miscue type
+        await tx.oralFluencyMiscue.update({
+          where: { id: miscueId },
+          data: { miscueType: newMiscueType! },
+        });
+      }
+
+      // 3. Recalculate session metrics from remaining miscues
+      const remainingMiscues = await tx.oralFluencyMiscue.findMany({
+        where: { sessionId },
+      });
+
+      const countedMiscues = remainingMiscues.filter(
+        (m) => !m.isSelfCorrected,
+      ).length;
+
+      const session = await tx.oralFluencySession.findUnique({
+        where: { id: sessionId },
+        select: { totalWords: true },
+      });
+
+      const totalWords = session?.totalWords ?? 0;
+      const oralFluencyScore = computeOralFluencyScore(totalWords, countedMiscues);
+      const classificationLevel = classifyReadingLevel(oralFluencyScore);
+      const accuracy =
+        totalWords > 0
+          ? Math.round(
+              ((totalWords - countedMiscues) / totalWords) * 100 * 10,
+            ) / 10
+          : 0;
+
+      // 4. Persist recalculated metrics on the session
+      await tx.oralFluencySession.update({
+        where: { id: sessionId },
+        data: {
+          totalMiscues: countedMiscues,
+          oralFluencyScore,
+          classificationLevel,
+          accuracy,
+        },
+      });
+
+      return {
+        totalMiscues: countedMiscues,
+        oralFluencyScore,
+        classificationLevel,
+        accuracy,
+      };
+    });
+
+    return { success: true, updatedMetrics };
+  } catch (err) {
+    console.error("updateMiscueService error:", err);
+    return {
+      success: false,
+      error: "Failed to update miscue.",
+      code: "INTERNAL_ERROR",
+    };
+  }
+}
