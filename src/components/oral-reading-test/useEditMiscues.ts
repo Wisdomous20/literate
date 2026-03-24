@@ -209,11 +209,12 @@ export function useEditMiscues({
   }, []);
 
   const resetAll = useCallback(() => {
-    pushUndo(editedMiscues);
     setEditedMiscues([...originalRef.current]);
+    setUndoStack([]);
+    setRedoStack([]);
     setActiveTool(null);
     setTranspositionFirst(null);
-  }, [editedMiscues, pushUndo]);
+  }, []);
 
   const saveEdit = useCallback(async () => {
     setIsSaving(true);

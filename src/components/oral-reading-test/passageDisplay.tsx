@@ -797,7 +797,7 @@ export function PassageDisplay({
         className={`oral-reading-scroll relative flex-1 overflow-auto rounded-[10px] border border-[#54A4FF] bg-[#EFFDFF] p-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)] md:p-5 ${collapsible && !collapsed && !expanded ? "rounded-t-none border-t-0" : ""}`}
       >
         {content ? (
-          <p className="whitespace-pre-wrap text-center leading-relaxed text-[#00306E]" style={passageLevel ? passageTextStyle : undefined}>
+          <p className="whitespace-pre-wrap text-center leading-relaxed text-[#00306E] px-8 md:px-10" style={passageLevel ? passageTextStyle : undefined}>
             {hasMiscues ? renderHighlightedContent() : content}
           </p>
         ) : (
