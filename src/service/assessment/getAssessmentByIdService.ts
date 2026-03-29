@@ -35,6 +35,7 @@ export async function getAssessmentByIdService(
             answers:true,
           },
         },
+        oralReadingResult: true,
         student: { select: { id: true, name: true } },
       },
     });

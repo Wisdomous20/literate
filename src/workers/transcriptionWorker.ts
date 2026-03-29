@@ -104,7 +104,6 @@ async function processTranscription(job: Job<TranscriptionJobData>) {
     }
   }, { maxWait: 10000, timeout: 30000 });
 
-  // Try computing oral reading level
   try {
     await createOralReadingService(assessmentId);
   } catch {

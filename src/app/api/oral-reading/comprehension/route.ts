@@ -1,23 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { submitComprehensionService } from "@/service/comprehension-test/submitComprehensionService";
+import { prisma } from "@/lib/prisma";
+import { gradingQueue, oralReadingLevelQueue } from "@/lib/queues";
+import type { GradingJobData } from "@/lib/queues";
+import classifyComprehensionLevel from "@/service/comprehension-test/classifyComprehensionLevel";
 import { createOralReadingService } from "@/service/oral-reading/createOralReadingService";
-
-export const maxDuration = 60;
-
-interface SubmitAnswer {
-  questionId: string;
-  answer: string;
-}
-
-interface SubmitComprehensionInput {
-  assessmentId: string;
-  answers: SubmitAnswer[];
-}
+import { Tags } from "@/generated/prisma/enums";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { assessmentId, answers } = body as SubmitComprehensionInput;
+    const { assessmentId, answers } = body as {
+      assessmentId: string;
+      answers: { questionId: string; answer: string }[];
+    };
 
     if (!assessmentId || !Array.isArray(answers) || answers.length === 0) {
       return NextResponse.json(
@@ -36,40 +31,153 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Submit comprehension first so the classification level is saved to the DB
-    const result = await submitComprehensionService({ assessmentId, answers });
+    // 1. Get assessment + passage + quiz
+    const assessment = await prisma.assessment.findUnique({
+      where: { id: assessmentId },
+      include: {
+        passage: {
+          include: {
+            quiz: {
+              include: {
+                questions: {
+                  select: {
+                    id: true,
+                    type: true,
+                    questionText: true,
+                    correctAnswer: true,
+                    tags: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
 
-    if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 500 });
+    if (!assessment?.passage?.quiz) {
+      return NextResponse.json(
+        { error: "Assessment, passage, or quiz not found" },
+        { status: 404 },
+      );
     }
 
-    // Try to compute the oral reading level (needs both fluency & comprehension in DB)
-    // If fluency is not ready yet (still transcribing), this will fail gracefully
-    let oralReadingResult = null;
-    try {
-      const oralReadingResponse = await createOralReadingService(
-        assessmentId,
-        result.level,
-      );
+    const quiz = assessment.passage.quiz;
+    const questionMap = new Map(quiz.questions.map((q) => [q.id, q]));
 
-      if (oralReadingResponse.success) {
-        oralReadingResult = oralReadingResponse;
+    // 2. Grade MC immediately, mark essays as pending
+    let hasEssays = false;
+    const gradedAnswers: {
+      questionId: string;
+      questionText: string;
+      answer: string;
+      isCorrect: boolean | null;
+      tag: Tags;
+    }[] = [];
+
+    for (const a of answers) {
+      const question = questionMap.get(a.questionId);
+      if (!question) continue;
+
+      if (question.type === "MULTIPLE_CHOICE") {
+        const isCorrect =
+          question.correctAnswer?.trim().toLowerCase() ===
+          a.answer.trim().toLowerCase();
+        gradedAnswers.push({
+          questionId: a.questionId,
+          questionText: question.questionText,
+          answer: a.answer,
+          isCorrect,
+          tag: question.tags,
+        });
       } else {
-        console.log("Oral reading result not created yet:", oralReadingResponse.error);
-        console.log("This is expected if transcription is still processing");
+        gradedAnswers.push({
+          questionId: a.questionId,
+          questionText: question.questionText,
+          answer: a.answer,
+          isCorrect: null,
+          tag: question.tags,
+        });
+        hasEssays = true;
       }
-    } catch (error) {
-      console.log("Could not create oral reading result (transcription may still be processing):", error);
+    }
+
+    // 3. Preliminary score
+    const mcCorrect = gradedAnswers.filter((a) => a.isCorrect === true).length;
+    const totalItems = quiz.questions.length;
+    const prelimPct = totalItems > 0 ? (mcCorrect / totalItems) * 100 : 0;
+    const prelimLevel = classifyComprehensionLevel(prelimPct);
+
+    // 4. Save — ComprehensionTest has NO quizId
+    //    ComprehensionAnswer uses question (string) + tag, NOT questionId
+    const comprehensionTest = await prisma.comprehensionTest.create({
+      data: {
+        assessmentId,
+        score: mcCorrect,
+        totalItems,
+        classificationLevel: prelimLevel,
+        answers: {
+          create: gradedAnswers.map((a) => ({
+            question: a.questionText,
+            tag: a.tag,
+            answer: a.answer,
+            isCorrect: a.isCorrect,
+          })),
+        },
+      },
+      select: { id: true },
+    });
+
+    // 5. Enqueue essay grading if needed
+    if (hasEssays) {
+      const jobData: GradingJobData = {
+        assessmentId,
+        comprehensionTestId: comprehensionTest.id,
+        answers: answers.filter((a) => {
+          const q = questionMap.get(a.questionId);
+          return q?.type === "ESSAY";
+        }),
+      };
+
+      await gradingQueue.add(`grade-${assessmentId}`, jobData, {
+        jobId: `grading-${assessmentId}`,
+      });
+    }
+
+    // 6. Try to compute oral reading level
+    let oralReadingResult = null;
+    if (!hasEssays) {
+      try {
+        const response = await createOralReadingService(
+          assessmentId,
+          prelimLevel,
+        );
+        if (response.success) {
+          oralReadingResult = response;
+        }
+      } catch {
+        console.log("Oral reading level not ready (transcription may be pending)");
+      }
+    } else {
+      await oralReadingLevelQueue.add(
+        `oral-reading-${assessmentId}`,
+        { assessmentId },
+        { jobId: `oral-reading-${assessmentId}`, delay: 15000 },
+      );
     }
 
     return NextResponse.json({
       success: true,
       assessmentId,
-      comprehensionTestId: result.comprehensionTestId,
-      score: result.score,
-      totalItems: result.totalItems,
-      level: result.level,
-      answers: result.answers,
+      comprehensionTestId: comprehensionTest.id,
+      score: mcCorrect,
+      totalItems,
+      level: prelimLevel,
+      answers: gradedAnswers.map((a) => ({
+        tag: a.tag,
+        isCorrect: a.isCorrect,
+      })),
+      essaysPending: hasEssays,
       oralReadingResult: oralReadingResult ?? null,
       transcriptionPending: oralReadingResult === null,
     });
