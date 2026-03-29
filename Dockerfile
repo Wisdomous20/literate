@@ -8,7 +8,7 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
-# ─── Stage 2: Build ──────────────────────────────────────
+# ─── Stage 2: Build Next.js ──────────────────────────────
 FROM node:20-alpine AS builder
 WORKDIR /app
 

@@ -4,9 +4,8 @@ import { PrismaNeon } from "@prisma/adapter-neon";
 import ws from "ws";
 
 // For local development
-if (process.env.NODE_ENV !== "production") {
   neonConfig.webSocketConstructor = ws;
-}
+
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
 

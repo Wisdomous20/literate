@@ -283,12 +283,12 @@ const PITCH_PUNCT_RE = /([!?])["'\u2019\u201D\)\]]*$/;
 const INTONATION_CHANGE_THRESHOLD = 0.05;
 const MIN_PITCH_PUNCT_OPPORTUNITIES = 2;
 
-function detectPunctuationDismissal(
+async function detectPunctuationDismissal(
   alignedWords: AlignedWord[],
   originalPassageWords: string[],
   pitchAnalysis: PitchAnalysis | null,
   audioBuffer?: Buffer,
-): BehaviorResult[] {
+): Promise<BehaviorResult[]> {
   // ── Part 1: Pause-based detection for . , ; : ──────────────────────────
   let pauseDismissed = 0;
   let pauseTotal = 0;
@@ -342,7 +342,7 @@ function detectPunctuationDismissal(
 
     // Lazy-load pitchfinder — only when needed
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { YIN } = require("pitchfinder") as typeof import("pitchfinder");
+    const { YIN } = await import("pitchfinder");
 
     // Convert WAV buffer to float32 once
     const PCM_OFFSET = 44;
@@ -454,12 +454,19 @@ function detectPunctuationDismissal(
 
 // ─── Entry point ──────────────────────────────────────────────────────────────
 
-export function detectBehaviors(
+export async function detectBehaviors(
   alignedWords: AlignedWord[],
   originalPassageWords: string[] = [],
   pitchAnalysis: PitchAnalysis | null = null,
   audioBuffer?: Buffer,
-): BehaviorResult[] {
+): Promise<BehaviorResult[]> {
+  const punctDismissal = await detectPunctuationDismissal(
+    alignedWords,
+    originalPassageWords,
+    pitchAnalysis,
+    audioBuffer,
+  );
+
   return [
     ...detectWordByWordReading(alignedWords),
     ...detectMonotonousReading(
@@ -467,11 +474,6 @@ export function detectBehaviors(
       originalPassageWords,
       pitchAnalysis,
     ),
-    ...detectPunctuationDismissal(
-      alignedWords,
-      originalPassageWords,
-      pitchAnalysis,
-      audioBuffer,
-    ),
+    ...punctDismissal,
   ];
 }
