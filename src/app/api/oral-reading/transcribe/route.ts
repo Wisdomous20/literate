@@ -1,20 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createOralFluencySessionService } from "@/service/oral-fluency/createOralFluencySessionService";
-import { createOralReadingService } from "@/service/oral-reading/createOralReadingService";
 import { prisma } from "@/lib/prisma";
+import { transcriptionQueue } from "@/lib/queues";
+import type { TranscriptionJobData } from "@/lib/queues";
 
-function serializeError(err: unknown): string {
-  if (err instanceof Error) {
-    return `${err.name}: ${err.message}`;
-  }
-  try {
-    const str = JSON.stringify(err);
-    if (str && str !== "{}") return str;
-  } catch {}
-  return String(err);
-}
-
-export const maxDuration = 60;
+export const maxDuration = 10; 
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,74 +19,142 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("Starting transcription for assessment:", assessmentId);
-
-    // Process the audio and create oral fluency session
-    const arrayBuffer = await audioFile.arrayBuffer();
-    const audioBuffer = Buffer.from(arrayBuffer);
-
-    const result = await createOralFluencySessionService({
-      assessmentId,
-      audioBuffer,
-      fileName: audioFile.name || "recording.wav",
-      audioUrl,
+    // Validate assessment exists
+    const assessment = await prisma.assessment.findUnique({
+      where: { id: assessmentId },
+      include: { passage: { select: { content: true, language: true } } },
     });
 
-    if (!result.success) {
-      const statusMap: Record<string, number> = {
-        VALIDATION_ERROR: 400,
-        NOT_FOUND: 404,
-        ANALYSIS_FAILED: 500,
-        INTERNAL_ERROR: 500,
-      };
-      const status = result.code ? (statusMap[result.code] ?? 500) : 500;
-
-      return NextResponse.json(
-        {
-          error: result.error || "Failed to process transcription",
-          sessionId: result.sessionId,
-          assessmentId,
-        },
-        { status },
-      );
+    if (!assessment) {
+      return NextResponse.json({ error: "Assessment not found" }, { status: 404 });
     }
 
-    // Transcription succeeded - check if comprehension is already submitted
-    // If yes, create the oral reading result now
-    try {
-      const assessment = await prisma.assessment.findUnique({
-        where: { id: assessmentId },
-        select: {
-          comprehension: { select: { classificationLevel: true } },
-        },
+    // Create session as PENDING (or update existing)
+    const existingSession = await prisma.oralFluencySession.findUnique({
+      where: { assessmentId },
+    });
+
+    let sessionId: string;
+    if (existingSession) {
+      await prisma.oralFluencySession.update({
+        where: { id: existingSession.id },
+        data: { status: "PENDING", audioUrl },
       });
-
-      if (assessment?.comprehension?.classificationLevel) {
-        console.log("Comprehension already completed - creating oral reading result");
-        await createOralReadingService(
-          assessmentId,
-          assessment.comprehension.classificationLevel,
-        );
-      } else {
-        console.log("Comprehension not yet completed - oral reading result will be created when comprehension is submitted");
-      }
-    } catch (error) {
-      console.error("Error checking/creating oral reading result:", error);
-      // Don't fail the whole request if this fails
+      sessionId = existingSession.id;
+    } else {
+      const session = await prisma.oralFluencySession.create({
+        data: { assessmentId, audioUrl, status: "PENDING" },
+      });
+      sessionId = session.id;
     }
 
-    return NextResponse.json(
-      {
-        assessmentId,
-        sessionId: result.sessionId,
-        status: "COMPLETED",
-        analysis: result.analysis,
-      },
-      { status: 201 },
+    // Enqueue the heavy work to BullMQ
+    const jobData: TranscriptionJobData = {
+      assessmentId,
+      audioUrl,
+      fileName: audioFile.name || "recording.wav",
+    };
+
+    const job = await transcriptionQueue.add(
+      `transcribe-${assessmentId}`,
+      jobData,
+      { jobId: `transcription-${assessmentId}` },
     );
+
+    console.log(`[API] Enqueued transcription job ${job.id} for assessment ${assessmentId}`);
+
+    return NextResponse.json({
+      success: true,
+      assessmentId,
+      sessionId,
+      status: "PENDING",
+      jobId: job.id,
+    }, { status: 202 });
   } catch (error) {
-    const errorMsg = serializeError(error);
-    console.error("Error in transcription:", errorMsg, error);
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error("Transcription enqueue error:", error);
+    return NextResponse.json(
+      { error: "Failed to enqueue transcription" },
+      { status: 500 },
+    );
   }
+}
+
+
+export async function GET(request: NextRequest) {
+  const assessmentId = request.nextUrl.searchParams.get("assessmentId");
+
+  if (!assessmentId) {
+    return NextResponse.json({ error: "assessmentId is required" }, { status: 400 });
+  }
+
+  const session = await prisma.oralFluencySession.findUnique({
+    where: { assessmentId },
+    include: {
+      miscues: true,
+      behaviors: true,
+      wordTimestamps: { orderBy: { index: "asc" } },
+    },
+  });
+
+  if (!session) {
+    return NextResponse.json({ error: "Session not found" }, { status: 404 });
+  }
+
+  // Still processing
+  if (session.status === "PENDING" || session.status === "PROCESSING") {
+    return NextResponse.json({
+      status: session.status,
+      assessmentId,
+      sessionId: session.id,
+    });
+  }
+
+  // Failed
+  if (session.status === "FAILED") {
+    return NextResponse.json({
+      status: "FAILED",
+      assessmentId,
+      sessionId: session.id,
+      error: "Transcription failed",
+    });
+  }
+
+  // Completed — return full analysis
+  return NextResponse.json({
+    status: "COMPLETED",
+    assessmentId,
+    sessionId: session.id,
+    analysis: {
+      transcript: session.transcript,
+      wordsPerMinute: session.wordsPerMinute,
+      accuracy: session.accuracy,
+      totalWords: session.totalWords,
+      totalMiscues: session.totalMiscues,
+      duration: session.duration,
+      classificationLevel: session.classificationLevel,
+      oralFluencyScore: session.oralFluencyScore,
+      miscues: session.miscues.map((m) => ({
+        miscueType: m.miscueType,
+        expectedWord: m.expectedWord,
+        spokenWord: m.spokenWord,
+        wordIndex: m.wordIndex,
+        timestamp: m.timestamp,
+        isSelfCorrected: m.isSelfCorrected,
+      })),
+      behaviors: session.behaviors.map((b) => ({
+        behaviorType: b.behaviorType,
+        startIndex: b.startIndex,
+        endIndex: b.endIndex,
+        startTime: b.startTime,
+        endTime: b.endTime,
+        notes: b.notes,
+      })),
+      alignedWords: session.wordTimestamps.map((w) => ({
+        spoken: w.word,
+        timestamp: w.startTime,
+        endTimestamp: w.endTime,
+        confidence: w.confidence,
+      })),
+    },
+  });
 }

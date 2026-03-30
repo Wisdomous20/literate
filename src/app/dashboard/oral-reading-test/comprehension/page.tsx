@@ -485,31 +485,69 @@ export default function OralReadingComprehensionPage() {
 
       // Write comprehensionResult and oralReadingLevel back into the main session
       // so the reading-level-report page can display them
-      try {
-        const mainRaw = sessionStorage.getItem("oral-reading-session");
-        if (mainRaw) {
-          const mainSession = JSON.parse(mainRaw);
-          mainSession.comprehensionResult = {
-            score: comprehensionData.score,
-            totalItems: comprehensionData.totalItems,
-            percentage: comprehensionData.totalItems
-              ? Math.round(
-                  (comprehensionData.score / comprehensionData.totalItems) *
-                    100,
-                )
-              : 0,
-            level: comprehensionData.level,
-          };
-          mainSession.oralReadingLevel =
-            result.oralReadingResult?.oralReadingLevel ?? null;
-          sessionStorage.setItem(
-            "oral-reading-session",
-            JSON.stringify(mainSession),
+try {
+  const mainRaw = sessionStorage.getItem("oral-reading-session");
+  if (mainRaw) {
+    const mainSession = JSON.parse(mainRaw);
+    mainSession.comprehensionResult = {
+      score: comprehensionData.score,
+      totalItems: comprehensionData.totalItems,
+      percentage: comprehensionData.totalItems
+        ? Math.round(
+            (comprehensionData.score / comprehensionData.totalItems) * 100,
+          )
+        : 0,
+      level: comprehensionData.level,
+    };
+ 
+    // Try to get oral reading level from the response
+    const immediateLevel = result.oralReadingResult?.oralReadingLevel ?? null;
+    mainSession.oralReadingLevel = immediateLevel;
+    sessionStorage.setItem("oral-reading-session", JSON.stringify(mainSession));
+ 
+    // If oral reading level wasn't computed yet (transcription still processing),
+    // poll until it's ready
+    if (!immediateLevel && assessmentId) {
+      console.log("Oral reading level not ready yet, polling...");
+ 
+      const pollInterval = setInterval(async () => {
+        try {
+          // Use your existing server action
+          const { getAssessmentByIdAction } = await import(
+            "@/app/actions/assessment/getAssessmentById"
           );
+          const assessment = await getAssessmentByIdAction(assessmentId) as {
+            oralReadingResult?: { classificationLevel?: string };
+          };
+ 
+          if (assessment?.oralReadingResult?.classificationLevel) {
+            clearInterval(pollInterval);
+            const level = assessment.oralReadingResult.classificationLevel;
+            console.log("Oral reading level ready:", level);
+ 
+            // Update sessionStorage
+            const raw = sessionStorage.getItem("oral-reading-session");
+            if (raw) {
+              const session = JSON.parse(raw);
+              session.oralReadingLevel = level;
+              sessionStorage.setItem("oral-reading-session", JSON.stringify(session));
+            }
+          }
+        } catch (err) {
+          console.error("Polling oral reading level error:", err);
         }
-      } catch {
-        /* failed to update main session — non-critical */
-      }
+      }, 5000); // Check every 5 seconds
+ 
+      // Stop polling after 2 minutes
+      setTimeout(() => {
+        clearInterval(pollInterval);
+        console.log("Stopped polling for oral reading level");
+      }, 120000);
+    }
+  }
+} catch (err) {
+  console.error("Failed to update session storage:", err);
+}
 
       setIsSubmitted(true);
     } catch (err) {

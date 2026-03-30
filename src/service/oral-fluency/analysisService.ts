@@ -55,7 +55,7 @@ export async function analyzeOralFluency(
   const miscues = detectMiscues(alignedWords, language)
 
   // 6. Detect behaviors — pass audioBuffer so ! and ? can use per-word pitch
-  const behaviors = detectBehaviors(
+  const behaviors = await  detectBehaviors(
     alignedWords,
     originalPassageWords,
     pitchAnalysis,

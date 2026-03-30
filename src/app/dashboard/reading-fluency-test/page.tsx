@@ -470,11 +470,7 @@ export default function ReadingFluencyTestPage() {
       const { uploadAudio } = await import("@/utils/uploadAudio");
       const wavBlob = await convertToWav(recordedAudioBlob);
 
-      const AudioUrl = await uploadAudio(
-        wavBlob,
-        studentId,
-        selectedPassage,
-      );
+      const AudioUrl = await uploadAudio(wavBlob, studentId, selectedPassage);
 
       if (!AudioUrl) {
         console.error("Audio upload failed");
@@ -494,6 +490,87 @@ export default function ReadingFluencyTestPage() {
 
       const responseText = await response.text();
       let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch {
+        setToast({
+          message: "Unexpected response from server.",
+          type: "error",
+        });
+        return;
+      }
+
+      if (!response.ok) {
+        setToast({
+          message: result.error || "Failed to submit.",
+          type: "error",
+        });
+        return;
+      }
+
+      // Store IDs immediately
+      if (result.sessionId) setSessionId(result.sessionId);
+      if (result.assessmentId) setAssessmentId(result.assessmentId);
+
+      const targetAssessmentId = result.assessmentId;
+
+      // If the response already has analysis (shouldn't with queue, but handle gracefully)
+      if (result.analysis) {
+        setAnalysisResult(result.analysis as OralFluencyAnalysis);
+        setToast({
+          message: "Reading Fluency Session Successful!",
+          type: "success",
+        });
+      } else {
+        // Poll for results
+        setToast({
+          message: "Analyzing recording... This may take a moment.",
+          type: "success",
+        });
+
+        const pollInterval = setInterval(async () => {
+          try {
+            const statusRes = await fetch(
+              `/api/oral-reading/transcribe?assessmentId=${targetAssessmentId}`,
+            );
+            const statusData = await statusRes.json();
+
+            if (statusData.status === "COMPLETED" && statusData.analysis) {
+              clearInterval(pollInterval);
+              setAnalysisResult(statusData.analysis as OralFluencyAnalysis);
+              if (statusData.sessionId) setSessionId(statusData.sessionId);
+
+              // Update session storage
+              try {
+                const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
+                if (sessionRaw) {
+                  const session = JSON.parse(sessionRaw);
+                  session.analysisResult = statusData.analysis;
+                  session.sessionId = statusData.sessionId;
+                  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+                }
+              } catch {}
+
+              setToast({
+                message: "Reading Fluency Session Successful!",
+                type: "success",
+              });
+            } else if (statusData.status === "FAILED") {
+              clearInterval(pollInterval);
+              setToast({
+                message: "Analysis failed. Please try again.",
+                type: "error",
+              });
+            }
+          } catch (err) {
+            console.error("Polling error:", err);
+          }
+        }, 3000);
+
+        // Safety timeout
+        setTimeout(() => clearInterval(pollInterval), 120000);
+      }
+      
       try {
         result = JSON.parse(responseText);
       } catch {
