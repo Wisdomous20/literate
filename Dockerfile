@@ -18,7 +18,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Generate Prisma client
-RUN pnpm prisma generate
+RUN DIRECT_URL="postgresql://dummy:dummy@localhost:5432/dummy" pnpm prisma generate
 
 # Build Next.js (requires output: 'standalone' in next.config)
 ENV NEXT_TELEMETRY_DISABLED=1
