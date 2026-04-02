@@ -1,5 +1,3 @@
-import { uploadAudioToGCS } from "@/app/actions/oral-fluency/uploadAudioToGCS";
-
 export async function uploadAudio(
   audioBlob: Blob,
   studentId: string,
@@ -18,7 +16,12 @@ export async function uploadAudio(
     formData.append("file", new File([audioBlob], `${timestamp}.${ext}`, { type: contentType }));
     formData.append("filePath", filePath);
 
-    const result = await uploadAudioToGCS(formData);
+    const response = await fetch("/api/upload-audio", {
+      method: "POST",
+      body: formData,
+    });
+
+    const result = await response.json();
 
     if (!result.success) {
       console.error("Audio upload failed:", result.error);
