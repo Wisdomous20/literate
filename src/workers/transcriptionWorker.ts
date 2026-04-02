@@ -7,7 +7,19 @@ import type { TranscriptionJobData } from "@/lib/queues";
 import type { OralFluencyAnalysis } from "@/types/oral-reading";
 
 async function downloadAudio(audioUrl: string): Promise<Buffer> {
-  console.log(`[Worker:transcription] Downloading from: ${audioUrl.substring(0, 100)}...`);
+  console.log(`[Worker:transcription] Downloading from: ${audioUrl.substring(0, 150)}...`);
+  
+  const gcsMatch = audioUrl.match(/storage\.googleapis\.com\/([^/]+)\/(.+?)(?:\?|$)/);
+  if (gcsMatch) {
+    const { storage } = await import("@/lib/gcs");
+    const bucketName = gcsMatch[1];
+    const filePath = decodeURIComponent(gcsMatch[2]);
+    console.log(`[Worker:transcription] Using GCS SDK: bucket=${bucketName}, file=${filePath}`);
+    const [buffer] = await storage.bucket(bucketName).file(filePath).download();
+    return buffer;
+  }
+
+  // Fallback to fetch for non-GCS URLs
   const response = await fetch(audioUrl);
   if (!response.ok) {
     console.log(`[Worker:transcription] Download failed: ${response.status} ${response.statusText}`);
@@ -16,6 +28,8 @@ async function downloadAudio(audioUrl: string): Promise<Buffer> {
   const arrayBuffer = await response.arrayBuffer();
   return Buffer.from(arrayBuffer);
 }
+
+
 async function processTranscription(job: Job<TranscriptionJobData>) {
   const { assessmentId, audioUrl, fileName } = job.data;
   console.log(`[Worker:transcription] Processing ${assessmentId}`);
