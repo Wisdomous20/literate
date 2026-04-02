@@ -7,14 +7,15 @@ import type { TranscriptionJobData } from "@/lib/queues";
 import type { OralFluencyAnalysis } from "@/types/oral-reading";
 
 async function downloadAudio(audioUrl: string): Promise<Buffer> {
+  console.log(`[Worker:transcription] Downloading from: ${audioUrl.substring(0, 100)}...`);
   const response = await fetch(audioUrl);
   if (!response.ok) {
+    console.log(`[Worker:transcription] Download failed: ${response.status} ${response.statusText}`);
     throw new Error(`Failed to download audio: ${response.status}`);
   }
   const arrayBuffer = await response.arrayBuffer();
   return Buffer.from(arrayBuffer);
 }
-
 async function processTranscription(job: Job<TranscriptionJobData>) {
   const { assessmentId, audioUrl, fileName } = job.data;
   console.log(`[Worker:transcription] Processing ${assessmentId}`);
