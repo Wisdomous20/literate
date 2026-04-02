@@ -1,9 +1,7 @@
-// next.config.ts
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-
   serverExternalPackages: [
     "bullmq",
     "ioredis",
@@ -11,6 +9,7 @@ const nextConfig: NextConfig = {
     "@google-cloud/storage",
     "pitchfinder",
     "bcrypt",
+    "google-auth-library",
   ],
 };
 
