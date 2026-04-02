@@ -13,6 +13,9 @@ export async function uploadAudioToGCS(
       return { success: false, error: "Missing file or filePath" };
     }
 
+    console.log(`[GCS] Uploading: ${filePath}, size: ${file.size}, type: ${file.type}`);
+    console.log(`[GCS] Bucket: ${GCS_BUCKET}`);
+
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
@@ -27,13 +30,12 @@ export async function uploadAudioToGCS(
       },
     });
 
-    // Generate a signed URL valid for 7 days (max practical for playback)
-    const [signedUrl] = await gcsFile.getSignedUrl({
-      action: "read",
-      expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
-    });
+    console.log(`[GCS] Upload successful: ${filePath}`);
 
-    return { success: true, url: signedUrl };
+    // Use public URL instead of signed URL
+    const url = `https://storage.googleapis.com/${GCS_BUCKET}/${filePath}`;
+
+    return { success: true, url };
   } catch (err) {
     console.error("GCS upload error:", err);
     return { success: false, error: String(err) };
