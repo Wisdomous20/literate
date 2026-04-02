@@ -1,0 +1,111 @@
+substitutions:
+  _REGION: asia-southeast1
+  _REPO: literate
+  _WEB_SERVICE: literate-web
+  _WORKER_SERVICE: literate-worker
+
+steps:
+  # ── Step 1: Build the Next.js web app image ──────────────
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "build"
+      - "-t"
+      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_WEB_SERVICE}:$SHORT_SHA"
+      - "-t"
+      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_WEB_SERVICE}:latest"
+      - "-f"
+      - "Dockerfile"
+      - "."
+    id: "build-web"
+
+  # ── Step 2: Build the BullMQ worker image ────────────────
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "build"
+      - "-t"
+      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_WORKER_SERVICE}:$SHORT_SHA"
+      - "-t"
+      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_WORKER_SERVICE}:latest"
+      - "-f"
+      - "Dockerfile.worker"
+      - "."
+    id: "build-worker"
+
+  # ── Step 3: Push web image to Artifact Registry ──────────
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "push"
+      - "--all-tags"
+      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_WEB_SERVICE}"
+    id: "push-web"
+    waitFor: ["build-web"]
+
+  # ── Step 4: Push worker image to Artifact Registry ───────
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "push"
+      - "--all-tags"
+      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_WORKER_SERVICE}"
+    id: "push-worker"
+    waitFor: ["build-worker"]
+
+  # ── Step 5: Deploy web app to Cloud Run ──────────────────
+  - name: "gcr.io/cloud-builders/gcloud"
+    args:
+      - "run"
+      - "deploy"
+      - "${_WEB_SERVICE}"
+      - "--image"
+      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_WEB_SERVICE}:$SHORT_SHA"
+      - "--region"
+      - "${_REGION}"
+      - "--platform"
+      - "managed"
+      - "--port"
+      - "3000"
+      - "--allow-unauthenticated"
+      - "--min-instances"
+      - "0"
+      - "--max-instances"
+      - "3"
+      - "--memory"
+      - "512Mi"
+      - "--cpu"
+      - "1"
+      - "--set-env-vars"
+      - "NODE_ENV=production,HOSTNAME=0.0.0.0"
+    id: "deploy-web"
+    waitFor: ["push-web"]
+
+  # ── Step 6: Deploy worker to Cloud Run ───────────────────
+  - name: "gcr.io/cloud-builders/gcloud"
+    args:
+      - "run"
+      - "deploy"
+      - "${_WORKER_SERVICE}"
+      - "--image"
+      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_WORKER_SERVICE}:$SHORT_SHA"
+      - "--region"
+      - "${_REGION}"
+      - "--platform"
+      - "managed"
+      - "--no-allow-unauthenticated"
+      - "--min-instances"
+      - "1"
+      - "--max-instances"
+      - "2"
+      - "--memory"
+      - "512Mi"
+      - "--cpu"
+      - "1"
+      - "--no-cpu-throttling"
+    id: "deploy-worker"
+    waitFor: ["push-worker"]
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+# Build both images in parallel for speed
+images:
+  - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_WEB_SERVICE}:$SHORT_SHA"
+  - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_WORKER_SERVICE}:$SHORT_SHA"
