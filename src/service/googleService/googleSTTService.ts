@@ -1,22 +1,39 @@
 import { v2, protos } from "@google-cloud/speech";
 import { TranscriptResponse } from "@/types/oral-reading";
 import convertToTranscriptResponse from "./convertToTranscriptResponse";
+import fs from "fs";
 
 const LOCATION = "asia-southeast1";
 
-const credentials = {
-  client_email: process.env.GOOGLE_CLOUD_CLIENT_EMAIL ?? "",
-  private_key: (process.env.GOOGLE_CLOUD_PRIVATE_KEY ?? "").replace(/\\n/g, "\n"),
-};
+function createSpeechClient(): v2.SpeechClient {
+  // Try key file first (Cloud Run)
+  const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  if (keyFile && fs.existsSync(keyFile)) {
+    const keyData = JSON.parse(fs.readFileSync(keyFile, "utf8"));
+    console.log(`[STT] Using key file, email: ${keyData.client_email}`);
+    return new v2.SpeechClient({
+      apiEndpoint: `${LOCATION}-speech.googleapis.com`,
+      projectId: keyData.project_id,
+      credentials: {
+        client_email: keyData.client_email,
+        private_key: keyData.private_key,
+      },
+    });
+  }
 
-const speechClient = new v2.SpeechClient({
-  apiEndpoint: `${LOCATION}-speech.googleapis.com`,
-  projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
-  credentials,
-});
+  // Try env vars (local dev)
+  const client_email = process.env.GOOGLE_CLOUD_CLIENT_EMAIL ?? "";
+  const private_key = (process.env.GOOGLE_CLOUD_PRIVATE_KEY ?? "").replace(/\\n/g, "\n");
+  console.log(`[STT] Using env vars, email: ${client_email}`);
+  return new v2.SpeechClient({
+    apiEndpoint: `${LOCATION}-speech.googleapis.com`,
+    projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
+    credentials: { client_email, private_key },
+  });
+}
 
+const speechClient = createSpeechClient();
 const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT_ID ?? "";
-
 const WAV_HEADER_BYTES = 44;
 const BYTES_PER_SECOND = 32000; // 16kHz, 16-bit, mono
 const CHUNK_DURATION_SEC = 50;

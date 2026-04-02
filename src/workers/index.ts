@@ -1,9 +1,5 @@
 import "dotenv/config";
 import http from "http";
-
-console.log("  LiteRate Worker Process Starting...");
-console.log("  Redis:", process.env.REDIS_URL || "redis://localhost:6379");
-
 import { transcriptionWorker } from "./transcriptionWorker";
 import { gradingWorker } from "./gradingWorker";
 import { oralReadingLevelWorker } from "./oralReadingLevelWorker";
