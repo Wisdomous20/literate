@@ -4,24 +4,9 @@ import convertToTranscriptResponse from "./convertToTranscriptResponse";
 
 const LOCATION = "asia-southeast1";
 
-let speechClient: v2.SpeechClient;
-
-if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-  speechClient = new v2.SpeechClient({
-    apiEndpoint: `${LOCATION}-speech.googleapis.com`,
-    projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
-  });
-} else {
-  const credentials = {
-    client_email: process.env.GOOGLE_CLOUD_CLIENT_EMAIL ?? "",
-    private_key: (process.env.GOOGLE_CLOUD_PRIVATE_KEY ?? "").replace(/\\n/g, "\n"),
-  };
-  speechClient = new v2.SpeechClient({
-    apiEndpoint: `${LOCATION}-speech.googleapis.com`,
-    projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
-    credentials,
-  });
-}
+const speechClient = new v2.SpeechClient({
+  apiEndpoint: `${LOCATION}-speech.googleapis.com`,
+});
 
 const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT_ID ?? "";
 
