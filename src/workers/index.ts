@@ -1,4 +1,5 @@
 import "dotenv/config";
+import http from "http";
 
 console.log("  LiteRate Worker Process Starting...");
 console.log("  Redis:", process.env.REDIS_URL || "redis://localhost:6379");
@@ -19,5 +20,14 @@ async function shutdown(signal: string) {
 
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
+
+// Cloud Run requires a listening port for health checks
+const PORT = process.env.PORT || 8080;
+http.createServer((req, res) => {
+  res.writeHead(200);
+  res.end("OK");
+}).listen(PORT, () => {
+  console.log(`[Worker] Health check listening on port ${PORT}`);
+});
 
 console.log("[Worker] All workers running. Waiting for jobs...");
