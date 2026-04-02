@@ -1,44 +1,57 @@
-import { v2, protos } from "@google-cloud/speech";
 import { TranscriptResponse } from "@/types/oral-reading";
 import convertToTranscriptResponse from "./convertToTranscriptResponse";
+import { protos } from "@google-cloud/speech";
 import fs from "fs";
+import { GoogleAuth } from "google-auth-library";
 
 const LOCATION = "asia-southeast1";
+const WAV_HEADER_BYTES = 44;
+const BYTES_PER_SECOND = 32000;
+const CHUNK_DURATION_SEC = 50;
+const CHUNK_BYTE_SIZE = CHUNK_DURATION_SEC * BYTES_PER_SECOND;
+const INLINE_DURATION_LIMIT_SEC = 55;
 
-function createSpeechClient(): v2.SpeechClient {
-  // Try key file first (Cloud Run)
+const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT_ID ?? "";
+
+// ── Auth ──────────────────────────────────────────────────
+
+let authClient: GoogleAuth;
+
+function getAuth(): GoogleAuth {
+  if (authClient) return authClient;
+
   const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS;
   if (keyFile && fs.existsSync(keyFile)) {
     const keyData = JSON.parse(fs.readFileSync(keyFile, "utf8"));
-    console.log(`[STT] Using key file, email: ${keyData.client_email}`);
-    return new v2.SpeechClient({
-      apiEndpoint: `${LOCATION}-speech.googleapis.com`,
-      projectId: keyData.project_id,
+    console.log(`[STT] Using key file credentials, email: ${keyData.client_email}`);
+    authClient = new GoogleAuth({
       credentials: {
         client_email: keyData.client_email,
         private_key: keyData.private_key,
       },
+      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+    });
+  } else {
+    const client_email = process.env.GOOGLE_CLOUD_CLIENT_EMAIL ?? "";
+    const private_key = (process.env.GOOGLE_CLOUD_PRIVATE_KEY ?? "").replace(/\\n/g, "\n");
+    console.log(`[STT] Using env var credentials, email: ${client_email}`);
+    authClient = new GoogleAuth({
+      credentials: { client_email, private_key },
+      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
     });
   }
 
-  // Try env vars (local dev)
-  const client_email = process.env.GOOGLE_CLOUD_CLIENT_EMAIL ?? "";
-  const private_key = (process.env.GOOGLE_CLOUD_PRIVATE_KEY ?? "").replace(/\\n/g, "\n");
-  console.log(`[STT] Using env vars, email: ${client_email}`);
-  return new v2.SpeechClient({
-    apiEndpoint: `${LOCATION}-speech.googleapis.com`,
-    projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
-    credentials: { client_email, private_key },
-  });
+  return authClient;
 }
 
-const speechClient = createSpeechClient();
-const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT_ID ?? "";
-const WAV_HEADER_BYTES = 44;
-const BYTES_PER_SECOND = 32000; // 16kHz, 16-bit, mono
-const CHUNK_DURATION_SEC = 50;
-const CHUNK_BYTE_SIZE = CHUNK_DURATION_SEC * BYTES_PER_SECOND;
-const INLINE_DURATION_LIMIT_SEC = 55;
+async function getAccessToken(): Promise<string> {
+  const auth = getAuth();
+  const client = await auth.getClient();
+  const token = await client.getAccessToken();
+  return token.token!;
+}
+
+// ── Language / Config ─────────────────────────────────────
 
 function getGoogleLanguageCode(language: string): string {
   const normalized = language.toLowerCase().trim();
@@ -53,11 +66,8 @@ function getGoogleLanguageCode(language: string): string {
   return languageMap[normalized] ?? "en-US";
 }
 
-function buildConfig(
-  languageCode: string,
-  passageText?: string,
-): protos.google.cloud.speech.v2.IRecognitionConfig {
-  const config: protos.google.cloud.speech.v2.IRecognitionConfig = {
+function buildConfig(languageCode: string, passageText?: string) {
+  const config: Record<string, unknown> = {
     model: "chirp_2",
     languageCodes: [languageCode],
     autoDecodingConfig: {},
@@ -90,23 +100,39 @@ function buildConfig(
   return config;
 }
 
-console.log(`[STT] GOOGLE_APPLICATION_CREDENTIALS: ${process.env.GOOGLE_APPLICATION_CREDENTIALS}`);
-console.log(`[STT] Project ID: ${PROJECT_ID}`);
+// ── REST-based transcription ──────────────────────────────
 
 async function transcribeChunk(
   chunk: Buffer,
-  config: protos.google.cloud.speech.v2.IRecognitionConfig,
+  config: Record<string, unknown>,
   recognizer: string,
   timeOffsetSec: number,
 ): Promise<protos.google.cloud.speech.v2.ISpeechRecognitionResult[]> {
-  const [response] = await speechClient.recognize({
-    recognizer,
+  const token = await getAccessToken();
+  const url = `https://${LOCATION}-speech.googleapis.com/v2/${recognizer}:recognize`;
+
+  const body = JSON.stringify({
     config,
-    content: chunk,
+    content: chunk.toString("base64"),
   });
 
-  const results = (response.results ??
-    []) as protos.google.cloud.speech.v2.ISpeechRecognitionResult[];
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`[STT] REST API error: ${response.status} ${errorText}`);
+    throw new Error(`STT API error: ${response.status} ${errorText}`);
+  }
+
+  const data = await response.json();
+  const results = (data.results ?? []) as protos.google.cloud.speech.v2.ISpeechRecognitionResult[];
 
   if (timeOffsetSec === 0) return results;
 
@@ -132,6 +158,8 @@ async function transcribeChunk(
     })),
   }));
 }
+
+// ── Public API ────────────────────────────────────────────
 
 export async function transcribeAudio(
   audioBuffer: Buffer,
