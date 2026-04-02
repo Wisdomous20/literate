@@ -5,7 +5,7 @@ substitutions:
   _WORKER_SERVICE: literate-worker
 
 steps:
-  # ── Step 1: Build the Next.js web app image ──────────────
+  # Build the Next.js web app image
   - name: "gcr.io/cloud-builders/docker"
     args:
       - "build"
@@ -18,7 +18,7 @@ steps:
       - "."
     id: "build-web"
 
-  # ── Step 2: Build the BullMQ worker image ────────────────
+  # Build the BullMQ worker image
   - name: "gcr.io/cloud-builders/docker"
     args:
       - "build"
@@ -31,25 +31,19 @@ steps:
       - "."
     id: "build-worker"
 
-  # ── Step 3: Push web image to Artifact Registry ──────────
+  # Push web image
   - name: "gcr.io/cloud-builders/docker"
-    args:
-      - "push"
-      - "--all-tags"
-      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_WEB_SERVICE}"
+    args: ["push", "--all-tags", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_WEB_SERVICE}"]
     id: "push-web"
     waitFor: ["build-web"]
 
-  # ── Step 4: Push worker image to Artifact Registry ───────
+  # Push worker image
   - name: "gcr.io/cloud-builders/docker"
-    args:
-      - "push"
-      - "--all-tags"
-      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_WORKER_SERVICE}"
+    args: ["push", "--all-tags", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_WORKER_SERVICE}"]
     id: "push-worker"
     waitFor: ["build-worker"]
 
-  # ── Step 5: Deploy web app to Cloud Run ──────────────────
+  # Deploy web app to Cloud Run
   - name: "gcr.io/cloud-builders/gcloud"
     args:
       - "run"
@@ -72,12 +66,14 @@ steps:
       - "512Mi"
       - "--cpu"
       - "1"
-      - "--set-env-vars"
-      - "NODE_ENV=production,HOSTNAME=0.0.0.0"
+      - "--vpc-connector"
+      - "literate-connector"
+      - "--vpc-egress"
+      - "private-ranges-only"
     id: "deploy-web"
     waitFor: ["push-web"]
 
-  # ── Step 6: Deploy worker to Cloud Run ───────────────────
+  # Deploy worker to Cloud Run
   - name: "gcr.io/cloud-builders/gcloud"
     args:
       - "run"
@@ -89,6 +85,8 @@ steps:
       - "${_REGION}"
       - "--platform"
       - "managed"
+      - "--port"
+      - "8080"
       - "--no-allow-unauthenticated"
       - "--min-instances"
       - "1"
@@ -99,13 +97,12 @@ steps:
       - "--cpu"
       - "1"
       - "--no-cpu-throttling"
+      - "--vpc-connector"
+      - "literate-connector"
+      - "--vpc-egress"
+      - "private-ranges-only"
     id: "deploy-worker"
     waitFor: ["push-worker"]
 
 options:
   logging: CLOUD_LOGGING_ONLY
-
-# Build both images in parallel for speed
-images:
-  - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_WEB_SERVICE}:$SHORT_SHA"
-  - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_WORKER_SERVICE}:$SHORT_SHA"
