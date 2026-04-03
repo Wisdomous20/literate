@@ -43,6 +43,7 @@ export async function loginUser(input: LoginUserInput): Promise<LoginResult> {
         email: true,
         password: true,
         isVerified: true,
+        isDisabled: true,
       },
     });
 
@@ -71,6 +72,14 @@ export async function loginUser(input: LoginUserInput): Promise<LoginResult> {
         code: "INVALID_CREDENTIALS",
       };
     }
+
+    if (user.isDisabled) {
+  return {
+    success: false,
+    error: "Your account has been disabled. Contact your organization admin.",
+    code: "ACCOUNT_DISABLED",
+  };
+}
 
     // Check if email is verified
     if (!user.isVerified) {
