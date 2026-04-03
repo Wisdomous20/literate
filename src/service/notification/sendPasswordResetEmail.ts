@@ -1,23 +1,13 @@
-import nodemailer from "nodemailer"
-
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: process.env.SMTP_SECURE === "true",
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASSWORD,
-  },
-})
+import transporter, { EMAIL_FROM } from "@/service/notification/emailTransporter";
 
 export async function sendPasswordResetEmail(
   email: string,
   token: string
 ): Promise<void> {
-  const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`
+  const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
 
   await transporter.sendMail({
-    from: process.env.SMTP_FROM || "noreply@literate.app",
+    from: EMAIL_FROM,
     to: email,
     subject: "Reset Your Password",
     html: `
@@ -36,5 +26,5 @@ export async function sendPasswordResetEmail(
         <p>If you did not request a password reset, please ignore this email.</p>
       </div>
     `,
-  })
+  });
 }

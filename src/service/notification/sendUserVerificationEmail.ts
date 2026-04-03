@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import transporter, { EMAIL_FROM } from "@/service/notification/emailTransporter";
 
 interface SendUserVerificationEmailParams {
   to: string;
@@ -7,14 +7,6 @@ interface SendUserVerificationEmailParams {
   verificationToken: string;
   color?: string;
 }
-
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
 
 export async function sendUserVerificationEmail({
   to,
@@ -92,12 +84,10 @@ export async function sendUserVerificationEmail({
     </html>
   `;
 
-  const mailOptions = {
-    from: process.env.SMTP_FROM || '"Literate" <noreply@literate.com>',
+  await transporter.sendMail({
+    from: EMAIL_FROM,
     to,
     subject: 'Verify Your Email - Literate',
     html,
-  };
-
-  await transporter.sendMail(mailOptions);
+  });
 }
