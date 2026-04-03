@@ -15,21 +15,68 @@ datasource db {
 }
 
 model User {
-  id                String              @id @default(cuid())
-  role              userType            @default(USER)
-  firstName         String?
-  lastName          String?
-  email             String?             @unique
-  password          String?
-  isVerified        Boolean             @default(false)
-  accounts          Account[]
-  sessions          Session[]
-  classRoom         ClassRoom[]
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  verificationToken VerificationToken[]
+  id                 String              @id @default(cuid())
+  role               userType            @default(USER)
+  firstName          String?
+  lastName           String?
+  email              String?             @unique
+  password           String?
+  isVerified         Boolean             @default(false)
+  isDisabled         Boolean             @default(false)
+  accounts           Account[]
+  sessions           Session[]
+  classRoom          ClassRoom[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  verificationToken  VerificationToken[]
+  subscription       Subscription?
+  ownedOrganizations Organization[]       @relation("OrgOwner")
+  orgMemberships     OrganizationMember[]
 
   @@map("users")
+}
+
+model Organization {
+  id           String               @id @default(cuid())
+  name         String
+  ownerId      String
+  owner        User                 @relation("OrgOwner", fields: [ownerId], references: [id])
+  members      OrganizationMember[]
+  subscription Subscription?        @relation("OrgSubscription")
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@index([ownerId])
+}
+
+model OrganizationMember {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  joinedAt       DateTime     @default(now())
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+  @@index([userId])
+}
+
+model Subscription {
+  id                 String             @id @default(cuid())
+  userId             String?            @unique
+  user               User?              @relation(fields: [userId], references: [id])
+  organizationId     String?            @unique
+  organization       Organization?      @relation("OrgSubscription", fields: [organizationId], references: [id])
+  planType           PlanType
+  status             SubscriptionStatus @default(PENDING)
+  maxMembers         Int                @default(1)
+  xenditCustomerId   String?
+  xenditPlanId       String?
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 }
 
 model Account {
@@ -282,7 +329,9 @@ enum AssessmentType {
 enum userType {
   USER
   ADMIN
+  ORG_ADMIN
 }
+
 
 enum testType {
   PRE_TEST
@@ -328,4 +377,20 @@ enum LevelClassification {
   INDEPENDENT
   INSTRUCTIONAL
   FRUSTRATION
+}
+
+
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  EXPIRED
+}
+
+enum PlanType {
+  SOLO
+  KASALO
+  PANALO
+  PAMILYA
 }
