@@ -1,245 +1,279 @@
+<div align="center">
+
 # Literate
 
-**Literate** is a reading proficiency assessment platform built with Next.js, designed to help educators evaluate and track students' reading abilities through oral reading tests, reading fluency assessments, and comprehension evaluations.
+A reading proficiency assessment platform that helps educators evaluate and track students' reading abilities through AI-powered oral reading tests, fluency assessments, and comprehension evaluations.
+
+
+</div>
 
 ---
 
-## ✨ Features
+## Overview
 
-### 📖 Oral Reading Test
-- Record students reading passages aloud with real-time audio capture
-- AI-powered transcription using OpenAI Whisper API
-- Automatic miscue detection and analysis:
-  - Mispronunciation
-  - Omission
-  - Substitution
-  - Transposition
-  - Insertion
-  - Self-correction
-  - Repetition
-- Reading behavior detection:
-  - Word-by-word reading
-  - Monotonous reading
-  - Dismissal of punctuation
-- Words per minute (WPM) and accuracy calculations
-- Classification levels: Independent, Instructional, Frustration
-
-### 📊 Reading Fluency Test
-- Assess students' reading fluency with timed passages
-- Audio recording and playback functionality
-- Detailed fluency scoring and analysis
-
-### 📝 Reading Comprehension Test *(Coming Soon)*
-- Passage-based comprehension quizzes
-- Multiple question types:
-  - Multiple choice
-  - Essay questions
-- Question tagging by cognitive level:
-  - Literal
-  - Inferential
-  - Critical
-- Automated scoring and progress tracking
-
-### 🏫 Class Management
-- Create and organize classes by school year
-- Add and manage students within classes
-- Track individual student progress across assessments
-- View class-wide statistics and performance metrics
-
-### ⚙️ Test Configuration
-- **Auto-Scroll**: Automatically scrolls passage as student reads (Web Speech API)
-- **Auto-Finish**: Detects when student completes reading
-- Adjustable countdown timer before recording starts
-- Readiness check system:
-  - Microphone detection and selection
-  - Background noise level monitoring
-  - Internet connectivity verification
-
-### 👨‍💼 Admin Dashboard
-- Create and manage graded reading passages
-- Configure passage metadata (language, grade level, test type)
-- Create comprehension questions with answer tagging
-- Monitor platform-wide statistics
+**Literate** enables teachers to conduct structured reading assessments with real-time audio capture, AI-powered transcription, and automated miscue analysis. Students are assessed across oral reading, fluency, and comprehension — with results tracked per student and per class over time.
 
 ---
 
-## 🚀 Getting Started
+## Features
+
+### Oral Reading Test
+Record students reading passages aloud with real-time audio capture. AI-powered transcription via Google Cloud Speech-to-Text V2 (Chirp 2) automatically detects miscues including mispronunciation, omission, substitution, transposition, insertion, self-correction, and repetition. The system also identifies reading behaviors such as word-by-word reading, monotonous reading, and dismissal of punctuation. Passage-guided phrase boosting improves transcription accuracy for known reading material. Results include words per minute (WPM), accuracy percentage, and classification levels (Independent, Instructional, Frustration).
+
+### Reading Fluency Test
+Assess students' reading fluency with timed passages, audio recording and playback, and detailed fluency scoring.
+
+### Reading Comprehension Test *(Coming Soon)*
+Passage-based comprehension quizzes with multiple choice and essay questions, tagged by cognitive level (Literal, Inferential, Critical) with automated scoring and progress tracking.
+
+### Class Management
+Create and organize classes by school year, manage students, track individual progress across assessments, and view class-wide performance metrics.
+
+### Test Configuration
+- **Auto-Scroll** — automatically scrolls the passage as the student reads (Web Speech API)
+- **Auto-Finish** — detects when the student completes reading
+- Adjustable countdown timer, microphone detection, background noise monitoring, and connectivity verification
+
+### Admin Dashboard
+Create and manage graded reading passages, configure metadata (language, grade level, test type), build comprehension questions, and monitor platform-wide statistics.
+
+---
+
+## Tech Stack
+
+| Category | Technology |
+|---|---|
+| Framework | [Next.js 15](https://nextjs.org) (App Router, Standalone Output) |
+| Language | [TypeScript](https://typescriptlang.org) |
+| Database | [PostgreSQL](https://postgresql.org) via [Neon](https://neon.tech) |
+| ORM | [Prisma](https://prisma.io) |
+| Authentication | [NextAuth.js](https://next-auth.js.org) |
+| AI / Transcription | [Google Cloud Speech-to-Text V2](https://cloud.google.com/speech-to-text) (Chirp 2) |
+| Job Queue | [BullMQ](https://docs.bullmq.io) + [Redis](https://redis.io) |
+| Storage | [Google Cloud Storage](https://cloud.google.com/storage) |
+| Styling | [Tailwind CSS](https://tailwindcss.com) + [Radix UI](https://radix-ui.com) |
+| Charts | [Recharts](https://recharts.org) |
+| Icons | [Lucide React](https://lucide.dev) |
+| Package Manager | [PNPM](https://pnpm.io) |
+
+---
+
+## Getting Started
 
 ### Prerequisites
 
-- **Node.js** 18.0.0 or higher
-- **PNPM** package manager
-- **PostgreSQL** database (or Neon serverless PostgreSQL)
-- **OpenAI API Key** for Whisper transcription
-- **Supabase** account for audio file storage
+- [Node.js](https://nodejs.org) 18.0.0+
+- [PNPM](https://pnpm.io)
+- [PostgreSQL](https://postgresql.org) (or [Neon](https://neon.tech) serverless)
+- [Redis](https://redis.io) (for background job processing)
+- [Google Cloud](https://cloud.google.com) project with Speech-to-Text and Cloud Storage APIs enabled
+- [Supabase](https://supabase.com) account (for audio file storage)
 
-### Installation
+### Environment Variables
 
-1. **Clone the repository**
+Create a `.env` file in the project root:
 
-   ```bash
-   git clone https://github.com/Wisdomous20/literate.git
-   cd literate
-   ```
+```env
+# Database
+DATABASE_URL=your_postgresql_connection_string
 
-2. **Install dependencies**
+# Authentication
+NEXTAUTH_SECRET=your_nextauth_secret
+NEXTAUTH_URL=http://localhost:3000
 
-   ```bash
-   pnpm install
-   ```
+# Google Cloud (Speech-to-Text & Cloud Storage)
+GOOGLE_CLOUD_PROJECT_ID=your_gcp_project_id
+GOOGLE_CLOUD_CLIENT_EMAIL=your_service_account_email
+GOOGLE_CLOUD_PRIVATE_KEY=your_service_account_private_key
+GOOGLE_CLOUD_STORAGE_BUCKET=your_gcs_bucket_name
+# OR use a key file instead of inline credentials:
+# GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account-key.json
 
-3. **Set up environment variables**
+# Supabase (audio storage)
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
-   Create a `.env` file in the root directory:
-
-   ```env
-   # Database
-   DATABASE_URL=your_postgresql_connection_string
-
-   # Authentication
-   NEXTAUTH_SECRET=your_nextauth_secret
-   NEXTAUTH_URL=http://localhost:3000
-
-   # OpenAI (for Whisper transcription)
-   OPENAI_API_KEY=your_openai_api_key
-
-   # Supabase (for audio storage)
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   ```
-
-4. **Set up the database**
-
-   ```bash
-   pnpm prisma generate
-   pnpm prisma migrate dev
-   ```
-
-5. **Run the development server**
-
-   ```bash
-   pnpm dev
-   ```
-
-6. **Open the application**
-
-   Navigate to [http://localhost:3000](http://localhost:3000) in your browser.
+# Redis (automatically set by Docker Compose, only needed for manual setup)
+REDIS_URL=redis://localhost:6379
+```
 
 ---
 
-## 📁 Project Structure
+### Option 1: Docker (Recommended)
+
+The easiest way to get Literate running locally. Docker Compose will spin up the Next.js app, the background worker, and Redis in a single command.
+
+**Prerequisites:** [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
+
+```bash
+# Clone the repository
+git clone https://github.com/Wisdomous20/literate.git
+cd literate
+
+# Create your .env file (see Environment Variables above)
+cp .env.example .env   # then edit with your values
+
+# Build and start all services
+docker compose up --build
+```
+
+This starts three services:
+
+| Service | Description | Port |
+|---|---|---|
+| `app` | Next.js application | `3000` |
+| `worker` | BullMQ background worker (transcription, grading, oral reading level) | — |
+| `redis` | Redis 7 (Alpine) with persistent storage | `6379` (internal) |
+
+Common Docker commands:
+
+```bash
+# Start in detached mode
+docker compose up --build -d
+
+# View logs
+docker compose logs -f
+
+# View logs for a specific service
+docker compose logs -f app
+
+# Stop all services
+docker compose down
+
+# Stop and remove volumes (clears Redis data)
+docker compose down -v
+
+# Rebuild a single service
+docker compose up --build app
+```
+
+> **Note:** The `REDIS_URL` is automatically injected by Docker Compose — you do not need to set it in your `.env` file when using Docker.
+
+---
+
+### Option 2: Manual Setup
+
+If you prefer running services directly on your machine:
+
+```bash
+# Clone the repository
+git clone https://github.com/Wisdomous20/literate.git
+cd literate
+
+# Install dependencies
+pnpm install
+
+# Generate Prisma client and run migrations
+pnpm prisma generate
+pnpm prisma migrate dev
+```
+
+You need three processes running simultaneously. Open three separate terminals:
+
+**Terminal 1 — Redis:**
+```bash
+docker start redis
+```
+> If you don't have a Redis container yet, create one first: `docker run -d --name redis -p 6379:6379 redis:7-alpine`
+
+**Terminal 2 — Background Worker:**
+```bash
+npx tsx watch src/workers/index.ts
+```
+
+**Terminal 3 — Development Server:**
+```bash
+pnpm dev
+```
+
+Make sure your `.env` includes `REDIS_URL=redis://localhost:6379`, then open [http://localhost:3000](http://localhost:3000) in your browser.
+
+---
+
+## Project Structure
 
 ```
 literate/
-├── prisma/                 # Database schema and migrations
-│   ├── schema.prisma
-│   └── migrations/
-├── public/                 # Static assets
+├── prisma/                     # Database schema and migrations
+├── public/                     # Static assets
 ├── src/
-│   ├── app/                # Next.js App Router pages and API routes
-│   │   ├── admin/          # Admin dashboard pages
-│   │   ├── api/            # API endpoints
-│   │   ├── dashboard/      # Teacher dashboard pages
-│   │   └── ...
-│   ├── components/         # Reusable UI components
-│   │   ├── auth/           # Authentication components
-│   │   ├── class-lists/    # Class management components
-│   │   ├── oral-reading-test/  # Oral reading test components
-│   │   ├── sidebar/        # Navigation sidebar
-│   │   └── ui/             # Base UI components
-│   ├── context/            # React context providers
-│   ├── generated/          # Prisma generated client
-│   ├── lib/                # Utility libraries (Prisma, auth)
-│   ├── service/            # Business logic services
-│   │   ├── admin/          # Admin services
-│   │   ├── assessment/     # Assessment creation services
-│   │   └── oral-reading/   # Oral reading analysis services
-│   ├── types/              # TypeScript type definitions
-│   └── utils/              # Helper utilities
+│   ├── app/                    # Next.js App Router (pages + API routes)
+│   │   ├── admin/              # Admin dashboard
+│   │   ├── api/                # API endpoints
+│   │   └── dashboard/          # Teacher dashboard
+│   ├── components/             # UI components
+│   │   ├── auth/               # Authentication
+│   │   ├── class-lists/        # Class management
+│   │   ├── oral-reading-test/  # Oral reading test
+│   │   ├── sidebar/            # Navigation
+│   │   └── ui/                 # Base UI primitives
+│   ├── context/                # React context providers
+│   ├── generated/              # Prisma generated client
+│   ├── lib/                    # Utility libraries (Prisma, auth, queues, Redis)
+│   ├── service/                # Business logic
+│   │   ├── admin/
+│   │   ├── assessment/
+│   │   └── oral-reading/
+│   ├── types/                  # TypeScript type definitions
+│   ├── utils/                  # Helper utilities
+│   └── workers/                # BullMQ background workers
+├── Dockerfile                  # Production app container
+├── Dockerfile.worker           # Production worker container
+├── docker-compose.yml          # Multi-service orchestration
 ├── package.json
 └── README.md
 ```
 
 ---
 
-## 🛠️ Tech Stack
-
-| Category | Technology |
-|----------|------------|
-| **Framework** | [Next.js 15](https://nextjs.org) (App Router) |
-| **Language** | [TypeScript](https://www.typescriptlang.org) |
-| **Database** | [PostgreSQL](https://www.postgresql.org) via [Neon](https://neon.tech) |
-| **ORM** | [Prisma](https://www.prisma.io) |
-| **Authentication** | [NextAuth.js](https://next-auth.js.org) |
-| **AI/ML** | [OpenAI Whisper API](https://openai.com/whisper) |
-| **Storage** | [Supabase](https://supabase.com) |
-| **Styling** | [Tailwind CSS](https://tailwindcss.com) |
-| **UI Components** | [Radix UI](https://www.radix-ui.com) |
-| **Charts** | [Recharts](https://recharts.org) |
-| **Icons** | [Lucide React](https://lucide.dev) |
-| **Package Manager** | [PNPM](https://pnpm.io) |
-
----
-
-## 📜 Available Scripts
+## Available Scripts
 
 | Command | Description |
-|---------|-------------|
+|---|---|
 | `pnpm dev` | Start the development server |
-| `pnpm build` | Build the application for production |
+| `pnpm build` | Build for production |
 | `pnpm start` | Start the production server |
-| `pnpm lint` | Run ESLint for code quality checks |
+| `pnpm lint` | Run ESLint |
 | `pnpm prisma generate` | Generate Prisma client |
 | `pnpm prisma migrate dev` | Run database migrations |
-| `pnpm prisma studio` | Open Prisma Studio for database management |
+| `pnpm prisma studio` | Open Prisma Studio (database GUI) |
+
 
 ---
 
-## 🌐 Browser Compatibility
-
-| Feature | Chrome | Edge | Firefox | Safari |
-|---------|--------|------|---------|--------|
-| Core functionality | ✅ | ✅ | ✅ | ✅ |
-| Audio recording | ✅ | ✅ | ✅ | ✅ |
-| Auto-Scroll (Web Speech API) | ✅ | ✅ | ⚠️ Limited | ⚠️ Limited |
-| Auto-Finish (Web Speech API) | ✅ | ✅ | ⚠️ Limited | ⚠️ Limited |
-
-> **Note:** Auto-Scroll and Auto-Finish features rely on the Web Speech API, which works best on Chrome and Edge browsers.
-
----
-
-## 🗺️ Roadmap
+## Roadmap
 
 - [x] Oral Reading Test with AI transcription
 - [x] Miscue detection and analysis
 - [x] Reading behavior detection
 - [x] Class and student management
 - [x] Reading Fluency Test
-- [ ] Reading Comprehension Test with quizzes
-- [ ] Detailed student progress reports
-- [ ] PDF report generation
-- [x] Multi-language passage support expansion
-- [ ] Parent portal for progress viewing
+- [x] Multi-language passage support
+- [x] Background job processing (BullMQ + Redis)
+- [x] Reading Comprehension Test with quizzes
+- [x] Detailed student progress reports
+- [x] PDF report generation
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the [MIT License](LICENSE).
 
 ---
 
-For questions, suggestions, or support, please reach out:
+## Contributing
 
-- **GitHub**: [Wisdomous20](https://github.com/Wisdomous20)
-- **Repository Issues**: [Create an issue](https://github.com/Wisdomous20/literate/issues)
+Contributions are welcome. Please open an [issue](https://github.com/Wisdomous20/literate/issues) to discuss proposed changes before submitting a pull request.
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
-- [OpenAI](https://openai.com) for the Whisper API
-- [Next.js](https://nextjs.org) team for the amazing framework
-- [Prisma](https://prisma.io) for the excellent ORM
-- [Tailwind CSS](https://tailwindcss.com) for utility-first styling
-- [Radix UI](https://radix-ui.com) for accessible UI primitives
+- [Google Cloud Speech-to-Text](https://cloud.google.com/speech-to-text) — AI transcription
+- [Google Cloud Storage](https://cloud.google.com/storage) — Audio file storage
+- [Next.js](https://nextjs.org) — React framework
+- [Prisma](https://prisma.io) — Database ORM
+- [Tailwind CSS](https://tailwindcss.com) — Utility-first CSS
+- [Radix UI](https://radix-ui.com) — Accessible UI primitives
+- [BullMQ](https://docs.bullmq.io) — Job queue for Node.js
