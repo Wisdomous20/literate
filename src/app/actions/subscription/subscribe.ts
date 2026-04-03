@@ -2,7 +2,7 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-import { createSubscription } from "@/service/subscription/createSubscription";
+import { createSubscriptionService } from "@/service/subscription/createSubscriptionService";
 import { PlanKey } from "@/config/plans";
 
 export async function subscribeAction(planType: PlanKey, memberCount?: number) {
@@ -12,7 +12,7 @@ export async function subscribeAction(planType: PlanKey, memberCount?: number) {
     return { success: false, error: "Unauthorized" };
   }
 
-  return await createSubscription({
+  return await createSubscriptionService({
     userId: session.user.id,
     userName: session.user.name || "",
     userEmail: session.user.email || "",

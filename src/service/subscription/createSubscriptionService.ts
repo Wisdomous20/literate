@@ -10,7 +10,7 @@ interface CreateSubscriptionInput {
   memberCount?: number;
 }
 
-export async function createSubscription(input: CreateSubscriptionInput) {
+export async function createSubscriptionService(input: CreateSubscriptionInput) {
   const { userId, userName, userEmail, planType, memberCount } = input;
 
   if (!["SOLO", "KASALO", "PANALO", "PAMILYA"].includes(planType)) {

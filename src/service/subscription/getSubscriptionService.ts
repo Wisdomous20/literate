@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
-export async function getSubscription(userId: string) {
+export async function getSubscriptionService(userId: string) {
   const subscription = await prisma.subscription.findUnique({
     where: { userId },
   });

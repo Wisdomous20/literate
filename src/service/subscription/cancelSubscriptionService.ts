@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { xenditRequest } from "@/lib/xendit";
 
-export async function cancelSubscription(userId: string) {
+export async function cancelSubscriptionService(userId: string) {
   const subscription = await prisma.subscription.findUnique({
     where: { userId },
   });

@@ -2,7 +2,7 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-import { cancelSubscription } from "@/service/subscription/cancelSubscription";
+import { cancelSubscriptionService } from "@/service/subscription/cancelSubscriptionService";
 
 export async function cancelSubscriptionAction() {
   const session = await getServerSession(authOptions);
@@ -11,5 +11,5 @@ export async function cancelSubscriptionAction() {
     return { success: false, error: "Unauthorized" };
   }
 
-  return await cancelSubscription(session.user.id);
+  return await cancelSubscriptionService(session.user.id);
 }

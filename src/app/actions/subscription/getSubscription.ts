@@ -2,7 +2,7 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-import { getSubscription } from "@/service/subscription/getSubscription";
+import { getSubscriptionService } from "@/service/subscription/getSubscriptionService";
 
 export async function getSubscriptionAction() {
   const session = await getServerSession(authOptions);
@@ -11,5 +11,5 @@ export async function getSubscriptionAction() {
     return { success: false, error: "Unauthorized" };
   }
 
-  return await getSubscription(session.user.id);
+  return await getSubscriptionService(session.user.id);
 }
