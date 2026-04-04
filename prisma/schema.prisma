@@ -24,11 +24,9 @@ model User {
   isVerified         Boolean             @default(false)
   isDisabled         Boolean             @default(false)
   accounts           Account[]
-  sessions           Session[]
   classRoom          ClassRoom[]
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
-  verificationToken  VerificationToken[]
   subscription       Subscription?
   ownedOrganizations Organization[]       @relation("OrgOwner")
   orgMemberships     OrganizationMember[]
@@ -225,15 +223,6 @@ model OralFluencyBehavior {
   @@index([sessionId])
 }
 
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("sessions")
-}
 
 model Passage {
   id          String       @id @default(cuid())
@@ -297,28 +286,6 @@ model Question {
   @@index([quizId])
 }
 
-model VerificationToken {
-  id        String   @id @default(cuid())
-  userId    String
-  token     String   @unique
-  expires   DateTime
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("verification_tokens")
-}
-
-model PasswordResetToken {
-  id        String   @id @default(cuid())
-  email     String
-  token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  @@index([email])
-  @@index([token])
-}
 
 enum AssessmentType {
   ORAL_READING

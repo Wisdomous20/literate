@@ -5,6 +5,7 @@ import { ReactNode, useState } from "react";
 import { SettingsProvider } from "@/context/settingsContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { SessionMonitor } from "@/components/auth/sessionMonitor";
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -24,7 +25,10 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <SessionProvider>
       <QueryClientProvider client={queryClient}>
-        <SettingsProvider>{children}</SettingsProvider>
+        <SettingsProvider>
+          <SessionMonitor />
+          {children}
+        </SettingsProvider>
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </SessionProvider>

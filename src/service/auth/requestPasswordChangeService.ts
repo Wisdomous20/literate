@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
-import { generateVerificationToken } from "@/service/auth/generateVerificationToken";
+import {
+  generateVerificationToken,
+  validateVerificationToken,
+  deleteVerificationToken,
+} from "@/service/auth/generateVerificationToken";
 import { sendPasswordChangeVerificationEmail } from "@/service/notification/sendPasswordChangeVerificationEmail";
 
 // Step 1: Verify current password and send code
@@ -26,7 +30,6 @@ export async function requestPasswordChangeService(
     return { success: false, error: "Current password is incorrect" };
   }
 
-  // Generate and send 6-digit code
   const tokenResult = await generateVerificationToken(userId);
 
   if (!tokenResult.success || !tokenResult.token) {
@@ -56,21 +59,11 @@ export async function confirmPasswordChangeService(
     return { success: false, error: "New password must be at least 8 characters" };
   }
 
-  // Verify the code
-  const token = await prisma.verificationToken.findFirst({
-    where: { userId, token: code },
-  });
-
-  if (!token) {
-    return { success: false, error: "Invalid verification code" };
+  const tokenResult = await validateVerificationToken(userId, code);
+  if (!tokenResult.valid) {
+    return { success: false, error: tokenResult.error || "Invalid verification code" };
   }
 
-  if (token.expires < new Date()) {
-    await prisma.verificationToken.delete({ where: { id: token.id } });
-    return { success: false, error: "Verification code has expired" };
-  }
-
-  // Check new password isn't the same as current
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { password: true },
@@ -83,18 +76,14 @@ export async function confirmPasswordChangeService(
     }
   }
 
-  // Update password and clean up token
   const hashed = await bcrypt.hash(newPassword, 10);
 
-  await prisma.$transaction([
-    prisma.user.update({
-      where: { id: userId },
-      data: { password: hashed },
-    }),
-    prisma.verificationToken.deleteMany({
-      where: { userId },
-    }),
-  ]);
+  await prisma.user.update({
+    where: { id: userId },
+    data: { password: hashed },
+  });
+
+  await deleteVerificationToken(userId);
 
   return { success: true };
 }
