@@ -26,7 +26,10 @@ export async function POST(req: NextRequest) {
 
         if (planId) {
           const maxMembers = parseInt(metadata?.maxMembers || "1", 10);
+          const userId = metadata?.userId;
+          const planType = metadata?.planType;
 
+          // Activate the subscription
           await prisma.subscription.updateMany({
             where: { xenditPlanId: planId },
             data: {
@@ -37,11 +40,58 @@ export async function POST(req: NextRequest) {
             },
           });
 
-          if (metadata?.userId && metadata?.planType !== "SOLO") {
+          // If it's an org plan, auto-create the organization
+          if (userId && planType && planType !== "SOLO") {
+            // Upgrade user role
             await prisma.user.update({
-              where: { id: metadata.userId },
+              where: { id: userId },
               data: { role: "ORG_ADMIN" },
             });
+
+            // Check if user already has an org
+            const existingOrg = await prisma.organization.findFirst({
+              where: { ownerId: userId },
+            });
+
+            if (!existingOrg) {
+              // Get user info for org name
+              const user = await prisma.user.findUnique({
+                where: { id: userId },
+                select: { firstName: true, lastName: true },
+              });
+
+              const orgName = `${user?.firstName || "My"}'s Organization`;
+
+              // Create org + membership + link subscription in a transaction
+              await prisma.$transaction(async (tx) => {
+                const org = await tx.organization.create({
+                  data: {
+                    name: orgName,
+                    ownerId: userId,
+                  },
+                });
+
+                // Add owner as a member
+                await tx.organizationMember.create({
+                  data: {
+                    userId: userId,
+                    organizationId: org.id,
+                  },
+                });
+
+                // Link the subscription to the org
+                await tx.subscription.updateMany({
+                  where: { xenditPlanId: planId },
+                  data: { organizationId: org.id },
+                });
+              });
+            } else {
+              // Org already exists, just link the subscription
+              await prisma.subscription.updateMany({
+                where: { xenditPlanId: planId },
+                data: { organizationId: existingOrg.id },
+              });
+            }
           }
         }
         break;
