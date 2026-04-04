@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { validateVerificationToken, deleteVerificationToken } from "@/service/auth/generateVerificationToken";
 
 interface VerifyUserResult {
   success: boolean;
@@ -10,31 +11,20 @@ export async function verifyUser(
   userId: string
 ): Promise<VerifyUserResult> {
   try {
-    const verificationRecord = await prisma.verificationToken.findUnique({
-      where: { token },
-    });
+    const tokenResult = await validateVerificationToken(userId, token);
 
-    if (!verificationRecord || verificationRecord.userId !== userId) {
+    if (!tokenResult.valid) {
       return { success: false, error: "INVALID_TOKEN" };
     }
 
-    if (new Date() > verificationRecord.expires) {
-      await prisma.verificationToken.delete({
-        where: { token },
-      });
-      return { success: false, error: "TOKEN_EXPIRED" };
-    }
+    // Mark user as verified
+    await prisma.user.update({
+      where: { id: userId },
+      data: { isVerified: true },
+    });
 
-    // Use transaction to ensure atomicity
-    await prisma.$transaction([
-      prisma.user.update({
-        where: { id: userId },
-        data: { isVerified: true },
-      }),
-      prisma.verificationToken.delete({
-        where: { token },
-      }),
-    ]);
+    // Clean up the token from Redis
+    await deleteVerificationToken(userId);
 
     return { success: true };
   } catch (error) {
