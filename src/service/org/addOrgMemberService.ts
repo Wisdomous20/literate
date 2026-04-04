@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { generateOrgPassword } from "@/utils/generateOrgPassword";
 import bcrypt from "bcrypt";
-import crypto from "crypto";
 
 interface AddMemberInput {
   email: string;
@@ -48,7 +48,7 @@ export async function addOrgMemberService(input: AddMemberInput) {
     where: { email: email.toLowerCase().trim() },
   });
 
-  const tempPassword = crypto.randomBytes(8).toString("hex");
+  const tempPassword = generateOrgPassword(org.name, lastName);
   const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
   if (user) {
