@@ -14,6 +14,7 @@ declare module 'next-auth' {
     email: string;
     role: userType;
     hashPassword?: string;
+    rememberMe?: boolean;
   }
 }
 

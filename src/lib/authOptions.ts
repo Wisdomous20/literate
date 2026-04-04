@@ -4,11 +4,11 @@ import { prisma } from "./prisma";
 import { loginUser } from "@/service/auth/login";
 import { userType } from "@/generated/prisma/enums";
 
-
 export const authOptions: NextAuthOptions = {
   debug: true,
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days (max, for "remember me")
   },
   providers: [
     CredentialsProvider({
@@ -23,6 +23,10 @@ export const authOptions: NextAuthOptions = {
           label: "Password",
           type: "password",
           placeholder: "Enter your password",
+        },
+        rememberMe: {
+          label: "Remember Me",
+          type: "text",
         },
       },
       async authorize(credentials): Promise<User | null> {
@@ -57,6 +61,7 @@ export const authOptions: NextAuthOptions = {
           lastName: result.user.lastName,
           email: result.user.email,
           role,
+          rememberMe: credentials.rememberMe === "true",
         } as User;
       },
     }),
@@ -69,6 +74,15 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        const remember = (user as User & { rememberMe?: boolean }).rememberMe;
+
+        if (remember) {
+          // 30 days
+          token.exp = Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60;
+        } else {
+          // 24 hours — session effectively expires after a day
+          token.exp = Math.floor(Date.now() / 1000) + 24 * 60 * 60;
+        }
       }
       return token;
     },
@@ -77,6 +91,17 @@ export const authOptions: NextAuthOptions = {
       session.user.id = token.id as string;
       session.user.role = token.role as userType;
       return session;
+    },
+  },
+  cookies: {
+    sessionToken: {
+      name: "next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
     },
   },
   events: {

@@ -121,6 +121,7 @@ export function LoginForm() {
     const result = await signIn("credentials", {
       email,
       password,
+      rememberMe: rememberMe.toString(),
       redirect: false,
     });
 
