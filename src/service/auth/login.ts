@@ -17,7 +17,7 @@ export interface LoginResult {
 
   };
   error?: string;
-  code?: "INVALID_CREDENTIALS" | "EMAIL_NOT_VERIFIED" | "USER_NOT_FOUND" | "INTERNAL_ERROR";
+  code?: "INVALID_CREDENTIALS" | "EMAIL_NOT_VERIFIED" | "USER_NOT_FOUND" | "INTERNAL_ERROR" | "ACCOUNT_DISABLED";
 }
 
 export async function loginUser(input: LoginUserInput): Promise<LoginResult> {
