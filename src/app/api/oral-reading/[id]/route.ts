@@ -1,19 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAssessmentService } from "@/service/assessment/createAssessmentService";
-import { createOralFluencySessionService } from "@/service/oral-fluency/createOralFluencySessionService";
+import { prisma } from "@/lib/prisma";
+import { transcriptionQueue } from "@/lib/queues";
+import type { TranscriptionJobData } from "@/lib/queues";
 
-function serializeError(err: unknown): string {
-  if (err instanceof Error) {
-    return `${err.name}: ${err.message}`;
-  }
-  try {
-    const str = JSON.stringify(err);
-    if (str && str !== "{}") return str;
-  } catch {}
-  return String(err);
-}
-
-export const maxDuration = 60;
+export const maxDuration = 10;
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,7 +21,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. Create assessment FIRST (type: ORAL_READING covers both fluency + comprehension)
+    // 1. Create assessment
     const assessmentResult = await createAssessmentService({
       studentId,
       passageId,
@@ -44,48 +35,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Create oral fluency session under this assessment
-    const arrayBuffer = await audioFile.arrayBuffer();
-    const audioBuffer = Buffer.from(arrayBuffer);
+    const assessmentId = assessmentResult.assessment.id;
 
-    const result = await createOralFluencySessionService({
-      assessmentId: assessmentResult.assessment.id,
-      audioBuffer,
-      fileName: audioFile.name || "recording.wav",
-      audioUrl,
+    // 2. Create PENDING session
+    const session = await prisma.oralFluencySession.create({
+      data: {
+        assessmentId,
+        audioUrl,
+        status: "PENDING",
+      },
     });
 
-    if (!result.success) {
-      const statusMap: Record<string, number> = {
-        VALIDATION_ERROR: 400,
-        NOT_FOUND: 404,
-        ANALYSIS_FAILED: 500,
-        INTERNAL_ERROR: 500,
-      };
-      const status = result.code ? (statusMap[result.code] ?? 500) : 500;
+    // 3. Enqueue transcription
+    const jobData: TranscriptionJobData = {
+      assessmentId,
+      audioUrl,
+      fileName: audioFile.name || "recording.wav",
+    };
 
-      return NextResponse.json(
-        {
-          error: result.error || "Failed to create session",
-          sessionId: result.sessionId,
-          assessmentId: assessmentResult.assessment.id,
-        },
-        { status },
-      );
-    }
+    await transcriptionQueue.add(
+      `transcribe-${assessmentId}`,
+      jobData,
+      { jobId: `transcription-${assessmentId}` },
+    );
 
+    console.log(`[API:oral-reading] Enqueued transcription for ${assessmentId}`);
+
+    // 4. Return immediately
     return NextResponse.json(
       {
-        assessmentId: assessmentResult.assessment.id,
-        sessionId: result.sessionId,
-        status: "COMPLETED",
-        analysis: result.analysis,
+        assessmentId,
+        sessionId: session.id,
+        status: "PENDING",
       },
-      { status: 201 },
+      { status: 202 },
     );
   } catch (error) {
-    const errorMsg = serializeError(error);
-    console.error("Error creating oral reading session:", errorMsg, error);
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error("Error creating oral reading session:", error);
+    return NextResponse.json(
+      { error: "Failed to create oral reading session" },
+      { status: 500 },
+    );
   }
 }

@@ -17,7 +17,7 @@ export interface LoginResult {
 
   };
   error?: string;
-  code?: "INVALID_CREDENTIALS" | "EMAIL_NOT_VERIFIED" | "USER_NOT_FOUND" | "INTERNAL_ERROR";
+  code?: "INVALID_CREDENTIALS" | "EMAIL_NOT_VERIFIED" | "USER_NOT_FOUND" | "INTERNAL_ERROR" | "ACCOUNT_DISABLED";
 }
 
 export async function loginUser(input: LoginUserInput): Promise<LoginResult> {
@@ -43,6 +43,7 @@ export async function loginUser(input: LoginUserInput): Promise<LoginResult> {
         email: true,
         password: true,
         isVerified: true,
+        isDisabled: true,
       },
     });
 
@@ -71,6 +72,14 @@ export async function loginUser(input: LoginUserInput): Promise<LoginResult> {
         code: "INVALID_CREDENTIALS",
       };
     }
+
+    if (user.isDisabled) {
+  return {
+    success: false,
+    error: "Your account has been disabled. Contact your organization admin.",
+    code: "ACCOUNT_DISABLED",
+  };
+}
 
     // Check if email is verified
     if (!user.isVerified) {

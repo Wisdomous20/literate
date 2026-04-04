@@ -11,24 +11,72 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  
 }
 
 model User {
-  id                String              @id @default(cuid())
-  role              userType            @default(USER)
-  firstName         String?
-  lastName          String?
-  email             String?             @unique
-  password          String?
-  isVerified        Boolean             @default(false)
-  accounts          Account[]
-  sessions          Session[]
-  classRoom         ClassRoom[]
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  verificationToken VerificationToken[]
+  id                 String              @id @default(cuid())
+  role               userType            @default(USER)
+  firstName          String?
+  lastName           String?
+  email              String?             @unique
+  password           String?
+  isVerified         Boolean             @default(false)
+  isDisabled         Boolean             @default(false)
+  accounts           Account[]
+  sessions           Session[]
+  classRoom          ClassRoom[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  verificationToken  VerificationToken[]
+  subscription       Subscription?
+  ownedOrganizations Organization[]       @relation("OrgOwner")
+  orgMemberships     OrganizationMember[]
 
   @@map("users")
+}
+
+model Organization {
+  id           String               @id @default(cuid())
+  name         String
+  ownerId      String
+  owner        User                 @relation("OrgOwner", fields: [ownerId], references: [id])
+  members      OrganizationMember[]
+  subscription Subscription?        @relation("OrgSubscription")
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@index([ownerId])
+}
+
+model OrganizationMember {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  joinedAt       DateTime     @default(now())
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+  @@index([userId])
+}
+
+model Subscription {
+  id                 String             @id @default(cuid())
+  userId             String?            @unique
+  user               User?              @relation(fields: [userId], references: [id])
+  organizationId     String?            @unique
+  organization       Organization?      @relation("OrgSubscription", fields: [organizationId], references: [id])
+  planType           PlanType
+  status             SubscriptionStatus @default(PENDING)
+  maxMembers         Int                @default(1)
+  xenditCustomerId   String?
+  xenditPlanId       String?
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 }
 
 model Account {
@@ -48,6 +96,7 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
   @@map("accounts")
 }
 
@@ -60,6 +109,9 @@ model ClassRoom {
   schoolYear String
   archived   Boolean   @default(false)
   students   Student[]
+
+  @@index([userId])
+  @@index([userId, schoolYear])
 }
 
 model Student {
@@ -69,7 +121,9 @@ model Student {
   classRoom   ClassRoom    @relation(fields: [classRoomId], references: [id], onDelete: Cascade)
   classRoomId String
   assessments Assessment[]
-  archived   Boolean      @default(false)
+  archived    Boolean      @default(false)
+
+  @@index([classRoomId])
 }
 
 model Assessment {
@@ -84,6 +138,10 @@ model Assessment {
   oralReadingResult OralReadingResult?
   comprehension     ComprehensionTest?
   oralFluency       OralFluencySession?
+
+  @@index([studentId])
+  @@index([passageId])
+  @@index([studentId, dateTaken(sort: Desc)])
 }
 
 model OralReadingResult {
@@ -131,6 +189,8 @@ model WordTimestamp {
   index      Int
 
   session OralFluencySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
 }
 
 model OralFluencyMiscue {
@@ -145,6 +205,8 @@ model OralFluencyMiscue {
   createdAt       DateTime   @default(now())
 
   session OralFluencySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
 }
 
 model OralFluencyBehavior {
@@ -159,6 +221,8 @@ model OralFluencyBehavior {
   createdAt    DateTime                @default(now())
 
   session OralFluencySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
 }
 
 model Session {
@@ -203,6 +267,8 @@ model ComprehensionAnswer {
   answer              String
   isCorrect           Boolean?
   createdAt           DateTime          @default(now())
+
+  @@index([comprehensionTestId])
 }
 
 model Quiz {
@@ -227,6 +293,8 @@ model Question {
   correctAnswer String?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+
+  @@index([quizId])
 }
 
 model VerificationToken {
@@ -261,7 +329,9 @@ enum AssessmentType {
 enum userType {
   USER
   ADMIN
+  ORG_ADMIN
 }
+
 
 enum testType {
   PRE_TEST
@@ -307,4 +377,20 @@ enum LevelClassification {
   INDEPENDENT
   INSTRUCTIONAL
   FRUSTRATION
+}
+
+
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  EXPIRED
+}
+
+enum PlanType {
+  SOLO
+  KASALO
+  PANALO
+  PAMILYA
 }

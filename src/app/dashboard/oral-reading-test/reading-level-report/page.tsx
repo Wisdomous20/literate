@@ -110,6 +110,43 @@ export default function ReadingLevelReportPage() {
   }, []);
 
   const session = loadSession();
+const [overallLevelState, setOverallLevelState] = useState<string | null>(
+  session.oralReadingLevel ?? null
+);
+
+useEffect(() => {
+  if (overallLevelState) return;
+
+  const assessmentId = sessionStorage.getItem("oral-reading-assessmentId");
+  if (!assessmentId) return;
+
+  const poll = setInterval(async () => {
+    try {
+      const { getAssessmentByIdAction } = await import(
+        "@/app/actions/assessment/getAssessmentById"
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const assessment = (await getAssessmentByIdAction(assessmentId)) as any;
+
+      if (assessment?.oralReadingResult?.classificationLevel) {
+        clearInterval(poll);
+        const level = assessment.oralReadingResult.classificationLevel;
+        setOverallLevelState(level);
+
+        const raw = sessionStorage.getItem("oral-reading-session");
+        if (raw) {
+          const s = JSON.parse(raw);
+          s.oralReadingLevel = level;
+          sessionStorage.setItem("oral-reading-session", JSON.stringify(s));
+        }
+      }
+    } catch {}
+  }, 3000);
+
+  return () => clearInterval(poll);
+}, [overallLevelState]);
+
+
 
   // Fetch assessment data for comprehension breakdown
   const assessmentId = useMemo(() => {
@@ -254,7 +291,7 @@ export default function ReadingLevelReportPage() {
 
   // Overall oral reading level — computed by backend createOralReadingService,
   // returned in the comprehension API response and stored in session
-  const overallLevel = formatLevel(session.oralReadingLevel);
+const overallLevel = formatLevel(session.oralReadingLevel);
 
   const fluencyStyle = getLevelStyle(fluencyLevel);
   const comprehensionStyle = getLevelStyle(comprehensionLevel);

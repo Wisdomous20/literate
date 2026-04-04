@@ -1,0 +1,120 @@
+substitutions:
+  _REGION: asia-southeast1
+  _REPO: literate
+  _WEB_SERVICE: literate-web
+  _WORKER_SERVICE: literate-worker
+
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "build"
+      - "-t"
+      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_WEB_SERVICE}:$SHORT_SHA"
+      - "-t"
+      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_WEB_SERVICE}:latest"
+      - "-f"
+      - "Dockerfile"
+      - "."
+    id: "build-web"
+
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "build"
+      - "-t"
+      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_WORKER_SERVICE}:$SHORT_SHA"
+      - "-t"
+      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_WORKER_SERVICE}:latest"
+      - "-f"
+      - "Dockerfile.worker"
+      - "."
+    id: "build-worker"
+
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["push", "--all-tags", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_WEB_SERVICE}"]
+    id: "push-web"
+    waitFor: ["build-web"]
+
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["push", "--all-tags", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_WORKER_SERVICE}"]
+    id: "push-worker"
+    waitFor: ["build-worker"]
+
+  # Deploy web app
+  - name: "gcr.io/cloud-builders/gcloud"
+    args:
+      - "run"
+      - "deploy"
+      - "${_WEB_SERVICE}"
+      - "--image"
+      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_WEB_SERVICE}:$SHORT_SHA"
+      - "--region"
+      - "${_REGION}"
+      - "--platform"
+      - "managed"
+      - "--port"
+      - "3000"
+      - "--allow-unauthenticated"
+      - "--min-instances"
+      - "0"
+      - "--max-instances"
+      - "3"
+      - "--memory"
+      - "1Gi"
+      - "--cpu"
+      - "1"
+      - "--timeout"
+      - "300"
+      - "--service-account"
+      - "literate-sa@$PROJECT_ID.iam.gserviceaccount.com"
+      - "--vpc-connector"
+      - "literate-connector"
+      - "--vpc-egress"
+      - "private-ranges-only"
+      - "--set-env-vars"
+      - "GOOGLE_APPLICATION_CREDENTIALS=/secrets/sa-key.json"
+      - "--set-secrets"
+      - "DATABASE_URL=DATABASE_URL:latest,NEXTAUTH_SECRET=NEXTAUTH_SECRET:latest,NEXTAUTH_URL=NEXTAUTH_URL:latest,OPENAI_API_KEY=OPENAI_API_KEY:latest,REDIS_URL=REDIS_URL:latest,GOOGLE_CLOUD_PROJECT_ID=GOOGLE_CLOUD_PROJECT_ID:latest,GOOGLE_CLOUD_CLIENT_EMAIL=GOOGLE_CLOUD_CLIENT_EMAIL:latest,GOOGLE_CLOUD_PRIVATE_KEY=GOOGLE_CLOUD_PRIVATE_KEY:latest,GOOGLE_CLOUD_STORAGE_BUCKET=GOOGLE_CLOUD_STORAGE_BUCKET:latest,NEXT_PUBLIC_SUPABASE_URL=NEXT_PUBLIC_SUPABASE_URL:latest,NEXT_PUBLIC_SUPABASE_ANON_KEY=NEXT_PUBLIC_SUPABASE_ANON_KEY:latest,EMAIL_USER=EMAIL_USER:latest,EMAIL_PASS=EMAIL_PASS:latest,NEXT_PUBLIC_APP_URL=NEXT_PUBLIC_APP_URL:latest,/secrets/sa-key.json=GOOGLE_SA_KEY_JSON:latest"
+    id: "deploy-web"
+    waitFor: ["push-web"]
+
+  # Deploy worker
+  - name: "gcr.io/cloud-builders/gcloud"
+    args:
+      - "run"
+      - "deploy"
+      - "${_WORKER_SERVICE}"
+      - "--image"
+      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_WORKER_SERVICE}:$SHORT_SHA"
+      - "--region"
+      - "${_REGION}"
+      - "--platform"
+      - "managed"
+      - "--port"
+      - "8080"
+      - "--no-allow-unauthenticated"
+      - "--min-instances"
+      - "1"
+      - "--max-instances"
+      - "2"
+      - "--memory"
+      - "1Gi"
+      - "--cpu"
+      - "1"
+      - "--no-cpu-throttling"
+      - "--timeout"
+      - "300"
+      - "--service-account"
+      - "literate-sa@$PROJECT_ID.iam.gserviceaccount.com"
+      - "--vpc-connector"
+      - "literate-connector"
+      - "--vpc-egress"
+      - "private-ranges-only"
+      - "--set-env-vars"
+      - "GOOGLE_APPLICATION_CREDENTIALS=/secrets/sa-key.json"
+      - "--set-secrets"
+      - "DATABASE_URL=DATABASE_URL:latest,DIRECT_URL=DIRECT_URL:latest,REDIS_URL=REDIS_URL:latest,OPENAI_API_KEY=OPENAI_API_KEY:latest,GOOGLE_CLOUD_PROJECT_ID=GOOGLE_CLOUD_PROJECT_ID:latest,GOOGLE_CLOUD_CLIENT_EMAIL=GOOGLE_CLOUD_CLIENT_EMAIL:latest,GOOGLE_CLOUD_PRIVATE_KEY=GOOGLE_CLOUD_PRIVATE_KEY:latest,GOOGLE_CLOUD_STORAGE_BUCKET=GOOGLE_CLOUD_STORAGE_BUCKET:latest,/secrets/sa-key.json=GOOGLE_SA_KEY_JSON:latest"
+    id: "deploy-worker"
+    waitFor: ["push-worker"]
+
+options:
+  logging: CLOUD_LOGGING_ONLY

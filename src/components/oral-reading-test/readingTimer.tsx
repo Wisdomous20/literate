@@ -15,6 +15,7 @@ interface ReadingTimerProps {
   onTryAgain: () => void
   onStartOver?: () => void
   audioRef?: React.RefObject<HTMLAudioElement | null>
+  isAnalyzing?: boolean  
 }
 
 const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 2]
@@ -206,6 +207,7 @@ export function ReadingTimer({
   onTryAgain,
   onStartOver,
   audioRef,
+  isAnalyzing = false,
 }: ReadingTimerProps) {
   const formatTime = (totalSeconds: number) => {
     const hrs = Math.floor(totalSeconds / 3600)
@@ -249,7 +251,7 @@ export function ReadingTimer({
           </button>
         )}
 
-        {hasRecording && (
+        {hasRecording && !isAnalyzing && (
           <button
             type="button"
             onClick={onTryAgain}
@@ -259,7 +261,7 @@ export function ReadingTimer({
           </button>
         )}
 
-        {hasRecording && onStartOver && (
+        {hasRecording && !isAnalyzing && onStartOver && (
           <button
             type="button"
             onClick={onStartOver}
