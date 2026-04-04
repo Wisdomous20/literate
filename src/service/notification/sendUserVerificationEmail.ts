@@ -3,21 +3,16 @@ import transporter, { EMAIL_FROM } from "@/service/notification/emailTransporter
 interface SendUserVerificationEmailParams {
   to: string;
   userName: string;
-  userId: string;
-  verificationToken: string;
+  verificationCode: string;
   color?: string;
 }
 
 export async function sendUserVerificationEmail({
   to,
   userName,
-  userId,
-  verificationToken,
+  verificationCode,
   color = '#4F46E5',
 }: SendUserVerificationEmailParams): Promise<void> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  const verificationUrl = `${baseUrl}/api/auth/verify?token=${verificationToken}&userId=${userId}`;
-
   const html = `
     <!DOCTYPE html>
     <html>
@@ -44,32 +39,30 @@ export async function sendUserVerificationEmail({
                       Hi ${userName},
                     </p>
                     <p style="margin: 16px 0 0 0; font-size: 16px; line-height: 24px; color: #52525b;">
-                      Thank you for signing up! Please verify your email address by clicking the button below.
+                      Thank you for signing up! Use the verification code below to verify your email address.
                     </p>
                   </td>
                 </tr>
                 <tr>
                   <td style="padding: 20px 40px 30px 40px; text-align: center;">
-                    <a href="${verificationUrl}" 
-                       style="display: inline-block; padding: 14px 32px; background-color: ${color}; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; border-radius: 6px;">
-                      Verify Email Address
-                    </a>
+                    <div style="display: inline-block; padding: 16px 40px; background-color: #f4f4f5; border-radius: 8px; border: 2px dashed #d4d4d8;">
+                      <span style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: ${color}; font-family: 'Courier New', monospace;">
+                        ${verificationCode}
+                      </span>
+                    </div>
                   </td>
                 </tr>
                 <tr>
                   <td style="padding: 0 40px 20px 40px; text-align: center;">
                     <p style="margin: 0; font-size: 14px; line-height: 20px; color: #71717a;">
-                      Or copy and paste this link into your browser:
-                    </p>
-                    <p style="margin: 8px 0 0 0; font-size: 14px; line-height: 20px; color: ${color}; word-break: break-all;">
-                      ${verificationUrl}
+                      Enter this code on the verification page to complete your registration.
                     </p>
                   </td>
                 </tr>
                 <tr>
                   <td style="padding: 20px 40px 40px 40px; text-align: center; border-top: 1px solid #e4e4e7;">
                     <p style="margin: 0; font-size: 12px; line-height: 18px; color: #a1a1aa;">
-                      This verification link will expire in ${process.env.VERIFICATION_WINDOW_MINUTES || 15} minutes.
+                      This code will expire in ${process.env.VERIFICATION_WINDOW_MINUTES || 15} minutes.
                     </p>
                     <p style="margin: 8px 0 0 0; font-size: 12px; line-height: 18px; color: #a1a1aa;">
                       If you didn't create an account, you can safely ignore this email.
@@ -87,7 +80,7 @@ export async function sendUserVerificationEmail({
   await transporter.sendMail({
     from: EMAIL_FROM,
     to,
-    subject: 'Verify Your Email - Literate',
+    subject: 'Your Verification Code - Literate',
     html,
   });
 }

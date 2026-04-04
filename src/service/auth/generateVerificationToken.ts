@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import { randomBytes } from "crypto";
 
 const VERIFICATION_WINDOW_MINUTES = Number(
   process.env.VERIFICATION_WINDOW_MINUTES || 15
@@ -21,19 +20,19 @@ export async function generateVerificationToken(
       where: { userId },
     });
 
-    // Generate new token
-    const token = randomBytes(16).toString("hex");
+    // Generate a 6-digit verification code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expires = new Date(Date.now() + VERIFICATION_WINDOW_MINUTES * 60000);
 
     await prisma.verificationToken.create({
       data: {
         userId,
-        token,
+        token: code,
         expires,
       },
     });
 
-    return { success: true, token, expires };
+    return { success: true, token: code, expires };
   } catch (error) {
     console.error("Failed to generate verification token:", error);
     return { success: false, error: "Failed to generate verification token" };
