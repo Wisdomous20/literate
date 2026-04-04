@@ -58,7 +58,10 @@ const REMEMBERED_EMAIL_KEY = "literate_remembered_email";
 export function LoginForm() {
   const { data: session } = useSession();
   const [email, setEmail] = useState(() => {
-    if (typeof window !== "undefined" && localStorage.getItem(REMEMBER_ME_KEY) === "true") {
+    if (
+      typeof window !== "undefined" &&
+      localStorage.getItem(REMEMBER_ME_KEY) === "true"
+    ) {
       return localStorage.getItem(REMEMBERED_EMAIL_KEY) ?? "";
     }
     return "";
@@ -109,46 +112,44 @@ export function LoginForm() {
     return true;
   };
 
-
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError(null);
-  if (!validateForm()) return;
+    e.preventDefault();
+    setError(null);
+    if (!validateForm()) return;
 
-  setIsLoading(true);
+    setIsLoading(true);
 
-  try {
-    const result = await signIn("credentials", {
-      email,
-      password,
-      rememberMe: rememberMe.toString(),
-      redirect: false,
-    });
+    try {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        rememberMe: rememberMe.toString(),
+        redirect: false,
+      });
 
-    if (result?.error) {
-      setError("Invalid email or password");
-      setIsLoading(false);
-      return;
-    }
-
-    if (result?.ok) {
-      // Persist or clear remembered email based on checkbox
-      if (rememberMe) {
-        localStorage.setItem(REMEMBER_ME_KEY, "true");
-        localStorage.setItem(REMEMBERED_EMAIL_KEY, email);
-      } else {
-        localStorage.removeItem(REMEMBER_ME_KEY);
-        localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+      if (result?.error) {
+        setError("Invalid email or password");
+        setIsLoading(false);
+        return;
       }
-      setLoginSuccess(true); 
-    }
-  } catch (err) {
-    console.error("Login error:", err);
-    setError("An unexpected error occurred. Please try again.");
-    setIsLoading(false);
-  }
-};
 
+      if (result?.ok) {
+        // Persist or clear remembered email based on checkbox
+        if (rememberMe) {
+          localStorage.setItem(REMEMBER_ME_KEY, "true");
+          localStorage.setItem(REMEMBERED_EMAIL_KEY, email);
+        } else {
+          localStorage.removeItem(REMEMBER_ME_KEY);
+          localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+        }
+        setLoginSuccess(true);
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("An unexpected error occurred. Please try again.");
+      setIsLoading(false);
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
