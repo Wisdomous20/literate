@@ -69,6 +69,26 @@ function formatTime(seconds: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
+function formatReadingTime(totalSeconds: number): { value: string; subtitle: string } {
+  if (totalSeconds >= 3600) {
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    return {
+      value: mins > 0 ? `${hrs}:${String(mins).padStart(2, "0")}` : String(hrs),
+      subtitle: mins > 0 ? "Hours & Minutes" : "Hours",
+    };
+  }
+  if (totalSeconds >= 60) {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = Math.round(totalSeconds % 60);
+    return {
+      value: secs > 0 ? `${mins}:${String(secs).padStart(2, "0")}` : String(mins),
+      subtitle: secs > 0 ? "Minutes & Seconds" : "Minutes",
+    };
+  }
+  return { value: String(Math.round(totalSeconds)), subtitle: "Seconds" };
+}
+
 function getAssessmentTitle(type: string): string {
   switch (type) {
     case "ORAL_READING":
@@ -131,6 +151,20 @@ export default function StudentAssessmentPage() {
   const [recordedAudioURL, setRecordedAudioURL] = useState<string | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcribeComplete, setTranscribeComplete] = useState(false);
+
+  // Fluency result states
+  const [fluencyResult, setFluencyResult] = useState<{
+    wcpm: number;
+    readingTimeSeconds: number;
+    classificationLevel: string;
+    totalWords: number;
+    totalMiscues: number;
+    oralFluencyScore: number;
+    miscueBreakdown: Record<string, number>;
+    behaviors: string[];
+  } | null>(null);
+  const [isPolling, setIsPolling] = useState(false);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Load assessment data ──
   useEffect(() => {
@@ -318,19 +352,39 @@ export default function StudentAssessmentPage() {
       // Submit fluency recording
       setIsTranscribing(true);
       try {
+        // Step 1: Convert to WAV and upload to GCS (same as normal flow)
+        const { convertToWav } = await import("@/utils/convertToWav");
+        const { uploadAudio } = await import("@/utils/uploadAudio");
+
+        const wavBlob = await convertToWav(audioBlob);
+        const uploadedAudioUrl = await uploadAudio(
+          wavBlob,
+          data.student.id,
+          data.passage.id,
+        );
+
+        if (!uploadedAudioUrl) {
+          setSubmitError("Audio upload failed. Please try again.");
+          setIsTranscribing(false);
+          return;
+        }
+
+        // Step 2: Submit with the uploaded URL
         const formData = new FormData();
         formData.append("studentId", data.student.id);
         formData.append("passageId", data.passage.id);
-        formData.append("audio", audioBlob, "recording.wav");
-        formData.append("audioUrl", "");
+        formData.append("audio", wavBlob, "recording.wav");
+        formData.append("audioUrl", uploadedAudioUrl);
 
-        const endpoint =
-          data.type === "READING_FLUENCY"
-            ? `/api/fluency-reading/${data.assessmentId}`
-            : `/api/oral-reading/transcribe`;
+        let endpoint: string;
 
-        // For oral reading, we already have an assessment
         if (data.type === "ORAL_READING") {
+          endpoint = "/api/oral-reading/transcribe";
+          formData.append("assessmentId", data.assessmentId);
+        } else {
+          // READING_FLUENCY — the fluency-reading endpoint creates its own assessment,
+          // but we already have one from the shareable link, so use oral-reading/transcribe
+          endpoint = "/api/oral-reading/transcribe";
           formData.append("assessmentId", data.assessmentId);
         }
 
@@ -341,25 +395,109 @@ export default function StudentAssessmentPage() {
 
         const result = await response.json();
 
-        if (response.ok && (result.success || result.assessmentId)) {
-          setTranscribeComplete(true);
-
-          // For oral reading, proceed to comprehension
-          if (data.type === "ORAL_READING" && questions.length > 0) {
-            setStep("questions");
-          } else if (data.type === "READING_FLUENCY") {
-            // Mark link as used
-            try {
-              await fetch(`/api/assess/${token}/complete`, { method: "POST" });
-            } catch {
-              // Non-critical
-            }
-            setStep("done");
-          }
+        if (!response.ok) {
+          setSubmitError("Failed to submit recording. Please try again.");
+          setIsTranscribing(false);
+          return;
         }
+
+        // Step 3: Poll for transcription results
+        const targetAssessmentId = result.assessmentId || data.assessmentId;
+
+        const pollForResults = (): Promise<void> => {
+          return new Promise((resolve) => {
+            const interval = setInterval(async () => {
+              try {
+                const statusRes = await fetch(
+                  `/api/oral-reading/transcribe?assessmentId=${targetAssessmentId}`,
+                );
+                const statusData = await statusRes.json();
+
+                if (statusData.status === "COMPLETED" && statusData.analysis) {
+                  clearInterval(interval);
+
+                  const analysis = statusData.analysis;
+                  const passageWords = data.passage.content
+                    .split(/\s+/)
+                    .filter(Boolean).length;
+                  const totalMiscues = analysis.totalMiscues ?? 0;
+                  const duration = analysis.duration ?? elapsedSecs;
+                  const wordsCorrect = Math.max(0, passageWords - totalMiscues);
+                  const wcpm =
+                    duration > 0
+                      ? Math.round((wordsCorrect / duration) * 60)
+                      : 0;
+
+                  const miscueCounts: Record<string, number> = {};
+                  for (const m of analysis.miscues ?? []) {
+                    miscueCounts[m.miscueType] =
+                      (miscueCounts[m.miscueType] || 0) + 1;
+                  }
+
+                  const behaviorTypes = (analysis.behaviors ?? []).map(
+                    (b: { behaviorType: string }) => b.behaviorType,
+                  );
+
+                  setFluencyResult({
+                    wcpm,
+                    readingTimeSeconds: Math.round(duration),
+                    classificationLevel: analysis.classificationLevel ?? "—",
+                    totalWords: passageWords,
+                    totalMiscues,
+                    oralFluencyScore: analysis.oralFluencyScore ?? 0,
+                    miscueBreakdown: miscueCounts,
+                    behaviors: behaviorTypes,
+                  });
+
+                  // For oral reading, proceed to comprehension questions
+                  if (data.type === "ORAL_READING" && questions.length > 0) {
+                    setIsTranscribing(false);
+                    setStep("questions");
+                    resolve();
+                    return;
+                  }
+
+                  // Mark link as used
+                  try {
+                    await fetch(`/api/assess/${token}/complete`, {
+                      method: "POST",
+                    });
+                  } catch {
+                    /* non-critical */
+                  }
+
+                  setIsTranscribing(false);
+                  setStep("done");
+                  resolve();
+                } else if (statusData.status === "FAILED") {
+                  clearInterval(interval);
+                  setSubmitError(
+                    "Analysis failed. Please try recording again.",
+                  );
+                  setIsTranscribing(false);
+                  resolve();
+                }
+                // PENDING or PROCESSING — keep polling
+              } catch {
+                // Retry on next tick
+              }
+            }, 3000);
+
+            // Safety timeout: stop polling after 2 minutes
+            setTimeout(() => {
+              clearInterval(interval);
+              setSubmitError(
+                "Analysis is taking longer than expected. Please try again.",
+              );
+              setIsTranscribing(false);
+              resolve();
+            }, 120000);
+          });
+        };
+
+        await pollForResults();
       } catch {
         setSubmitError("Failed to submit recording. Please try again.");
-      } finally {
         setIsTranscribing(false);
       }
     },
@@ -439,36 +577,334 @@ export default function StudentAssessmentPage() {
     );
   }
 
-  // ── Done state ──
+  // ── Done state — show actual results ──
   if (step === "done") {
+    const passageWords = data.passage.content.split(/\s+/).filter(Boolean).length;
+
+    // Fluency result display helper
+    const readingTime = fluencyResult
+      ? formatReadingTime(fluencyResult.readingTimeSeconds)
+      : null;
+
+    const getLevelColor = (level: string) => {
+      const upper = level.toUpperCase();
+      if (upper === "INDEPENDENT") return "text-[#16a34a]";
+      if (upper === "INSTRUCTIONAL") return "text-[#ca8a04]";
+      if (upper === "FRUSTRATION") return "text-[#CE330C]";
+      return "text-[#00306E]";
+    };
+
+    const getLevelBg = (level: string) => {
+      const upper = level.toUpperCase();
+      if (upper === "INDEPENDENT") return "bg-green-50 border-green-200";
+      if (upper === "INSTRUCTIONAL") return "bg-yellow-50 border-yellow-200";
+      if (upper === "FRUSTRATION") return "bg-red-50 border-red-200";
+      return "bg-[#EFFDFF] border-[#54A4FF]";
+    };
+
+    const miscueLabels: { key: string; label: string }[] = [
+      { key: "MISPRONUNCIATION", label: "Mispronunciation" },
+      { key: "OMISSION", label: "Omission" },
+      { key: "SUBSTITUTION", label: "Substitution" },
+      { key: "TRANSPOSITION", label: "Transposition" },
+      { key: "REVERSAL", label: "Reversal" },
+      { key: "INSERTION", label: "Insertion" },
+      { key: "REPETITION", label: "Repetition" },
+      { key: "SELF_CORRECTION", label: "Self-Correction" },
+    ];
+
+    const behaviorLabels: { key: string; label: string; description: string }[] = [
+      { key: "WORD_BY_WORD_READING", label: "Does word-by-word reading", description: "(Nagbabasa nang pa-isa isang salita)" },
+      { key: "MONOTONOUS_READING", label: "Lacks expression: reads in a monotonous tone", description: "(Walang damdamin; walang pagbabago ang tono)" },
+      { key: "DISMISSAL_OF_PUNCTUATION", label: "Disregards Punctuation", description: "(Hindi pinapansin ang mga bantas)" },
+    ];
+
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#E4F4FF] px-4">
-        <div className="flex flex-col items-center gap-4 max-w-md text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-50 border border-green-200">
-            <CheckCircle className="h-8 w-8 text-green-500" />
+      <div className="flex min-h-screen flex-col bg-[#E4F4FF]">
+        {/* Header */}
+        <div className="flex items-center gap-3 border-b border-[#8D8DEC] bg-white/60 px-6 py-4 shadow-[0_4px_4px_#54A4FF]">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[rgba(74,74,252,0.06)] border border-[#DAE6FF]">
+            {getAssessmentIcon(data.type)}
           </div>
-          <h1 className="text-xl font-bold text-[#00306E]">
-            Assessment Complete!
-          </h1>
-          <p className="text-sm text-[#6B7DB3]">
-            Your assessment has been submitted successfully. Your teacher will
-            review the results.
-          </p>
-          {comprehensionResult && (
-            <div className="mt-4 w-full max-w-xs">
-              <ComprehensionBreakdown
-                score={comprehensionResult.score}
-                totalItems={comprehensionResult.totalItems}
-                level={comprehensionResult.level}
-                tagBreakdown={comprehensionResult.tagBreakdown}
-                disabled={false}
-                highlightedTag={highlightedTag}
-                onTagClick={handleTagClick}
-                showReportButton={false}
-              />
-            </div>
-          )}
+          <div>
+            <h1 className="text-lg font-bold text-[#00306E]">
+              {getAssessmentTitle(data.type)} — Results
+            </h1>
+            <p className="text-xs text-[#6B7DB3]">
+              {data.student.name} — {data.passage.title}
+            </p>
+          </div>
         </div>
+
+        <main className="flex-1 overflow-y-auto px-4 py-6 md:px-8 lg:px-12">
+          <div className="mx-auto max-w-5xl space-y-6">
+            {/* Success banner */}
+            <div className="flex items-center gap-3 rounded-2xl border border-green-200 bg-green-50 px-6 py-4">
+              <CheckCircle className="h-6 w-6 shrink-0 text-green-500" />
+              <div>
+                <p className="text-sm font-bold text-green-800">
+                  Assessment Complete!
+                </p>
+                <p className="text-xs text-green-700">
+                  Your results are shown below. Your teacher will also be able
+                  to review them.
+                </p>
+              </div>
+            </div>
+
+            {/* Student info + passage info */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {/* Student info */}
+              <div className="rounded-2xl border border-[#54A4FF] bg-[#EFFDFF] p-6 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
+                <p className="text-xs font-medium text-[#6B7DB3] mb-3">
+                  Student Information
+                </p>
+                <div className="space-y-2">
+                  <div>
+                    <span className="text-[10px] font-bold text-[#6B7DB3] uppercase">
+                      Student Name
+                    </span>
+                    <p className="text-sm font-semibold text-[#00306E]">
+                      {data.student.name}
+                    </p>
+                  </div>
+                  {data.student.level && (
+                    <div>
+                      <span className="text-[10px] font-bold text-[#6B7DB3] uppercase">
+                        Grade Level
+                      </span>
+                      <p className="text-sm font-semibold text-[#00306E]">
+                        Grade {data.student.level}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Passage info */}
+              <div className="rounded-2xl border border-[#54A4FF] bg-[#EFFDFF] p-6 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
+                <p className="text-xs font-medium text-[#6B7DB3] mb-3">
+                  Passage Information
+                </p>
+                <div className="space-y-2">
+                  <div>
+                    <span className="text-[10px] font-bold text-[#6B7DB3] uppercase">
+                      Passage Title
+                    </span>
+                    <p className="text-sm font-semibold text-[#00306E]">
+                      {data.passage.title}
+                    </p>
+                  </div>
+                  <div className="flex gap-6">
+                    <div>
+                      <span className="text-[10px] font-bold text-[#6B7DB3] uppercase">
+                        Level
+                      </span>
+                      <p className="text-sm font-semibold text-[#00306E]">
+                        Grade {data.passage.level}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-[#6B7DB3] uppercase">
+                        Words
+                      </span>
+                      <p className="text-sm font-semibold text-[#00306E]">
+                        {passageWords}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ─── Fluency Results ─── */}
+            {fluencyResult && (
+              <>
+                {/* Metric cards */}
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  {/* WCPM */}
+                  <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-[#54A4FF] bg-[#EFFDFF] p-6 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#DAE6FF] bg-[rgba(74,74,252,0.06)]">
+                        <FileText size={18} className="text-[#162DB0]" />
+                      </div>
+                      <h3 className="text-base font-bold leading-tight text-[#003366]">
+                        Reading Rate
+                        <br />
+                        (WCPM)
+                      </h3>
+                    </div>
+                    <p className="mt-2 text-4xl font-bold text-[#162DB0]">
+                      {fluencyResult.wcpm}
+                    </p>
+                    <p className="text-base text-[#162DB0]">
+                      Words Correct Per Minute
+                    </p>
+                  </div>
+
+                  {/* Reading Time */}
+                  <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-[#54A4FF] bg-[#EFFDFF] p-6 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#DAE6FF] bg-[rgba(74,74,252,0.06)]">
+                        <Clock size={18} className="text-[#1A6673]" />
+                      </div>
+                      <h3 className="text-base font-bold leading-tight text-[#003366]">
+                        Reading
+                        <br />
+                        Time
+                      </h3>
+                    </div>
+                    <p className="mt-2 text-4xl font-bold text-[#1A6673]">
+                      {readingTime?.value}
+                    </p>
+                    <p className="text-base text-[#162DB0]">
+                      {readingTime?.subtitle}
+                    </p>
+                  </div>
+
+                  {/* Classification */}
+                  <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-[#54A4FF] bg-[#EFFDFF] p-6 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#DAE6FF] bg-[rgba(74,74,252,0.06)]">
+                        <ClipboardCheck size={18} className="text-[#CE330C]" />
+                      </div>
+                      <h3 className="text-base font-bold leading-tight text-[#003366]">
+                        Fluency
+                        <br />
+                        Classification
+                      </h3>
+                    </div>
+                    <p
+                      className={`mt-2 text-2xl font-bold italic ${getLevelColor(fluencyResult.classificationLevel)}`}
+                    >
+                      {fluencyResult.classificationLevel}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Miscue & Behavior breakdown */}
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  {/* Miscue Analysis */}
+                  <div className="rounded-2xl border border-[#54A4FF] bg-[#EFFDFF] p-6 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
+                    <p className="text-xs font-medium text-[#6B7DB3] mb-4">
+                      Miscue Analysis
+                    </p>
+                    <div className="space-y-2">
+                      {miscueLabels.map(({ key, label }) => {
+                        const count =
+                          fluencyResult.miscueBreakdown[key] ?? 0;
+                        return (
+                          <div
+                            key={key}
+                            className="flex items-center justify-between"
+                          >
+                            <span className="text-xs text-[#00306E]">
+                              {label}
+                            </span>
+                            <span className="text-xs font-bold text-[#00306E]">
+                              {count}
+                            </span>
+                          </div>
+                        );
+                      })}
+                      <div className="mt-3 border-t border-[#DAE6FF] pt-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-[#00306E]">
+                            Total Miscues
+                          </span>
+                          <span className="text-xs font-bold text-[#CE330C]">
+                            {fluencyResult.totalMiscues}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-xs font-bold text-[#00306E]">
+                            Oral Fluency Score
+                          </span>
+                          <span className="text-xs font-bold text-[#162DB0]">
+                            {fluencyResult.oralFluencyScore}%
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-xs font-bold text-[#00306E]">
+                            Classification Level
+                          </span>
+                          <span
+                            className={`text-xs font-bold italic ${getLevelColor(fluencyResult.classificationLevel)}`}
+                          >
+                            {fluencyResult.classificationLevel}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Behavior Checklist */}
+                  <div className="rounded-2xl border border-[#54A4FF] bg-[#EFFDFF] p-6 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
+                    <p className="text-xs font-medium text-[#6B7DB3] mb-4">
+                      Reading Behavior Observations
+                    </p>
+                    <div className="space-y-3">
+                      {behaviorLabels.map(({ key, label, description }) => {
+                        const detected =
+                          fluencyResult.behaviors.includes(key);
+                        return (
+                          <div key={key} className="flex items-start gap-3">
+                            <div
+                              className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 ${
+                                detected
+                                  ? "border-[#6666FF] bg-[#6666FF]"
+                                  : "border-[#C4C4FF] bg-white"
+                              }`}
+                            >
+                              {detected && (
+                                <CheckCircle className="h-3.5 w-3.5 text-white" />
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold text-[#00306E]">
+                                {label}
+                              </p>
+                              <p className="text-[10px] text-[#6B7DB3]">
+                                {description}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* ─── Comprehension Results ─── */}
+            {comprehensionResult && (
+              <div className="mx-auto max-w-sm">
+                <ComprehensionBreakdown
+                  score={comprehensionResult.score}
+                  totalItems={comprehensionResult.totalItems}
+                  level={comprehensionResult.level}
+                  tagBreakdown={comprehensionResult.tagBreakdown}
+                  disabled={false}
+                  highlightedTag={highlightedTag}
+                  onTagClick={handleTagClick}
+                  showReportButton={false}
+                />
+              </div>
+            )}
+
+            {/* No results yet (edge case) */}
+            {!fluencyResult && !comprehensionResult && (
+              <div className="flex flex-col items-center gap-3 py-8 text-center">
+                <CheckCircle className="h-12 w-12 text-green-500" />
+                <p className="text-sm text-[#6B7DB3]">
+                  Your assessment has been submitted. Your teacher will review
+                  the results.
+                </p>
+              </div>
+            )}
+          </div>
+        </main>
       </div>
     );
   }

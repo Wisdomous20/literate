@@ -19,6 +19,20 @@ async function getAccessToken(): Promise<string> {
     const token = await client.getAccessToken();
     return token.token!;
   }
+    const client_email = process.env.GOOGLE_CLOUD_CLIENT_EMAIL ?? "";
+  const private_key = (process.env.GOOGLE_CLOUD_PRIVATE_KEY ?? "").replace(/\\n/g, "\n");
+
+  if (client_email && private_key) {
+    const { GoogleAuth } = await import("google-auth-library");
+    const auth = new GoogleAuth({
+      credentials: { client_email, private_key },
+      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+    });
+    const client = await auth.getClient();
+    const token = await client.getAccessToken();
+    return token.token!;
+  }
+
   throw new Error("No credentials available");
 }
 
