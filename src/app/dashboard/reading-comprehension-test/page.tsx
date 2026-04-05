@@ -28,6 +28,8 @@ import { useClassList } from "@/lib/hooks/useClassList";
 import { useQueryClient } from "@tanstack/react-query";
 import { getQuizByPassageAction } from "@/app/actions/comprehension-Test/getQuizByPassage";
 import { createStudent } from "@/app/actions/student/createStudent";
+import { ShareableLinkSection } from "@/components/assessment/shareableLinkSection";
+
 
 function getCurrentSchoolYear(): string {
   const now = new Date();
@@ -697,6 +699,14 @@ export default function ReadingComprehensionTestPage() {
                 testType={hasPassage ? selectedTestType : undefined}
                 hasPassage={hasPassage}
                 onOpenPassageModal={() => setIsPassageModalOpen(true)}
+              />
+            )}
+
+            {!passageExpanded && !showQuestions && selectedStudentId && selectedPassage && (
+              <ShareableLinkSection
+                studentId={selectedStudentId}
+                passageId={selectedPassage}
+                assessmentType="COMPREHENSION"
               />
             )}
 

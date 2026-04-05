@@ -30,6 +30,7 @@ import { useEditMiscues } from "@/components/oral-reading-test/useEditMiscues";
 import { fetchOralFluencyMiscues } from "@/app/actions/oral-fluency/getMiscues";
 import { updateMiscueAction } from "@/app/actions/oral-fluency/updateMiscue";
 import type { MiscueResult } from "@/types/oral-reading";
+import { ShareableLinkSection } from "@/components/assessment/shareableLinkSection";
 
 function getCurrentSchoolYear(): string {
   const now = new Date();
@@ -997,6 +998,14 @@ export default function OralReadingTestPage() {
                 testType={hasPassage ? selectedTestType : undefined}
                 hasPassage={hasPassage}
                 onOpenPassageModal={() => setIsPassageModalOpen(true)}
+              />
+            )}
+            
+            {!passageExpanded  && selectedStudentId && selectedPassage && (
+              <ShareableLinkSection
+                studentId={selectedStudentId}
+                passageId={selectedPassage}
+                assessmentType="ORAL_READING"
               />
             )}
 
