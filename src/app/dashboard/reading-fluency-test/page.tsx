@@ -35,6 +35,7 @@ import {
   buildFluencyReportData,
 } from "@/lib/exportFluencyReportPdf";
 import { uploadAudio } from "@/utils/uploadAudio";
+import { ShareableLinkSection } from "@/components/assessment/shareableLinkSection";
 
 function getCurrentSchoolYear(): string {
   const now = new Date();
@@ -739,6 +740,14 @@ export default function ReadingFluencyTestPage() {
                 testType={hasPassage ? selectedTestType : undefined}
                 hasPassage={hasPassage}
                 onOpenPassageModal={() => setIsPassageModalOpen(true)}
+              />
+            )}
+            
+            {!passageExpanded && selectedStudentId && selectedPassage && (
+              <ShareableLinkSection
+                studentId={selectedStudentId}
+                passageId={selectedPassage}
+                assessmentType="READING_FLUENCY"
               />
             )}
 
