@@ -11,22 +11,21 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  
 }
 
 model User {
-  id                 String              @id @default(cuid())
-  role               userType            @default(USER)
+  id                 String               @id @default(cuid())
+  role               userType             @default(USER)
   firstName          String?
   lastName           String?
-  email              String?             @unique
+  email              String?              @unique
   password           String?
-  isVerified         Boolean             @default(false)
-  isDisabled         Boolean             @default(false)
+  isVerified         Boolean              @default(false)
+  isDisabled         Boolean              @default(false)
   accounts           Account[]
   classRoom          ClassRoom[]
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
   subscription       Subscription?
   ownedOrganizations Organization[]       @relation("OrgOwner")
   orgMemberships     OrganizationMember[]
@@ -125,14 +124,15 @@ model Student {
 }
 
 model Assessment {
-  id        String         @id @default(cuid())
-  studentId String
-  student   Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  passageId String
-  passage   Passage        @relation(fields: [passageId], references: [id])
-  dateTaken DateTime       @default(now())
-  type      AssessmentType
-
+  id         String         @id @default(cuid())
+  studentId  String
+  student    Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  passageId  String
+  passage    Passage        @relation(fields: [passageId], references: [id])
+  dateTaken  DateTime       @default(now())
+  type       AssessmentType
+  
+  assessmentLink  AssessmentLink?
   oralReadingResult OralReadingResult?
   comprehension     ComprehensionTest?
   oralFluency       OralFluencySession?
@@ -140,6 +140,18 @@ model Assessment {
   @@index([studentId])
   @@index([passageId])
   @@index([studentId, dateTaken(sort: Desc)])
+}
+
+model AssessmentLink {
+  id           String     @id @default(cuid())
+  token        String     @unique
+  assessmentId String     @unique
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  used         Boolean    @default(false)
+  expiresAt    DateTime
+  createdAt    DateTime   @default(now())
+
+  @@index([token])
 }
 
 model OralReadingResult {
@@ -223,7 +235,6 @@ model OralFluencyBehavior {
   @@index([sessionId])
 }
 
-
 model Passage {
   id          String       @id @default(cuid())
   title       String
@@ -286,7 +297,6 @@ model Question {
   @@index([quizId])
 }
 
-
 enum AssessmentType {
   ORAL_READING
   COMPREHENSION
@@ -298,7 +308,6 @@ enum userType {
   ADMIN
   ORG_ADMIN
 }
-
 
 enum testType {
   PRE_TEST
@@ -345,7 +354,6 @@ enum LevelClassification {
   INSTRUCTIONAL
   FRUSTRATION
 }
-
 
 enum SubscriptionStatus {
   PENDING
