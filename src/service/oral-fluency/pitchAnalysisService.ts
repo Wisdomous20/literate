@@ -13,9 +13,9 @@ export interface PitchAnalysis {
 // Typical speech: 0.20–0.40  |  Monotone: < 0.12–0.15
 export const MONOTONE_COV_THRESHOLD = 0.15
 
-const SAMPLE_RATE = 16_000   // must match convertToWav() output
-const FRAME_SIZE  = 2_048    // ~128ms window — good for speech F0
-const HOP_SIZE    = 512      // 75% overlap
+const SAMPLE_RATE = 48_000      // must match convertToWav() output
+const FRAME_SIZE  = 6_144    // ~128ms window — good for speech F0
+const HOP_SIZE    = 1_536          // 75% overlap
 const MIN_F0      = 60       // Hz — below this is noise / creak
 const MAX_F0      = 600      // Hz — above this is falsetto / noise
 

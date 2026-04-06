@@ -6,7 +6,7 @@ import { GoogleAuth } from "google-auth-library";
 
 const LOCATION = "asia-southeast1";
 const WAV_HEADER_BYTES = 44;
-const BYTES_PER_SECOND = 32000;
+const BYTES_PER_SECOND = 96000;
 const CHUNK_DURATION_SEC = 50;
 const CHUNK_BYTE_SIZE = CHUNK_DURATION_SEC * BYTES_PER_SECOND;
 const INLINE_DURATION_LIMIT_SEC = 55;
@@ -159,7 +159,6 @@ async function transcribeChunk(
   }));
 }
 
-// ── Public API ────────────────────────────────────────────
 
 export async function transcribeAudio(
   audioBuffer: Buffer,

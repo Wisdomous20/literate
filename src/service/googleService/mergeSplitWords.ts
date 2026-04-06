@@ -1,10 +1,15 @@
 import { TranscriptWord } from "@/types/oral-reading";
 import { normalizeWord, similarityRatio } from "@/utils/textUtils";
 
+function minConfidence(...values: (number | undefined)[]): number | undefined {
+  const defined = values.filter((v): v is number => v !== undefined);
+  return defined.length > 0 ? Math.min(...defined) : undefined;
+}
+
 export default function mergeSplitWords(
   transcribedWords: TranscriptWord[],
   passageWords: string[],
-  threshold = 0.8
+  threshold = 0.8,
 ): TranscriptWord[] {
   const passageNorm = passageWords.map((w) => normalizeWord(w));
   const passageSet = new Set(passageNorm);
@@ -17,14 +22,24 @@ export default function mergeSplitWords(
     // Try 3-word merge first
     if (i + 2 < transcribedWords.length) {
       const combined = normalizeWord(
-        transcribedWords[i].word + transcribedWords[i + 1].word + transcribedWords[i + 2].word
+        transcribedWords[i].word +
+          transcribedWords[i + 1].word +
+          transcribedWords[i + 2].word,
       );
       const matchIdx = findBestPassageMatch(combined, passageNorm, threshold);
-      if (matchIdx !== -1 && !allMatchIndividually(transcribedWords, i, 3, passageSet)) {
+      if (
+        matchIdx !== -1 &&
+        !allMatchIndividually(transcribedWords, i, 3, passageSet)
+      ) {
         merged.push({
-          word: passageWords[matchIdx], // use correct passage spelling
+          word: passageWords[matchIdx],
           start: transcribedWords[i].start,
           end: transcribedWords[i + 2].end,
+          confidence: minConfidence(
+            transcribedWords[i].confidence,
+            transcribedWords[i + 1].confidence,
+            transcribedWords[i + 2].confidence,
+          ),
         });
         i += 3;
         didMerge = true;
@@ -34,14 +49,21 @@ export default function mergeSplitWords(
     // Try 2-word merge
     if (!didMerge && i + 1 < transcribedWords.length) {
       const combined = normalizeWord(
-        transcribedWords[i].word + transcribedWords[i + 1].word
+        transcribedWords[i].word + transcribedWords[i + 1].word,
       );
       const matchIdx = findBestPassageMatch(combined, passageNorm, threshold);
-      if (matchIdx !== -1 && !allMatchIndividually(transcribedWords, i, 2, passageSet)) {
+      if (
+        matchIdx !== -1 &&
+        !allMatchIndividually(transcribedWords, i, 2, passageSet)
+      ) {
         merged.push({
-          word: passageWords[matchIdx], // use correct passage spelling
+          word: passageWords[matchIdx],
           start: transcribedWords[i].start,
           end: transcribedWords[i + 1].end,
+          confidence: minConfidence(
+            transcribedWords[i].confidence,
+            transcribedWords[i + 1].confidence,
+          ),
         });
         i += 2;
         didMerge = true;
@@ -62,7 +84,7 @@ export default function mergeSplitWords(
 function findBestPassageMatch(
   combined: string,
   passageNorm: string[],
-  threshold: number
+  threshold: number,
 ): number {
   let bestIdx = -1;
   let bestSim = threshold;
@@ -84,7 +106,7 @@ function allMatchIndividually(
   words: TranscriptWord[],
   startIdx: number,
   count: number,
-  passageSet: Set<string>
+  passageSet: Set<string>,
 ): boolean {
   for (let k = 0; k < count; k++) {
     if (!passageSet.has(normalizeWord(words[startIdx + k].word))) {

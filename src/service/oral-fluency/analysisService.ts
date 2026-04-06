@@ -41,7 +41,12 @@ export async function analyzeOralFluency(
 
   // 3. Normalize and post-correct spoken words
   const corrected = postCorrectTranscription(
-    sttResult.words.map(w => ({ word: normalizeWord(w.word), start: w.start, end: w.end })),
+    sttResult.words.map(w => ({
+      word: normalizeWord(w.word),
+      start: w.start,
+      end: w.end,
+      confidence: w.confidence,
+    })),
     normalizedPassageWords,
   )
 

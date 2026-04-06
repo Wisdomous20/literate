@@ -4,11 +4,14 @@ import mergeSplitWords from "./mergeSplitWords";
 
 const MORPHOLOGICAL_SUFFIXES = ["s", "es", "ed", "ing", "er", "est", "ly", "d"];
 
-function isMorphologicalVariant(transcribedNorm: string, passageNorm: string): boolean {
+function isMorphologicalVariant(
+  transcribedNorm: string,
+  passageNorm: string,
+): boolean {
   return MORPHOLOGICAL_SUFFIXES.some(
     (suffix) =>
       transcribedNorm === passageNorm + suffix ||
-      passageNorm === transcribedNorm + suffix
+      passageNorm === transcribedNorm + suffix,
   );
 }
 
@@ -20,12 +23,9 @@ function isMorphologicalVariant(transcribedNorm: string, passageNorm: string): b
 export default function correctWithPassage(
   transcribedWords: TranscriptWord[],
   passageText: string,
-  similarityThreshold = 0.55
+  similarityThreshold = 0.55,
 ): TranscriptWord[] {
-  const expandedPassageText = passageText.replace(
-    /(\p{L})-(\p{L})/gu,
-    "$1 $2"
-  );
+  const expandedPassageText = passageText.replace(/(\p{L})-(\p{L})/gu, "$1 $2");
   const passageWords = expandedPassageText
     .split(/\s+/)
     .filter((w) => w.length > 0);
@@ -42,7 +42,9 @@ export default function correctWithPassage(
   const normTranscribed = transcribedWords.map((w) => normalizeWord(w.word));
   const normPassage = passageWords.map(normalizeWord);
 
-  const simMatrix: number[][] = Array.from({ length: tLen }, () => Array(pLen).fill(0));
+  const simMatrix: number[][] = Array.from({ length: tLen }, () =>
+    Array(pLen).fill(0),
+  );
   for (let i = 0; i < tLen; i++) {
     for (let j = 0; j < pLen; j++) {
       simMatrix[i][j] = similarityRatio(normTranscribed[i], normPassage[j]);
@@ -54,10 +56,11 @@ export default function correctWithPassage(
   const GAP_PENALTY = -0.5;
 
   const dp: number[][] = Array.from({ length: tLen + 1 }, () =>
-    Array(pLen + 1).fill(0)
+    Array(pLen + 1).fill(0),
   );
-  const trace: Uint8Array[] = Array.from({ length: tLen + 1 }, () =>
-    new Uint8Array(pLen + 1)
+  const trace: Uint8Array[] = Array.from(
+    { length: tLen + 1 },
+    () => new Uint8Array(pLen + 1),
   );
 
   let bestScore = 0;
@@ -67,7 +70,8 @@ export default function correctWithPassage(
   for (let i = 1; i <= tLen; i++) {
     for (let j = 1; j <= pLen; j++) {
       const sim = simMatrix[i - 1][j - 1];
-      const bonus = sim > 0.8 ? MATCH_BONUS : sim > similarityThreshold ? CLOSE_BONUS : -1;
+      const bonus =
+        sim > 0.8 ? MATCH_BONUS : sim > similarityThreshold ? CLOSE_BONUS : -1;
 
       const diag = dp[i - 1][j - 1] + bonus;
       const up = dp[i - 1][j] + GAP_PENALTY;
@@ -105,14 +109,22 @@ export default function correctWithPassage(
       const transcribedNorm = normTranscribed[ci - 1];
       const passageNorm = normPassage[cj - 1];
 
-            if (
-        sim > similarityThreshold &&
-        transcribedNorm !== passageNorm
-      ) {
+      if (sim > similarityThreshold && transcribedNorm !== passageNorm) {
         const isMorph = isMorphologicalVariant(transcribedNorm, passageNorm);
-        console.log(`[correction] "${transcribedNorm}" → "${passageNorm}" | sim: ${sim.toFixed(2)} | isMorph: ${isMorph}`);
-        
-        if (!isMorph) {
+        const wordConfidence = transcribedWords[ci - 1].confidence ?? 1.0;
+
+        // High-confidence words that don't match = real miscues, don't correct
+        const isHighConfidence = wordConfidence >= 0.85;
+        // Medium similarity + high confidence = student said something deliberate
+        const isDeliberateMiscue = isHighConfidence && sim < 0.75;
+
+        console.log(
+          `[correction] "${transcribedNorm}" → "${passageNorm}" | ` +
+            `sim: ${sim.toFixed(2)} | conf: ${wordConfidence.toFixed(2)} | ` +
+            `isMorph: ${isMorph} | deliberate: ${isDeliberateMiscue}`,
+        );
+
+        if (!isMorph && !isDeliberateMiscue) {
           corrections.set(ci - 1, passageWords[cj - 1]);
         }
       }

@@ -28,6 +28,7 @@ export default function convertToTranscriptResponse(
           word: wordInfo.word ?? "",
           start: startSec,
           end: endSec,
+          confidence:wordInfo.confidence ?? undefined,
         });
 
         if (endSec > maxEndTime) {
@@ -46,7 +47,7 @@ export default function convertToTranscriptResponse(
 
   let duration = maxEndTime;
   if (duration === 0 && isWav) {
-    duration = Math.max(0, (audioBuffer.length - 44) / 32000);
+    duration = Math.max(0, (audioBuffer.length - 44) / 96000);
   }
 
   // Build segments using time boundaries from original results

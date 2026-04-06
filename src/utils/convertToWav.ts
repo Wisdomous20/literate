@@ -5,7 +5,7 @@ export async function convertToWav(blob: Blob): Promise<Blob> {
 
   // Downmix to mono
   const numSamples = audioBuffer.length
-  const sampleRate = 16000
+  const sampleRate = 48000  
   const monoData = audioBuffer.getChannelData(0)
 
   // Build WAV file
