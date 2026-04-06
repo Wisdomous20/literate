@@ -79,18 +79,48 @@ function buildConfig(languageCode: string, passageText?: string) {
   };
 
   if (passageText) {
+    const allWords = passageText.split(/\s+/).filter((w) => w.length > 0);
+
+    // Unique individual words — include ALL lengths
     const uniqueWords = [
-      ...new Set(passageText.split(/\s+/).filter((w) => w.length > 3)),
-    ].slice(0, 200);
+      ...new Set(
+        allWords.map((w) => w.replace(/[^\p{L}\p{N}'-]/gu, ""))
+      ),
+    ].filter((w) => w.length > 0);
+
+    const wordPhrases = uniqueWords.slice(0, 200).map((word) => ({
+      value: word,
+      boost: word.length <= 3 ? 3 : 5,
+    }));
+
+    // N-gram context phrases (2-4 word windows)
+    const ngramPhrases: { value: string; boost: number }[] = [];
+    const seenNgrams = new Set<string>();
+
+    for (let n = 2; n <= 4; n++) {
+      for (let i = 0; i <= allWords.length - n; i++) {
+        const ngram = allWords
+          .slice(i, i + n)
+          .map((w) => w.replace(/[^\p{L}\p{N}'-]/gu, ""))
+          .join(" ")
+          .trim();
+        if (ngram && !seenNgrams.has(ngram)) {
+          seenNgrams.add(ngram);
+          ngramPhrases.push({ value: ngram, boost: 8 });
+        }
+      }
+    }
+
+    const maxNgrams = Math.max(0, 500 - wordPhrases.length);
+    const selectedNgrams = ngramPhrases
+      .sort((a, b) => b.value.split(" ").length - a.value.split(" ").length)
+      .slice(0, maxNgrams);
 
     config.adaptation = {
       phraseSets: [
         {
           inlinePhraseSet: {
-            phrases: [
-              ...uniqueWords.map((word) => ({ value: word, boost: 5 })),
-              { value: passageText.slice(0, 500), boost: 20 },
-            ],
+            phrases: [...wordPhrases, ...selectedNgrams],
           },
         },
       ],

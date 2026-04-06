@@ -12,10 +12,159 @@ function isMorphologicalVariant(transcribedNorm: string, passageNorm: string): b
   );
 }
 
+// ── Double Metaphone (lightweight) ────────────────────────
+// Produces phonetic codes so homophones like "are"/"our",
+// "there"/"their", "or"/"our" resolve correctly.
+
+function doubleMetaphone(word: string): [string, string] {
+  const w = word.toUpperCase();
+  let primary = "";
+  let secondary = "";
+  let pos = 0;
+  const len = w.length;
+
+  const charAt = (i: number) => (i >= 0 && i < len ? w[i] : "");
+  const isVowel = (c: string) => "AEIOUY".includes(c);
+
+  if (["GN", "KN", "PN", "AE", "WR"].includes(w.slice(0, 2))) pos = 1;
+
+  while (pos < len && primary.length < 4) {
+    const c = charAt(pos);
+    const next = charAt(pos + 1);
+
+    if (isVowel(c)) {
+      if (pos === 0) { primary += "A"; secondary += "A"; }
+      pos++;
+      continue;
+    }
+
+    switch (c) {
+      case "B":
+        primary += "P"; secondary += "P";
+        pos += next === "B" ? 2 : 1;
+        break;
+      case "C":
+        if (next === "H") { primary += "X"; secondary += "X"; pos += 2; }
+        else if ("EIY".includes(next)) { primary += "S"; secondary += "S"; pos += 2; }
+        else { primary += "K"; secondary += "K"; pos += next === "C" ? 2 : 1; }
+        break;
+      case "D":
+        if (next === "G" && "EIY".includes(charAt(pos + 2))) {
+          primary += "J"; secondary += "J"; pos += 3;
+        } else { primary += "T"; secondary += "T"; pos += next === "D" ? 2 : 1; }
+        break;
+      case "F":
+        primary += "F"; secondary += "F"; pos += next === "F" ? 2 : 1;
+        break;
+      case "G":
+        if (next === "H") {
+          if (pos > 0 && !isVowel(charAt(pos - 1))) { pos += 2; }
+          else { primary += "K"; secondary += "K"; pos += 2; }
+        } else if ("EIY".includes(next)) {
+          primary += "J"; secondary += "K"; pos += 2;
+        } else {
+          primary += "K"; secondary += "K"; pos += next === "G" ? 2 : 1;
+        }
+        break;
+      case "H":
+        if (isVowel(next) && (pos === 0 || !isVowel(charAt(pos - 1)))) {
+          primary += "H"; secondary += "H";
+        }
+        pos++;
+        break;
+      case "J":
+        primary += "J"; secondary += "H"; pos++;
+        break;
+      case "K":
+        primary += "K"; secondary += "K"; pos += next === "K" ? 2 : 1;
+        break;
+      case "L":
+        primary += "L"; secondary += "L"; pos += next === "L" ? 2 : 1;
+        break;
+      case "M":
+        primary += "M"; secondary += "M"; pos += next === "M" ? 2 : 1;
+        break;
+      case "N":
+        primary += "N"; secondary += "N"; pos += next === "N" ? 2 : 1;
+        break;
+      case "P":
+        if (next === "H") { primary += "F"; secondary += "F"; pos += 2; }
+        else { primary += "P"; secondary += "P"; pos += next === "P" ? 2 : 1; }
+        break;
+      case "Q":
+        primary += "K"; secondary += "K"; pos += next === "U" ? 2 : 1;
+        break;
+      case "R":
+        primary += "R"; secondary += "R"; pos += next === "R" ? 2 : 1;
+        break;
+      case "S":
+        if (next === "H") { primary += "X"; secondary += "X"; pos += 2; }
+        else if (next === "I" && "AO".includes(charAt(pos + 2))) {
+          primary += "S"; secondary += "X"; pos += 3;
+        } else { primary += "S"; secondary += "S"; pos += next === "S" ? 2 : 1; }
+        break;
+      case "T":
+        if (next === "H") { primary += "0"; secondary += "T"; pos += 2; }
+        else if (next === "I" && "AO".includes(charAt(pos + 2))) {
+          primary += "X"; secondary += "X"; pos += 3;
+        } else { primary += "T"; secondary += "T"; pos += next === "T" ? 2 : 1; }
+        break;
+      case "V":
+        primary += "F"; secondary += "F"; pos += next === "V" ? 2 : 1;
+        break;
+      case "W":
+      case "Y":
+        if (isVowel(next)) { primary += c; secondary += c; }
+        pos++;
+        break;
+      case "X":
+        primary += "KS"; secondary += "KS"; pos += next === "X" ? 2 : 1;
+        break;
+      case "Z":
+        primary += "S"; secondary += "S"; pos += next === "Z" ? 2 : 1;
+        break;
+      default:
+        pos++;
+    }
+  }
+
+  return [primary.slice(0, 4), secondary.slice(0, 4)];
+}
+
+function phoneticallyMatch(a: string, b: string): boolean {
+  if (a === b) return true;
+  if (a.length === 0 || b.length === 0) return false;
+  const [pA1, pA2] = doubleMetaphone(a);
+  const [pB1, pB2] = doubleMetaphone(b);
+  return (
+    (pA1.length > 0 && (pA1 === pB1 || pA1 === pB2)) ||
+    (pA2.length > 0 && (pA2 === pB1 || pA2 === pB2))
+  );
+}
+
+/**
+ * Combined similarity: max of string similarity and phonetic match.
+ * Phonetic match returns 0.9 so homophones like are/our get paired
+ * by the alignment but can still be corrected.
+ */
+function combinedSimilarity(a: string, b: string): number {
+  const stringSim = similarityRatio(a, b);
+  if (stringSim >= 0.9) return stringSim;
+
+  if (phoneticallyMatch(a, b)) {
+    return Math.max(stringSim, 0.9);
+  }
+
+  return stringSim;
+}
+
 /**
  * Passage-guided correction using Smith-Waterman-style local alignment.
  * Only corrects obvious STT noise — preserves real miscues including
  * morphological variants (e.g. "understands" vs "understand").
+ *
+ * Uses phonetic matching (Double Metaphone) so homophones like
+ * "are"/"our", "there"/"their" get corrected to the passage word.
  */
 export default function correctWithPassage(
   transcribedWords: TranscriptWord[],
@@ -42,10 +191,11 @@ export default function correctWithPassage(
   const normTranscribed = transcribedWords.map((w) => normalizeWord(w.word));
   const normPassage = passageWords.map(normalizeWord);
 
+  // Use combined similarity (string + phonetic) for the alignment matrix
   const simMatrix: number[][] = Array.from({ length: tLen }, () => Array(pLen).fill(0));
   for (let i = 0; i < tLen; i++) {
     for (let j = 0; j < pLen; j++) {
-      simMatrix[i][j] = similarityRatio(normTranscribed[i], normPassage[j]);
+      simMatrix[i][j] = combinedSimilarity(normTranscribed[i], normPassage[j]);
     }
   }
 
@@ -105,14 +255,23 @@ export default function correctWithPassage(
       const transcribedNorm = normTranscribed[ci - 1];
       const passageNorm = normPassage[cj - 1];
 
-            if (
+      if (
         sim > similarityThreshold &&
         transcribedNorm !== passageNorm
       ) {
         const isMorph = isMorphologicalVariant(transcribedNorm, passageNorm);
-        console.log(`[correction] "${transcribedNorm}" → "${passageNorm}" | sim: ${sim.toFixed(2)} | isMorph: ${isMorph}`);
-        
-        if (!isMorph) {
+        const isPhoneticMatch = phoneticallyMatch(transcribedNorm, passageNorm);
+
+        console.log(
+          `[correction] "${transcribedNorm}" → "${passageNorm}" | sim: ${sim.toFixed(2)} | isMorph: ${isMorph} | phonetic: ${isPhoneticMatch}`
+        );
+
+        // Correct if:
+        // 1. Phonetic match (homophones) — STT can't distinguish these,
+        //    so trust the passage. e.g. "are"→"our", "there"→"their"
+        // 2. High string similarity AND not a morphological variant —
+        //    STT garbled the word. e.g. "beautful"→"beautiful"
+        if (isPhoneticMatch || !isMorph) {
           corrections.set(ci - 1, passageWords[cj - 1]);
         }
       }
