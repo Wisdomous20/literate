@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
+import { WelcomeSection } from "@/components/dashboard/welcomeSection";
 import { ClassInventory } from "@/components/dashboard/classInventory";
 import { ClassificationChart } from "@/components/dashboard/classificationChart";
-import { QuickActions } from "@/components/dashboard/quickActions";
-import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
+import { WordOfTheDay } from "@/components/dashboard/wordOfTheDay";
 import { X, CheckCircle, XCircle } from "lucide-react";
 
 function getCurrentSchoolYear(): string {
@@ -15,7 +16,7 @@ function getCurrentSchoolYear(): string {
 
 export default function DashboardPage() {
   const [selectedYear, setSelectedYear] = useState<string>(
-    getCurrentSchoolYear(),
+    getCurrentSchoolYear()
   );
   const [toast, setToast] = useState<{
     message: string;
@@ -29,6 +30,7 @@ export default function DashboardPage() {
 
   return (
     <div className="flex min-h-full flex-col overflow-y-auto">
+      {/* Toast notification */}
       {toast && (
         <div
           className={`fixed top-6 right-6 z-50 flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium shadow-lg transition-all duration-300 ${
@@ -54,19 +56,46 @@ export default function DashboardPage() {
           </button>
         </div>
       )}
+
+      {/* Header */}
       <DashboardHeader title="My Dashboard" />
-      <main className="flex flex-col gap-5 px-6 py-5 lg:px-8 lg:py-6">
-        <ClassInventory
-          selectedYear={selectedYear}
-          onYearChange={setSelectedYear}
-          showToast={showToast}
-        />
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <div className="min-h-90 lg:h-100">
-            <ClassificationChart schoolYear={selectedYear} />
+
+      {/* Main content */}
+      <main className="flex-1 p-4 md:p-6 lg:p-8">
+        {/* Two column layout for main content */}
+        <div className="flex flex-col xl:flex-row gap-6">
+          {/* Left column - Welcome and Class Inventory */}
+          <div className="flex-1 space-y-6 min-w-0">
+            {/* Welcome Section */}
+            <WelcomeSection
+              teacherName="Rhea"
+              schoolYear={selectedYear}
+              planType="Free User Plan"
+            />
+
+            {/* Class Inventory */}
+            <ClassInventory
+              selectedYear={selectedYear}
+              onYearChange={setSelectedYear}
+              showToast={showToast}
+            />
           </div>
-          <div className="min-h-90 lg:h-100">
-            <QuickActions schoolYear={selectedYear} />
+
+          {/* Right column - Charts and Word of the Day */}
+          <div className="w-full xl:w-[380px] 2xl:w-[420px] space-y-6 flex-shrink-0">
+            {/* Classification Chart */}
+            <div className="min-h-[320px]">
+              <ClassificationChart schoolYear={selectedYear} />
+            </div>
+
+            
+
+            {/* Word of the Day */}
+            <WordOfTheDay
+              word="LiteRate"
+              definition="playfully quaint or fanciful, especially in an appealing and amusing way."
+              partOfSpeech="Adjective"
+            />
           </div>
         </div>
       </main>

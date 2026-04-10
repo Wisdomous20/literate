@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from "react";
 import { deleteClass } from "@/app/actions/class/deleteClass";
 import { useRouter } from "next/navigation";
 import { UpdateClassModal } from "./updateClassModal";
-import { createPortal } from "react-dom"; 
+import { createPortal } from "react-dom";
 
 type ClassCardVariant = "blue" | "yellow" | "cyan";
 
@@ -121,49 +121,57 @@ export function ClassCard({
           onKeyDown={handleCardKeyDown}
           tabIndex={0}
           className={cn(
-            "group relative flex h-29 w-full flex-col justify-between overflow-hidden rounded-[15px] border border-[#5D5DFB] bg-white p-4 shadow-[0px_0px_16px_1px_rgba(84,164,255,0.55)] transition-all hover:scale-[1.02] cursor-pointer",
+            "group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-[#E0E7FF] bg-white p-4 min-h-[140px] shadow-[0px_0px_16px_1px_rgba(84,164,255,0.25)] transition-all hover:shadow-[0px_0px_20px_2px_rgba(84,164,255,0.4)] hover:border-[#5D5DFB]/40 cursor-pointer"
           )}
         >
-          <div className="flex items-start justify-between">
+          {/* Top section with folder icon and label */}
+          <div className="flex items-start gap-3">
             <div
               className={cn(
-                "flex h-6 w-6 items-center justify-center rounded-lg",
-                styles.iconBg,
+                "flex h-10 w-10 items-center justify-center rounded-lg",
+                styles.iconBg
               )}
             >
-              <Folder className={cn("h-3.5 w-3.5", styles.iconColor)} />
+              <Folder className={cn("h-5 w-5", styles.iconColor)} />
             </div>
-            <span
-              className={cn(
-                "mr-7 rounded-lg px-2 py-0.5 text-[9px] font-semibold",
-                styles.badgeBg,
-                styles.badgeText,
-              )}
-            >
-              {studentCount} students
-            </span>
+            <div className="flex-1">
+              <span
+                className={cn(
+                  "inline-block rounded-md px-2 py-0.5 text-xs font-medium",
+                  styles.badgeBg,
+                  styles.badgeText
+                )}
+              >
+                Class
+              </span>
+            </div>
           </div>
 
-          <div className="flex min-w-0 items-center justify-between gap-1">
-            <span className="min-w-0 flex-1 truncate text-[13px] font-semibold leading-tight text-[#00306E]">
+          {/* Bottom section with class name and student count */}
+          <div className="mt-4">
+            <h3 className="text-lg font-bold text-[#00306E] truncate mb-1">
               {name}
-            </span>
-            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[#00306E]/60 transition-transform group-hover:translate-x-0.5" />
+            </h3>
+            <p className="text-sm text-[#00306E]/60">{studentCount} students</p>
           </div>
+
+          {/* Arrow indicator */}
+          <ChevronRight className="absolute bottom-4 right-4 h-4 w-4 text-[#00306E]/40 transition-transform group-hover:translate-x-0.5" />
         </div>
 
+        {/* Menu button */}
         <div className="absolute right-3 top-3 z-20" ref={menuRef}>
           <button
             type="button"
             onClick={handleMenuClick}
             aria-label="Open class options"
-            className="rounded p-0.5 transition-colors hover:bg-gray-100"
+            className="rounded-full p-1.5 transition-colors hover:bg-gray-100"
           >
-            <MoreVertical className="h-3.5 w-3.5 text-[#00306E]/60" />
+            <MoreVertical className="h-4 w-4 text-[#00306E]/50" />
           </button>
 
           {isMenuOpen && (
-            <div className="absolute right-0 top-6 z-50 w-28 overflow-hidden rounded-lg border border-gray-100 bg-white shadow-lg">
+            <div className="absolute right-0 top-8 z-50 w-28 overflow-hidden rounded-lg border border-gray-100 bg-white shadow-lg">
               <button
                 type="button"
                 onClick={handleUpdate}
@@ -187,6 +195,7 @@ export function ClassCard({
         </div>
       </div>
 
+      {/* Delete confirmation modal */}
       {isDeleteModalOpen &&
         typeof window !== "undefined" &&
         createPortal(
@@ -220,7 +229,7 @@ export function ClassCard({
                   disabled={isDeleting}
                   className="rounded-lg bg-red-600 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
                 >
-                  {isDeleting ? "Deleting…" : "Delete"}
+                  {isDeleting ? "Deleting..." : "Delete"}
                 </button>
               </div>
             </div>

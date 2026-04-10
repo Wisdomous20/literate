@@ -1,16 +1,13 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { ChevronDown, ClipboardList, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, ClipboardList, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ClassCard } from "./classCard";
 import { CreateClassModal } from "./createClassModal";
 import { createClass } from "@/app/actions/class/createClass";
-import { useQueryClient } from "@tanstack/react-query";
 import { useClassList } from "@/lib/hooks/useClassList";
-import { Scrollbar } from "swiper/modules";
-import { Swiper, SwiperSlide } from "swiper/react";
-import "swiper/css";
+import { cn } from "@/lib/utils";
 
 type ClassCardVariant = "blue" | "yellow" | "cyan";
 
@@ -42,14 +39,15 @@ export function ClassInventory({
   showToast,
 }: ClassInventoryProps) {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
 
   const {
     data: rawClasses,
     isLoading,
     error: fetchError,
+    mutate: refreshClasses,
   } = useClassList(selectedYear);
 
   const error = fetchError?.message ?? null;
@@ -57,7 +55,7 @@ export function ClassInventory({
   const currentYear = getCurrentSchoolYear();
   const nextYear = getNextSchoolYear();
   const now = new Date();
-  const nextYearStart = new Date(Number(nextYear.split("-")[0]), 7, 1); // August 1st of next year
+  const nextYearStart = new Date(Number(nextYear.split("-")[0]), 7, 1);
   const isNextYearDisabled = now < nextYearStart;
 
   const yearsWithData = useMemo(() => {
@@ -69,7 +67,7 @@ export function ClassInventory({
   const classes = (rawClasses ?? []).map(
     (
       c: { id: string; name: string; studentCount: number },
-      index: number,
+      index: number
     ): {
       id: string;
       name: string;
@@ -80,38 +78,38 @@ export function ClassInventory({
       name: c.name,
       studentCount: c.studentCount,
       variant: getVariant(index),
-    }),
+    })
   );
 
-  const [swiperProgress, setSwiperProgress] = useState(0);
-  const [slidesPerView, setSlidesPerView] = useState(2);
+  // Responsive items per page
+  const [itemsPerPage, setItemsPerPage] = useState(4);
 
   useEffect(() => {
-    const updateSlides = () => {
-      setSlidesPerView(
-        window.innerWidth >= 1280
-          ? 5
-          : window.innerWidth >= 1024
-            ? 4
-            : window.innerWidth >= 640
-              ? 3
-              : 2,
-      );
+    const updateItemsPerPage = () => {
+      if (window.innerWidth < 640) {
+        setItemsPerPage(2);
+      } else if (window.innerWidth < 1024) {
+        setItemsPerPage(3);
+      } else {
+        setItemsPerPage(4);
+      }
     };
-    updateSlides();
-    window.addEventListener("resize", updateSlides);
-    return () => window.removeEventListener("resize", updateSlides);
+    updateItemsPerPage();
+    window.addEventListener("resize", updateItemsPerPage);
+    return () => window.removeEventListener("resize", updateItemsPerPage);
   }, []);
 
-  const totalSlides = classes.length;
-  const showScrollbar = totalSlides > slidesPerView;
-  const indicatorWidth = showScrollbar
-    ? Math.max((slidesPerView / totalSlides) * 100, 10)
-    : 100;
-  const indicatorLeft = showScrollbar
-    ? swiperProgress * (100 - indicatorWidth)
-    : 0;
+  const totalPages = Math.ceil(classes.length / itemsPerPage);
+  const startIndex = currentPage * itemsPerPage;
+  const visibleClasses = classes.slice(startIndex, startIndex + itemsPerPage);
 
+  const goToPrevPage = () => {
+    setCurrentPage((prev) => Math.max(0, prev - 1));
+  };
+
+  const goToNextPage = () => {
+    setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1));
+  };
 
   const handleCreateClass = async (data: {
     className: string;
@@ -119,9 +117,7 @@ export function ClassInventory({
   }) => {
     const result = await createClass(data.className);
     if (result.success) {
-      await queryClient.invalidateQueries({
-        queryKey: ["classes", selectedYear],
-      });
+      refreshClasses();
       showToast?.("Class created successfully!", "success");
     } else {
       showToast?.("Failed to create class.", "error");
@@ -130,38 +126,39 @@ export function ClassInventory({
   };
 
   const handleClassUpdated = async () => {
-    await queryClient.invalidateQueries({
-      queryKey: ["classes", selectedYear],
-    });
+    refreshClasses();
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
-          <h2 className="text-[20px] font-semibold text-[#00306E]">
+    <div className="rounded-3xl bg-white p-4 md:p-6 shadow-[0px_0px_20px_1px_rgba(84,164,255,0.35)]">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-lg md:text-xl font-bold text-[#00306E]">
             Class Inventory
           </h2>
           <button
             type="button"
             onClick={() => router.push("/dashboard/class/all")}
-            className="rounded-full border border-[#6666FF] bg-[#6666FF] px-3 py-1 text-[11px] font-medium text-white ml-1 h-7 min-w-0 hover:bg-[#7A7AFB] transition-colors"
+            className="rounded-full bg-[#5D5DFB] px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#4a4ae8] shadow-sm"
           >
             View All
           </button>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Year Dropdown */}
           <div className="relative">
             <button
               type="button"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="rounded-lg border border-[#6666FF]/25 bg-[#6666FF]/8 px-5 py-2 text-sm font-medium text-[#6666FF] flex items-center gap-1 h-10 min-w-30"
+              className="flex items-center gap-2 rounded-full border border-[#5D5DFB]/30 bg-[#5D5DFB]/5 px-4 py-2 text-sm font-medium text-[#5D5DFB]"
             >
               {selectedYear}
               <ChevronDown className="h-4 w-4" />
             </button>
             {isDropdownOpen && (
-              <div className="absolute right-0 top-full z-10 mt-1 w-36 rounded-lg border border-[#5D5DFB]/30 bg-white py-1 shadow-lg">
+              <div className="absolute right-0 top-full z-10 mt-1 w-40 rounded-lg border border-[#5D5DFB]/30 bg-white py-1 shadow-lg">
                 {yearsWithData.map((year) => {
                   const isCurrent = year === currentYear;
                   const isNext = year === nextYear;
@@ -176,13 +173,13 @@ export function ClassInventory({
                         }
                       }}
                       disabled={disabled}
-                      className={`w-full px-4 py-2 text-left text-sm transition-colors
-                        ${
-                          year === selectedYear
-                            ? "font-semibold text-[#6666FF] bg-gray-100"
-                            : "text-[#00306E] hover:bg-[#E4F4FF]"
-                        }
-                        ${disabled ? "cursor-not-allowed opacity-60" : ""}`}
+                      className={cn(
+                        "w-full px-4 py-2 text-left text-sm transition-colors",
+                        year === selectedYear
+                          ? "font-semibold text-[#5D5DFB] bg-[#E4F4FF]"
+                          : "text-[#00306E] hover:bg-[#E4F4FF]",
+                        disabled && "cursor-not-allowed opacity-60"
+                      )}
                     >
                       {year}
                       {isCurrent && " (Current)"}
@@ -193,32 +190,34 @@ export function ClassInventory({
               </div>
             )}
           </div>
+
+          {/* Create Class Button */}
           <button
             type="button"
             onClick={() => setIsModalOpen(true)}
-            className="rounded-lg border border-[#7A7AFB] bg-[#6666FF] px-5 py-2 text-sm font-medium text-white shadow-[0px_1px_20px_rgba(65,155,180,0.47)] transition-opacity hover:opacity-90 h-10 min-w-30"
+            className="rounded-full bg-[#5D5DFB] px-4 py-2 text-sm font-medium text-white shadow-[0px_1px_20px_rgba(93,93,251,0.4)] transition-colors hover:bg-[#4a4ae8]"
           >
             + Create Class
           </button>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 pl-1 text-[15px] text-[#5d5db6] font-semibold mb-5">
-        <ClipboardList className="w-5 h-5" />
+      {/* Subtitle */}
+      <div className="flex items-center gap-2 text-sm text-[#5D5DFB]/80 font-medium mb-6">
+        <ClipboardList className="w-4 h-4" />
         Manage your classes for the selected school year.
       </div>
 
-      {isLoading && (
+      {/* Content */}
+      {isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-[#6666FF]" />
+          <Loader2 className="h-8 w-8 animate-spin text-[#5D5DFB]" />
         </div>
-      )}
-      {!isLoading && error && (
+      ) : error ? (
         <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
           {error}
         </div>
-      )}
-      {!isLoading && !error && classes.length === 0 && (
+      ) : classes.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <p className="text-[#00306E]/70 mb-2">
             No classes found for {selectedYear}
@@ -227,55 +226,81 @@ export function ClassInventory({
             Click Create Class to add your first class
           </p>
         </div>
-      )}
-      {!isLoading && !error && classes.length > 0 && (
-        <div>
-          <Swiper
-            modules={[Scrollbar]}
-            scrollbar={{ draggable: true }}
-            spaceBetween={10}
-            grabCursor={true}
-            simulateTouch={true}
-            slidesPerView={slidesPerView}
-            breakpoints={{
-              640: { slidesPerView: 3 },
-              1024: { slidesPerView: 4 },
-              1280: { slidesPerView: 5 },
-            }}
-            onProgress={(swiper, progress) => setSwiperProgress(progress)}
-          >
-            {classes.map((classItem) => (
-              <SwiperSlide key={classItem.id}>
-                <ClassCard
-                  classRoomId={classItem.id}
-                  name={classItem.name}
-                  studentCount={classItem.studentCount}
-                  variant={classItem.variant}
-                  onClick={() =>
-                    router.push(`/dashboard/class/${classItem.id}`)
-                  }
-                  onClassUpdated={handleClassUpdated}
-                />
-              </SwiperSlide>
+      ) : (
+        <div className="relative">
+          {/* Navigation arrows */}
+          {totalPages > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={goToPrevPage}
+                disabled={currentPage === 0}
+                className={cn(
+                  "absolute -left-2 md:-left-4 top-1/2 -translate-y-1/2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-[#5D5DFB] text-white shadow-lg transition-all",
+                  currentPage === 0
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-[#4a4deb]"
+                )}
+                aria-label="Previous page"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={goToNextPage}
+                disabled={currentPage === totalPages - 1}
+                className={cn(
+                  "absolute -right-2 md:-right-4 top-1/2 -translate-y-1/2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-[#5D5DFB] text-white shadow-lg transition-all",
+                  currentPage === totalPages - 1
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-[#4a4deb]"
+                )}
+                aria-label="Next page"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </>
+          )}
+
+          {/* Class cards grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 px-4 md:px-8">
+            {visibleClasses.map((classItem) => (
+              <ClassCard
+                key={classItem.id}
+                classRoomId={classItem.id}
+                name={classItem.name}
+                studentCount={classItem.studentCount}
+                variant={classItem.variant}
+                onClick={() => router.push(`/dashboard/class/${classItem.id}`)}
+                onClassUpdated={handleClassUpdated}
+              />
             ))}
-          </Swiper>
-          {/* Custom scroll bar indicator */}
-          {showScrollbar && (
-            <div className="mt-2 flex justify-center">
-              <div className="relative w-full h-1 bg-[#E4E6FB] rounded">
-                <div
-                  className="absolute top-0 h-1 rounded transition-all duration-300"
-                  style={{
-                    width: `${indicatorWidth}%`,
-                    left: `${indicatorLeft}%`,
-                    background: "rgba(102, 102, 255, 0.18)", // very transparent purple
-                  }}
-                ></div>
-              </div>
+          </div>
+
+          {/* Pagination dots */}
+          {totalPages > 1 && (
+            <div className="flex justify-center gap-2 mt-6">
+              {Array.from({ length: totalPages }).map((_, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => setCurrentPage(index)}
+                  className={cn(
+                    "flex h-8 w-8 items-center justify-center rounded-md text-sm font-medium transition-all",
+                    currentPage === index
+                      ? "bg-[#0C1A6D] text-white"
+                      : "border border-[#5D5DFB]/30 text-[#00306E] hover:bg-[#E4F4FF]"
+                  )}
+                  aria-label={`Go to page ${index + 1}`}
+                >
+                  {index + 1}
+                </button>
+              ))}
             </div>
           )}
         </div>
       )}
+
       <CreateClassModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
