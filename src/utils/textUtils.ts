@@ -1,29 +1,25 @@
 
-/**
- * Normalize a word for comparison — lowercase, keep only letters/ñ/apostrophes/hyphens.
- */
 export function normalizeWord(word: string): string {
   return word
     .toLowerCase()
-    .replace(/[^a-zñ'\-]/g, "")
-    .trim();
-}
-
-
-/**
- * Normalize a word with diacritic stripping (for passage ↔ transcription comparison).
- */
-export function normalizeWordStrict(word: string): string {
-  return word
-    .toLowerCase()
-    .replace(/[.,!?;:'""\u2018\u2019\u201C\u201D\u2014\u2013\-()[\]{}]/g, "")
+    .replace(/[.,!?;:'""\u2018\u2019\u201C\u201D\u2014\u2013()[\]{}]/g, "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9'\-]/g, "")
     .trim();
 }
 
+// Keep this alias around so callers that imported normalizeWordStrict still
+// compile, but it now points to the exact same function. Over time you can
+// grep and replace all usages.
+export const normalizeWordStrict = normalizeWord;
+
+
+// ─── Tokenization ─────────────────────────────────────────────────────────────
+
 /**
- * Tokenize a word for comparison, handling Tagalog "ng" digraph.
+ * Tokenize a word into comparison units. For Tagalog, "ng" is treated as a
+ * single digraph so that levenshtein counts it as one operation, not two.
  */
 export function tokenizeForComparison(word: string, language: string): string[] {
   const normalized = normalizeWord(word);
@@ -33,7 +29,11 @@ export function tokenizeForComparison(word: string, language: string): string[] 
     const tokens: string[] = [];
     let idx = 0;
     while (idx < normalized.length) {
-      if (idx + 1 < normalized.length && normalized[idx] === "n" && normalized[idx + 1] === "g") {
+      if (
+        idx + 1 < normalized.length &&
+        normalized[idx] === "n" &&
+        normalized[idx + 1] === "g"
+      ) {
         tokens.push("ng");
         idx += 2;
       } else {
@@ -47,8 +47,12 @@ export function tokenizeForComparison(word: string, language: string): string[] 
   return normalized.split("");
 }
 
+
+// ─── Edit distance ────────────────────────────────────────────────────────────
+
 /**
- * Levenshtein edit distance (language-aware, handles Tagalog tokenization).
+ * Levenshtein edit distance with language-aware tokenization.
+ * This is the primary distance function used by similarityRatio.
  */
 export function levenshteinDistance(a: string, b: string, language: string = "en"): number {
   const tokensA = tokenizeForComparison(a, language);
@@ -73,7 +77,8 @@ export function levenshteinDistance(a: string, b: string, language: string = "en
 }
 
 /**
- * Simple edit distance (no language tokenization). Used where language isn't relevant.
+ * Simple character-level edit distance. Used by postCorrectTranscription where
+ * language-aware tokenization isn't needed.
  */
 export function editDistance(a: string, b: string): number {
   if (Math.abs(a.length - b.length) > 2) return 999;
@@ -94,33 +99,45 @@ export function editDistance(a: string, b: string): number {
   return dp[m][n];
 }
 
+
+// ─── Similarity ───────────────────────────────────────────────────────────────
+
 /**
- * Similarity ratio between two strings (0–1). Language-aware.
+ * Similarity ratio between two normalized strings (0–1). Language-aware.
+ *
+ * The old version had an early-exit shortcut that returned a rough length-ratio
+ * estimate when lengths differed by more than 60%. That produced inconsistent
+ * scores depending on which side was longer, which confused thresholds in the
+ * correction and alignment layers. We now always compute the real edit distance
+ * — it's trivially fast on typical word lengths (3–10 chars).
  */
 export function similarityRatio(a: string, b: string, language: string = "en"): number {
   if (a === b) return 1.0;
   if (a.length === 0 || b.length === 0) return 0.0;
 
-  // Quick length-based rejection: if lengths differ too much, similarity is low
-  const maxLen = Math.max(a.length, b.length);
-  const minLen = Math.min(a.length, b.length);
-  if (minLen / maxLen < 0.4) return minLen / maxLen; // rough estimate, skip full edit distance
-
   const dist = levenshteinDistance(a, b, language);
+  const maxLen = Math.max(a.length, b.length);
   return 1 - dist / maxLen;
 }
 
 /**
  * Check if two words are similar above a threshold.
  */
-export function isSimilar(a: string | null | undefined, b: string | null | undefined, threshold = 0.8): boolean {
+export function isSimilar(
+  a: string | null | undefined,
+  b: string | null | undefined,
+  threshold = 0.8
+): boolean {
   if (!a || !b) return false;
   return similarityRatio(normalizeWord(a), normalizeWord(b)) >= threshold;
 }
 
 const REPETITION_SIMILARITY_THRESHOLD = 0.7;
 
-export function isSimilarForRepetition(a: string | null | undefined, b: string | null | undefined): boolean {
+export function isSimilarForRepetition(
+  a: string | null | undefined,
+  b: string | null | undefined
+): boolean {
   if (!a || !b) return false;
   const normA = normalizeWord(a);
   const normB = normalizeWord(b);
@@ -136,5 +153,3 @@ export function isReversal(expected: string, spoken: string): boolean {
   const b = normalizeWord(spoken);
   return a.length > 1 && a === b.split("").reverse().join("");
 }
-
-

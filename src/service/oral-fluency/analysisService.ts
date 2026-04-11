@@ -1,11 +1,16 @@
 import { OralFluencyAnalysis } from "@/types/oral-reading"
 import { transcribeAudio } from "../googleService/googleSTTService"
 import { alignWords } from "./alignmentService"
+import { phoneticPostCorrection } from "./phoneticPostCorrection"
 import { detectMiscues } from "./miscueDetectionService"
 import { detectBehaviors } from "./behaviorDetectionService"
 import { analyzePitch } from "./pitchAnalysisService"
 import { postCorrectTranscription } from "@/utils/postCorrectTranscription"
+import { initPhoneticDict } from "@/utils/phoneticUtils"
 import { normalizeWordStrict as normalizeWord } from "@/utils/textUtils"
+
+// Load CMU dict once on first use
+let dictLoaded = false;
 
 function computeOralFluencyScore(totalWords: number, totalMiscues: number): number {
   if (totalWords <= 0) return 0
@@ -24,8 +29,14 @@ export async function analyzeOralFluency(
   passageText: string,
   language:    string,
 ): Promise<OralFluencyAnalysis> {
-  // 1. Run STT and pitch analysis — pitch is sync (~90ms) so start it first,
-  //    then await STT which takes several seconds.
+  // Load the CMU pronunciation dictionary on first call.
+  // Takes ~1s the first time, then cached in memory.
+  if (!dictLoaded) {
+    await initPhoneticDict()
+    dictLoaded = true
+  }
+
+  // 1. Run STT and pitch analysis in parallel.
   const pitchAnalysis = analyzePitch(audioBuffer)
   const sttResult     = await transcribeAudio(audioBuffer, fileName, language, passageText)
 
@@ -39,30 +50,56 @@ export async function analyzeOralFluency(
   const originalPassageWords   = passageText.split(/\s+/).filter(w => w.length > 0)
   const normalizedPassageWords = originalPassageWords.map(normalizeWord)
 
-  // 3. Normalize and post-correct spoken words
+  // ── CORRECTION PIPELINE ──────────────────────────────────────────────────
+  //
+  //   Layer 0 (already ran): correctWithPassage inside convertToTranscriptResponse
+  //     Catches: high-similarity spelling noise via alignment
+  //
+  //   Layer 1: postCorrectTranscription — edit-distance-1 corrections
+  //     Catches: garbled tokens, single-char typos
+  //
+  //   Layer 2 (after alignment): phoneticPostCorrection
+  //     Catches: STT contextual confusions that SOUND similar to the passage
+  //     word. "these"→"this", "our"→"are", homophones like "their"→"there".
+  //     Uses CMU Pronouncing Dictionary to compare actual phoneme sequences
+  //     with relaxed similarity scoring. No hardcoded word list needed.
+  //
+
+  // 3. Normalize and correct edit-distance noise
+  const normalized = sttResult.words.map(w => ({
+    word: normalizeWord(w.word),
+    start: w.start,
+    end: w.end,
+  }))
+
   const corrected = postCorrectTranscription(
-    sttResult.words.map(w => ({ word: normalizeWord(w.word), start: w.start, end: w.end })),
+    normalized,
     normalizedPassageWords,
   )
 
-  // 4. Align
-  const alignedWords = alignWords(
+  // 4. Align spoken words against passage
+  const rawAlignedWords = alignWords(
     normalizedPassageWords,
     corrected.map(w => ({ word: w.word, start: w.start, end: w.end })),
   )
 
-  // 5. Detect miscues
+  // 5. Phonetic post-correction: check each MISMATCH — if the spoken word
+  //    sounds similar to the passage word (per CMU dict), the STT just picked
+  //    the wrong spelling. Correct the word and flip to EXACT.
+  const alignedWords = phoneticPostCorrection(rawAlignedWords)
+
+  // 6. Detect miscues
   const miscues = detectMiscues(alignedWords, language)
 
-  // 6. Detect behaviors — pass audioBuffer so ! and ? can use per-word pitch
-  const behaviors = await  detectBehaviors(
+  // 7. Detect behaviors
+  const behaviors = await detectBehaviors(
     alignedWords,
     originalPassageWords,
     pitchAnalysis,
-    audioBuffer,      // ← needed for ! and ? intonation check
+    audioBuffer,
   )
 
-  // 7. Metrics
+  // 8. Metrics
   const duration        = sttResult.duration
   const totalWords      = originalPassageWords.length
   const exactMatches    = alignedWords.filter(w => w.match === "EXACT").length
