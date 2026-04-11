@@ -23,6 +23,7 @@
     "bullmq": "^5.71.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cmu-pronouncing-dictionary": "^3.0.0",
     "dotenv": "^17.2.3",
     "google-auth-library": "^10.6.2",
     "html2canvas-pro": "^2.0.2",
