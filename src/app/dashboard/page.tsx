@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import { WelcomeSection } from "@/components/dashboard/welcomeSection";
 import { ClassInventory } from "@/components/dashboard/classInventory";
@@ -22,6 +23,9 @@ export default function DashboardPage() {
     message: string;
     type: "success" | "error";
   } | null>(null);
+
+  const { data: session } = useSession();
+  const firstName = session?.user?.name?.split(" ")[0] || "Teacher";
 
   const showToast = (message: string, type: "success" | "error") => {
     setToast({ message, type });
@@ -58,7 +62,7 @@ export default function DashboardPage() {
       )}
 
       {/* Header */}
-      <DashboardHeader title="My Dashboard" />
+<DashboardHeader title="My Dashboard" schoolYear={selectedYear} />
 
       {/* Main content */}
       <main className="flex-1 p-4 md:p-6 lg:p-8">
@@ -68,7 +72,7 @@ export default function DashboardPage() {
           <div className="flex-1 space-y-6 min-w-0">
             {/* Welcome Section */}
             <WelcomeSection
-              teacherName="Rhea"
+              teacherName={firstName}
               schoolYear={selectedYear}
               planType="Free User Plan"
             />
@@ -82,13 +86,11 @@ export default function DashboardPage() {
           </div>
 
           {/* Right column - Charts and Word of the Day */}
-          <div className="w-full xl:w-[380px] 2xl:w-[420px] space-y-6 flex-shrink-0">
+          <div className="w-full xl:w-95 2xl:w-[420px]2xl:w-105 space-y-6 shrink-0">
             {/* Classification Chart */}
-            <div className="min-h-[320px]">
+            <div className="min-h-80">
               <ClassificationChart schoolYear={selectedYear} />
             </div>
-
-            
 
             {/* Word of the Day */}
             <WordOfTheDay
