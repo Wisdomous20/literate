@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, ClipboardList, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { ClassCard } from "./classCard";
 import { CreateClassModal } from "./createClassModal";
 import { createClass } from "@/app/actions/class/createClass";
@@ -39,6 +40,7 @@ export function ClassInventory({
   showToast,
 }: ClassInventoryProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
@@ -47,7 +49,6 @@ export function ClassInventory({
     data: rawClasses,
     isLoading,
     error: fetchError,
-    mutate: refreshClasses,
   } = useClassList(selectedYear);
 
   const error = fetchError?.message ?? null;
@@ -81,24 +82,8 @@ export function ClassInventory({
     })
   );
 
-  // Responsive items per page
-  const [itemsPerPage, setItemsPerPage] = useState(4);
-
-  useEffect(() => {
-    const updateItemsPerPage = () => {
-      if (window.innerWidth < 640) {
-        setItemsPerPage(2);
-      } else if (window.innerWidth < 1024) {
-        setItemsPerPage(3);
-      } else {
-        setItemsPerPage(4);
-      }
-    };
-    updateItemsPerPage();
-    window.addEventListener("resize", updateItemsPerPage);
-    return () => window.removeEventListener("resize", updateItemsPerPage);
-  }, []);
-
+  // Fixed 4 items per page (2 columns x 2 rows)
+  const itemsPerPage = 4;
   const totalPages = Math.ceil(classes.length / itemsPerPage);
   const startIndex = currentPage * itemsPerPage;
   const visibleClasses = classes.slice(startIndex, startIndex + itemsPerPage);
@@ -109,6 +94,10 @@ export function ClassInventory({
 
   const goToNextPage = () => {
     setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1));
+  };
+
+  const refreshClasses = () => {
+    queryClient.invalidateQueries({ queryKey: ["classes", selectedYear] });
   };
 
   const handleCreateClass = async (data: {
@@ -130,85 +119,87 @@ export function ClassInventory({
   };
 
   return (
-    <div className="rounded-3xl bg-white p-4 md:p-6 shadow-[0px_0px_20px_1px_rgba(84,164,255,0.35)]">
+    <div className="w-full font-poppins">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-lg md:text-xl font-bold text-[#00306E]">
-            Class Inventory
-          </h2>
-          <button
-            type="button"
-            onClick={() => router.push("/dashboard/class/all")}
-            className="rounded-full bg-[#5D5DFB] px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#4a4ae8] shadow-sm"
-          >
-            View All
-          </button>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Year Dropdown */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-2 rounded-full border border-[#5D5DFB]/30 bg-[#5D5DFB]/5 px-4 py-2 text-sm font-medium text-[#5D5DFB]"
-            >
-              {selectedYear}
-              <ChevronDown className="h-4 w-4" />
-            </button>
-            {isDropdownOpen && (
-              <div className="absolute right-0 top-full z-10 mt-1 w-40 rounded-lg border border-[#5D5DFB]/30 bg-white py-1 shadow-lg">
-                {yearsWithData.map((year) => {
-                  const isCurrent = year === currentYear;
-                  const isNext = year === nextYear;
-                  const disabled = isNext && isNextYearDisabled;
-                  return (
-                    <button
-                      key={year}
-                      onClick={() => {
-                        if (!disabled) {
-                          onYearChange(year);
-                          setIsDropdownOpen(false);
-                        }
-                      }}
-                      disabled={disabled}
-                      className={cn(
-                        "w-full px-4 py-2 text-left text-sm transition-colors",
-                        year === selectedYear
-                          ? "font-semibold text-[#5D5DFB] bg-[#E4F4FF]"
-                          : "text-[#00306E] hover:bg-[#E4F4FF]",
-                        disabled && "cursor-not-allowed opacity-60"
-                      )}
-                    >
-                      {year}
-                      {isCurrent && " (Current)"}
-                      {isNext && isNextYearDisabled && " (Upcoming)"}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+      <div className="flex flex-col gap-2 sm:gap-3 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex flex-col gap-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-lg font-bold text-[#00306E]">
+                Class Inventory
+              </h2>
+              <button
+                type="button"
+                onClick={() => router.push("/dashboard/class/all")}
+                className="rounded-full bg-[#5D5DFB] px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-[#4a4ae8] shadow-sm"
+              >
+                View All
+              </button>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-[#5D5DFB]/70 font-medium">
+              <ClipboardList className="w-3 h-3" />
+              <span>Create and manage your class inventory</span>
+            </div>
           </div>
 
-          {/* Create Class Button */}
-          <button
-            type="button"
-            onClick={() => setIsModalOpen(true)}
-            className="rounded-full bg-[#5D5DFB] px-4 py-2 text-sm font-medium text-white shadow-[0px_1px_20px_rgba(93,93,251,0.4)] transition-colors hover:bg-[#4a4ae8]"
-          >
-            + Create Class
-          </button>
+          <div className="flex flex-wrap items-center gap-2 z-30">
+            {/* Year Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center gap-2 rounded-full border border-[#5D5DFB]/30 bg-[#5D5DFB]/5 px-3 py-1.5 text-xs font-medium text-[#5D5DFB] whitespace-nowrap hover:bg-[#5D5DFB]/10 transition-colors"
+              >
+                School Year
+                <ChevronDown className="h-3 w-3" />
+              </button>
+              {isDropdownOpen && (
+                <div className="absolute right-0 top-full z-50 mt-1 w-40 rounded-lg border border-[#5D5DFB]/30 bg-white py-1 shadow-lg">
+                  {yearsWithData.map((year) => {
+                    const isCurrent = year === currentYear;
+                    const isNext = year === nextYear;
+                    const disabled = isNext && isNextYearDisabled;
+                    return (
+                      <button
+                        key={year}
+                        onClick={() => {
+                          if (!disabled) {
+                            onYearChange(year);
+                            setIsDropdownOpen(false);
+                          }
+                        }}
+                        disabled={disabled}
+                        className={cn(
+                          "w-full px-4 py-2 text-left text-sm transition-colors",
+                          year === selectedYear
+                            ? "font-semibold text-[#5D5DFB] bg-[#E4F4FF]"
+                            : "text-[#00306E] hover:bg-[#E4F4FF]",
+                          disabled && "cursor-not-allowed opacity-60"
+                        )}
+                      >
+                        {year}
+                        {isCurrent && " (Current)"}
+                        {isNext && isNextYearDisabled && " (Upcoming)"}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Create Class Button */}
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(true)}
+              className="rounded-full bg-[#5D5DFB] px-3 py-1.5 text-xs font-medium text-white shadow-[0px_1px_20px_rgba(93,93,251,0.4)] transition-colors hover:bg-[#4a4ae8] whitespace-nowrap"
+            >
+              + Create Class
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Subtitle */}
-      <div className="flex items-center gap-2 text-sm text-[#5D5DFB]/80 font-medium mb-6">
-        <ClipboardList className="w-4 h-4" />
-        Manage your classes for the selected school year.
-      </div>
-
-      {/* Content */}
+      {/* Class Cards Section */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-[#5D5DFB]" />
@@ -218,7 +209,7 @@ export function ClassInventory({
           {error}
         </div>
       ) : classes.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="flex flex-col items-center justify-center py-12 text-center rounded-3xl bg-white">
           <p className="text-[#00306E]/70 mb-2">
             No classes found for {selectedYear}
           </p>
@@ -227,8 +218,27 @@ export function ClassInventory({
           </p>
         </div>
       ) : (
-        <div className="relative">
-          {/* Navigation arrows */}
+        <div className="relative w-full">
+          {/* Class cards grid - 2 columns x 2 rows */}
+          <div className="grid grid-cols-2 gap-3 md:gap-4 w-full">
+            {visibleClasses.map((classItem) => (
+              <div 
+                key={classItem.id} 
+                className="border-r-2 border-b-2 border-[#5D5DFB] rounded-2xl overflow-hidden bg-white"
+              >
+                <ClassCard
+                  classRoomId={classItem.id}
+                  name={classItem.name}
+                  studentCount={classItem.studentCount}
+                  variant={classItem.variant}
+                  onClick={() => router.push(`/dashboard/class/${classItem.id}`)}
+                  onClassUpdated={handleClassUpdated}
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Carousel Navigation Arrows */}
           {totalPages > 1 && (
             <>
               <button
@@ -236,60 +246,45 @@ export function ClassInventory({
                 onClick={goToPrevPage}
                 disabled={currentPage === 0}
                 className={cn(
-                  "absolute -left-2 md:-left-4 top-1/2 -translate-y-1/2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-[#5D5DFB] text-white shadow-lg transition-all",
+                  "absolute -left-5 sm:-left-7 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-[#5D5DFB] text-white shadow-lg transition-all hover:scale-110",
                   currentPage === 0
-                    ? "opacity-50 cursor-not-allowed"
+                    ? "opacity-40 cursor-not-allowed"
                     : "hover:bg-[#4a4deb]"
                 )}
                 aria-label="Previous page"
               >
-                <ChevronLeft className="h-5 w-5" />
+                <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
               </button>
               <button
                 type="button"
                 onClick={goToNextPage}
                 disabled={currentPage === totalPages - 1}
                 className={cn(
-                  "absolute -right-2 md:-right-4 top-1/2 -translate-y-1/2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-[#5D5DFB] text-white shadow-lg transition-all",
+                  "absolute -right-5 sm:-right-7 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-[#5D5DFB] text-white shadow-lg transition-all hover:scale-110",
                   currentPage === totalPages - 1
-                    ? "opacity-50 cursor-not-allowed"
+                    ? "opacity-40 cursor-not-allowed"
                     : "hover:bg-[#4a4deb]"
                 )}
                 aria-label="Next page"
               >
-                <ChevronRight className="h-5 w-5" />
+                <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
               </button>
             </>
           )}
 
-          {/* Class cards grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 px-4 md:px-8">
-            {visibleClasses.map((classItem) => (
-              <ClassCard
-                key={classItem.id}
-                classRoomId={classItem.id}
-                name={classItem.name}
-                studentCount={classItem.studentCount}
-                variant={classItem.variant}
-                onClick={() => router.push(`/dashboard/class/${classItem.id}`)}
-                onClassUpdated={handleClassUpdated}
-              />
-            ))}
-          </div>
-
-          {/* Pagination dots */}
+          {/* Pagination dots with numbers */}
           {totalPages > 1 && (
-            <div className="flex justify-center gap-2 mt-6">
+            <div className="flex justify-center gap-2 mt-4 sm:mt-6 pb-4">
               {Array.from({ length: totalPages }).map((_, index) => (
                 <button
                   key={index}
                   type="button"
                   onClick={() => setCurrentPage(index)}
                   className={cn(
-                    "flex h-8 w-8 items-center justify-center rounded-md text-sm font-medium transition-all",
+                    "flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium transition-all",
                     currentPage === index
                       ? "bg-[#0C1A6D] text-white"
-                      : "border border-[#5D5DFB]/30 text-[#00306E] hover:bg-[#E4F4FF]"
+                      : "border-2 border-[#5D5DFB] text-[#5D5DFB] hover:bg-[#5D5DFB]/10"
                   )}
                   aria-label={`Go to page ${index + 1}`}
                 >
