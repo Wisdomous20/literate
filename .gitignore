@@ -43,5 +43,5 @@ next-env.d.ts
 /src/generated/prisma
 
 #AI Rules
-
+CLAUDE.md                                                                                                                                            
 airules.txt

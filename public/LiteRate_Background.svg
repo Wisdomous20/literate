@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <!-- Base gradient matching the overall color range -->
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8888FF"/>
+      <stop offset="50%" stop-color="#6666FF"/>
+      <stop offset="100%" stop-color="#5555EE"/>
+    </linearGradient>
+
+    <!-- Lighter wave gradient -->
+    <linearGradient id="waveLight" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#9999FF" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#7777FF" stop-opacity="0.2"/>
+    </linearGradient>
+
+    <!-- Mid-tone wave gradient -->
+    <linearGradient id="waveMid" x1="0.2" y1="0" x2="1" y2="0.8">
+      <stop offset="0%" stop-color="#7777FF" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#5555EE" stop-opacity="0.3"/>
+    </linearGradient>
+
+    <!-- Darker wave gradient -->
+    <linearGradient id="waveDark" x1="0" y1="0.2" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#5555EE" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#4444DD" stop-opacity="0.6"/>
+    </linearGradient>
+
+    <!-- Subtle highlight gradient -->
+    <linearGradient id="waveHighlight" x1="0" y1="0" x2="0.5" y2="0.5">
+      <stop offset="0%" stop-color="#AAAAFF" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#8888FF" stop-opacity="0.1"/>
+    </linearGradient>
+
+    <!-- Deep accent gradient -->
+    <linearGradient id="waveDeep" x1="0.3" y1="0" x2="0.7" y2="1">
+      <stop offset="0%" stop-color="#6060FF" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#4040DD" stop-opacity="0.5"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Solid background fill -->
+  <rect width="400" height="800" fill="url(#bgGrad)"/>
+
+  <!-- Wave layer 1: large sweeping curve from top-left -->
+  <path d="M0,0 L0,180 C60,140 140,100 200,160 C260,220 300,120 400,150 L400,0 Z"
+        fill="url(#waveHighlight)"/>
+
+  <!-- Wave layer 2: flowing mid-section curve -->
+  <path d="M0,120 C80,80 160,200 240,160 C320,120 360,220 400,200 L400,400
+           C340,360 280,440 200,400 C120,360 60,300 0,340 Z"
+        fill="url(#waveLight)"/>
+
+  <!-- Wave layer 3: central dominant wave -->
+  <path d="M0,280 C100,220 150,350 250,300 C350,250 380,350 400,320 L400,520
+           C350,480 280,560 180,520 C80,480 40,400 0,440 Z"
+        fill="url(#waveMid)"/>
+
+  <!-- Wave layer 4: deep accent wave -->
+  <path d="M0,400 C60,360 140,460 220,420 C300,380 360,440 400,460 L400,650
+           C320,620 260,700 180,660 C100,620 40,560 0,580 Z"
+        fill="url(#waveDark)"/>
+
+  <!-- Wave layer 5: bottom flowing curve -->
+  <path d="M0,550 C80,500 180,600 260,560 C340,520 380,580 400,600 L400,800
+           L0,800 Z"
+        fill="url(#waveDeep)"/>
+
+  <!-- Wave layer 6: subtle top-right highlight -->
+  <path d="M200,0 C240,60 300,20 400,80 L400,0 Z"
+        fill="url(#waveHighlight)" opacity="0.5"/>
+
+  <!-- Wave layer 7: subtle overlay ripple across the middle -->
+  <path d="M0,350 C50,320 120,380 200,340 C280,300 340,370 400,350
+           L400,420 C340,400 280,460 200,420 C120,380 60,430 0,410 Z"
+        fill="url(#waveHighlight)" opacity="0.3"/>
+
+  <!-- Wave layer 8: bottom-left accent -->
+  <path d="M0,650 C60,620 120,680 200,660 C280,640 340,690 400,680
+           L400,750 C340,740 260,770 180,750 C100,730 50,710 0,730 Z"
+        fill="url(#waveLight)" opacity="0.4"/>
+</svg>
