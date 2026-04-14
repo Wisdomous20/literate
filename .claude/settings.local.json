@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx vitest:*)"
+      "Bash(npx vitest:*)",
+      "Bash(cat /c/Users/aljas/OneDrive/Documents/GitHub/literate/vitest.config.*)",
+      "Bash(cat /c/Users/aljas/OneDrive/Documents/GitHub/literate/vite.config.*)"
     ]
   }
 }
