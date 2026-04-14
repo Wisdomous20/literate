@@ -421,8 +421,6 @@ import {
   Edit2,
   Trash2,
   X,
-  Check,
-  Loader2,
   ChevronLeft,
   ChevronRight,
   Calendar,
@@ -461,7 +459,12 @@ const assessmentTypeLabels: Record<string, string> = {
   ORAL_READING: "Oral Reading Test",
   COMPREHENSION: "Reading Comprehension Test",
   READING_FLUENCY: "Reading Fluency Test",
-  ALL: "—",
+  // Add more types here as needed
+};
+
+const getAssessmentTypeLabel = (type?: string) => {
+  if (!type) return "—";
+  return assessmentTypeLabels[type] || type;
 };
 
 export function StudentTable({
@@ -536,16 +539,11 @@ export function StudentTable({
   const handleCardClick = (student: StudentTableItem) => {
     const assessments = studentAssessments[student.id] || [];
     if (assessments.length === 0) return;
-
     router.push(
       `/dashboard/class/${classRoomId}/report/${student.id}?assessmentType=${encodeURIComponent(
         student.assessmentType,
       )}`,
     );
-  };
-
-  const getAssessmentTypeLabel = (type: string) => {
-    return assessmentTypeLabels[type] || "—";
   };
 
   return (
@@ -563,10 +561,14 @@ export function StudentTable({
             const hasAssessment = (studentAssessments[student.id] || []).length > 0;
 
             return (
-              <div
-                key={student.id}
-                className="relative bg-white rounded-2xl border-r-4 border-b-4 border-[#5D5DFB] shadow-lg shadow-[#5D5DFB]/10 transition-all duration-300 hover:shadow-xl hover:border-[#7A7AFB] p-5 flex flex-col gap-5"
-              >
+            <div
+  key={student.id}
+  className="relative bg-white rounded-2xl border-l-2 border-t-2 border-[#5D5DFB] shadow-lg shadow-[#5D5DFB]/10 transition-all duration-300 hover:shadow-xl hover:border-[#7A7AFB] p-5 flex flex-col gap-5"
+  style={{
+    borderRight: "4px solid #A855F7", // thick purple right
+    borderBottom: "4px solid #A855F7",   // thick purple top
+  }}
+>
                 {editingId === student.id ? (
                   // Edit Mode
                   <div className="h-full flex flex-col gap-3">
@@ -594,11 +596,6 @@ export function StudentTable({
                         disabled={isUpdating}
                         className="flex-1 flex items-center justify-center gap-1 rounded-lg bg-[#E8D5FF] px-3 py-2 text-xs font-bold text-[#6666FF] transition-all hover:bg-[#D9C0FF] disabled:opacity-50"
                       >
-                        {isUpdating ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Check className="h-3 w-3" />
-                        )}
                         Save
                       </button>
                       <button
@@ -612,8 +609,13 @@ export function StudentTable({
                 ) : (
                   // View Mode
                   <div
-                    onClick={() => handleCardClick(student)}
-                    className={`h-full flex flex-col gap-4 ${hasAssessment ? "cursor-pointer" : ""}`}
+                    onClick={() => hasAssessment && handleCardClick(student)}
+                    className={`h-full flex flex-col gap-4 ${
+                      hasAssessment
+                        ? "cursor-pointer"
+                        : "cursor-not-allowed opacity-60 grayscale"
+                    }`}
+                    title={hasAssessment ? "" : "No results yet"}
                   >
                     {/* Student Name and Grade */}
                     <div className="flex items-center gap-2">
@@ -626,7 +628,7 @@ export function StudentTable({
                       </span>
                     </div>
 
-                    {/* Assessment Type - always show, not bold */}
+                    {/* Assessment Type - always show */}
                     <div className="flex items-center gap-2">
                       <BookOpen className="h-4 w-4 text-[#6666FF]" />
                       <span className="text-xs text-[#00306E]">
@@ -638,7 +640,11 @@ export function StudentTable({
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-[#6666FF]" />
                       <span className="text-xs text-[#00306E]">
-                        {student.lastAssessment || "No assessment"}
+                        {student.lastAssessment ? (
+                          <span>{student.lastAssessment}</span>
+                        ) : (
+                          <span className="text-[#00306E]/40">—</span>
+                        )}
                       </span>
                     </div>
 
@@ -662,6 +668,13 @@ export function StudentTable({
                         Delete
                       </button>
                     </div>
+                    {!hasAssessment && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <span className="bg-white/80 text-[#6666FF] text-xs font-semibold px-3 py-1 rounded-lg shadow">
+                          No results yet
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -677,17 +690,10 @@ export function StudentTable({
                         disabled={isDeleting === student.id}
                         className="flex-1 rounded-lg bg-[#E84C3D] px-2 py-1 text-xs font-bold text-white transition-all hover:bg-[#D93D30] disabled:opacity-50"
                       >
-                        {isDeleting === student.id ? (
-                          <Loader2 className="inline h-3 w-3 animate-spin" />
-                        ) : (
-                          "Delete"
-                        )}
+                        Delete
                       </button>
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteConfirmId(null);
-                        }}
+                        onClick={() => setDeleteConfirmId(null)}
                         className="flex-1 rounded-lg bg-white/90 px-2 py-1 text-xs font-bold text-[#00306E] transition-all hover:bg-white"
                       >
                         Cancel

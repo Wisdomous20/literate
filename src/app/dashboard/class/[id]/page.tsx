@@ -621,75 +621,67 @@ export default function ClassListsPage() {
     }
   };
 
-  const transformStudentsForTable = (
-    studentList: StudentData[],
-  ): StudentTableItem[] => {
-    if (assessmentType === "ALL") {
-      return studentList
-        .map((student) => {
-          const assessments = studentAssessments[student.id] || [];
-          const lastAssessmentDate = assessments.length > 0
-            ? new Date(
-                Math.max(
-                  ...assessments.map((a) =>
-                    new Date(a.dateTaken).getTime(),
-                  ),
-                ),
-              )
-            : null;
-          
+ const transformStudentsForTable = (
+  studentList: StudentData[],
+): StudentTableItem[] => {
+  if (assessmentType === "ALL") {
+    return studentList
+      .map((student) => {
+        const assessments = [...(studentAssessments[student.id] || [])].sort(
+          (a, b) =>
+            new Date(b.dateTaken).getTime() - new Date(a.dateTaken).getTime(),
+        );
+        // For ALL filter, show all students, even if they only have one type
+        if (assessments.length === 0) {
           return {
             id: student.id,
-            name: student.name,
+            name: student.name || "No Name",
             gradeLevel: levelToGradeLevel(student.level),
-            assessmentType: "ALL",
-            lastAssessment: lastAssessmentDate
-              ? new Date(lastAssessmentDate).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })
-              : null,
+            lastAssessment: null,
+            assessmentType: "Awaiting Assessment",
           };
-        })
-        .filter((s) =>
-          s.name.toLowerCase().includes(searchQuery.toLowerCase()),
+        }
+        const latest = assessments[0] as AssessmentData | undefined;
+        return {
+          id: student.id,
+          name: student.name || "No Name",
+          gradeLevel: levelToGradeLevel(student.level),
+          lastAssessment: latest
+            ? new Date(latest.dateTaken).toLocaleDateString()
+            : null,
+          assessmentType: latest ? latest.type : "Awaiting Assessment",
+        };
+      })
+      .filter((s) =>
+        s.name.toLowerCase().includes(searchQuery.toLowerCase()),
+      );
+  } else {
+    return studentList
+      .map((student) => {
+        const assessments = (studentAssessments[student.id] || []).filter(
+          (a) => a.type === assessmentType,
         );
-    } else {
-      return studentList
-        .map((student) => {
-          const assessments = studentAssessments[student.id] || [];
-          const relevant = assessments.filter((a) => a.type === assessmentType);
-          if (relevant.length === 0) return null;
-
-          const lastAssessmentDate = relevant.length > 0
-            ? new Date(
-                Math.max(
-                  ...relevant.map((a) => new Date(a.dateTaken).getTime()),
-                ),
-              )
-            : null;
-
-          return {
-            id: student.id,
-            name: student.name,
-            gradeLevel: levelToGradeLevel(student.level),
-            assessmentType: assessmentType,
-            lastAssessment: lastAssessmentDate
-              ? new Date(lastAssessmentDate).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })
-              : null,
-          };
-        })
-        .filter((s): s is StudentTableItem => s !== null)
-        .filter((s) =>
-          s.name.toLowerCase().includes(searchQuery.toLowerCase()),
-        );
-    }
-  };
+        if (assessments.length === 0) return null;
+        const latest = [...assessments].sort(
+          (a, b) =>
+            new Date(b.dateTaken).getTime() - new Date(a.dateTaken).getTime(),
+        )[0];
+        return {
+          id: student.id,
+          name: student.name || "No Name",
+          gradeLevel: levelToGradeLevel(student.level),
+          lastAssessment: latest
+            ? new Date(latest.dateTaken).toLocaleDateString()
+            : null,
+          assessmentType: assessmentType as string,
+        };
+      })
+      .filter((s): s is StudentTableItem => s !== null)
+      .filter((s) =>
+        s.name.toLowerCase().includes(searchQuery.toLowerCase()),
+      );
+  }
+};
 
   const calculateStats = () => {
     let assessed = 0,
