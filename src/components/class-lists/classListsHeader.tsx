@@ -2,14 +2,10 @@
 
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 
-interface ClassListsHeaderProps {
-  onCreateStudent: () => void;
-}
-
-export function ClassListsHeader({ }: ClassListsHeaderProps) {
+export function ClassListsHeader() {
   return (
     <DashboardHeader
-      title="Class Lists"
+      title="Manage Class"
     />
   );
 }

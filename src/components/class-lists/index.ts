@@ -1,7 +1,7 @@
 export { ClassListsHeader } from "./classListsHeader";
-export { StatCards } from "./statCards";
-export { AssessmentTypeFilterDropdown } from "./assessmentTypeFilter";
-export type { AssessmentTypeFilter } from "./assessmentTypeFilter";
+export { ClassInfoBox } from "./classInfoBox";
+export { StatisticsSidebar } from "./statisticsSidebar";
+export { WelcomeBox } from "./welcomeBox";
+export { AssessmentFilterTabs, type AssessmentTypeFilter } from "./assessmentFilterTabs";
 export { StudentTable } from "./studentTable";
-export { ClassInfo } from "./classInfo";
 export { CreateStudentModal } from "./createStudentModal";
