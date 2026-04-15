@@ -1,4 +1,3 @@
-// src/components/class-lists/assessmentFilterTabs.tsx
 "use client";
 
 export type AssessmentTypeFilter =

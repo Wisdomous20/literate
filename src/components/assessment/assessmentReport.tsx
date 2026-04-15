@@ -4,8 +4,6 @@ import React, { useState, useRef, useEffect } from "react";
 import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 
-const PASTEL_BG = "#E0E7FF"; // Pastel version of #6666FF
-
 type Assessment = {
   attempt: number;
   assessmentType: string;
@@ -41,7 +39,6 @@ const RECORDS_PER_PAGE = 7;
 export function AssessmentReport({
   studentName,
   studentGrade,
-  studentClass,
   assessmentTypeLabel,
   assessments,
   loading,
@@ -84,36 +81,26 @@ export function AssessmentReport({
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <DashboardHeader title="Assessment Report" />
+      <DashboardHeader title="Assessment Report" schoolYear="" />
 
       <main className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 py-4 lg:px-8">
-        {/* Main Container */}
         <div className="rounded-2xl bg-white p-0 overflow-hidden flex flex-col border border-[#E5E7EB] h-full">
-          {/* Pastel Header Section */}
-          <div
-            className="p-4"
-            style={{
-              background: PASTEL_BG,
-            }}
-          >
+          <div className="p-4 bg-indigo-100">
             <div className="flex items-center gap-4">
-              {/* Back Button */}
               <button
+                type="button"
                 onClick={onBack}
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white hover:bg-[#9333EA] transition-all shadow-sm active:scale-95"
+                aria-label="Go back"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              {/* Student Info */}
               <div className="flex flex-col gap-0.5">
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] font-semibold text-black uppercase tracking-widest">
                     {studentGrade}
                   </span>
-                  <span
-                    className="rounded-full px-2 py-0.5 text-[11px] font-medium text-black"
-                    style={{ background: PASTEL_BG }}
-                  >
+                  <span className="rounded-full px-2 py-0.5 text-[11px] font-medium text-black bg-indigo-100">
                     {assessmentTypeLabel}
                   </span>
                 </div>
@@ -121,7 +108,6 @@ export function AssessmentReport({
                   {studentName}
                 </h1>
               </div>
-              {/* Test Type Dropdown */}
               <div className="ml-auto relative" ref={testDropdownRef}>
                 <button
                   type="button"
@@ -132,7 +118,9 @@ export function AssessmentReport({
                   aria-label="Select test type"
                 >
                   <span className="truncate">{testTypeFilter}</span>
-                  <ChevronDown className={`h-3 w-3 shrink-0 transition-transform ${isTestDropdownOpen ? "rotate-180" : ""}`} />
+                  <ChevronDown
+                    className={`h-3 w-3 shrink-0 transition-transform ${isTestDropdownOpen ? "rotate-180" : ""}`}
+                  />
                 </button>
                 {isTestDropdownOpen && (
                   <div className="absolute right-0 top-full z-10 mt-1 w-full min-w-24 rounded-lg border border-[#6666FF]/30 bg-white py-1 shadow-lg">
@@ -160,17 +148,11 @@ export function AssessmentReport({
             </div>
           </div>
 
-          {/* Space between header and table */}
           <div className="h-4" />
 
-          {/* Table Section */}
           <div className="flex-1 flex flex-col overflow-x-auto">
-            <div className="min-w-[600px] w-full flex flex-col h-full">
-              {/* Table Header */}
-              <div
-                className="grid grid-cols-4 gap-0 px-4 py-2 rounded-t-lg w-full"
-                style={{ background: PASTEL_BG }}
-              >
+            <div className="min-w-150 w-full flex flex-col h-full">
+              <div className="grid grid-cols-4 gap-0 px-4 py-2 rounded-t-lg w-full bg-indigo-100">
                 <div className="text-center">
                   <span className="text-[12px] font-semibold text-black uppercase tracking-wider">
                     Attempts
@@ -193,8 +175,7 @@ export function AssessmentReport({
                 </div>
               </div>
 
-              {/* Table Body */}
-              <div className="flex-1 min-h-[200px]">
+              <div className="flex-1 min-h-50">
                 {loading ? (
                   <div className="py-8 text-center text-xs text-black/50">
                     Loading…
@@ -216,7 +197,8 @@ export function AssessmentReport({
                       tabIndex={0}
                       role="button"
                       onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") onRowClick(record);
+                        if (e.key === "Enter" || e.key === " ")
+                          onRowClick(record);
                       }}
                     >
                       <span className="font-medium text-black text-center">
@@ -236,7 +218,6 @@ export function AssessmentReport({
                 )}
               </div>
 
-              {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between border-t border-[#E5E7EB] bg-white px-4 py-3">
                   <button
@@ -288,4 +269,4 @@ export function AssessmentReport({
       </main>
     </div>
   );
-}g
+}
