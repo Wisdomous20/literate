@@ -31,7 +31,7 @@ export function AnimatedSection({
       x: 0,
       transition: {
         duration: 0.65,
-        ease: [0.22, 1, 0.36, 1],
+        ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
         delay,
       },
     },
@@ -76,7 +76,7 @@ export function AnimatedList({
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
           transition={{
             duration: 0.55,
-            ease: [0.22, 1, 0.36, 1],
+            ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
             delay: baseDelay + i * staggerDelay,
           }}
         >
