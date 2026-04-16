@@ -1,5 +1,9 @@
-export { ClassCard } from "./classCard"
-export { ClassInventory } from "./classInventory"
-export { ClassificationChart } from "./classificationChart"
-export { DashboardHeader } from "./dashboardHeader"
-export { QuickActions } from "./quickActions"
+export { DashboardHeader } from "./dashboardHeader";
+export { WelcomeSection } from "./welcomeSection";
+export { ClassCard } from "./classCard";
+export { ClassInventory } from "./classInventory";
+export { ClassificationChart } from "./classificationChart";
+export { WordOfTheDay } from "./wordOfTheDay";
+export { QuickActions } from "./quickActions";
+export { CreateClassModal } from "./createClassModal";
+export { UpdateClassModal } from "./updateClassModal";

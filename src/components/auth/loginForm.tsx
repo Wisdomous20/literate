@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useEffect } from "react";
 
-// SVG icons for show/hide password
 const EyeIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     {...props}
@@ -89,13 +88,11 @@ export function LoginForm() {
     }
   }, [session, loginSuccess, router]);
 
-  // Validation function
   const validateForm = () => {
     if (!email) {
       setError("Email is required.");
       return false;
     }
-    // Simple email regex for demonstration
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError("Please enter a valid email address.");
@@ -134,7 +131,6 @@ export function LoginForm() {
       }
 
       if (result?.ok) {
-        // Persist or clear remembered email based on checkbox
         if (rememberMe) {
           localStorage.setItem(REMEMBER_ME_KEY, "true");
           localStorage.setItem(REMEMBERED_EMAIL_KEY, email);
@@ -154,23 +150,23 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold text-[#040029]">
+        <h1 className="text-2xl font-bold text-white">
           Login to your account
         </h1>
-        <p className="text-[#040029]/70">
+        <p className="text-white/70">
           Get access to your LiteRate account now!
         </p>
       </div>
 
       {error && (
-        <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
+        <div className="p-3 rounded-lg bg-red-200/20 border border-red-300 text-red-100 text-sm">
           {error}
         </div>
       )}
 
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-[#040029] font-semibold">
+          <Label htmlFor="email" className="text-white font-semibold">
             Email
           </Label>
           <Input
@@ -178,14 +174,15 @@ export function LoginForm() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="h-12 rounded-xl border-[#54a4ff] focus-visible:border-[#54a4ff] focus-visible:ring-[#54a4ff]/30 disabled:opacity-60"
+            placeholder="you@example.com"
+            className="h-12 rounded-2xl bg-white/90 border-white border-2 text-[#040029] placeholder-gray-400 focus-visible:border-white focus-visible:ring-white/30 disabled:opacity-60"
             required
             disabled={isLoading}
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-[#040029] font-semibold">
+          <Label htmlFor="password" className="text-white font-semibold">
             Password
           </Label>
           <div className="relative">
@@ -194,14 +191,14 @@ export function LoginForm() {
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="h-12 rounded-xl border-[#54a4ff] focus-visible:border-[#54a4ff] focus-visible:ring-[#54a4ff]/30 disabled:opacity-60 pr-10"
+              className="h-12 rounded-2xl bg-white/90 border-white border-2 text-[#040029] placeholder-gray-400 focus-visible:border-white focus-visible:ring-white/30 disabled:opacity-60 pr-10"
               required
               disabled={isLoading}
             />
             <button
               type="button"
               tabIndex={-1}
-              className="absolute inset-y-0 right-3 flex items-center text-[#54a4ff] focus:outline-none"
+              className="absolute inset-y-0 right-3 flex items-center text-white focus:outline-none"
               onClick={() => setShowPassword((prev) => !prev)}
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
@@ -223,12 +220,12 @@ export function LoginForm() {
               onChange={(e) => setRememberMe(e.target.checked)}
               disabled={isLoading}
             />
-            <span className="text-sm text-[#040029]">Remember me</span>
+            <span className="text-sm text-white">Remember me</span>
           </label>
 
           <Link
             href="/forgot-password"
-            className="text-sm text-[#162db0] hover:underline font-medium"
+            className="text-sm text-white hover:underline font-medium"
           >
             Forgot password?
           </Link>
@@ -237,13 +234,13 @@ export function LoginForm() {
 
       <Button
         type="submit"
-        className="w-full h-12 rounded-full bg-[#2e2e68] hover:bg-[#2e2e68]/90 text-white font-medium disabled:opacity-60 flex items-center justify-center"
+        className="w-full h-12 rounded-full bg-white hover:bg-white/90 text-[#7a7afb] font-bold disabled:opacity-60 flex items-center justify-center"
         disabled={isLoading}
       >
         {isLoading ? (
           <>
             <svg
-              className="animate-spin h-5 w-5 mr-3 text-white"
+              className="animate-spin h-5 w-5 mr-3 text-[#7a7afb]"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -272,18 +269,18 @@ export function LoginForm() {
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-[#e2e8f0]" />
+          <span className="w-full border-t border-white/30" />
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="bg-white px-4 text-[#040029]/60">or</span>
+          <span className="bg-[#7a7afb] px-4 text-white/70">or</span>
         </div>
       </div>
 
-      <p className="text-center text-sm text-[#040029]">
+      <p className="text-center text-sm text-white">
         Don&apos;t have an account?{" "}
         <Link
           href="/signup"
-          className="text-[#162db0] hover:underline font-medium"
+          className="text-white hover:underline font-medium"
         >
           Sign up
         </Link>
