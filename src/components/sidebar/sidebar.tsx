@@ -250,9 +250,12 @@ export function Sidebar() {
                 <h3 className="text-sm font-bold text-[#6666FF]">Upgrade to Premium</h3>
               </div>
               <p className="text-xs text-gray-600 mb-4">Unlock all assessments</p>
-              <button className="w-full rounded-lg bg-[#6666FF] px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-[#5555ee]">
+              <Link
+                href="/dashboard/subscription"
+                className="block w-full rounded-lg bg-[#6666FF] px-4 py-2 text-center text-xs font-semibold text-white transition-all hover:bg-[#5555ee]"
+              >
                 Get Started
-              </button>
+              </Link>
             </div>
           )}
         </div>
