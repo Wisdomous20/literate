@@ -114,6 +114,9 @@ export default function AssessmentSummaryPage() {
 
   return (
     <AssessmentSummary
+      studentName={found.student.name}
+      studentGrade={found.student.level != null ? `Grade ${found.student.level}` : ""}
+      assessmentTypeLabel="Oral Reading Test"
       assessmentCards={assessmentCards}
       oralReadingLevel={{
         level: oralReadingLevel,

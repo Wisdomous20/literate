@@ -7,10 +7,10 @@ import { QuickActions } from "./quickActions";
 interface DashboardHeaderProps {
   title: string;
   action?: React.ReactNode;
-  schoolYear: string;
+  schoolYear?: string;
 }
 
-export function DashboardHeader({ title, action, schoolYear }: DashboardHeaderProps) {
+export function DashboardHeader({ title, action, schoolYear = "" }: DashboardHeaderProps) {
   const [showDrawer, setShowDrawer] = useState(false);
 
   return (
