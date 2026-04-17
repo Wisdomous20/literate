@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { getSubscriptionAction } from "@/app/actions/subscription/getSubscription";
 import {
   LayoutDashboard,
   FileText,
@@ -58,9 +59,54 @@ export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [collapsed, setCollapsed] = useState(false);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
 
   const firstName = session?.user?.name?.split(" ")[0] || "User";
   const schoolYear = getCurrentSchoolYear();
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    let cancelled = false;
+    const justPaid =
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("subscription") ===
+        "success";
+    const maxAttempts = justPaid ? 8 : 1;
+    let attempt = 0;
+
+    const tick = async () => {
+      const res = await getSubscriptionAction();
+      if (cancelled) return;
+
+      if (
+        res.success &&
+        "subscription" in res &&
+        res.subscription?.status === "ACTIVE"
+      ) {
+        setHasActiveSubscription(true);
+        return;
+      }
+
+      if (++attempt < maxAttempts) {
+        setTimeout(tick, 2000);
+      }
+    };
+
+    tick();
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible" && !hasActiveSubscription) {
+        tick();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [session?.user?.id, hasActiveSubscription]);
 
   const handleLogout = async () => {
     await signOut({ redirect: true, callbackUrl: "/login" });
@@ -160,10 +206,12 @@ export function Sidebar() {
                   />
                 </svg>
               </div>
-              <span className="text-xl font-bold tracking-[0.02em] text-white">LiteRate</span>
+              <span className="text-xl font-bold tracking-[0.02em] text-white">
+                LiteRate
+              </span>
             </div>
           )}
-          
+
           <button
             type="button"
             onClick={() => setCollapsed(!collapsed)}
@@ -171,13 +219,19 @@ export function Sidebar() {
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             className="z-50 flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#6666FF] shadow-lg ring-2 ring-[#6666FF] hover:bg-gray-100 transition-all"
           >
-            {collapsed ? <ChevronsRight className="h-6 w-6" /> : <ChevronsLeft className="h-6 w-6" />}
+            {collapsed ? (
+              <ChevronsRight className="h-6 w-6" />
+            ) : (
+              <ChevronsLeft className="h-6 w-6" />
+            )}
           </button>
         </div>
 
         {!collapsed ? (
           <div className="px-8 pb-4 pt-2">
-            <h2 className="text-lg font-semibold text-white">Hi, Teacher {firstName}!</h2>
+            <h2 className="text-lg font-semibold text-white">
+              Hi, Teacher {firstName}!
+            </h2>
             <p className="text-sm text-white/70">S.Y {schoolYear}</p>
           </div>
         ) : (
@@ -185,7 +239,11 @@ export function Sidebar() {
         )}
 
         <div className={cn("flex-1", collapsed ? "px-3" : "px-6")}>
-          {!collapsed && <p className="mb-3 px-2 text-[11px] font-semibold tracking-[0.25em] text-white/90">MENU</p>}
+          {!collapsed && (
+            <p className="mb-3 px-2 text-[11px] font-semibold tracking-[0.25em] text-white/90">
+              MENU
+            </p>
+          )}
           <nav className="space-y-1">
             {menuItems.map((item) => {
               const isActive = pathname === item.href;
@@ -197,22 +255,30 @@ export function Sidebar() {
                   className={cn(
                     "flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-all duration-200",
                     collapsed ? "justify-center px-0" : "px-2",
-                    isActive ? "bg-[rgba(93,93,251,0.6)] text-white" : "text-white/90 hover:text-white",
+                    isActive
+                      ? "bg-[rgba(93,93,251,0.6)] text-white"
+                      : "text-white/90 hover:text-white",
                   )}
                 >
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#5D5DFB]">
                     <item.icon className="h-4 w-4 text-white" />
                   </div>
-                  {!collapsed && <span className="text-[13px]">{item.label}</span>}
+                  {!collapsed && (
+                    <span className="text-[13px]">{item.label}</span>
+                  )}
                 </Link>
               );
             })}
           </nav>
 
-          <div className={cn("my-5 h-px bg-white/30", collapsed ? "mx-1" : "mx-2")} />
+          <div
+            className={cn("my-5 h-px bg-white/30", collapsed ? "mx-1" : "mx-2")}
+          />
 
           {!collapsed && (
-            <p className="mb-3 px-2 text-[11px] font-semibold tracking-[0.25em] text-white/90">GENERAL</p>
+            <p className="mb-3 px-2 text-[11px] font-semibold tracking-[0.25em] text-white/90">
+              GENERAL
+            </p>
           )}
           <nav className="space-y-1">
             {generalItems.map((item) => {
@@ -225,28 +291,39 @@ export function Sidebar() {
                   className={cn(
                     "flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-all duration-200",
                     collapsed ? "justify-center px-0" : "px-2",
-                    isActive ? "bg-[rgba(93,93,251,0.6)] text-white" : "text-white/90 hover:text-white",
+                    isActive
+                      ? "bg-[rgba(93,93,251,0.6)] text-white"
+                      : "text-white/90 hover:text-white",
                   )}
                 >
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#5D5DFB]">
                     <item.icon className="h-4 w-4 text-white" />
                   </div>
-                  {!collapsed && <span className="text-[13px]">{item.label}</span>}
+                  {!collapsed && (
+                    <span className="text-[13px]">{item.label}</span>
+                  )}
                 </Link>
               );
             })}
           </nav>
 
-          {!collapsed && (
+          {!collapsed && !hasActiveSubscription && (
             <div className="mt-8 rounded-2xl bg-white p-4 shadow-lg">
               <div className="flex items-center gap-2 mb-2">
                 <Zap className="h-5 w-5 text-[#6666FF]" />
-                <h3 className="text-sm font-bold text-[#6666FF]">Upgrade to Premium</h3>
+                <h3 className="text-sm font-bold text-[#6666FF]">
+                  Upgrade to Premium
+                </h3>
               </div>
-              <p className="text-xs text-gray-600 mb-4">Unlock all assessments</p>
-              <button className="w-full rounded-lg bg-[#6666FF] px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-[#5555ee]">
+              <p className="text-xs text-gray-600 mb-4">
+                Unlock all assessments
+              </p>
+              <Link
+                href="/dashboard/subscription"
+                className="block w-full rounded-lg bg-[#6666FF] px-4 py-2 text-center text-xs font-semibold text-white transition-all hover:bg-[#5555ee]"
+              >
                 Get Started
-              </button>
+              </Link>
             </div>
           )}
         </div>

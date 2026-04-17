@@ -13,14 +13,15 @@ export interface PitchAnalysis {
 // Typical speech: 0.20–0.40  |  Monotone: < 0.12–0.15
 export const MONOTONE_COV_THRESHOLD = 0.15
 
-const SAMPLE_RATE = 16_000   // must match convertToWav() output
-const FRAME_SIZE  = 2_048    // ~128ms window — good for speech F0
-const HOP_SIZE    = 512      // 75% overlap
+// Updated to match convertToWav output (was 16000, now 24000)
+const SAMPLE_RATE = 24_000
+const FRAME_SIZE  = 2_048    // ~85ms window at 24kHz — still good for speech F0
+const HOP_SIZE    = 512      // ~21ms hop
 const MIN_F0      = 60       // Hz — below this is noise / creak
 const MAX_F0      = 600      // Hz — above this is falsetto / noise
 
 /**
- * Convert a WAV buffer (16kHz mono 16-bit PCM) to a Float32Array of samples.
+ * Convert a WAV buffer (24kHz mono 16-bit PCM) to a Float32Array of samples.
  * Skips the standard 44-byte WAV header.
  */
 function wavToFloat32(wavBuffer: Buffer): Float32Array {
@@ -37,7 +38,7 @@ function wavToFloat32(wavBuffer: Buffer): Float32Array {
  * Analyze pitch statistics from a WAV audio buffer using the YIN algorithm.
  *
  * Pure JavaScript — no external binaries, works on all platforms.
- * Input must be a 16kHz mono 16-bit PCM WAV (the output of convertToWav()).
+ * Input must be a 24kHz mono 16-bit PCM WAV (the output of convertToWav()).
  */
 export function analyzePitch(audioBuffer: Buffer): PitchAnalysis {
   try {
@@ -45,7 +46,7 @@ export function analyzePitch(audioBuffer: Buffer): PitchAnalysis {
 
     const detectPitch = Pitchfinder.YIN({
       sampleRate: SAMPLE_RATE,
-      threshold:  0.10,   // lower = stricter voiced/unvoiced decision
+      threshold:  0.10,
     })
 
     const pitches: number[] = []
@@ -61,7 +62,6 @@ export function analyzePitch(audioBuffer: Buffer): PitchAnalysis {
     }
 
     if (pitches.length < 5) {
-      // Not enough voiced speech to make a judgment
       return {
         pitchCoV:    0,
         meanF0:      0,
@@ -87,17 +87,22 @@ export function analyzePitch(audioBuffer: Buffer): PitchAnalysis {
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    console.warn("[PitchAnalysis] failed:", msg)
+    console.error(`[Pitch] Analysis failed: ${msg}`)
     return {
-      pitchCoV: 0, meanF0: 0, voicedFrames: 0,
-      totalFrames: 0, voicedRatio: 0, error: msg,
+      pitchCoV:    0,
+      meanF0:      0,
+      voicedFrames: 0,
+      totalFrames:  0,
+      voicedRatio:  0,
+      error:       msg,
     }
   }
 }
 
-/** Convenience: is this pitch analysis monotonous? */
-export function isMonotonousPitch(pitch: PitchAnalysis | null): boolean {
-  if (!pitch || pitch.error) return false
-  if (pitch.voicedFrames < 5)  return false
-  return pitch.pitchCoV < MONOTONE_COV_THRESHOLD
+/**
+ * Determine if pitch analysis indicates monotonous reading.
+ */
+export function isMonotonousPitch(analysis: PitchAnalysis): boolean {
+  if (analysis.error || analysis.voicedFrames < 20) return false
+  return analysis.pitchCoV < MONOTONE_COV_THRESHOLD
 }

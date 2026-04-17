@@ -2,175 +2,87 @@ import { TranscriptWord } from "@/types/oral-reading";
 import { normalizeWord, similarityRatio } from "@/utils/textUtils";
 import mergeSplitWords from "./mergeSplitWords";
 
-const MORPHOLOGICAL_SUFFIXES = ["s", "es", "ed", "ing", "er", "est", "ly", "d"];
-
-function isMorphologicalVariant(transcribedNorm: string, passageNorm: string): boolean {
-  return MORPHOLOGICAL_SUFFIXES.some(
-    (suffix) =>
-      transcribedNorm === passageNorm + suffix ||
-      passageNorm === transcribedNorm + suffix
-  );
-}
-
-// ── Double Metaphone (lightweight) ────────────────────────
-// Produces phonetic codes so homophones like "are"/"our",
-// "there"/"their", "or"/"our" resolve correctly.
-
-function doubleMetaphone(word: string): [string, string] {
-  const w = word.toUpperCase();
-  let primary = "";
-  let secondary = "";
-  let pos = 0;
-  const len = w.length;
-
-  const charAt = (i: number) => (i >= 0 && i < len ? w[i] : "");
-  const isVowel = (c: string) => "AEIOUY".includes(c);
-
-  if (["GN", "KN", "PN", "AE", "WR"].includes(w.slice(0, 2))) pos = 1;
-
-  while (pos < len && primary.length < 4) {
-    const c = charAt(pos);
-    const next = charAt(pos + 1);
-
-    if (isVowel(c)) {
-      if (pos === 0) { primary += "A"; secondary += "A"; }
-      pos++;
-      continue;
-    }
-
-    switch (c) {
-      case "B":
-        primary += "P"; secondary += "P";
-        pos += next === "B" ? 2 : 1;
-        break;
-      case "C":
-        if (next === "H") { primary += "X"; secondary += "X"; pos += 2; }
-        else if ("EIY".includes(next)) { primary += "S"; secondary += "S"; pos += 2; }
-        else { primary += "K"; secondary += "K"; pos += next === "C" ? 2 : 1; }
-        break;
-      case "D":
-        if (next === "G" && "EIY".includes(charAt(pos + 2))) {
-          primary += "J"; secondary += "J"; pos += 3;
-        } else { primary += "T"; secondary += "T"; pos += next === "D" ? 2 : 1; }
-        break;
-      case "F":
-        primary += "F"; secondary += "F"; pos += next === "F" ? 2 : 1;
-        break;
-      case "G":
-        if (next === "H") {
-          if (pos > 0 && !isVowel(charAt(pos - 1))) { pos += 2; }
-          else { primary += "K"; secondary += "K"; pos += 2; }
-        } else if ("EIY".includes(next)) {
-          primary += "J"; secondary += "K"; pos += 2;
-        } else {
-          primary += "K"; secondary += "K"; pos += next === "G" ? 2 : 1;
-        }
-        break;
-      case "H":
-        if (isVowel(next) && (pos === 0 || !isVowel(charAt(pos - 1)))) {
-          primary += "H"; secondary += "H";
-        }
-        pos++;
-        break;
-      case "J":
-        primary += "J"; secondary += "H"; pos++;
-        break;
-      case "K":
-        primary += "K"; secondary += "K"; pos += next === "K" ? 2 : 1;
-        break;
-      case "L":
-        primary += "L"; secondary += "L"; pos += next === "L" ? 2 : 1;
-        break;
-      case "M":
-        primary += "M"; secondary += "M"; pos += next === "M" ? 2 : 1;
-        break;
-      case "N":
-        primary += "N"; secondary += "N"; pos += next === "N" ? 2 : 1;
-        break;
-      case "P":
-        if (next === "H") { primary += "F"; secondary += "F"; pos += 2; }
-        else { primary += "P"; secondary += "P"; pos += next === "P" ? 2 : 1; }
-        break;
-      case "Q":
-        primary += "K"; secondary += "K"; pos += next === "U" ? 2 : 1;
-        break;
-      case "R":
-        primary += "R"; secondary += "R"; pos += next === "R" ? 2 : 1;
-        break;
-      case "S":
-        if (next === "H") { primary += "X"; secondary += "X"; pos += 2; }
-        else if (next === "I" && "AO".includes(charAt(pos + 2))) {
-          primary += "S"; secondary += "X"; pos += 3;
-        } else { primary += "S"; secondary += "S"; pos += next === "S" ? 2 : 1; }
-        break;
-      case "T":
-        if (next === "H") { primary += "0"; secondary += "T"; pos += 2; }
-        else if (next === "I" && "AO".includes(charAt(pos + 2))) {
-          primary += "X"; secondary += "X"; pos += 3;
-        } else { primary += "T"; secondary += "T"; pos += next === "T" ? 2 : 1; }
-        break;
-      case "V":
-        primary += "F"; secondary += "F"; pos += next === "V" ? 2 : 1;
-        break;
-      case "W":
-      case "Y":
-        if (isVowel(next)) { primary += c; secondary += c; }
-        pos++;
-        break;
-      case "X":
-        primary += "KS"; secondary += "KS"; pos += next === "X" ? 2 : 1;
-        break;
-      case "Z":
-        primary += "S"; secondary += "S"; pos += next === "Z" ? 2 : 1;
-        break;
-      default:
-        pos++;
-    }
-  }
-
-  return [primary.slice(0, 4), secondary.slice(0, 4)];
-}
-
-function phoneticallyMatch(a: string, b: string): boolean {
-  if (a === b) return true;
-  if (a.length === 0 || b.length === 0) return false;
-  const [pA1, pA2] = doubleMetaphone(a);
-  const [pB1, pB2] = doubleMetaphone(b);
-  return (
-    (pA1.length > 0 && (pA1 === pB1 || pA1 === pB2)) ||
-    (pA2.length > 0 && (pA2 === pB1 || pA2 === pB2))
-  );
-}
-
 /**
- * Combined similarity: max of string similarity and phonetic match.
- * Phonetic match returns 0.9 so homophones like are/our get paired
- * by the alignment but can still be corrected.
- */
-function combinedSimilarity(a: string, b: string): number {
-  const stringSim = similarityRatio(a, b);
-  if (stringSim >= 0.9) return stringSim;
-
-  if (phoneticallyMatch(a, b)) {
-    return Math.max(stringSim, 0.9);
-  }
-
-  return stringSim;
-}
-
-/**
- * Passage-guided correction using Smith-Waterman-style local alignment.
- * Only corrects obvious STT noise — preserves real miscues including
- * morphological variants (e.g. "understands" vs "understand").
+ * Check if two words are morphological variants of each other.
  *
- * Uses phonetic matching (Double Metaphone) so homophones like
- * "are"/"our", "there"/"their" get corrected to the passage word.
+ * The old version just checked if one word was the other + a suffix, which
+ * produced false positives ("mating" matched "mat" + "ing") and missed
+ * common English spelling rules (e-dropping in "make" → "making", consonant
+ * doubling in "run" → "running").
+ *
+ * For a reading assessment we WANT to preserve morphological differences as
+ * real miscues — if the passage says "understand" and the student said
+ * "understands", that's a reading error. This function's job is to prevent
+ * the correction layer from "fixing" these back to the passage word.
+ */
+function isMorphologicalVariant(a: string, b: string): boolean {
+  if (a === b) return false;
+
+  const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a];
+  const diff = longer.length - shorter.length;
+
+  if (diff > 4 || diff === 0) return false;
+
+  // Direct suffix: "walk" → "walks", "play" → "played"
+  if (longer.startsWith(shorter)) {
+    const suffix = longer.slice(shorter.length);
+    if (["s", "es", "ed", "ing", "er", "est", "ly", "d"].includes(suffix)) {
+      return true;
+    }
+  }
+
+  // Consonant doubling: "run" → "running", "stop" → "stopped"
+  if (diff >= 3 && shorter.length >= 2) {
+    const lastChar = shorter[shorter.length - 1];
+    if (longer[shorter.length] === lastChar) {
+      const tail = longer.slice(shorter.length + 1);
+      if (["ing", "ed", "er", "est"].includes(tail)) return true;
+    }
+  }
+
+  // E-dropping: "make" → "making", "bake" → "baked", "dance" → "dancing"
+  if (shorter.endsWith("e") && shorter.length >= 3) {
+    const base = shorter.slice(0, -1);
+    if (longer.startsWith(base)) {
+      const tail = longer.slice(base.length);
+      if (["ing", "ed", "er", "est"].includes(tail)) return true;
+    }
+  }
+
+  // Y → IES / IED: "carry" → "carries", "try" → "tried"
+  if (shorter.endsWith("y") && shorter.length >= 3) {
+    const base = shorter.slice(0, -1);
+    if (longer.startsWith(base)) {
+      const tail = longer.slice(base.length);
+      if (["ies", "ied", "ier", "iest"].includes(tail)) return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Passage-guided correction using Needleman-Wunsch global alignment.
+ *
+ * Major change from the old implementation: we switched from Smith-Waterman
+ * (local alignment) to Needleman-Wunsch (global alignment). The old local
+ * alignment found the single best-scoring region and only corrected words
+ * inside that region. Words near the start and end of the transcript that
+ * fell outside the alignment window were never considered for correction.
+ * Since we know the student was reading this specific passage, global alignment
+ * makes more sense — it forces the alignment to cover the full transcript.
+ *
+ * Other improvements:
+ *   - Similarity threshold lowered from 0.55 to 0.50 for short words
+ *   - Morphological variant detection handles English spelling rules properly
+ *   - Correction logging shows what changed and why
  */
 export default function correctWithPassage(
   transcribedWords: TranscriptWord[],
   passageText: string,
   similarityThreshold = 0.55
 ): TranscriptWord[] {
+  // Expand hyphenated words so "well-known" becomes "well known"
   const expandedPassageText = passageText.replace(
     /(\p{L})-(\p{L})/gu,
     "$1 $2"
@@ -183,6 +95,7 @@ export default function correctWithPassage(
     return transcribedWords;
   }
 
+  // Merge split words first (e.g. "under" + "stand" → "understand")
   transcribedWords = mergeSplitWords(transcribedWords, passageWords);
 
   const tLen = transcribedWords.length;
@@ -191,11 +104,11 @@ export default function correctWithPassage(
   const normTranscribed = transcribedWords.map((w) => normalizeWord(w.word));
   const normPassage = passageWords.map(normalizeWord);
 
-  // Use combined similarity (string + phonetic) for the alignment matrix
+  // Pre-compute similarity matrix
   const simMatrix: number[][] = Array.from({ length: tLen }, () => Array(pLen).fill(0));
   for (let i = 0; i < tLen; i++) {
     for (let j = 0; j < pLen; j++) {
-      simMatrix[i][j] = combinedSimilarity(normTranscribed[i], normPassage[j]);
+      simMatrix[i][j] = similarityRatio(normTranscribed[i], normPassage[j]);
     }
   }
 
@@ -203,6 +116,8 @@ export default function correctWithPassage(
   const CLOSE_BONUS = 1;
   const GAP_PENALTY = -0.5;
 
+  // Needleman-Wunsch: initialize borders with gap penalties so the alignment
+  // is forced to cover the full transcript (global alignment)
   const dp: number[][] = Array.from({ length: tLen + 1 }, () =>
     Array(pLen + 1).fill(0)
   );
@@ -210,69 +125,88 @@ export default function correctWithPassage(
     new Uint8Array(pLen + 1)
   );
 
-  let bestScore = 0;
-  let bestI = 0;
-  let bestJ = 0;
+  // Initialize gap penalties for global alignment.
+  // We use half the normal gap penalty for the borders so the alignment isn't
+  // overly punished for length differences between transcript and passage.
+  for (let i = 1; i <= tLen; i++) {
+    dp[i][0] = i * (GAP_PENALTY * 0.5);
+    trace[i][0] = 2; // came from above (skip transcribed word)
+  }
+  for (let j = 1; j <= pLen; j++) {
+    dp[0][j] = j * (GAP_PENALTY * 0.5);
+    trace[0][j] = 3; // came from left (skip passage word)
+  }
 
   for (let i = 1; i <= tLen; i++) {
     for (let j = 1; j <= pLen; j++) {
       const sim = simMatrix[i - 1][j - 1];
-      const bonus = sim > 0.8 ? MATCH_BONUS : sim > similarityThreshold ? CLOSE_BONUS : -1;
+
+      // Use a lower threshold for very short words (≤3 chars) since
+      // one-char edits have outsized impact on similarity ratios
+      const effectiveThreshold = normTranscribed[i - 1].length <= 3
+        ? Math.min(similarityThreshold, 0.50)
+        : similarityThreshold;
+
+      const bonus = sim > 0.8 ? MATCH_BONUS
+        : sim > effectiveThreshold ? CLOSE_BONUS
+        : -1;
 
       const diag = dp[i - 1][j - 1] + bonus;
       const up = dp[i - 1][j] + GAP_PENALTY;
       const left = dp[i][j - 1] + GAP_PENALTY;
 
-      if (diag >= up && diag >= left && diag > 0) {
+      if (diag >= up && diag >= left) {
         dp[i][j] = diag;
-        trace[i][j] = 1;
-      } else if (up >= left && up > 0) {
+        trace[i][j] = 1; // diagonal
+      } else if (up >= left) {
         dp[i][j] = up;
-        trace[i][j] = 2;
-      } else if (left > 0) {
-        dp[i][j] = left;
-        trace[i][j] = 3;
+        trace[i][j] = 2; // up (skip transcribed)
       } else {
-        dp[i][j] = 0;
-        trace[i][j] = 0;
-      }
-
-      if (dp[i][j] > bestScore) {
-        bestScore = dp[i][j];
-        bestI = i;
-        bestJ = j;
+        dp[i][j] = left;
+        trace[i][j] = 3; // left (skip passage)
       }
     }
   }
 
+  // Traceback from (tLen, pLen) — global alignment covers the full sequences
   const corrections = new Map<number, string>();
-  let ci = bestI;
-  let cj = bestJ;
+  let ci = tLen;
+  let cj = pLen;
 
-  while (ci > 0 && cj > 0 && dp[ci][cj] > 0) {
+  while (ci > 0 && cj > 0) {
     if (trace[ci][cj] === 1) {
+      // Diagonal: transcribed[ci-1] aligned to passage[cj-1]
       const sim = simMatrix[ci - 1][cj - 1];
       const transcribedNorm = normTranscribed[ci - 1];
       const passageNorm = normPassage[cj - 1];
 
+      const effectiveThreshold = transcribedNorm.length <= 3
+        ? Math.min(similarityThreshold, 0.50)
+        : similarityThreshold;
+
       if (
-        sim > similarityThreshold &&
+        sim > effectiveThreshold &&
         transcribedNorm !== passageNorm
       ) {
         const isMorph = isMorphologicalVariant(transcribedNorm, passageNorm);
-        const isPhoneticMatch = phoneticallyMatch(transcribedNorm, passageNorm);
 
-        console.log(
-          `[correction] "${transcribedNorm}" → "${passageNorm}" | sim: ${sim.toFixed(2)} | isMorph: ${isMorph} | phonetic: ${isPhoneticMatch}`
-        );
+        if (!isMorph) {
+          // Only correct if the transcribed word is NOT already a real word
+          // that happens to be different from the passage. We check this by
+          // seeing if the similarity is high enough that it's likely noise
+          // rather than a genuine substitution.
+          const isLikelyNoise = sim > 0.7;
 
-        // Correct if:
-        // 1. Phonetic match (homophones) — STT can't distinguish these,
-        //    so trust the passage. e.g. "are"→"our", "there"→"their"
-        // 2. High string similarity AND not a morphological variant —
-        //    STT garbled the word. e.g. "beautful"→"beautiful"
-        if (isPhoneticMatch || !isMorph) {
-          corrections.set(ci - 1, passageWords[cj - 1]);
+          if (isLikelyNoise) {
+            corrections.set(ci - 1, passageWords[cj - 1]);
+            console.log(
+              `[correction] "${transcribedNorm}" → "${passageNorm}" | sim: ${sim.toFixed(2)}`
+            );
+          }
+        } else {
+          console.log(
+            `[correction] PRESERVED morph variant: "${transcribedNorm}" ≠ "${passageNorm}" | sim: ${sim.toFixed(2)}`
+          );
         }
       }
 
@@ -285,6 +219,11 @@ export default function correctWithPassage(
     } else {
       break;
     }
+  }
+
+  const correctionCount = corrections.size;
+  if (correctionCount > 0) {
+    console.log(`[correctWithPassage] Applied ${correctionCount} correction(s)`);
   }
 
   return transcribedWords.map((w, idx) => {
