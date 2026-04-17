@@ -16,6 +16,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Zap,
+  Users,
 } from "lucide-react";
 
 function getCurrentSchoolYear(): string {
@@ -55,6 +56,14 @@ const generalItems = [
   },
 ];
 
+const orgAdminItems = [
+  {
+    label: "Organization",
+    href: "/dashboard/organization",
+    icon: Users,
+  },
+];
+
 export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
@@ -63,6 +72,7 @@ export function Sidebar() {
 
   const firstName = session?.user?.name?.split(" ")[0] || "User";
   const schoolYear = getCurrentSchoolYear();
+  const isOrgAdmin = session?.user?.role === "ORG_ADMIN";
 
   useEffect(() => {
     if (!session?.user?.id) return;
@@ -79,7 +89,11 @@ export function Sidebar() {
       const res = await getSubscriptionAction();
       if (cancelled) return;
 
-      if (res.success && res.subscription?.status === "ACTIVE") {
+      if (
+        res.success &&
+        "subscription" in res &&
+        res.subscription?.status === "ACTIVE"
+      ) {
         setHasActiveSubscription(true);
         return;
       }
@@ -282,6 +296,27 @@ export function Sidebar() {
                 </Link>
               );
             })}
+            {isOrgAdmin &&
+              orgAdminItems.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    title={collapsed ? item.label : undefined}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-all duration-200",
+                      collapsed ? "justify-center px-0" : "px-2",
+                      isActive ? "bg-[rgba(93,93,251,0.6)] text-white" : "text-white/90 hover:text-white",
+                    )}
+                  >
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#5D5DFB]">
+                      <item.icon className="h-4 w-4 text-white" />
+                    </div>
+                    {!collapsed && <span className="text-[13px]">{item.label}</span>}
+                  </Link>
+                );
+              })}
           </nav>
 
           {/* Upgrade Premium Box */}

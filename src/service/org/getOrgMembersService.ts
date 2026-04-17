@@ -5,7 +5,11 @@ export async function getOrgMembersService(organizationId: string, requestedByUs
     where: { id: organizationId },
     include: {
       subscription: true,
-      _count: { select: { members: true } },
+      _count: {
+        select: {
+          members: { where: { user: { isDisabled: false } } },
+        },
+      },
     },
   });
 
@@ -38,6 +42,7 @@ export async function getOrgMembersService(organizationId: string, requestedByUs
       plan: org.subscription?.planType || null,
       maxMembers: org.subscription?.maxMembers || 0,
       currentMembers: org._count.members,
+      totalMembers: members.length,
     },
     members: members.map((m) => ({
       membershipId: m.id,
