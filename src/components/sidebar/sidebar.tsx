@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { getSubscriptionAction } from "@/app/actions/subscription/getSubscription";
 import {
   LayoutDashboard,
   FileText,
@@ -58,9 +59,50 @@ export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [collapsed, setCollapsed] = useState(false);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
 
   const firstName = session?.user?.name?.split(" ")[0] || "User";
   const schoolYear = getCurrentSchoolYear();
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    let cancelled = false;
+    const justPaid =
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("subscription") ===
+        "success";
+    const maxAttempts = justPaid ? 8 : 1;
+    let attempt = 0;
+
+    const tick = async () => {
+      const res = await getSubscriptionAction();
+      if (cancelled) return;
+
+      if (res.success && res.subscription?.status === "ACTIVE") {
+        setHasActiveSubscription(true);
+        return;
+      }
+
+      if (++attempt < maxAttempts) {
+        setTimeout(tick, 2000);
+      }
+    };
+
+    tick();
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible" && !hasActiveSubscription) {
+        tick();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [session?.user?.id, hasActiveSubscription]);
 
   const handleLogout = async () => {
     await signOut({ redirect: true, callbackUrl: "/login" });
@@ -243,7 +285,7 @@ export function Sidebar() {
           </nav>
 
           {/* Upgrade Premium Box */}
-          {!collapsed && (
+          {!collapsed && !hasActiveSubscription && (
             <div className="mt-8 rounded-2xl bg-white p-4 shadow-lg">
               <div className="flex items-center gap-2 mb-2">
                 <Zap className="h-5 w-5 text-[#6666FF]" />
