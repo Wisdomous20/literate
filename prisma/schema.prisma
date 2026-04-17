@@ -29,21 +29,43 @@ model User {
   subscription       Subscription?
   ownedOrganizations Organization[]       @relation("OrgOwner")
   orgMemberships     OrganizationMember[]
+  invitesSent        OrganizationInvitation[] @relation("OrgInvitesSent")
 
   @@map("users")
 }
 
 model Organization {
-  id           String               @id @default(cuid())
+  id           String                   @id @default(cuid())
   name         String
   ownerId      String
-  owner        User                 @relation("OrgOwner", fields: [ownerId], references: [id])
+  owner        User                     @relation("OrgOwner", fields: [ownerId], references: [id])
   members      OrganizationMember[]
-  subscription Subscription?        @relation("OrgSubscription")
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
+  subscription Subscription?            @relation("OrgSubscription")
+  invitations  OrganizationInvitation[]
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
 
   @@index([ownerId])
+}
+
+model OrganizationInvitation {
+  id             String       @id @default(cuid())
+  token          String       @unique
+  email          String
+  firstName      String
+  lastName       String
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedById    String
+  invitedBy      User         @relation("OrgInvitesSent", fields: [invitedById], references: [id])
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  revokedAt      DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@index([email])
 }
 
 model OrganizationMember {
@@ -72,6 +94,7 @@ model Subscription {
   xenditPlanId       String?
   currentPeriodStart DateTime?
   currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean            @default(false)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 }
