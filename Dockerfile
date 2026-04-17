@@ -22,6 +22,9 @@ RUN DIRECT_URL="postgresql://dummy:dummy@localhost:5432/dummy" pnpm prisma gener
 
 # Build Next.js (requires output: 'standalone' in next.config)
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV XENDIT_SECRET_KEY=build-placeholder
+ENV XENDIT_PUBLIC_KEY=build-placeholder
+ENV XENDIT_WEBHOOK_TOKEN=build-placeholder
 RUN pnpm build
 
 # ─── Stage 3: Production Runtime ─────────────────────────
