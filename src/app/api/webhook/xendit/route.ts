@@ -4,8 +4,8 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 function verifyWebhookToken(req: NextRequest): boolean {
-  const token = req.headers.get("x-callback-token");
-  return token === process.env.XENDIT_WEBHOOK_TOKEN;
+  const token = req.headers.get("x-callback-token")?.trim();
+  return token === process.env.XENDIT_WEBHOOK_TOKEN?.trim();
 }
 
 export async function POST(req: NextRequest) {
