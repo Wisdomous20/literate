@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { xenditRequest } from "@/lib/xendit";
 import { prisma } from "@/lib/prisma";
 import { calculatePrice, getMaxMembers, PlanKey } from "@/config/plans";
@@ -32,20 +33,35 @@ export async function createSubscriptionService(input: CreateSubscriptionInput) 
 
     let xenditCustomerId = existingSub?.xenditCustomerId;
 
-    // Step 1: Create Xendit customer if needed
+    // Step 1: Create or retrieve Xendit customer
     if (!xenditCustomerId) {
-      const customer = await xenditRequest<{ id: string }>(
-        "/customers",
-        "POST",
-        {
-          reference_id: userId,
-          type: "INDIVIDUAL",
-          individual_detail: { given_names: userName || "User" },
-          email: userEmail,
+      try {
+        const customer = await xenditRequest<{ id: string }>(
+          "/customers",
+          "POST",
+          {
+            reference_id: userId,
+            type: "INDIVIDUAL",
+            individual_detail: { given_names: userName || "User" },
+            email: userEmail,
+          }
+        );
+        xenditCustomerId = customer.id;
+      } catch {
+        // Customer may already exist from a previous attempt, fetch by reference_id
+        const existing = await xenditRequest<{ data: { id: string }[] }>(
+          `/customers?reference_id=${userId}`,
+          "GET"
+        );
+        if (existing.data.length > 0) {
+          xenditCustomerId = existing.data[0].id;
+        } else {
+          throw new Error("Failed to create or retrieve Xendit customer");
         }
-      );
-      xenditCustomerId = customer.id;
+      }
     }
+
+    const uniqueId = randomUUID();
 
     // Step 2: Create subscription plan
     const plan = await xenditRequest<{
@@ -53,13 +69,13 @@ export async function createSubscriptionService(input: CreateSubscriptionInput) 
       status: string;
       actions: { action: string; url: string }[];
     }>("/recurring/plans", "POST", {
-      reference_id: `literate-${planType.toLowerCase()}-${userId}-${Date.now()}`,
+      reference_id: `literate-${planType.toLowerCase()}-${userId}-${uniqueId}`,
       customer_id: xenditCustomerId,
       recurring_action: "PAYMENT",
       currency: "PHP",
       amount,
       schedule: {
-        reference_id: `schedule-${userId}-${Date.now()}`,
+        reference_id: `schedule-${userId}-${uniqueId}`,
         interval: "MONTH",
         interval_count: 12,
         anchor_date: new Date().toISOString(),
