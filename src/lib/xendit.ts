@@ -1,7 +1,8 @@
 const XENDIT_BASE_URL = "https://api.xendit.co";
 
 function getAuthHeader() {
-  const key = process.env.XENDIT_SECRET_KEY!;
+  const key = process.env.XENDIT_SECRET_KEY ?? "";
+  console.log(`[Xendit] Key length: ${key.length}, starts with: ${key.substring(0, 10)}, ends with: ${JSON.stringify(key.slice(-5))}`);
   return "Basic " + Buffer.from(key + ":").toString("base64");
 }
 
