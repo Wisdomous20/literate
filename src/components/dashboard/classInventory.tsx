@@ -1,16 +1,14 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { ChevronDown, ClipboardList, Loader2 } from "lucide-react";
+import { useState, useMemo } from "react";
+import { ChevronDown, ChevronLeft, ChevronRight, ClipboardList, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { ClassCard } from "./classCard";
 import { CreateClassModal } from "./createClassModal";
 import { createClass } from "@/app/actions/class/createClass";
-import { useQueryClient } from "@tanstack/react-query";
 import { useClassList } from "@/lib/hooks/useClassList";
-import { Scrollbar } from "swiper/modules";
-import { Swiper, SwiperSlide } from "swiper/react";
-import "swiper/css";
+import { cn } from "@/lib/utils";
 
 type ClassCardVariant = "blue" | "yellow" | "cyan";
 
@@ -45,6 +43,7 @@ export function ClassInventory({
   const queryClient = useQueryClient();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
 
   const {
     data: rawClasses,
@@ -57,7 +56,7 @@ export function ClassInventory({
   const currentYear = getCurrentSchoolYear();
   const nextYear = getNextSchoolYear();
   const now = new Date();
-  const nextYearStart = new Date(Number(nextYear.split("-")[0]), 7, 1); // August 1st of next year
+  const nextYearStart = new Date(Number(nextYear.split("-")[0]), 7, 1);
   const isNextYearDisabled = now < nextYearStart;
 
   const yearsWithData = useMemo(() => {
@@ -69,7 +68,7 @@ export function ClassInventory({
   const classes = (rawClasses ?? []).map(
     (
       c: { id: string; name: string; studentCount: number },
-      index: number,
+      index: number
     ): {
       id: string;
       name: string;
@@ -80,38 +79,26 @@ export function ClassInventory({
       name: c.name,
       studentCount: c.studentCount,
       variant: getVariant(index),
-    }),
+    })
   );
 
-  const [swiperProgress, setSwiperProgress] = useState(0);
-  const [slidesPerView, setSlidesPerView] = useState(2);
+  // Fixed 4 items per page (2 columns x 2 rows)
+  const itemsPerPage = 4;
+  const totalPages = Math.ceil(classes.length / itemsPerPage);
+  const startIndex = currentPage * itemsPerPage;
+  const visibleClasses = classes.slice(startIndex, startIndex + itemsPerPage);
 
-  useEffect(() => {
-    const updateSlides = () => {
-      setSlidesPerView(
-        window.innerWidth >= 1280
-          ? 5
-          : window.innerWidth >= 1024
-            ? 4
-            : window.innerWidth >= 640
-              ? 3
-              : 2,
-      );
-    };
-    updateSlides();
-    window.addEventListener("resize", updateSlides);
-    return () => window.removeEventListener("resize", updateSlides);
-  }, []);
+  const goToPrevPage = () => {
+    setCurrentPage((prev) => Math.max(0, prev - 1));
+  };
 
-  const totalSlides = classes.length;
-  const showScrollbar = totalSlides > slidesPerView;
-  const indicatorWidth = showScrollbar
-    ? Math.max((slidesPerView / totalSlides) * 100, 10)
-    : 100;
-  const indicatorLeft = showScrollbar
-    ? swiperProgress * (100 - indicatorWidth)
-    : 0;
+  const goToNextPage = () => {
+    setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1));
+  };
 
+  const refreshClasses = () => {
+    queryClient.invalidateQueries({ queryKey: ["classes", selectedYear] });
+  };
 
   const handleCreateClass = async (data: {
     className: string;
@@ -119,9 +106,7 @@ export function ClassInventory({
   }) => {
     const result = await createClass(data.className);
     if (result.success) {
-      await queryClient.invalidateQueries({
-        queryKey: ["classes", selectedYear],
-      });
+      refreshClasses();
       showToast?.("Class created successfully!", "success");
     } else {
       showToast?.("Failed to create class.", "error");
@@ -130,96 +115,101 @@ export function ClassInventory({
   };
 
   const handleClassUpdated = async () => {
-    await queryClient.invalidateQueries({
-      queryKey: ["classes", selectedYear],
-    });
+    refreshClasses();
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
-          <h2 className="text-[20px] font-semibold text-[#00306E]">
-            Class Inventory
-          </h2>
-          <button
-            type="button"
-            onClick={() => router.push("/dashboard/class/all")}
-            className="rounded-full border border-[#6666FF] bg-[#6666FF] px-3 py-1 text-[11px] font-medium text-white ml-1 h-7 min-w-0 hover:bg-[#7A7AFB] transition-colors"
-          >
-            View All
-          </button>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="rounded-lg border border-[#6666FF]/25 bg-[#6666FF]/8 px-5 py-2 text-sm font-medium text-[#6666FF] flex items-center gap-1 h-10 min-w-30"
-            >
-              {selectedYear}
-              <ChevronDown className="h-4 w-4" />
-            </button>
-            {isDropdownOpen && (
-              <div className="absolute right-0 top-full z-10 mt-1 w-36 rounded-lg border border-[#5D5DFB]/30 bg-white py-1 shadow-lg">
-                {yearsWithData.map((year) => {
-                  const isCurrent = year === currentYear;
-                  const isNext = year === nextYear;
-                  const disabled = isNext && isNextYearDisabled;
-                  return (
-                    <button
-                      key={year}
-                      onClick={() => {
-                        if (!disabled) {
-                          onYearChange(year);
-                          setIsDropdownOpen(false);
-                        }
-                      }}
-                      disabled={disabled}
-                      className={`w-full px-4 py-2 text-left text-sm transition-colors
-                        ${
-                          year === selectedYear
-                            ? "font-semibold text-[#6666FF] bg-gray-100"
-                            : "text-[#00306E] hover:bg-[#E4F4FF]"
-                        }
-                        ${disabled ? "cursor-not-allowed opacity-60" : ""}`}
-                    >
-                      {year}
-                      {isCurrent && " (Current)"}
-                      {isNext && isNextYearDisabled && " (Upcoming)"}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+    <div className="w-full font-poppins">
+      {/* Header */}
+      <div className="flex flex-col gap-2 sm:gap-3 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex flex-col gap-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-lg font-bold text-[#00306E]">
+                Class Inventory
+              </h2>
+              <button
+                type="button"
+                onClick={() => router.push("/dashboard/class/all")}
+                className="rounded-full bg-[#5D5DFB] px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-[#4a4ae8] shadow-sm"
+              >
+                View All
+              </button>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-[#5D5DFB]/70 font-medium">
+              <ClipboardList className="w-3 h-3" />
+              <span>Create and manage your class inventory</span>
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setIsModalOpen(true)}
-            className="rounded-lg border border-[#7A7AFB] bg-[#6666FF] px-5 py-2 text-sm font-medium text-white shadow-[0px_1px_20px_rgba(65,155,180,0.47)] transition-opacity hover:opacity-90 h-10 min-w-30"
-          >
-            + Create Class
-          </button>
+
+          <div className="flex flex-wrap items-center gap-2 z-30">
+            {/* Year Dropdown */}
+            <div className="relative">
+              <button
+  type="button"
+  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+  className="flex items-center gap-2 rounded-full border border-[#5D5DFB]/30 bg-[#5D5DFB]/5 px-4 py-1.5 text-xs sm:text-sm font-medium text-[#5D5DFB] whitespace-nowrap hover:bg-[#5D5DFB]/10 transition-colors"
+>
+  School Year
+  <ChevronDown className="h-3 w-3" />
+</button>
+              {isDropdownOpen && (
+                <div className="absolute right-0 top-full z-50 mt-1 w-40 rounded-lg border border-[#5D5DFB]/30 bg-white py-1 shadow-lg">
+                  {yearsWithData.map((year) => {
+                    const isCurrent = year === currentYear;
+                    const isNext = year === nextYear;
+                    const disabled = isNext && isNextYearDisabled;
+                    return (
+                      <button
+                        key={year}
+                        onClick={() => {
+                          if (!disabled) {
+                            onYearChange(year);
+                            setIsDropdownOpen(false);
+                          }
+                        }}
+                        disabled={disabled}
+                        className={cn(
+                          "w-full px-4 py-2 text-left text-sm transition-colors",
+                          year === selectedYear
+                            ? "font-semibold text-[#5D5DFB] bg-[#E4F4FF]"
+                            : "text-[#00306E] hover:bg-[#E4F4FF]",
+                          disabled && "cursor-not-allowed opacity-60"
+                        )}
+                      >
+                        {year}
+                        {isCurrent && " (Current)"}
+                        {isNext && isNextYearDisabled && " (Upcoming)"}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Create Class Button */}
+           <button
+  type="button"
+  onClick={() => setIsModalOpen(true)}
+  className="rounded-full bg-[#5D5DFB] px-4 py-1.5 text-xs sm:text-sm font-medium text-white shadow-[0px_1px_20px_rgba(93,93,251,0.4)] transition-colors hover:bg-[#4a4ae8] whitespace-nowrap"
+>
+  + Create Class
+</button>
+          </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 pl-1 text-[15px] text-[#5d5db6] font-semibold mb-5">
-        <ClipboardList className="w-5 h-5" />
-        Manage your classes for the selected school year.
-      </div>
-
-      {isLoading && (
+      {/* Class Cards Section */}
+      {isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-[#6666FF]" />
+          <Loader2 className="h-8 w-8 animate-spin text-[#5D5DFB]" />
         </div>
-      )}
-      {!isLoading && error && (
+      ) : error ? (
         <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
           {error}
         </div>
-      )}
-      {!isLoading && !error && classes.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
+      ) : classes.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center rounded-3xl bg-white">
           <p className="text-[#00306E]/70 mb-2">
             No classes found for {selectedYear}
           </p>
@@ -227,55 +217,85 @@ export function ClassInventory({
             Click Create Class to add your first class
           </p>
         </div>
-      )}
-      {!isLoading && !error && classes.length > 0 && (
-        <div>
-          <Swiper
-            modules={[Scrollbar]}
-            scrollbar={{ draggable: true }}
-            spaceBetween={10}
-            grabCursor={true}
-            simulateTouch={true}
-            slidesPerView={slidesPerView}
-            breakpoints={{
-              640: { slidesPerView: 3 },
-              1024: { slidesPerView: 4 },
-              1280: { slidesPerView: 5 },
-            }}
-            onProgress={(swiper, progress) => setSwiperProgress(progress)}
-          >
-            {classes.map((classItem) => (
-              <SwiperSlide key={classItem.id}>
-                <ClassCard
-                  classRoomId={classItem.id}
-                  name={classItem.name}
-                  studentCount={classItem.studentCount}
-                  variant={classItem.variant}
-                  onClick={() =>
-                    router.push(`/dashboard/class/${classItem.id}`)
-                  }
-                  onClassUpdated={handleClassUpdated}
-                />
-              </SwiperSlide>
+      ) : (
+        <div className="relative w-full">
+          {/* Class cards grid - 2 columns x 2 rows */}
+          <div className="grid grid-cols-2 gap-3 md:gap-4 w-full">
+            {visibleClasses.map((classItem) => (
+            <div 
+  key={classItem.id} 
+  className="border-r-4 border-b-4 border-[#5D5DFB] rounded-2xl overflow-hidden bg-white min-h-35 shadow-lg shadow-[#5D5DFB]/10"
+>
+  <ClassCard
+    classRoomId={classItem.id}
+    name={classItem.name}
+    studentCount={classItem.studentCount}
+    variant={classItem.variant}
+    onClick={() => router.push(`/dashboard/class/${classItem.id}`)}
+    onClassUpdated={handleClassUpdated}
+  />
+</div>
             ))}
-          </Swiper>
-          {/* Custom scroll bar indicator */}
-          {showScrollbar && (
-            <div className="mt-2 flex justify-center">
-              <div className="relative w-full h-1 bg-[#E4E6FB] rounded">
-                <div
-                  className="absolute top-0 h-1 rounded transition-all duration-300"
-                  style={{
-                    width: `${indicatorWidth}%`,
-                    left: `${indicatorLeft}%`,
-                    background: "rgba(102, 102, 255, 0.18)", // very transparent purple
-                  }}
-                ></div>
-              </div>
+          </div>
+
+          {/* Carousel Navigation Arrows */}
+          {totalPages > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={goToPrevPage}
+                disabled={currentPage === 0}
+                className={cn(
+                  "absolute left-2 top-[32%] z-50 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white text-[#5D5DFB] border-2 border-[#5D5DFB] shadow-2xl ring-2 ring-white transition-all hover:scale-110 hover:bg-[#E4F4FF]",
+                  currentPage === 0
+                    ? "opacity-40 cursor-not-allowed"
+                    : ""
+                )}
+                aria-label="Previous page"
+              >
+                <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={goToNextPage}
+                disabled={currentPage === totalPages - 1}
+                className={cn(
+                  "absolute right-2 top-[32%] z-50 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-[#5D5DFB] text-white shadow-2xl ring-2 ring-white transition-all hover:scale-110",
+                  currentPage === totalPages - 1
+                    ? "opacity-40 cursor-not-allowed"
+                    : "hover:bg-[#4a4deb]"
+                )}
+                aria-label="Next page"
+              >
+                <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
+              </button>
+            </>
+          )}
+
+          {/* Pagination dots with numbers */}
+          {totalPages > 1 && (
+            <div className="flex justify-center gap-2 mt-4 sm:mt-6 pb-4">
+              {Array.from({ length: totalPages }).map((_, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => setCurrentPage(index)}
+                  className={cn(
+                    "flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium transition-all",
+                    currentPage === index
+                      ? "bg-[#0C1A6D] text-white"
+                      : "border-2 border-[#5D5DFB] text-[#5D5DFB] hover:bg-[#5D5DFB]/10"
+                  )}
+                  aria-label={`Go to page ${index + 1}`}
+                >
+                  {index + 1}
+                </button>
+              ))}
             </div>
           )}
         </div>
       )}
+
       <CreateClassModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

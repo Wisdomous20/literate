@@ -4,8 +4,8 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 function verifyWebhookToken(req: NextRequest): boolean {
-  const token = req.headers.get("x-callback-token");
-  return token === process.env.XENDIT_WEBHOOK_TOKEN;
+  const token = req.headers.get("x-callback-token")?.trim();
+  return token === process.env.XENDIT_WEBHOOK_TOKEN?.trim();
 }
 
 export async function POST(req: NextRequest) {
@@ -100,8 +100,11 @@ export async function POST(req: NextRequest) {
       case "recurring.plan.inactivated": {
         const planId = body.data?.id;
         if (planId) {
+          // Preserve ACTIVE until the paid period ends when the user explicitly
+          // stopped renewal (e.g. accepted an org invite). The natural expiry
+          // is enforced at read time via currentPeriodEnd.
           await prisma.subscription.updateMany({
-            where: { xenditPlanId: planId },
+            where: { xenditPlanId: planId, cancelAtPeriodEnd: false },
             data: { status: "CANCELED" },
           });
         }
