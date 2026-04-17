@@ -17,7 +17,7 @@ export function WordOfTheDay({
   const [isPlaying, setIsPlaying] = useState(false);
 
   const handleSpeak = () => {
-    if ('speechSynthesis' in window) {
+    if ("speechSynthesis" in window) {
       setIsPlaying(true);
       const utterance = new SpeechSynthesisUtterance(word);
       utterance.onend = () => setIsPlaying(false);
@@ -26,13 +26,7 @@ export function WordOfTheDay({
   };
 
   return (
-    <div 
-      className="flex flex-col rounded-3xl p-4 md:p-6 min-h-[200px]"
-      style={{
-        background: "linear-gradient(135deg, #5D5DFB 0%, #7A5DFB 50%, #54A4FF 100%)",
-      }}
-    >
-      {/* Header */}
+    <div className="flex flex-col rounded-3xl p-4 md:p-6 min-h-50 [background:linear-gradient(135deg,#5D5DFB_0%,#7A5DFB_50%,#54A4FF_100%)]">
       <div className="flex items-center gap-2 mb-4">
         <Star className="h-5 w-5 text-yellow-300 fill-yellow-300" />
         <span className="text-sm font-semibold text-white tracking-wide uppercase">
@@ -40,17 +34,15 @@ export function WordOfTheDay({
         </span>
       </div>
 
-      {/* Word */}
       <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-3">
         {word}
       </h2>
 
-      {/* Definition */}
       <p className="text-sm md:text-base text-white/90 italic flex-1">
-        <span className="font-medium not-italic">{partOfSpeech}:</span> {definition}
+        <span className="font-medium not-italic">{partOfSpeech}:</span>{" "}
+        {definition}
       </p>
 
-      {/* Audio player */}
       <div className="flex items-center gap-3 mt-4 pt-4 border-t border-white/20">
         <button
           type="button"
@@ -62,7 +54,7 @@ export function WordOfTheDay({
           <Volume2 className="h-5 w-5" />
         </button>
         <div className="flex-1 h-1 bg-white/30 rounded-full overflow-hidden">
-          <div 
+          <div
             className={`h-full bg-white rounded-full transition-all duration-1000 ${
               isPlaying ? "w-full" : "w-0"
             }`}

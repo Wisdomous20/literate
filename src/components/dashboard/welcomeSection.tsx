@@ -26,11 +26,9 @@ export function WelcomeSection({
         />
       </div>
 
-      {/* Optional: keep the gradient overlay if you want */}
       <div className="absolute inset-0 rounded-3xl bg-linear-to-br from-transparent via-transparent to-purple-300/20 pointer-events-none z-10" />
 
       <div className="flex items-center justify-between p-4 md:p-8 min-h-45 relative z-20">
-        {/* Text content */}
         <div className="flex-1 z-20">
           <h2 className="text-2xl md:text-3xl font-semibold text-[#00306E] mb-2">
             Welcome Teacher {teacherName}!

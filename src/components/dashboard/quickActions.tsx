@@ -30,7 +30,8 @@ interface QuickActionsProps {
 
 export function QuickActions({ schoolYear, minimal }: QuickActionsProps) {
   const router = useRouter();
-  const { data: assessments = [], isLoading } = useRecentAssessments(schoolYear);
+  const { data: assessments = [], isLoading } =
+    useRecentAssessments(schoolYear);
 
   const handleAssessmentClick = (item: RecentAssessmentItem) => {
     const reportTypeMap: Record<string, string> = {
@@ -41,7 +42,7 @@ export function QuickActions({ schoolYear, minimal }: QuickActionsProps) {
     const reportType = reportTypeMap[item.assessmentType];
     if (reportType && item.classRoomId && item.studentId && item.id) {
       router.push(
-        `/dashboard/class/${item.classRoomId}/report/${item.studentId}/${reportType}?id=${item.id}`
+        `/dashboard/class/${item.classRoomId}/report/${item.studentId}/${reportType}?id=${item.id}`,
       );
     }
   };
@@ -68,17 +69,16 @@ export function QuickActions({ schoolYear, minimal }: QuickActionsProps) {
               idx % 4 === 0
                 ? "bg-blue-50"
                 : idx % 4 === 1
-                ? "bg-pink-50"
-                : idx % 4 === 2
-                ? "bg-green-50"
-                : "bg-yellow-50";
+                  ? "bg-pink-50"
+                  : idx % 4 === 2
+                    ? "bg-green-50"
+                    : "bg-yellow-50";
             return (
               <button
                 key={item.id}
                 onClick={() => handleAssessmentClick(item)}
                 type="button"
-                className={`flex items-center justify-between rounded-xl border border-[#E0E7FF] ${pastelBg} px-4 py-2.5 shadow-lg transition-all hover:shadow-xl hover:border-[#6666FF]/50 hover:bg-white`}
-                style={{ transition: "box-shadow 0.2s, background 0.2s" }}
+                className={`flex items-center justify-between rounded-xl border border-[#E0E7FF] ${pastelBg} px-4 py-2.5 shadow-lg hover:shadow-xl hover:border-[#6666FF]/50 hover:bg-white transition-shadow duration-200`}
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#EEF0FF]">
@@ -90,7 +90,8 @@ export function QuickActions({ schoolYear, minimal }: QuickActionsProps) {
                     </p>
                     <div className="flex items-center gap-1.5">
                       <span className="text-[11px] text-[#00306E]/60">
-                        {assessmentTypeLabels[item.assessmentType] ?? item.assessmentType}
+                        {assessmentTypeLabels[item.assessmentType] ??
+                          item.assessmentType}
                       </span>
                       <span
                         className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${badge.bg} ${badge.text}`}
@@ -140,17 +141,16 @@ export function QuickActions({ schoolYear, minimal }: QuickActionsProps) {
               idx % 4 === 0
                 ? "bg-blue-50"
                 : idx % 4 === 1
-                ? "bg-pink-50"
-                : idx % 4 === 2
-                ? "bg-green-50"
-                : "bg-yellow-50";
+                  ? "bg-pink-50"
+                  : idx % 4 === 2
+                    ? "bg-green-50"
+                    : "bg-yellow-50";
             return (
               <button
                 key={item.id}
                 onClick={() => handleAssessmentClick(item)}
                 type="button"
-                className={`flex items-center justify-between rounded-xl border border-[#E0E7FF] ${pastelBg} px-4 py-2.5 shadow-lg transition-all hover:shadow-xl hover:border-[#6666FF]/50 hover:bg-white`}
-                style={{ transition: "box-shadow 0.2s, background 0.2s" }}
+                className={`flex items-center justify-between rounded-xl border border-[#E0E7FF] ${pastelBg} px-4 py-2.5 shadow-lg hover:shadow-xl hover:border-[#6666FF]/50 hover:bg-white transition-shadow duration-200`}
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#EEF0FF]">
@@ -162,7 +162,8 @@ export function QuickActions({ schoolYear, minimal }: QuickActionsProps) {
                     </p>
                     <div className="flex items-center gap-1.5">
                       <span className="text-[11px] text-[#00306E]/60">
-                        {assessmentTypeLabels[item.assessmentType] ?? item.assessmentType}
+                        {assessmentTypeLabels[item.assessmentType] ??
+                          item.assessmentType}
                       </span>
                       <span
                         className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${badge.bg} ${badge.text}`}

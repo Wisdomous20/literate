@@ -73,7 +73,7 @@ function generatePDF(
   studentGrade: string,
   assessmentTypeLabel: string,
   oralReadingLevel: OralReadingLevel,
-  assessmentCards: AssessmentCard[]
+  assessmentCards: AssessmentCard[],
 ) {
   const doc = new jsPDF();
   let yPosition = 20;
@@ -81,21 +81,17 @@ function generatePDF(
   const margins = 15;
   const contentWidth = pageWidth - 2 * margins;
 
-  // Set font
   doc.setFont("helvetica");
 
-  // Title
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
   doc.text("ASSESSMENT REPORT", margins, yPosition);
   yPosition += 10;
 
-  // Horizontal line
   doc.setDrawColor(0);
   doc.line(margins, yPosition, pageWidth - margins, yPosition);
   yPosition += 8;
 
-  // Student Information Section
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.text("Student Information", margins, yPosition);
@@ -112,7 +108,6 @@ function generatePDF(
   doc.text(`Date: ${new Date().toLocaleDateString()}`, margins + 5, yPosition);
   yPosition += 10;
 
-  // Reading Level Section
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.text("Final Reading Level Classification", margins, yPosition);
@@ -123,50 +118,48 @@ function generatePDF(
   doc.text(`Classification: ${oralReadingLevel.level}`, margins + 5, yPosition);
   yPosition += 6;
 
-  // Add classification description wrapped
   const description = getClassificationSubtext(oralReadingLevel.level);
   const descriptionLines = doc.splitTextToSize(description, contentWidth - 5);
   doc.text(descriptionLines, margins + 5, yPosition);
   yPosition += descriptionLines.length * 5 + 5;
 
-  // Assessment Reports Section (up to 2 reports)
   const reportsToInclude = assessmentCards.slice(0, 2);
 
   reportsToInclude.forEach((card, index) => {
-    // Add page break if needed
     if (yPosition > 240) {
       doc.addPage();
       yPosition = 20;
     }
 
-    // Report title
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
-    const reportTitle = card.title === "Oral Reading Fluency Test"
-      ? "Oral Fluency Test Report"
-      : card.title === "Reading Comprehension Test"
-        ? "Reading Comprehension Test Report"
-        : card.title;
-    
+    const reportTitle =
+      card.title === "Oral Reading Fluency Test"
+        ? "Oral Fluency Test Report"
+        : card.title === "Reading Comprehension Test"
+          ? "Reading Comprehension Test Report"
+          : card.title;
+
     doc.text(`Report ${index + 1}: ${reportTitle}`, margins, yPosition);
     yPosition += 7;
 
-    // Horizontal line
     doc.setDrawColor(200);
     doc.line(margins, yPosition, pageWidth - margins, yPosition);
     yPosition += 6;
 
-    // Report details
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.text(`Assessment Type: ${card.title}`, margins + 5, yPosition);
     yPosition += 6;
     doc.text(`Classification Level: ${card.level}`, margins + 5, yPosition);
     yPosition += 6;
-    doc.text(`Performance Score: ${Math.round(card.percentage)}%`, margins + 5, yPosition);
+    doc.text(
+      `Performance Score: ${Math.round(card.percentage)}%`,
+      margins + 5,
+      yPosition,
+    );
     yPosition += 6;
 
-    // Performance interpretation
     let performanceText = "";
     if (card.percentage >= 90) {
       performanceText = "Excellent performance";
@@ -181,23 +174,13 @@ function generatePDF(
     yPosition += 10;
   });
 
-  // Footer
   yPosition = doc.internal.pageSize.getHeight() - 15;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(128);
-  doc.text(
-    `Generated on ${new Date().toLocaleString()}`,
-    margins,
-    yPosition
-  );
-  doc.text(
-    `Page 1 of 1`,
-    pageWidth - margins - 20,
-    yPosition
-  );
+  doc.text(`Generated on ${new Date().toLocaleString()}`, margins, yPosition);
+  doc.text(`Page 1 of 1`, pageWidth - margins - 20, yPosition);
 
-  // Download PDF
   doc.save(`${studentName}-assessment-report.pdf`);
 }
 
@@ -217,7 +200,7 @@ export function AssessmentSummary({
       studentGrade,
       assessmentTypeLabel,
       oralReadingLevel,
-      assessmentCards
+      assessmentCards,
     );
     onExportPdf?.();
   };

@@ -75,7 +75,14 @@ export function SignupForm() {
 
   // Verification code state
   const [userId, setUserId] = useState<string | null>(null);
-  const [codeDigits, setCodeDigits] = useState<string[]>(["", "", "", "", "", ""]);
+  const [codeDigits, setCodeDigits] = useState<string[]>([
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+  ]);
   const [verifyError, setVerifyError] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -173,7 +180,7 @@ export function SignupForm() {
 
   const handleKeyDown = (
     index: number,
-    e: React.KeyboardEvent<HTMLInputElement>
+    e: React.KeyboardEvent<HTMLInputElement>,
   ) => {
     if (e.key === "Backspace" && !codeDigits[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
@@ -182,7 +189,10 @@ export function SignupForm() {
 
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
     if (!pasted) return;
 
     const newDigits = [...codeDigits];
@@ -280,7 +290,9 @@ export function SignupForm() {
             {codeDigits.map((digit, index) => (
               <input
                 key={index}
-                ref={(el) => { inputRefs.current[index] = el; }}
+                ref={(el) => {
+                  inputRefs.current[index] = el;
+                }}
                 type="text"
                 inputMode="numeric"
                 maxLength={1}
@@ -288,14 +300,17 @@ export function SignupForm() {
                 onChange={(e) => handleCodeChange(index, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(index, e)}
                 disabled={isVerifying}
+                title={`Digit ${index + 1} of 6`}
+                placeholder="•"
+                aria-label={`Digit ${index + 1} of 6`}
                 className={`w-12 h-14 text-center text-2xl font-bold border-2 rounded-lg outline-none transition-all
-                  ${
-                    verifyError
-                      ? "border-red-400 focus:border-red-500"
-                      : "border-gray-300 focus:border-[#2e2e68]"
-                  }
-                  ${isVerifying ? "opacity-50 cursor-not-allowed" : ""}
-                `}
+    ${
+      verifyError
+        ? "border-red-400 focus:border-red-500"
+        : "border-gray-300 focus:border-[#2e2e68]"
+    }
+    ${isVerifying ? "opacity-50 cursor-not-allowed" : ""}
+  `}
               />
             ))}
           </div>
@@ -314,9 +329,7 @@ export function SignupForm() {
           <div className="pt-2">
             <Button
               onClick={() => handleVerifyCode(codeDigits.join(""))}
-              disabled={
-                isVerifying || codeDigits.join("").length !== 6
-              }
+              disabled={isVerifying || codeDigits.join("").length !== 6}
               className="w-full bg-[#2e2e68] hover:bg-[#1e1e58] text-white py-2 rounded-lg"
             >
               {isVerifying ? "Verifying..." : "Verify Email"}
@@ -462,10 +475,7 @@ export function SignupForm() {
         )}
       </div>
       <div className="space-y-2">
-        <Label
-          htmlFor="confirmPassword"
-          className="text-[#040029] font-medium"
-        >
+        <Label htmlFor="confirmPassword" className="text-[#040029] font-medium">
           Confirm Password
         </Label>
         <div className="relative">

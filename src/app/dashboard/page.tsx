@@ -17,7 +17,7 @@ function getCurrentSchoolYear(): string {
 
 export default function DashboardPage() {
   const [selectedYear, setSelectedYear] = useState<string>(
-    getCurrentSchoolYear()
+    getCurrentSchoolYear(),
   );
   const [toast, setToast] = useState<{
     message: string;
@@ -34,7 +34,6 @@ export default function DashboardPage() {
 
   return (
     <div className="flex min-h-full flex-col overflow-y-auto">
-      {/* Toast notification */}
       {toast && (
         <div
           className={`fixed top-6 right-6 z-50 flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium shadow-lg transition-all duration-300 ${
@@ -61,23 +60,17 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Header */}
-<DashboardHeader title="My Dashboard" schoolYear={selectedYear} />
+      <DashboardHeader title="My Dashboard" schoolYear={selectedYear} />
 
-      {/* Main content */}
       <main className="flex-1 p-4 md:p-6 lg:p-8">
-        {/* Two column layout for main content */}
         <div className="flex flex-col xl:flex-row gap-6">
-          {/* Left column - Welcome and Class Inventory */}
           <div className="flex-1 space-y-6 min-w-0">
-            {/* Welcome Section */}
             <WelcomeSection
               teacherName={firstName}
               schoolYear={selectedYear}
               planType="Free User Plan"
             />
 
-            {/* Class Inventory */}
             <ClassInventory
               selectedYear={selectedYear}
               onYearChange={setSelectedYear}
@@ -85,14 +78,11 @@ export default function DashboardPage() {
             />
           </div>
 
-          {/* Right column - Charts and Word of the Day */}
           <div className="w-full xl:w-95 2xl:w-[420px]2xl:w-105 space-y-6 shrink-0">
-            {/* Classification Chart */}
             <div className="min-h-80">
               <ClassificationChart schoolYear={selectedYear} />
             </div>
 
-            {/* Word of the Day */}
             <WordOfTheDay
               word="LiteRate"
               definition="playfully quaint or fanciful, especially in an appealing and amusing way."

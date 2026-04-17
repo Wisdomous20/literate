@@ -161,6 +161,8 @@ export function ShareableLinkSection({
                 value={expiryHours}
                 onChange={(e) => setExpiryHours(Number(e.target.value))}
                 className="rounded-lg border border-[#DAE6FF] bg-white px-3 py-1.5 text-xs font-medium text-[#00306E] outline-none focus:border-[#6666FF] focus:ring-1 focus:ring-[#6666FF]"
+                title="Link expiry time"
+                aria-label="Link expiry time"
               >
                 {EXPIRY_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -188,6 +190,7 @@ export function ShareableLinkSection({
                   value={generatedUrl}
                   readOnly
                   className="flex-1 bg-transparent text-xs font-medium text-[#31318A] outline-none truncate"
+                  aria-label="Generated shareable link"
                 />
                 <button
                   type="button"

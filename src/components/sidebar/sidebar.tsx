@@ -73,7 +73,6 @@ export function Sidebar() {
         collapsed ? "w-20 min-w-20" : "w-65 min-w-65",
       )}
     >
-      {/* Soft Wavy Background Pattern - More Visible */}
       <div className="absolute inset-0 opacity-25">
         <svg
           viewBox="0 0 260 800"
@@ -86,7 +85,6 @@ export function Sidebar() {
               <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" />
             </filter>
           </defs>
-          {/* Soft wavy fills instead of lines */}
           <path
             d="M0,150 Q65,100 130,130 T260,150 L260,0 L0,0 Z"
             fill="white"
@@ -138,9 +136,7 @@ export function Sidebar() {
         </svg>
       </div>
 
-      {/* Content */}
       <div className="relative z-0 flex h-full flex-col">
-        {/* Top Header with Button */}
         <div
           className={cn(
             "flex items-center gap-2 pb-4 pt-4 px-4",
@@ -168,7 +164,6 @@ export function Sidebar() {
             </div>
           )}
           
-          {/* Toggle Button - Left Side Visible */}
           <button
             type="button"
             onClick={() => setCollapsed(!collapsed)}
@@ -242,7 +237,6 @@ export function Sidebar() {
             })}
           </nav>
 
-          {/* Upgrade Premium Box */}
           {!collapsed && (
             <div className="mt-8 rounded-2xl bg-white p-4 shadow-lg">
               <div className="flex items-center gap-2 mb-2">
