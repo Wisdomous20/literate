@@ -1,6 +1,6 @@
 "use client"
 
-import { Globe, BarChart3, ClipboardList } from "lucide-react"
+import { Globe, BarChart3, ClipboardList, Link2 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
 interface PassageFiltersProps {
@@ -9,6 +9,8 @@ interface PassageFiltersProps {
   testType?: string
   hasPassage: boolean
   onOpenPassageModal: () => void
+  onShareLink?: () => void
+  showShareLink?: boolean
 }
 
 function FilterChip({
@@ -28,7 +30,6 @@ function FilterChip({
           : "text-[#00306E]/50"
       }`}
     >
-      {/* Checkbox */}
       <span
         className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-colors ${
           active
@@ -60,6 +61,8 @@ export function PassageFilters({
   testType,
   hasPassage,
   onOpenPassageModal,
+  onShareLink,
+  showShareLink = false,
 }: PassageFiltersProps) {
   return (
     <div className="flex flex-wrap items-center gap-4">
@@ -79,7 +82,17 @@ export function PassageFilters({
         active={!!passageLevel}
       />
 
-      <div className="ml-auto">
+      <div className="ml-auto flex items-center gap-2">
+        {showShareLink && onShareLink && (
+          <button
+            type="button"
+            onClick={onShareLink}
+            className="shrink-0 flex items-center gap-2 rounded-lg border border-[#5D5DFB] bg-white px-4 py-2 text-sm font-semibold text-[#5D5DFB] shadow-[0px_1px_20px_rgba(65,155,180,0.47)] transition-colors hover:bg-[#5D5DFB]/5 md:px-5 md:text-[15px]"
+          >
+            <Link2 className="h-4 w-4" />
+            Share Link
+          </button>
+        )}
         <button
           type="button"
           onClick={onOpenPassageModal}

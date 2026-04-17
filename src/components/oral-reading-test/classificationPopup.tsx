@@ -1,3 +1,4 @@
+// src/components/oral-reading-test/classificationPopup.tsx
 "use client";
 
 import { useEffect } from "react";
@@ -8,11 +9,19 @@ interface ClassificationPopupProps {
   classificationLevel: string;
   studentName: string;
   onClose: () => void;
+  score?: string;
+  assessmentType?: "oral-reading" | "comprehension" | "fluency";
 }
 
 const LEVEL_CONFIG: Record<
   string,
-  { label: string; message: string; gradient: string; glow: string; badge: string }
+  {
+    label: string;
+    message: string;
+    gradient: string;
+    glow: string;
+    badge: string;
+  }
 > = {
   INDEPENDENT: {
     label: "Independent",
@@ -41,9 +50,12 @@ export function ClassificationPopup({
   classificationLevel,
   studentName,
   onClose,
+  score,
+  assessmentType = "oral-reading",
 }: ClassificationPopupProps) {
   const config =
-    LEVEL_CONFIG[classificationLevel.toUpperCase()] ?? LEVEL_CONFIG.INSTRUCTIONAL;
+    LEVEL_CONFIG[classificationLevel.toUpperCase()] ??
+    LEVEL_CONFIG.INSTRUCTIONAL;
 
   useEffect(() => {
     const timer = setTimeout(onClose, 8000);
@@ -52,9 +64,16 @@ export function ClassificationPopup({
 
   const firstName = studentName.trim().split(" ")[0] || "Reader";
 
+  const assessmentLabel =
+    assessmentType === "comprehension"
+      ? "Reading Comprehension"
+      : assessmentType === "fluency"
+        ? "Reading Fluency"
+        : "Oral Reading";
+
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-300"
+      className="fixed inset-0 z-100 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-300"
       onClick={onClose}
     >
       <div
@@ -65,6 +84,8 @@ export function ClassificationPopup({
           type="button"
           onClick={onClose}
           className="absolute right-4 top-4 rounded-full p-1 text-[#6B7280] transition-colors hover:bg-gray-100 hover:text-gray-800"
+          aria-label="Close popup"
+          title="Close popup"
         >
           <X className="h-5 w-5" />
         </button>
@@ -82,25 +103,42 @@ export function ClassificationPopup({
           />
         </div>
 
-        <div className={`mb-3 rounded-full border px-5 py-1.5 text-sm font-bold ${config.badge}`}>
+        <div
+          className={`mb-3 rounded-full border px-5 py-1.5 text-sm font-bold ${config.badge}`}
+        >
           {config.label} Reader
         </div>
 
         <h2 className="mb-1 text-center text-xl font-bold text-[#1E1B4B]">
           Way to go, {firstName}!
         </h2>
+
+        {score && (
+          <p className="mb-1 text-center text-lg font-bold text-[#31318A]">
+            Score: {score}
+          </p>
+        )}
+
+        <p className="mb-1 text-center text-xs font-medium text-[#6B7280]">
+          {assessmentLabel} Test
+        </p>
+
         <p className="mb-2 text-center text-2xl font-extrabold">
-          <span className={`bg-gradient-to-r ${config.gradient} bg-clip-text text-transparent`}>
+          <span
+            className={`bg-linear-to-r ${config.gradient} bg-clip-text text-transparent`}
+          >
             You&apos;re an {config.label} Reader!
           </span>
         </p>
 
-        <p className="mb-6 text-center text-sm text-[#6B7280]">{config.message}</p>
+        <p className="mb-6 text-center text-sm text-[#6B7280]">
+          {config.message}
+        </p>
 
         <button
           type="button"
           onClick={onClose}
-          className={`w-full rounded-xl bg-gradient-to-r ${config.gradient} px-6 py-3 text-sm font-semibold text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98]`}
+          className={`w-full rounded-xl bg-linear-to-r ${config.gradient} px-6 py-3 text-sm font-semibold text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98]`}
         >
           Continue
         </button>

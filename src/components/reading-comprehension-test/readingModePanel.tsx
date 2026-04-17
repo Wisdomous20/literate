@@ -57,7 +57,8 @@ export function ReadingModePanel({
   const accumulatedMsRef = useRef(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const totalDurationMs = wordCount > 0 ? (wordCount / (150 * speechRate)) * 60 * 1000 : 0;
+  const totalDurationMs =
+    wordCount > 0 ? (wordCount / (150 * speechRate)) * 60 * 1000 : 0;
 
   function formatTime(ms: number): string {
     const totalSec = Math.max(0, Math.round(ms / 1000));
@@ -127,15 +128,36 @@ export function ReadingModePanel({
     availableVoices.find((v) => v.name === selectedVoiceName)?.label ??
     "Select a voice";
 
+  function getProgressWidthClass(progress: number) {
+    if (progress >= 100) return "w-full";
+    if (progress >= 96) return "w-[96%]";
+    if (progress >= 90) return "w-11/12";
+    if (progress >= 83) return "w-10/12";
+    if (progress >= 75) return "w-9/12";
+    if (progress >= 66) return "w-8/12";
+    if (progress >= 58) return "w-7/12";
+    if (progress >= 50) return "w-6/12";
+    if (progress >= 41) return "w-5/12";
+    if (progress >= 33) return "w-4/12";
+    if (progress >= 25) return "w-3/12";
+    if (progress >= 16) return "w-2/12";
+    if (progress > 0) return "w-1/12";
+    return "w-0";
+  }
+
   return (
     <div className="flex h-full flex-col rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] px-5 py-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)]">
       <span className="mb-3 block text-[10px] font-bold uppercase tracking-widest text-[#6666FF]">
         Read Aloud
       </span>
 
-      <div className="mt-4 flex flex-col gap-3" style={{ flex: hasPassage ? "0 0 auto" : 1, marginBottom: hasPassage ? "1rem" : 0 }}>
+      <div
+        className={`mt-4 flex flex-col gap-3
+    ${hasPassage ? "flex-none mb-4" : "flex-1 mb-0"}
+  `}
+      >
+        {" "}
         <span className="text-xs font-semibold text-[#00306E]">Voice</span>
-
         <div ref={dropdownRef} className="relative">
           <button
             type="button"
@@ -196,134 +218,135 @@ export function ReadingModePanel({
         <div className="flex flex-1 flex-col justify-between pt-1 pb-2">
           <div className="flex flex-col items-center gap-3">
             <div className="flex w-full items-center justify-between">
-              <span className="text-xs font-semibold text-[#00306E]">Voice Controls</span>
+              <span className="text-xs font-semibold text-[#00306E]">
+                Voice Controls
+              </span>
               {totalDurationMs > 0 && (
                 <span className="flex items-center gap-1 rounded-full bg-[rgba(102,102,255,0.08)] px-2 py-0.5 text-[10px] font-medium text-[#6666FF]">
                   <Clock className="h-3 w-3" />
                   {isSpeaking || isPausedTTS
-                    ? formatTime(totalDurationMs * (1 - progress / 100)) + " left"
+                    ? formatTime(totalDurationMs * (1 - progress / 100)) +
+                      " left"
                     : "~" + formatTime(totalDurationMs)}
                 </span>
               )}
             </div>
             <div className="mt-6 flex items-center justify-center gap-3">
-            {!isSpeaking && !isPausedTTS && (
-              <button
-                type="button"
-                onClick={onPlayTTS}
-                aria-label="Start reading"
-                title="Start reading"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_0_12px_rgba(102,102,255,0.4)] transition-all hover:bg-[#5555EE]"
-              >
-                <Play className="h-4.5 w-4.5" />
-              </button>
+              {!isSpeaking && !isPausedTTS && (
+                <button
+                  type="button"
+                  onClick={onPlayTTS}
+                  aria-label="Start reading"
+                  title="Start reading"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_0_12px_rgba(102,102,255,0.4)] transition-all hover:bg-[#5555EE]"
+                >
+                  <Play className="h-4.5 w-4.5" />
+                </button>
+              )}
+
+              {isSpeaking && !isPausedTTS && (
+                <button
+                  type="button"
+                  onClick={onPauseTTS}
+                  aria-label="Pause reading"
+                  title="Pause reading"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FFB020] text-white shadow-[0_0_12px_rgba(255,176,32,0.4)] transition-all hover:bg-[#E5A01C]"
+                >
+                  <Pause className="h-4.5 w-4.5" />
+                </button>
+              )}
+
+              {isPausedTTS && (
+                <button
+                  type="button"
+                  onClick={onResumeTTS}
+                  aria-label="Resume reading"
+                  title="Resume reading"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-[#16A34A] text-white shadow-[0_0_12px_rgba(22,163,74,0.4)] transition-all hover:bg-[#15803D]"
+                >
+                  <Play className="h-4.5 w-4.5" />
+                </button>
+              )}
+
+              {(isSpeaking || isPausedTTS) && (
+                <button
+                  type="button"
+                  onClick={onStopTTS}
+                  aria-label="Stop reading"
+                  title="Stop reading"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-[#DC2626] text-white shadow-[0_0_12px_rgba(220,38,38,0.4)] transition-all hover:bg-[#B91C1C]"
+                >
+                  <Square className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            {(isSpeaking || isPausedTTS) && (
+              <div className="w-full">
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-[rgba(102,102,255,0.15)]">
+                  <div
+                    className={`h-full rounded-full bg-[#6666FF] transition-all duration-300 ${getProgressWidthClass(progress)}`}
+                  />
+                </div>
+              </div>
             )}
 
             {isSpeaking && !isPausedTTS && (
-              <button
-                type="button"
-                onClick={onPauseTTS}
-                aria-label="Pause reading"
-                title="Pause reading"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FFB020] text-white shadow-[0_0_12px_rgba(255,176,32,0.4)] transition-all hover:bg-[#E5A01C]"
-              >
-                <Pause className="h-4.5 w-4.5" />
-              </button>
-            )}
-
-            {isPausedTTS && (
-              <button
-                type="button"
-                onClick={onResumeTTS}
-                aria-label="Resume reading"
-                title="Resume reading"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-[#16A34A] text-white shadow-[0_0_12px_rgba(22,163,74,0.4)] transition-all hover:bg-[#15803D]"
-              >
-                <Play className="h-4.5 w-4.5" />
-              </button>
-            )}
-
-            {(isSpeaking || isPausedTTS) && (
-              <button
-                type="button"
-                onClick={onStopTTS}
-                aria-label="Stop reading"
-                title="Stop reading"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-[#DC2626] text-white shadow-[0_0_12px_rgba(220,38,38,0.4)] transition-all hover:bg-[#B91C1C]"
-              >
-                <Square className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-
-          {(isSpeaking || isPausedTTS) && (
-            <div className="w-full">
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-[rgba(102,102,255,0.15)]">
-                <div
-                  className="h-full rounded-full bg-[#6666FF] transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                />
+              <div className="flex items-center justify-center gap-2">
+                <Volume2 className="h-3.5 w-3.5 animate-pulse text-[#6666FF]" />
+                <span className="text-[10px] font-medium text-[#6666FF]">
+                  Reading passage...
+                </span>
               </div>
-            </div>
-          )}
-
-          {isSpeaking && !isPausedTTS && (
-            <div className="flex items-center justify-center gap-2">
-              <Volume2 className="h-3.5 w-3.5 animate-pulse text-[#6666FF]" />
-              <span className="text-[10px] font-medium text-[#6666FF]">
-                Reading passage...
-              </span>
-            </div>
-          )}
-          {isPausedTTS && (
-            <div className="flex items-center justify-center gap-2">
-              <Pause className="h-3.5 w-3.5 text-[#FFB020]" />
-              <span className="text-[10px] font-medium text-[#FFB020]">
-                Paused
-              </span>
-            </div>
-          )}
+            )}
+            {isPausedTTS && (
+              <div className="flex items-center justify-center gap-2">
+                <Pause className="h-3.5 w-3.5 text-[#FFB020]" />
+                <span className="text-[10px] font-medium text-[#FFB020]">
+                  Paused
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-between rounded-xl bg-[rgba(102,102,255,0.06)] px-4 py-3">
             <span className="text-xs font-semibold text-[#31318A]">Speed</span>
             <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() =>
-                onSpeechRateChange(
-                  Math.max(0.5, Math.round((speechRate - 0.25) * 100) / 100),
-                )
-              }
-              disabled={isSpeaking}
-              aria-label="Decrease speech rate"
-              title="Decrease speech rate"
-              className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(102,102,255,0.15)] transition-colors hover:opacity-70 disabled:opacity-40"
-            >
-              <Minus className="h-3 w-3 text-[#6666FF]" />
-            </button>
-            <span className="w-10 text-center text-sm font-bold tabular-nums text-[#6666FF]">
-              {speechRate}x
-            </span>
-            <button
-              type="button"
-              onClick={() =>
-                onSpeechRateChange(
-                  Math.min(2, Math.round((speechRate + 0.25) * 100) / 100),
-                )
-              }
-              disabled={isSpeaking}
-              aria-label="Increase speech rate"
-              title="Increase speech rate"
-              className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(102,102,255,0.15)] transition-colors hover:opacity-70 disabled:opacity-40"
-            >
-              <Plus className="h-3.5 w-3.5 text-[#6666FF]" />
-            </button>
+              <button
+                type="button"
+                onClick={() =>
+                  onSpeechRateChange(
+                    Math.max(0.5, Math.round((speechRate - 0.25) * 100) / 100),
+                  )
+                }
+                disabled={isSpeaking}
+                aria-label="Decrease speech rate"
+                title="Decrease speech rate"
+                className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(102,102,255,0.15)] transition-colors hover:opacity-70 disabled:opacity-40"
+              >
+                <Minus className="h-3 w-3 text-[#6666FF]" />
+              </button>
+              <span className="w-10 text-center text-sm font-bold tabular-nums text-[#6666FF]">
+                {speechRate}x
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  onSpeechRateChange(
+                    Math.min(2, Math.round((speechRate + 0.25) * 100) / 100),
+                  )
+                }
+                disabled={isSpeaking}
+                aria-label="Increase speech rate"
+                title="Increase speech rate"
+                className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(102,102,255,0.15)] transition-colors hover:opacity-70 disabled:opacity-40"
+              >
+                <Plus className="h-3.5 w-3.5 text-[#6666FF]" />
+              </button>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }

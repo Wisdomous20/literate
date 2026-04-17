@@ -1,23 +1,28 @@
+// src/components/reports/reading-comprehension-test/reportHeader.tsx
 "use client";
 
-import { LayoutDashboard, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState } from "react";
+import { LayoutDashboard, ChevronLeft, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { DeleteConfirmModal } from "@/components/ui/deleteConfirmModal";
 import { NavButton } from "@/components/ui/navButton";
 
-interface ComprehensionReportHeaderProps {
+interface ReadingComprehensionReportHeaderProps {
   onExportPdf?: () => void;
 }
 
-export default function ComprehensionReportHeader({ onExportPdf }: ComprehensionReportHeaderProps) {
+export default function ReadingComprehensionReportHeader({ onExportPdf }: ReadingComprehensionReportHeaderProps) {
   const router = useRouter();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-8 py-5 border-b border-[#8D8DEC] shadow-[0_4px_4px_#54A4FF]">
+      <div className="flex items-center justify-between px-8 py-5 border-b-[3px] border-[#5D5DFB] bg-white">
         <div className="flex items-center gap-3">
-          <LayoutDashboard size={24} className="text-[#00306E]" />
-          <h1 className="text-xl lg:text-2xl font-semibold text-[#00306E]">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#5D5DFB]/10">
+            <LayoutDashboard size={20} className="text-[#5D5DFB]" />
+          </div>
+          <h1 className="text-xl lg:text-2xl font-semibold text-[#31318A]">
             Reading Comprehension Test Report
           </h1>
         </div>
@@ -26,27 +31,42 @@ export default function ComprehensionReportHeader({ onExportPdf }: Comprehension
             type="button"
             onClick={() => onExportPdf?.()}
             disabled={!onExportPdf}
-            className="px-5 py-2 bg-[#297CEC] text-white text-xs font-medium rounded-lg border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#297CEC]/90 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+            className="px-5 py-2 bg-[#2E2E68] text-white text-xs font-medium rounded-lg border border-[#5D5DFB] shadow-[0_1px_20px_rgba(65,155,180,0.47)] hover:bg-[#2E2E68]/90 transition-colors disabled:opacity-50 disabled:pointer-events-none"
           >
             Export to PDF
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowDeleteModal(true)}
+            className="px-5 py-2 bg-[#DE3B40] text-white text-xs font-medium rounded-lg border border-[#DE3B40] hover:bg-[#DE3B40]/90 transition-colors"
+          >
+            Delete
           </button>
         </div>
       </div>
 
-      {/* Previous + Reading Level */}
+      <DeleteConfirmModal
+        open={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={() => { /* TODO: wire up actual delete handler */ }}
+      />
+
       <div className="flex items-center justify-between px-8 pt-2">
         <NavButton onClick={() => router.back()}>
           <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
           <span>Previous</span>
         </NavButton>
-
         <NavButton
-          onClick={() =>
-            router.push("/dashboard/oral-reading-test/reading-level-report")
-          }
+          variant="outlined"
+          onClick={() => {
+            sessionStorage.removeItem("reading-comprehension-session");
+            sessionStorage.removeItem("reading-comprehension-comp-state");
+            sessionStorage.removeItem("reading-comprehension-assessmentId");
+            router.push("/dashboard/reading-comprehension-test");
+          }}
         >
-          <span>Reading Level</span>
-          <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
+          <RotateCcw className="h-4 w-4 md:h-5 md:w-5" />
+          <span>Start New</span>
         </NavButton>
       </div>
     </div>

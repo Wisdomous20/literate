@@ -1,3 +1,4 @@
+// src/components/reading-comprehension-test/comprehensionSubmitArea.tsx
 interface ComprehensionSubmitAreaProps {
   isSubmitting: boolean;
   isSubmitted: boolean;
@@ -22,14 +23,14 @@ export function ComprehensionSubmitArea({
         onTryAgain ? (
           <button
             onClick={onTryAgain}
-            className="w-56.25 h-15.75 bg-[#2E2E68] border border-[#7A7AFB] rounded-lg shadow-[0px_1px_20px_rgba(65,155,180,0.47)] text-white font-semibold text-xl hover:bg-[#2E2E68]/90 transition-colors"
+            className="w-56.25 h-15.75 bg-[#2E2E68] border border-[#5D5DFB] rounded-lg shadow-[0px_1px_20px_rgba(65,155,180,0.47)] text-white font-semibold text-xl hover:bg-[#2E2E68]/90 transition-colors"
           >
             Try Again
           </button>
         ) : (
           <button
             disabled
-            className="w-56.25 h-15.75 bg-[#2E2E68] border border-[#7A7AFB] rounded-lg shadow-[0px_1px_20px_rgba(65,155,180,0.47)] text-white font-semibold text-xl transition-colors disabled:opacity-60"
+            className="w-56.25 h-15.75 bg-[#2E2E68] border border-[#5D5DFB] rounded-lg shadow-[0px_1px_20px_rgba(65,155,180,0.47)] text-white font-semibold text-xl transition-colors disabled:opacity-60"
           >
             Submitted
           </button>
@@ -38,7 +39,7 @@ export function ComprehensionSubmitArea({
         <button
           onClick={onSubmit}
           disabled={isSubmitting}
-          className="w-56.25 h-15.75 bg-[#2E2E68] border border-[#7A7AFB] rounded-lg shadow-[0px_1px_20px_rgba(65,155,180,0.47)] text-white font-semibold text-xl hover:bg-[#2E2E68]/90 transition-colors disabled:opacity-60"
+          className="w-56.25 h-15.75 bg-[#2E2E68] border border-[#5D5DFB] rounded-lg shadow-[0px_1px_20px_rgba(65,155,180,0.47)] text-white font-semibold text-xl hover:bg-[#2E2E68]/90 transition-colors disabled:opacity-60"
         >
           {isSubmitting ? "Submitting..." : "Submit"}
         </button>

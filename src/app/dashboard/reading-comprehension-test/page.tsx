@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, Clock, Loader2, RotateCcw } from "lucide-react";
 import { TestPageLayout } from "@/components/assessment/testPageLayout";
 import { StudentSetupSection } from "@/components/assessment/studentSetupSection";
-import { NavButton } from "@/components/ui/navButton";
+import { ClassificationPopup } from "@/components/oral-reading-test/classificationPopup";
 import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay";
 import { AddPassageModal } from "@/components/oral-reading-test/addPassageModal";
 import { ComprehensionBreakdown } from "@/components/oral-reading-test/comprehensionBreakdown";
@@ -161,6 +161,7 @@ export default function ReadingComprehensionTestPage() {
   const [highlightedTag, setHighlightedTag] = useState<
     "literal" | "inferential" | "critical" | null
   >(null);
+  const [showClassificationPopup, setShowClassificationPopup] = useState(false);
 
   // ── General UI state ──
   const [isHydrated, setIsHydrated] = useState(false);
@@ -442,12 +443,9 @@ export default function ReadingComprehensionTestPage() {
     [],
   );
 
-  const handleEssayChange = useCallback(
-    (questionId: string, value: string) => {
-      setAnswers((prev) => ({ ...prev, [questionId]: value }));
-    },
-    [],
-  );
+  const handleEssayChange = useCallback((questionId: string, value: string) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: value }));
+  }, []);
 
   const handleTagClick = (tag: "literal" | "inferential" | "critical") => {
     setHighlightedTag((prev) => (prev === tag ? null : tag));
@@ -589,6 +587,7 @@ export default function ReadingComprehensionTestPage() {
       }
 
       setIsSubmitted(true);
+      setShowClassificationPopup(true);
       setToast({ message: "Answers submitted successfully!", type: "success" });
     } catch (err) {
       console.error("Comprehension submit error:", err);
@@ -606,6 +605,17 @@ export default function ReadingComprehensionTestPage() {
       toast={toast}
       onCloseToast={() => setToast(null)}
       passageExpanded={passageExpanded}
+      overlay={
+        showClassificationPopup && comprehensionResult?.level ? (
+          <ClassificationPopup
+            classificationLevel={comprehensionResult.level}
+            studentName={studentName}
+            score={`${comprehensionResult.score}/${comprehensionResult.totalItems}`}
+            assessmentType="comprehension"
+            onClose={() => setShowClassificationPopup(false)}
+          />
+        ) : undefined
+      }
       sidebar={
         !passageExpanded ? (
           <ComprehensionBreakdown
@@ -629,22 +639,42 @@ export default function ReadingComprehensionTestPage() {
         />
       }
     >
-      {/* Nav row */}
+      {/* Nav row — matches oral reading / fluency card style */}
       {!passageExpanded && (
-        <div className="flex items-center justify-between">
-          <NavButton onClick={() => router.back()}>
-            <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
-            <span>Previous</span>
-          </NavButton>
+        <div className="flex items-center justify-between rounded-2xl border border-[#D5E7FE] bg-white px-4 py-3 shadow-[0px_2px_16px_rgba(108,164,239,0.18)]">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              aria-label="Go back"
+              title="Go back"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_2px_8px_rgba(102,102,255,0.4)] transition-colors hover:bg-[#5555EE]"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#6B7280]">
+                Details
+              </p>
+              <p className="text-sm font-semibold text-[#1E1B4B]">
+                Student Information
+              </p>
+            </div>
+          </div>
 
-          <NavButton
-            variant="outlined"
+          <button
+            type="button"
             onClick={handleStartNew}
             disabled={!hasPassage}
+            className={`flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-semibold transition-all ${
+              hasPassage
+                ? "border-[#6666FF] bg-[#6666FF] text-white shadow-[0_2px_12px_rgba(102,102,255,0.35)] hover:bg-[#5555EE]"
+                : "cursor-not-allowed border-[#C4C4FF] bg-white text-[#A5A5D6]"
+            }`}
           >
             <RotateCcw className="h-4 w-4" />
             <span>Start New</span>
-          </NavButton>
+          </button>
         </div>
       )}
 
