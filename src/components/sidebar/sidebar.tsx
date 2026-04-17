@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
-import { getSubscriptionAction } from "@/app/actions/subscription/getSubscription";
+import { hasActiveAccessAction } from "@/app/actions/subscription/hasActiveAccess";
 import {
   LayoutDashboard,
   FileText,
@@ -86,14 +86,10 @@ export function Sidebar() {
     let attempt = 0;
 
     const tick = async () => {
-      const res = await getSubscriptionAction();
+      const res = await hasActiveAccessAction();
       if (cancelled) return;
 
-      if (
-        res.success &&
-        "subscription" in res &&
-        res.subscription?.status === "ACTIVE"
-      ) {
+      if (res.success && res.hasAccess) {
         setHasActiveSubscription(true);
         return;
       }

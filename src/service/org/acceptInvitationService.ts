@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import { prisma } from "@/lib/prisma";
+import { stopSubscriptionRenewalService } from "@/service/subscription/stopSubscriptionRenewalService";
 
 interface AcceptInvitationInput {
   token: string;
@@ -153,6 +154,14 @@ export async function acceptInvitationService(
     } catch (err) {
       // Default class is a nice-to-have; sign-up should still succeed if it fails.
       console.error("Failed to create default class:", err);
+    }
+  } else {
+    // Existing user is now covered by the org's seat — stop their personal
+    // auto-renewal. Keep access until the paid period ends (cancelAtPeriodEnd).
+    try {
+      await stopSubscriptionRenewalService(userId);
+    } catch (err) {
+      console.error("Failed to stop personal renewal on org accept:", err);
     }
   }
 
