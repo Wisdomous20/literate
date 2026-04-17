@@ -34,7 +34,6 @@ import {
   exportFluencyReportPdf,
   buildFluencyReportData,
 } from "@/lib/exportFluencyReportPdf";
-import { uploadAudio } from "@/utils/uploadAudio";
 import { ShareableLinkSection } from "@/components/assessment/shareableLinkSection";
 
 function getCurrentSchoolYear(): string {

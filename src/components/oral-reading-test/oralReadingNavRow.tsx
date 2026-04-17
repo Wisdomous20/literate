@@ -1,7 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { NavButton } from "@/components/ui/navButton";
+import { ChevronLeft } from "lucide-react";
 
 interface OralReadingNavRowProps {
   onGoBack: () => void;
@@ -15,26 +14,48 @@ export function OralReadingNavRow({
   continueEnabled,
 }: OralReadingNavRowProps) {
   return (
-    <div className="flex items-center justify-between">
-      <NavButton onClick={onGoBack}>
-        <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
-        <span>Previous</span>
-      </NavButton>
+    <div className="flex items-center justify-between rounded-2xl border border-[#D5E7FE] bg-white px-4 py-3 shadow-[0px_2px_16px_rgba(108,164,239,0.18)]">
+      {/* Left: Back button + Details */}
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onGoBack}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_2px_8px_rgba(102,102,255,0.4)] transition-colors hover:bg-[#5555EE]"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#6B7280]">
+            Details
+          </p>
+          <p className="text-sm font-semibold text-[#1E1B4B]">
+            Student Information
+          </p>
+        </div>
+      </div>
 
-      <NavButton
+      {/* Right: Comprehension Test button */}
+      <button
+        type="button"
         onClick={onContinue}
-        aria-label="Continue to comprehension"
-        title="Continue to comprehension"
-        className={
-          continueEnabled
-            ? "animate-[pulseGlow_2s_ease-in-out_infinite]"
-            : "cursor-not-allowed bg-transparent text-[#00306E]/40 shadow-none hover:bg-transparent"
-        }
         disabled={!continueEnabled}
+        className={`flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-semibold transition-all ${
+          continueEnabled
+            ? "border-[#6666FF] bg-[#6666FF] text-white shadow-[0_2px_12px_rgba(102,102,255,0.35)] hover:bg-[#5555EE]"
+            : "cursor-not-allowed border-[#C4C4FF] bg-white text-[#A5A5D6]"
+        }`}
       >
-        <span>Continue to Comprehension</span>
-        <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
-      </NavButton>
+        <span>Comprehension Test</span>
+        <span
+          className={`flex h-4 w-4 items-center justify-center rounded-full border-2 ${
+            continueEnabled ? "border-white" : "border-[#C4C4FF]"
+          }`}
+        >
+          {continueEnabled && (
+            <span className="h-1.5 w-1.5 rounded-full bg-white" />
+          )}
+        </span>
+      </button>
     </div>
   );
 }
