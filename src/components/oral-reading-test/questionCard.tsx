@@ -61,11 +61,11 @@ export function QuestionCard({
 
   const tagClass = highlight
     ? ""
-    : "bg-[#EFFDFF] border-[#10AABF] shadow-[0px_1px_20px_rgba(65,155,180,0.47)]";
+    : "bg-white border-[#E0E0FF] shadow-sm";
 
   return (
     <div
-      className={`rounded-4xl border px-8 py-6 transition-all duration-300 ${tagClass}`}
+      className={`rounded-2xl border px-8 py-6 transition-all duration-300 ${tagClass}`}
       style={
         highlight
           ? {

@@ -54,10 +54,9 @@ export function QuestionCard({
     | undefined;
 
   const tagClass =
-    highlightedTag && tagKey === highlightedTag
-      ? TAG_HIGHLIGHT[tagKey]
-      : "bg-[#EFFDFF] border-[#10AABF] shadow-[0px_1px_20px_rgba(65,155,180,0.47)]";
-
+  highlightedTag && tagKey === highlightedTag
+    ? TAG_HIGHLIGHT[tagKey]
+    : "bg-white border-[#E0E0FF] shadow-sm";
   return (
     <div
       className={`rounded-4xl border px-8 py-6 transition-all duration-300 ${tagClass}`}

@@ -639,9 +639,9 @@ export default function ReadingComprehensionTestPage() {
         />
       }
     >
-      {/* Nav row — matches oral reading / fluency card style */}
       {!passageExpanded && (
-        <div className="flex items-center justify-between rounded-2xl border border-[#D5E7FE] bg-white px-4 py-3 shadow-[0px_2px_16px_rgba(108,164,239,0.18)]">
+        <div className="flex items-center justify-between rounded-2xl border border-[#D5E7FE] bg-[#F3F0FF] px-4 py-3 shadow-[0px_2px_16px_rgba(108,164,239,0.18)]">
+          {" "}
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -661,7 +661,6 @@ export default function ReadingComprehensionTestPage() {
               </p>
             </div>
           </div>
-
           <button
             type="button"
             onClick={handleStartNew}

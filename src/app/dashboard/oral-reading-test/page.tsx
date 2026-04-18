@@ -120,12 +120,8 @@ export default function OralReadingTestPage() {
   const [passageContent, setPassageContent] = useState("");
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [recordedSeconds, setRecordedSeconds] = useState(0);
-  const [recordedAudioURL, setRecordedAudioURL] = useState<string | null>(
-    null,
-  );
-  const [recordedAudioBlob, setRecordedAudioBlob] = useState<Blob | null>(
-    null,
-  );
+  const [recordedAudioURL, setRecordedAudioURL] = useState<string | null>(null);
+  const [recordedAudioBlob, setRecordedAudioBlob] = useState<Blob | null>(null);
   const [hasRecording, setHasRecording] = useState(false);
   const [countdownEnabled, setCountdownEnabled] = useState(true);
   const [countdownSeconds, setCountdownSeconds] = useState(3);
@@ -789,9 +785,8 @@ export default function OralReadingTestPage() {
       return;
     }
 
-    const existingAssessmentId = sessionStorage.getItem(
-      "oral-reading-assessmentId",
-    );
+    const existingAssessmentId =
+      assessmentId || sessionStorage.getItem("oral-reading-assessmentId");
 
     if (!existingAssessmentId) {
       console.error(
@@ -900,7 +895,7 @@ export default function OralReadingTestPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [recordedAudioBlob, selectedPassage, selectedStudentId]);
+  }, [recordedAudioBlob, selectedPassage, selectedStudentId, assessmentId]);
 
   // ── Recovery: retry transcription if session was restored with recording but no results ──
   useEffect(() => {

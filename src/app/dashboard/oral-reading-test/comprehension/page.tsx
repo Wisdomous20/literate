@@ -2,11 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Clock, Loader2, RotateCcw } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import { ComprehensionBreakdown } from "@/components/oral-reading-test/comprehensionBreakdown";
-import { ComprehensionInfoBar } from "@/components/oral-reading-test/comprehensionInfoBar";
-import { ComprehensionNavRow } from "@/components/oral-reading-test/comprehensionNavRow";
 import { ComprehensionSubmitArea } from "@/components/oral-reading-test/comprehensionSubmitArea";
 import { QuestionCard } from "@/components/oral-reading-test/questionCard";
 import type { QuestionData } from "@/components/oral-reading-test/questionCard";
@@ -424,7 +422,7 @@ export default function OralReadingComprehensionPage() {
       if (formattedAnswers.length === 0) {
         setSubmitError("Please answer at least one question before submitting.");
         setIsSubmitting(false);
-        return;  // ← is this actually returning?
+        return;
       }
 
       const response = await fetch("/api/oral-reading/comprehension", {
@@ -485,69 +483,69 @@ export default function OralReadingComprehensionPage() {
 
       // Write comprehensionResult and oralReadingLevel back into the main session
       // so the reading-level-report page can display them
-try {
-  const mainRaw = sessionStorage.getItem("oral-reading-session");
-  if (mainRaw) {
-    const mainSession = JSON.parse(mainRaw);
-    mainSession.comprehensionResult = {
-      score: comprehensionData.score,
-      totalItems: comprehensionData.totalItems,
-      percentage: comprehensionData.totalItems
-        ? Math.round(
-            (comprehensionData.score / comprehensionData.totalItems) * 100,
-          )
-        : 0,
-      level: comprehensionData.level,
-    };
- 
-    // Try to get oral reading level from the response
-    const immediateLevel = result.oralReadingResult?.oralReadingLevel ?? null;
-    mainSession.oralReadingLevel = immediateLevel;
-    sessionStorage.setItem("oral-reading-session", JSON.stringify(mainSession));
- 
-    // If oral reading level wasn't computed yet (transcription still processing),
-    // poll until it's ready
-    if (!immediateLevel && assessmentId) {
-      console.log("Oral reading level not ready yet, polling...");
- 
-      const pollInterval = setInterval(async () => {
-        try {
-          // Use your existing server action
-          const { getAssessmentByIdAction } = await import(
-            "@/app/actions/assessment/getAssessmentById"
-          );
-          const assessment = await getAssessmentByIdAction(assessmentId) as {
-            oralReadingResult?: { classificationLevel?: string };
+      try {
+        const mainRaw = sessionStorage.getItem("oral-reading-session");
+        if (mainRaw) {
+          const mainSession = JSON.parse(mainRaw);
+          mainSession.comprehensionResult = {
+            score: comprehensionData.score,
+            totalItems: comprehensionData.totalItems,
+            percentage: comprehensionData.totalItems
+              ? Math.round(
+                  (comprehensionData.score / comprehensionData.totalItems) * 100,
+                )
+              : 0,
+            level: comprehensionData.level,
           };
- 
-          if (assessment?.oralReadingResult?.classificationLevel) {
-            clearInterval(pollInterval);
-            const level = assessment.oralReadingResult.classificationLevel;
-            console.log("Oral reading level ready:", level);
- 
-            // Update sessionStorage
-            const raw = sessionStorage.getItem("oral-reading-session");
-            if (raw) {
-              const session = JSON.parse(raw);
-              session.oralReadingLevel = level;
-              sessionStorage.setItem("oral-reading-session", JSON.stringify(session));
-            }
+
+          // Try to get oral reading level from the response
+          const immediateLevel = result.oralReadingResult?.oralReadingLevel ?? null;
+          mainSession.oralReadingLevel = immediateLevel;
+          sessionStorage.setItem("oral-reading-session", JSON.stringify(mainSession));
+
+          // If oral reading level wasn't computed yet (transcription still processing),
+          // poll until it's ready
+          if (!immediateLevel && assessmentId) {
+            console.log("Oral reading level not ready yet, polling...");
+
+            const pollInterval = setInterval(async () => {
+              try {
+                // Use your existing server action
+                const { getAssessmentByIdAction } = await import(
+                  "@/app/actions/assessment/getAssessmentById"
+                );
+                const assessment = await getAssessmentByIdAction(assessmentId) as {
+                  oralReadingResult?: { classificationLevel?: string };
+                };
+
+                if (assessment?.oralReadingResult?.classificationLevel) {
+                  clearInterval(pollInterval);
+                  const level = assessment.oralReadingResult.classificationLevel;
+                  console.log("Oral reading level ready:", level);
+
+                  // Update sessionStorage
+                  const raw = sessionStorage.getItem("oral-reading-session");
+                  if (raw) {
+                    const session = JSON.parse(raw);
+                    session.oralReadingLevel = level;
+                    sessionStorage.setItem("oral-reading-session", JSON.stringify(session));
+                  }
+                }
+              } catch (err) {
+                console.error("Polling oral reading level error:", err);
+              }
+            }, 5000); // Check every 5 seconds
+
+            // Stop polling after 2 minutes
+            setTimeout(() => {
+              clearInterval(pollInterval);
+              console.log("Stopped polling for oral reading level");
+            }, 120000);
           }
-        } catch (err) {
-          console.error("Polling oral reading level error:", err);
         }
-      }, 5000); // Check every 5 seconds
- 
-      // Stop polling after 2 minutes
-      setTimeout(() => {
-        clearInterval(pollInterval);
-        console.log("Stopped polling for oral reading level");
-      }, 120000);
-    }
-  }
-} catch (err) {
-  console.error("Failed to update session storage:", err);
-}
+      } catch (err) {
+        console.error("Failed to update session storage:", err);
+      }
 
       setIsSubmitted(true);
     } catch (err) {
@@ -617,34 +615,82 @@ try {
       {/* Header */}
       <DashboardHeader title="Oral Reading Test" />
 
-      {/* Two-column layout */}
-      <div className="flex flex-1 min-h-0 flex-col gap-4 px-4 py-4 md:px-6 lg:px-8">
-        {/* Navigation Buttons — above both columns */}
-        <ComprehensionNavRow
-          onGoBack={handleGoBack}
-          onContinue={() =>
-            router.push("/dashboard/oral-reading-test/reading-level-report")
-          }
-          continueEnabled={isSubmitted}
-        />
+      {/* Main content area */}
+      <main className="flex min-h-0 flex-1 px-4 py-4 md:px-6 lg:px-8">
+        <div className="flex min-h-0 flex-1 gap-4">
+          {/* Left column — white container matching reading-comprehension style */}
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-[#6868f162] bg-white shadow-[0_8px_32px_rgba(168,85,247,0.18)]">
+            {/* Top bar: Back button · Questions info · Timer · Reading Level */}
+            <div className="flex items-center justify-between border-b border-[#E8E8FF] px-5 py-3 shrink-0">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleGoBack}
+                  aria-label="Go back"
+                  title="Go back"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_2px_8px_rgba(102,102,255,0.4)] transition-colors hover:bg-[#5555EE]"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <div>
+                  <h2 className="text-sm font-bold text-[#00306E] md:text-base">
+                    Questions 1-{totalQuestions}
+                  </h2>
+                  <p className="text-xs font-medium text-[#00306E]/60">
+                    Choose the correct answer
+                  </p>
+                </div>
+              </div>
 
-        {/* Two columns: left (info bar + scrollable questions) | right (breakdown aligned with timer top) */}
-        <div className="flex flex-1 min-h-0 gap-4">
-          {/* Left column */}
-          <div className="flex flex-1 min-h-0 flex-col gap-4">
-            <ComprehensionInfoBar
-              totalQuestions={totalQuestions}
-              formattedTime={formattedTime}
-              isPaused={isPaused}
-              onTogglePause={togglePause}
-            />
+              <div className="flex items-center gap-3">
+                {/* Timer */}
+                <button
+                  onClick={togglePause}
+                  className={`flex items-center gap-2 rounded-full border px-4 py-2 transition-all cursor-pointer select-none shrink-0 ${
+                    isPaused
+                      ? "border-[#E53E3E] bg-red-50 shadow-[0_0_12px_rgba(229,62,62,0.2)]"
+                      : "border-[#D0D0FF] bg-[#F5F5FF] shadow-sm"
+                  }`}
+                  title={isPaused ? "Click to resume timer" : "Click to pause timer"}
+                >
+                  <Clock
+                    className={`w-5 h-5 ${isPaused ? "text-[#E53E3E]" : "text-[#6666FF]"}`}
+                  />
+                  <span
+                    className={`font-bold text-xl tabular-nums ${isPaused ? "text-[#E53E3E]" : "text-[#00306E]"}`}
+                  >
+                    {formattedTime}
+                  </span>
+                  {isPaused && (
+                    <span className="text-[#E53E3E] text-[10px] font-semibold">PAUSED</span>
+                  )}
+                </button>
 
-            {/* Scrollable questions */}
+                {/* Reading Level button */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push("/dashboard/oral-reading-test/reading-level-report")
+                  }
+                  disabled={!isSubmitted}
+                  className={`flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-semibold transition-all ${
+                    isSubmitted
+                      ? "border-[#6666FF] bg-[#6666FF] text-white shadow-[0_2px_12px_rgba(102,102,255,0.35)] hover:bg-[#5555EE]"
+                      : "cursor-not-allowed border-[#C4C4FF] bg-white text-[#A5A5D6]"
+                  }`}
+                >
+                  <span>Reading Level</span>
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Scrollable questions area */}
             <div
               ref={contentRef}
-              className="flex-1 overflow-y-auto scroll-smooth pr-2"
+              className="flex-1 overflow-y-auto scroll-smooth px-5 py-4"
             >
-              <div className="space-y-6">
+              <div className="space-y-5">
                 {questions.map((question) => (
                   <QuestionCard
                     key={question.id}
@@ -668,8 +714,8 @@ try {
             </div>
           </div>
 
-          {/* Right column: Comprehension Breakdown — top aligned with timer */}
-          <div className="w-70 shrink-0 md:w-75 lg:w-[320px]">
+          {/* Right column: Comprehension Breakdown */}
+          <div className="w-60 shrink-0 md:w-67.5 lg:w-75 xl:w-[320px]">
             <ComprehensionBreakdown
               score={comprehensionResult?.score}
               totalItems={comprehensionResult?.totalItems}
@@ -717,7 +763,7 @@ try {
             />
           </div>
         </div>
-      </div>
+      </main>
 
       {/* Scroll Down Button */}
       {showScrollButton && (
