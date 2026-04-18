@@ -255,7 +255,7 @@ export function ReadingTimer({
           <button
             type="button"
             onClick={onTryAgain}
-            className="rounded-lg border border-[#0C1A6D] bg-[#2E2E68] px-6 py-2.5 text-sm font-semibold text-white shadow-[0px_1px_20px_rgba(65,155,180,0.47)] transition-colors hover:opacity-90 md:px-8 lg:px-10"
+            className="rounded-lg border border-[#7A7AFB] bg-[#2E2E68] px-6 py-2.5 text-sm font-semibold text-white shadow-[0px_1px_20px_rgba(65,155,180,0.47)] transition-colors hover:opacity-90 md:px-8 lg:px-10"
           >
             Try Again
           </button>

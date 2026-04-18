@@ -62,7 +62,7 @@ export function QuestionCard({
       className={`rounded-4xl border px-8 py-6 transition-all duration-300 ${tagClass}`}
     >
       <div className="mb-2 flex items-start gap-3">
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-[#00306E] bg-[#0C1A6D]">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-[#2d50ec] bg-[#3939f4]">
           <span className="text-xs font-semibold text-white">
             {question.questionNumber}
           </span>

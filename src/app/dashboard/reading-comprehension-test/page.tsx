@@ -772,35 +772,35 @@ export default function ReadingComprehensionTestPage() {
 
       {/* Continue to Comprehension button */}
       {!passageExpanded && !showQuestions && (
-        <div className="flex justify-center">
-          <button
-            type="button"
-            onClick={handleContinueToComprehension}
-            disabled={
-              !hasPassage ||
-              !studentName.trim() ||
-              !gradeLevel ||
-              !selectedClassName
-            }
-            className={`rounded-lg px-10 py-2.5 text-sm font-semibold text-white transition-all duration-200 md:px-12 md:py-3 md:text-[15px] ${
-              !hasPassage ||
-              !studentName.trim() ||
-              !gradeLevel ||
-              !selectedClassName
-                ? "cursor-not-allowed bg-[#2E2E68]/30 opacity-60 shadow-none"
-                : "bg-[#2E2E68] shadow-[0px_1px_20px_rgba(108,164,239,0.37)] hover:brightness-110"
-            }`}
-            title={
-              !studentName.trim() || !gradeLevel || !selectedClassName
-                ? "Enter student information first"
-                : !hasPassage
-                  ? "Add a passage first"
-                  : undefined
-            }
-          >
-            Continue to Comprehension
-          </button>
-        </div>
+      <div className="flex justify-center">
+  <button
+    type="button"
+    onClick={handleContinueToComprehension}
+    disabled={
+      !hasPassage ||
+      !studentName.trim() ||
+      !gradeLevel ||
+      !selectedClassName
+    }
+    className={`rounded-full px-10 py-2.5 text-sm font-semibold text-white transition-all duration-200 md:px-12 md:py-3 md:text-[15px] ${
+      !hasPassage ||
+      !studentName.trim() ||
+      !gradeLevel ||
+      !selectedClassName
+        ? "cursor-not-allowed bg-[#6666FF]/30 opacity-60 shadow-none"
+        : "bg-[#6666FF] shadow-[0_2px_8px_rgba(102,102,255,0.4)] hover:bg-[#5555EE]"
+    }`}
+    title={
+      !studentName.trim() || !gradeLevel || !selectedClassName
+        ? "Enter student information first"
+        : !hasPassage
+          ? "Add a passage first"
+          : undefined
+    }
+  >
+    Continue to Comprehension
+  </button>
+</div>
       )}
 
       {/* ── Comprehension Questions Section ── */}

@@ -78,7 +78,7 @@ export function QuestionCard({
     >
       {/* Question Header */}
       <div className="mb-2 flex items-start gap-3">
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-[#00306E] bg-[#0C1A6D]">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-[#2d50ec] bg-[#3939f4]">
           <span className="text-xs font-semibold text-white">
             {question.questionNumber}
           </span>
@@ -102,14 +102,14 @@ export function QuestionCard({
                 disabled={isSubmitted}
                 className={`flex items-center gap-3 w-full text-left py-1 px-2 rounded-lg transition-all duration-200 ${
                   isSelected
-                    ? "bg-[#162DB0]/10 shadow-[0px_0px_10px_rgba(255,176,32,0.3)]"
+                    ? "bg-[#6666FF]/10 shadow-[0px_0px_10px_rgba(255,176,32,0.3)]"
                     : "hover:bg-[#162DB0]/5"
                 } ${isSubmitted ? "cursor-default" : ""}`}
               >
                 <div
                   className={`shrink-0 w-7 h-6.5 rounded-full flex items-center justify-center transition-all duration-200 ${
                     isSelected
-                      ? "bg-[#0C1A6D] border-2 border-[#00306E] shadow-[0px_0px_8px_rgba(255,176,32,0.5)]"
+                      ? "bg-[#6666FF] border-2 border-[#753eeb] shadow-[0px_0px_8px_rgba(255,176,32,0.5)]"
                       : "bg-[rgba(185,188,207,0.36)]"
                   }`}
                 >
