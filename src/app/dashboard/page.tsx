@@ -93,11 +93,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Word of the Day */}
-            <WordOfTheDay
-              word="LiteRate"
-              definition="playfully quaint or fanciful, especially in an appealing and amusing way."
-              partOfSpeech="Adjective"
-            />
+            <WordOfTheDay />
           </div>
         </div>
       </main>
