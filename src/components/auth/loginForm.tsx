@@ -12,7 +12,7 @@ const EyeIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     {...props}
     fill="none"
-    stroke="currentColor"
+    stroke="#E0E7FF"
     viewBox="0 0 24 24"
     xmlns="http://www.w3.org/2000/svg"
   >
@@ -27,23 +27,6 @@ const EyeIcon = (props: React.SVGProps<SVGSVGElement>) => (
       strokeLinejoin="round"
       strokeWidth={2}
       d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-    />
-  </svg>
-);
-
-const EyeOffIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg
-    {...props}
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.956 9.956 0 012.293-3.95m2.1-1.9A9.956 9.956 0 0112 5c4.477 0 8.268 2.943 9.542 7a9.956 9.956 0 01-4.043 5.197M15 12a3 3 0 11-6 0 3 3 0 016 0zm-6.364 6.364L19.07 4.93"
     />
   </svg>
 );
@@ -136,9 +119,15 @@ export function LoginForm() {
     }
   };
 
+  // Consistent, darker purple-blue for input text, placeholder, border, and background
+  const inputClass =
+    "h-12 rounded-full bg-[#27348B] border border-[#27348B] text-[#E0E7FF] placeholder:text-[#E0E7FF]/60 focus-visible:ring-[#E0E7FF]/30 focus-visible:border-[#E0E7FF] disabled:opacity-60";
+
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <h1 className="text-3xl font-bold text-white text-center">Login</h1>
+      <h1 className="text-3xl font-bold text-white text-center mb-2">
+        Login
+      </h1>
 
       {error && (
         <div className="p-3 rounded-lg bg-red-500/20 border border-red-300/50 text-white text-sm">
@@ -156,9 +145,10 @@ export function LoginForm() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="h-12 rounded-full bg-[#3B4FCC] border-[#3B4FCC] text-white placeholder:text-white/40 focus-visible:ring-white/30 focus-visible:border-[#5566EE] disabled:opacity-60"
+            className={inputClass}
             required
             disabled={isLoading}
+            autoComplete="username"
           />
         </div>
 
@@ -172,22 +162,19 @@ export function LoginForm() {
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="h-12 rounded-full bg-[#3B4FCC] border-[#3B4FCC] text-white placeholder:text-white/40 focus-visible:ring-white/30 focus-visible:border-[#5566EE] disabled:opacity-60 pr-11"
+              className={inputClass + " pr-11"}
               required
               disabled={isLoading}
+              autoComplete="current-password"
             />
             <button
               type="button"
               tabIndex={-1}
-              className="absolute inset-y-0 right-4 flex items-center text-white/70 hover:text-white focus:outline-none"
+              className="absolute inset-y-0 right-4 flex items-center text-[#E0E7FF]/70 hover:text-[#E0E7FF] focus:outline-none"
               onClick={() => setShowPassword((prev) => !prev)}
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
-              {showPassword ? (
-                <EyeOffIcon className="h-5 w-5" />
-              ) : (
-                <EyeIcon className="h-5 w-5" />
-              )}
+              <EyeIcon className="h-5 w-5" />
             </button>
           </div>
         </div>
@@ -244,19 +231,13 @@ export function LoginForm() {
         )}
       </Button>
 
-      <div className="text-center space-y-1">
+      <div className="text-center space-y-1 mt-8">
         <p className="text-sm text-white">Don&apos;t have an account?</p>
         <Link
           href="/signup"
           className="text-sm text-white font-semibold hover:underline"
         >
           Register now!
-        </Link>
-      </div>
-
-      <div className="text-center pt-2">
-        <Link href="/terms" className="text-xs text-white/80 hover:underline">
-          Terms and Services
         </Link>
       </div>
     </form>

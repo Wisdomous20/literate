@@ -125,70 +125,33 @@ export function Sidebar() {
         collapsed ? "w-20 min-w-20" : "w-65 min-w-65",
       )}
     >
-      <div className="absolute inset-0 opacity-25">
+      {/* More visible, soft, slanting wavy SVG background using only #6666FF variants */}
+      <div className="absolute inset-0 pointer-events-none z-0">
         <svg
-          viewBox="0 0 260 800"
+          viewBox="0 0 320 800"
           preserveAspectRatio="none"
           className="h-full w-full"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <defs>
-            <filter id="softBlur">
-              <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" />
-            </filter>
-          </defs>
           <path
-            d="M0,150 Q65,100 130,130 T260,150 L260,0 L0,0 Z"
-            fill="white"
-            opacity="0.8"
-            filter="url(#softBlur)"
+            d="M0,120 Q80,180 320,60 L320,800 L0,800 Z"
+            fill="#7878FF"
+            opacity="0.35"
           />
           <path
-            d="M0,250 Q65,200 130,230 T260,250 L260,80 Q65,130 0,100 Z"
-            fill="white"
-            opacity="0.6"
-            filter="url(#softBlur)"
-          />
-          <path
-            d="M0,350 Q65,300 130,330 T260,350 L260,180 Q65,230 0,200 Z"
-            fill="white"
-            opacity="0.5"
-            filter="url(#softBlur)"
-          />
-          <path
-            d="M0,450 Q65,400 130,430 T260,450 L260,280 Q65,330 0,300 Z"
-            fill="white"
-            opacity="0.4"
-            filter="url(#softBlur)"
-          />
-          <path
-            d="M0,550 Q65,500 130,530 T260,550 L260,380 Q65,430 0,400 Z"
-            fill="white"
-            opacity="0.3"
-            filter="url(#softBlur)"
-          />
-          <path
-            d="M0,650 Q65,600 130,630 T260,650 L260,480 Q65,530 0,500 Z"
-            fill="white"
+            d="M0,300 Q120,400 320,220 L320,800 L0,800 Z"
+            fill="#5555EE"
             opacity="0.25"
-            filter="url(#softBlur)"
           />
           <path
-            d="M0,750 Q65,700 130,730 T260,750 L260,580 Q65,630 0,600 Z"
-            fill="white"
-            opacity="0.2"
-            filter="url(#softBlur)"
-          />
-          <path
-            d="M0,800 Q65,750 130,780 T260,800 L260,680 Q65,730 0,700 Z"
-            fill="white"
-            opacity="0.15"
-            filter="url(#softBlur)"
+            d="M0,600 Q160,700 320,540 L320,800 L0,800 Z"
+            fill="#8888FF"
+            opacity="0.20"
           />
         </svg>
       </div>
 
-      <div className="relative z-0 flex h-full flex-col">
+      <div className="relative z-10 flex h-full flex-col">
         <div
           className={cn(
             "flex items-center gap-2 pb-4 pt-4 px-4",
@@ -259,14 +222,15 @@ export function Sidebar() {
                   href={item.href}
                   title={collapsed ? item.label : undefined}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-all duration-200",
+                    "flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-all duration-200 group",
                     collapsed ? "justify-center px-0" : "px-2",
                     isActive
-                      ? "bg-[rgba(93,93,251,0.6)] text-white"
-                      : "text-white/90 hover:text-white",
+                      ? "bg-[rgba(93,93,251,0.7)] text-white shadow-md"
+                      : "text-white/90 hover:text-white hover:bg-[rgba(93,93,251,0.25)] hover:shadow-2xl hover:scale-[1.06] hover:ring-2 hover:ring-white hover:ring-offset-2 hover:ring-offset-[#6666FF]",
                   )}
+                  style={{ transition: "box-shadow 0.2s, transform 0.2s" }}
                 >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#5D5DFB]">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#5D5DFB] group-hover:scale-110 transition-transform">
                     <item.icon className="h-4 w-4 text-white" />
                   </div>
                   {!collapsed && (
@@ -295,15 +259,20 @@ export function Sidebar() {
                   href={item.href}
                   title={collapsed ? item.label : undefined}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-all duration-200",
+                    "flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-all duration-200 group",
                     collapsed ? "justify-center px-0" : "px-2",
-                    isActive ? "bg-[rgba(93,93,251,0.6)] text-white" : "text-white/90 hover:text-white",
+                    isActive
+                      ? "bg-[rgba(93,93,251,0.7)] text-white shadow-md"
+                      : "text-white/90 hover:text-white hover:bg-[rgba(93,93,251,0.25)] hover:shadow-2xl hover:scale-[1.06] hover:ring-2 hover:ring-white hover:ring-offset-2 hover:ring-offset-[#6666FF]",
                   )}
+                  style={{ transition: "box-shadow 0.2s, transform 0.2s" }}
                 >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#5D5DFB]">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#5D5DFB] group-hover:scale-110 transition-transform">
                     <item.icon className="h-4 w-4 text-white" />
                   </div>
-                  {!collapsed && <span className="text-[13px]">{item.label}</span>}
+                  {!collapsed && (
+                    <span className="text-[13px]">{item.label}</span>
+                  )}
                 </Link>
               );
             })}
@@ -316,15 +285,20 @@ export function Sidebar() {
                     href={item.href}
                     title={collapsed ? item.label : undefined}
                     className={cn(
-                      "flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-all duration-200",
+                      "flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-all duration-200 group",
                       collapsed ? "justify-center px-0" : "px-2",
-                      isActive ? "bg-[rgba(93,93,251,0.6)] text-white" : "text-white/90 hover:text-white",
+                      isActive
+                        ? "bg-[rgba(93,93,251,0.7)] text-white shadow-md"
+                        : "text-white/90 hover:text-white hover:bg-[rgba(93,93,251,0.25)] hover:shadow-2xl hover:scale-[1.06] hover:ring-2 hover:ring-white hover:ring-offset-2 hover:ring-offset-[#6666FF]",
                     )}
+                    style={{ transition: "box-shadow 0.2s, transform 0.2s" }}
                   >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#5D5DFB]">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#5D5DFB] group-hover:scale-110 transition-transform">
                       <item.icon className="h-4 w-4 text-white" />
                     </div>
-                    {!collapsed && <span className="text-[13px]">{item.label}</span>}
+                    {!collapsed && (
+                      <span className="text-[13px]">{item.label}</span>
+                    )}
                   </Link>
                 );
               })}
@@ -343,7 +317,8 @@ export function Sidebar() {
               </p>
               <Link
                 href="/dashboard/subscription"
-                className="block w-full rounded-lg bg-[#6666FF] px-4 py-2 text-center text-xs font-semibold text-white transition-all hover:bg-[#5555ee]"
+                className="block w-full rounded-lg bg-[#6666FF] px-4 py-2 text-center text-xs font-semibold text-white transition-all hover:bg-[#5555ee] hover:scale-105"
+                style={{ transition: "background 0.2s, transform 0.2s" }}
               >
                 Get Started
               </Link>
@@ -359,11 +334,12 @@ export function Sidebar() {
             onClick={handleLogout}
             title={collapsed ? "Logout Account" : undefined}
             className={cn(
-              "flex items-center gap-3 rounded-lg px-2 py-2 text-sm font-medium text-white/90 transition-all duration-200 hover:text-white",
+              "flex items-center gap-3 rounded-lg px-2 py-2 text-sm font-medium text-white/90 transition-all duration-200 hover:text-white hover:bg-[rgba(93,93,251,0.25)] hover:shadow-2xl hover:scale-[1.06] hover:ring-2 hover:ring-white hover:ring-offset-2 hover:ring-offset-[#6666FF]",
               collapsed ? "w-auto justify-center" : "w-full",
             )}
+            style={{ transition: "box-shadow 0.2s, transform 0.2s" }}
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#5D5DFB]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#5D5DFB] group-hover:scale-110 transition-transform">
               <LogOut className="h-4 w-4 text-white" />
             </div>
             {!collapsed && <span className="text-[13px]">Logout Account</span>}

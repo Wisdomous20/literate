@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, ClipboardList, Loader2 } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
+  Loader2,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { ClassCard } from "./classCard";
@@ -68,7 +74,7 @@ export function ClassInventory({
   const classes = (rawClasses ?? []).map(
     (
       c: { id: string; name: string; studentCount: number },
-      index: number
+      index: number,
     ): {
       id: string;
       name: string;
@@ -79,7 +85,7 @@ export function ClassInventory({
       name: c.name,
       studentCount: c.studentCount,
       variant: getVariant(index),
-    })
+    }),
   );
 
   // Fixed 4 items per page (2 columns x 2 rows)
@@ -146,13 +152,13 @@ export function ClassInventory({
             {/* Year Dropdown */}
             <div className="relative">
               <button
-  type="button"
-  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-  className="flex items-center gap-2 rounded-full border border-[#5D5DFB]/30 bg-[#5D5DFB]/5 px-4 py-1.5 text-xs sm:text-sm font-medium text-[#5D5DFB] whitespace-nowrap hover:bg-[#5D5DFB]/10 transition-colors"
->
-  School Year
-  <ChevronDown className="h-3 w-3" />
-</button>
+                type="button"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center gap-2 rounded-full border border-[#5D5DFB]/30 bg-[#5D5DFB]/5 px-4 py-1.5 text-xs sm:text-sm font-medium text-[#5D5DFB] whitespace-nowrap hover:bg-[#5D5DFB]/10 transition-colors"
+              >
+                School Year
+                <ChevronDown className="h-3 w-3" />
+              </button>
               {isDropdownOpen && (
                 <div className="absolute right-0 top-full z-50 mt-1 w-40 rounded-lg border border-[#5D5DFB]/30 bg-white py-1 shadow-lg">
                   {yearsWithData.map((year) => {
@@ -174,7 +180,7 @@ export function ClassInventory({
                           year === selectedYear
                             ? "font-semibold text-[#5D5DFB] bg-[#E4F4FF]"
                             : "text-[#00306E] hover:bg-[#E4F4FF]",
-                          disabled && "cursor-not-allowed opacity-60"
+                          disabled && "cursor-not-allowed opacity-60",
                         )}
                       >
                         {year}
@@ -188,13 +194,13 @@ export function ClassInventory({
             </div>
 
             {/* Create Class Button */}
-           <button
-  type="button"
-  onClick={() => setIsModalOpen(true)}
-  className="rounded-full bg-[#5D5DFB] px-4 py-1.5 text-xs sm:text-sm font-medium text-white shadow-[0px_1px_20px_rgba(93,93,251,0.4)] transition-colors hover:bg-[#4a4ae8] whitespace-nowrap"
->
-  + Create Class
-</button>
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(true)}
+              className="rounded-full bg-[#5D5DFB] px-4 py-1.5 text-xs sm:text-sm font-medium text-white shadow-[0px_1px_20px_rgba(93,93,251,0.4)] transition-colors hover:bg-[#4a4ae8] whitespace-nowrap"
+            >
+              + Create Class
+            </button>
           </div>
         </div>
       </div>
@@ -218,23 +224,25 @@ export function ClassInventory({
           </p>
         </div>
       ) : (
-        <div className="relative w-full">
+        <div className="relative w-full min-h-[320px] flex flex-col">
           {/* Class cards grid - 2 columns x 2 rows */}
           <div className="grid grid-cols-2 gap-3 md:gap-4 w-full">
             {visibleClasses.map((classItem) => (
-            <div 
-  key={classItem.id} 
-  className="border-r-4 border-b-4 border-[#5D5DFB] rounded-2xl overflow-hidden bg-white min-h-35 shadow-lg shadow-[#5D5DFB]/10"
->
-  <ClassCard
-    classRoomId={classItem.id}
-    name={classItem.name}
-    studentCount={classItem.studentCount}
-    variant={classItem.variant}
-    onClick={() => router.push(`/dashboard/class/${classItem.id}`)}
-    onClassUpdated={handleClassUpdated}
-  />
-</div>
+              <div
+                key={classItem.id}
+                className="border-l border-t border-r-4 border-b-4 border-[#5D5DFB] rounded-2xl overflow-hidden bg-white min-h-35 shadow-lg shadow-[#5D5DFB]/10"
+              >
+                <ClassCard
+                  classRoomId={classItem.id}
+                  name={classItem.name}
+                  studentCount={classItem.studentCount}
+                  variant={classItem.variant}
+                  onClick={() =>
+                    router.push(`/dashboard/class/${classItem.id}`)
+                  }
+                  onClassUpdated={handleClassUpdated}
+                />
+              </div>
             ))}
           </div>
 
@@ -246,53 +254,49 @@ export function ClassInventory({
                 onClick={goToPrevPage}
                 disabled={currentPage === 0}
                 className={cn(
-                  "absolute left-2 top-[32%] z-50 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white text-[#5D5DFB] border-2 border-[#5D5DFB] shadow-2xl ring-2 ring-white transition-all hover:scale-110 hover:bg-[#E4F4FF]",
-                  currentPage === 0
-                    ? "opacity-40 cursor-not-allowed"
-                    : ""
+                  "absolute left-0 top-1/2 -translate-y-1/2 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-[#5D5DFB] text-white shadow-2xl ring-2 ring-white transition-all hover:scale-110 hover:bg-[#4a4deb]",
+                  currentPage === 0 && "cursor-not-allowed",
                 )}
                 aria-label="Previous page"
               >
-                <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+                <ChevronLeft className="h-5 w-5" />
               </button>
               <button
                 type="button"
                 onClick={goToNextPage}
                 disabled={currentPage === totalPages - 1}
                 className={cn(
-                  "absolute right-2 top-[32%] z-50 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-[#5D5DFB] text-white shadow-2xl ring-2 ring-white transition-all hover:scale-110",
-                  currentPage === totalPages - 1
-                    ? "opacity-40 cursor-not-allowed"
-                    : "hover:bg-[#4a4deb]"
+                  "absolute right-0 top-1/2 -translate-y-1/2 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-[#5D5DFB] text-white shadow-2xl ring-2 ring-white transition-all hover:scale-110 hover:bg-[#4a4deb]",
+                  currentPage === totalPages - 1 && "cursor-not-allowed",
                 )}
                 aria-label="Next page"
               >
-                <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                <ChevronRight className="h-5 w-5" />
               </button>
             </>
           )}
+        </div>
+      )}
 
-          {/* Pagination dots with numbers */}
-          {totalPages > 1 && (
-            <div className="flex justify-center gap-2 mt-4 sm:mt-6 pb-4">
-              {Array.from({ length: totalPages }).map((_, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => setCurrentPage(index)}
-                  className={cn(
-                    "flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium transition-all",
-                    currentPage === index
-                      ? "bg-[#0C1A6D] text-white"
-                      : "border-2 border-[#5D5DFB] text-[#5D5DFB] hover:bg-[#5D5DFB]/10"
-                  )}
-                  aria-label={`Go to page ${index + 1}`}
-                >
-                  {index + 1}
-                </button>
-              ))}
-            </div>
-          )}
+      {/* Pagination always below the boxes */}
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-2 mt-6">
+          {Array.from({ length: totalPages }).map((_, index) => (
+            <button
+              key={index}
+              type="button"
+              onClick={() => setCurrentPage(index)}
+              className={cn(
+                "flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium transition-all",
+                currentPage === index
+                  ? "bg-[#0C1A6D] text-white"
+                  : "border-2 border-[#5D5DFB] text-[#5D5DFB] hover:bg-[#5D5DFB]/10",
+              )}
+              aria-label={`Go to page ${index + 1}`}
+            >
+              {index + 1}
+            </button>
+          ))}
         </div>
       )}
 
