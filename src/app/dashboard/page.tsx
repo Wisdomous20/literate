@@ -83,11 +83,8 @@ export default function DashboardPage() {
               <ClassificationChart schoolYear={selectedYear} />
             </div>
 
-            <WordOfTheDay
-              word="LiteRate"
-              definition="playfully quaint or fanciful, especially in an appealing and amusing way."
-              partOfSpeech="Adjective"
-            />
+            {/* Word of the Day */}
+            <WordOfTheDay />
           </div>
         </div>
       </main>
