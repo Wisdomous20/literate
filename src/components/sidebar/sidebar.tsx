@@ -125,7 +125,7 @@ export function Sidebar() {
         collapsed ? "w-20 min-w-20" : "w-65 min-w-65",
       )}
     >
-      {/* More visible, soft, slanting wavy SVG background using only #6666FF variants */}
+      {/* SVG background */}
       <div className="absolute inset-0 pointer-events-none z-0">
         <svg
           viewBox="0 0 320 800"
@@ -152,9 +152,10 @@ export function Sidebar() {
       </div>
 
       <div className="relative z-10 flex h-full flex-col">
+        {/* Header */}
         <div
           className={cn(
-            "flex items-center gap-2 pb-4 pt-4 px-4",
+            "flex items-center gap-2 shrink-0 pb-4 pt-4 px-4",
             collapsed ? "justify-center" : "justify-between px-6",
           )}
         >
@@ -196,18 +197,20 @@ export function Sidebar() {
           </button>
         </div>
 
+        {/* Greeting */}
         {!collapsed ? (
-          <div className="px-8 pb-4 pt-2">
+          <div className="px-8 pb-4 pt-2 shrink-0">
             <h2 className="text-lg font-semibold text-white">
               Hi, Teacher {firstName}!
             </h2>
             <p className="text-sm text-white/70">S.Y {schoolYear}</p>
           </div>
         ) : (
-          <div className="pb-4 pt-2" />
+          <div className="pb-4 pt-2 shrink-0" />
         )}
 
-        <div className={cn("flex-1", collapsed ? "px-3" : "px-6")}>
+        {/* Scrollable menu content area + premium box */}
+        <div className={cn("flex-1 overflow-y-auto", collapsed ? "px-3" : "px-6")}>
           {!collapsed && (
             <p className="mb-3 px-2 text-[11px] font-semibold tracking-[0.25em] text-white/90">
               MENU
@@ -304,6 +307,7 @@ export function Sidebar() {
               })}
           </nav>
 
+          {/* Premium box is now INSIDE the scrollable area */}
           {!collapsed && !hasActiveSubscription && (
             <div className="mt-8 rounded-2xl bg-white p-4 shadow-lg">
               <div className="flex items-center gap-2 mb-2">
@@ -326,9 +330,10 @@ export function Sidebar() {
           )}
         </div>
 
-        <div className={cn("h-px bg-white/30", collapsed ? "mx-3" : "mx-8")} />
+        {/* Divider + Logout — pinned to bottom */}
+        <div className={cn("shrink-0 h-px bg-white/30", collapsed ? "mx-3" : "mx-8")} />
 
-        <div className={cn("p-6", collapsed && "flex justify-center")}>
+        <div className={cn("shrink-0 px-6 py-4", collapsed && "flex justify-center")}>
           <button
             type="button"
             onClick={handleLogout}

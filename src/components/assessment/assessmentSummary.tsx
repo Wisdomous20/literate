@@ -227,7 +227,7 @@ export function AssessmentSummary({
                     <span className="text-[11px] font-semibold text-black uppercase tracking-widest">
                       {studentGrade}
                     </span>
-                    <span className="rounded-full px-2 py-0.5 text-[11px] font-medium text-black bg-indigo-100">
+                  <span className="rounded-full px-2 py-0.5 text-[11px] font-medium text-[#3B2F7F] bg-[#dcdff8f9] border border-[#A855F7]">
                       {assessmentTypeLabel}
                     </span>
                   </div>

@@ -1,4 +1,3 @@
-// src/components/oral-reading-test/classificationPopup.tsx
 "use client";
 
 import { useEffect } from "react";
@@ -26,23 +25,23 @@ const LEVEL_CONFIG: Record<
   INDEPENDENT: {
     label: "Independent",
     message: "Amazing job! You can read this all on your own!",
-    gradient: "from-[#34D399] to-[#10B981]",
-    glow: "shadow-[0_0_60px_rgba(52,211,153,0.4)]",
-    badge: "bg-[#ECFDF5] text-[#065F46] border-[#A7F3D0]",
+    gradient: "from-green-400 to-green-600",
+    glow: "shadow-[0_0_60px_rgba(34,197,94,0.3)]",
+    badge: "bg-green-100 text-green-800 border-green-200",
   },
   INSTRUCTIONAL: {
     label: "Instructional",
     message: "Great effort! With a little help, you'll master this!",
-    gradient: "from-[#818CF8] to-[#6366F1]",
-    glow: "shadow-[0_0_60px_rgba(129,140,248,0.4)]",
-    badge: "bg-[#EEF2FF] text-[#3730A3] border-[#C7D2FE]",
+    gradient: "from-indigo-400 to-indigo-600",
+    glow: "shadow-[0_0_60px_rgba(99,102,241,0.3)]",
+    badge: "bg-indigo-100 text-indigo-800 border-indigo-200",
   },
   FRUSTRATION: {
     label: "Frustration",
     message: "Keep going! Every reader grows one page at a time!",
-    gradient: "from-[#FB923C] to-[#F97316]",
-    glow: "shadow-[0_0_60px_rgba(251,146,60,0.4)]",
-    badge: "bg-[#FFF7ED] text-[#9A3412] border-[#FED7AA]",
+    gradient: "from-purple-400 to-purple-600",
+    glow: "shadow-[0_0_60px_rgba(139,92,246,0.3)]",
+    badge: "bg-purple-100 text-purple-800 border-purple-200",
   },
 };
 
@@ -83,7 +82,7 @@ export function ClassificationPopup({
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-full p-1 text-[#6B7280] transition-colors hover:bg-gray-100 hover:text-gray-800"
+          className="absolute right-4 top-4 rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-800"
           aria-label="Close popup"
           title="Close popup"
         >
@@ -93,11 +92,12 @@ export function ClassificationPopup({
         <Sparkles className="absolute left-6 top-6 h-5 w-5 animate-pulse text-yellow-400" />
         <Sparkles className="absolute right-14 top-8 h-4 w-4 animate-pulse text-purple-400 delay-300" />
 
-        <div className="relative -mt-2 mb-4 h-40 w-40">
+        <div className="relative -mt-2 mb-4 flex items-center justify-center" style={{ height: 112, width: 112 }}>
           <Image
-            src="/images/bee.png"
-            alt="LiteRate Bee Mascot"
-            fill
+            src="/images/Mascot.svg"
+            alt="LiteRate Mascot"
+            width={112}
+            height={112}
             className="object-contain drop-shadow-lg"
             priority
           />
@@ -109,36 +109,36 @@ export function ClassificationPopup({
           {config.label} Reader
         </div>
 
-        <h2 className="mb-1 text-center text-xl font-bold text-[#1E1B4B]">
+        <h2 className="mb-1 text-center text-xl font-bold text-indigo-900">
           Way to go, {firstName}!
         </h2>
 
         {score && (
-          <p className="mb-1 text-center text-lg font-bold text-[#31318A]">
+          <p className="mb-1 text-center text-lg font-bold text-indigo-700">
             Score: {score}
           </p>
         )}
 
-        <p className="mb-1 text-center text-xs font-medium text-[#6B7280]">
+        <p className="mb-1 text-center text-xs font-medium text-gray-400">
           {assessmentLabel} Test
         </p>
 
         <p className="mb-2 text-center text-2xl font-extrabold">
           <span
-            className={`bg-linear-to-r ${config.gradient} bg-clip-text text-transparent`}
+            className={`bg-gradient-to-r ${config.gradient} bg-clip-text text-transparent`}
           >
             You&apos;re an {config.label} Reader!
           </span>
         </p>
 
-        <p className="mb-6 text-center text-sm text-[#6B7280]">
+        <p className="mb-6 text-center text-sm text-gray-400">
           {config.message}
         </p>
 
         <button
           type="button"
           onClick={onClose}
-          className={`w-full rounded-xl bg-linear-to-r ${config.gradient} px-6 py-3 text-sm font-semibold text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98]`}
+          className={`w-full rounded-xl bg-gradient-to-r ${config.gradient} px-6 py-3 text-sm font-semibold text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98]`}
         >
           Continue
         </button>

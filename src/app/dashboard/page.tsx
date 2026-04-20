@@ -68,7 +68,6 @@ export default function DashboardPage() {
             <WelcomeSection
               teacherName={firstName}
               schoolYear={selectedYear}
-              planType="Free User Plan"
             />
 
             <ClassInventory

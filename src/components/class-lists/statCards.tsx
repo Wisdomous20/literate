@@ -24,8 +24,8 @@ function StatCard({
   icon,
 }: StatCardProps) {
   return (
-    <div className="rounded-2xl border border-[#9999FF]/25 bg-gradient-to-br from-white/80 to-[#F8F9FF]/60 p-4 shadow-[0_4px_16px_rgba(102,102,255,0.1)] transition-all hover:shadow-[0_8px_24px_rgba(102,102,255,0.15)] hover:border-[#9999FF]/35 backdrop-blur-sm">
-      <div className="flex items-start justify-between gap-3">
+    <div className="rounded-2xl border border-[#9999FF]/25 bg-gradient-to-br from-white/80 to-[#F8F9FF]/60 p-3 shadow-[0_4px_16px_rgba(102,102,255,0.1)] transition-all hover:shadow-[0_8px_24px_rgba(102,102,255,0.15)] hover:border-[#9999FF]/35 backdrop-blur-sm h-24">
+      <div className="flex items-start justify-between gap-3 h-full">
         <div className="flex items-center gap-3 flex-1">
           <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${tailwindIconColor} border border-[#6666FF]/15 shadow-[0_2px_8px_rgba(102,102,255,0.12)]`}>
             {icon}

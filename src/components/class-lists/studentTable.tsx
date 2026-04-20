@@ -57,7 +57,6 @@ export function StudentTable({
   studentAssessments,
   onDeleteStudent,
   onUpdateStudent,
-  // assessmentType = "ALL",
 }: StudentTableProps) {
   const params = useParams();
   const router = useRouter();
@@ -73,9 +72,10 @@ export function StudentTable({
 
   const cardsPerPage = 6;
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [students]);
+  // Remove this effect if you want to stay on the same page after edit/delete
+  // useEffect(() => {
+  //   setCurrentPage(1);
+  // }, [students]);
 
   const totalPages = Math.max(1, Math.ceil(students.length / cardsPerPage));
   const paginatedStudents = students.slice(
@@ -146,18 +146,37 @@ export function StudentTable({
             const hasAssessment =
               (studentAssessments[student.id] || []).length > 0;
 
+            // The whole card is clickable unless in edit mode
             return (
               <div
                 key={student.id}
-                className="
-    relative bg-white rounded-2xl
-    border-l-2 border-t-2 border-[#5D5DFB]
-    border-r-4 border-b-4 border-r-[#A855F7] border-b-[#A855F7]
-    shadow-lg shadow-[#5D5DFB]/10
-    transition-all duration-300
-    hover:shadow-xl hover:border-[#7A7AFB]
-    p-5 flex flex-col gap-5
-  "
+                onClick={
+                  editingId === student.id
+                    ? undefined
+                    : () => hasAssessment && handleCardClick(student)
+                }
+                className={`
+                  relative bg-white rounded-2xl
+                  border-l-2 border-t-2 border-[#5D5DFB]
+                  border-r-4 border-b-4 border-r-[#A855F7] border-b-[#A855F7]
+                  shadow-lg shadow-[#5D5DFB]/10
+                  transition-all duration-200
+                  p-5 flex flex-col gap-5
+                  ${
+                    editingId === student.id
+                      ? ""
+                      : hasAssessment
+                        ? "cursor-pointer hover:scale-[1.03] hover:shadow-2xl hover:bg-[#F8F9FF] hover:border-[#7A7AFB] active:scale-95"
+                        : "cursor-not-allowed opacity-60 grayscale"
+                  }
+                `}
+                title={
+                  editingId === student.id
+                    ? ""
+                    : hasAssessment
+                      ? "Click to view details"
+                      : "No results yet"
+                }
               >
                 {editingId === student.id ? (
                   // Edit Mode
@@ -175,7 +194,6 @@ export function StudentTable({
                       onChange={(e) => setEditGradeLevel(e.target.value)}
                       className="rounded-lg border border-[#6666FF]/30 bg-[#F8F9FF] px-3 py-2 text-sm font-semibold text-[#00306E] outline-none focus:border-[#6666FF]"
                       title="Grade level"
-                      // or aria-label="Grade level"
                     >
                       {gradeLevels.map((grade) => (
                         <option key={grade} value={grade}>
@@ -193,25 +211,18 @@ export function StudentTable({
                       </button>
                       <button
                         onClick={handleCancelEdit}
-                        className="flex-1 rounded-lg bg-[#F0E8FA] px-3 py-2 text-xs font-bold text-[#00306E]/60 transition-all hover:bg-[#E8D5FF]"
+                        className="flex-1 flex items-center justify-center gap-1 rounded-lg bg-[#F0E8FA] px-3 py-2 text-xs font-bold text-[#00306E]/60 transition-all hover:bg-[#E8D5FF]"
                         aria-label="Cancel edit"
                         title="Cancel edit"
                       >
                         <X className="h-3 w-3" />
+                        Cancel
                       </button>
                     </div>
                   </div>
                 ) : (
                   // View Mode
-                  <div
-                    onClick={() => hasAssessment && handleCardClick(student)}
-                    className={`h-full flex flex-col gap-4 ${
-                      hasAssessment
-                        ? "cursor-pointer"
-                        : "cursor-not-allowed opacity-60 grayscale"
-                    }`}
-                    title={hasAssessment ? "" : "No results yet"}
-                  >
+                  <>
                     {/* Student Name and Grade */}
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-[#6666FF]" />
@@ -246,7 +257,10 @@ export function StudentTable({
                     {/* Action Buttons */}
                     <div className="flex gap-2 pt-2 mt-auto">
                       <button
-                        onClick={(e) => handleEdit(e, student)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(e, student);
+                        }}
                         className="flex-1 flex items-center justify-center gap-1 rounded-lg bg-[#E8D5FF] px-2 py-2 text-xs font-bold text-[#6666FF] transition-all hover:bg-[#D9C0FF] active:scale-95"
                       >
                         <Edit2 className="h-3 w-3" />
@@ -270,7 +284,7 @@ export function StudentTable({
                         </span>
                       </div>
                     )}
-                  </div>
+                  </>
                 )}
 
                 {/* Delete Confirmation */}
