@@ -5,7 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
-import { hasActiveAccessAction } from "@/app/actions/subscription/hasActiveAccess";
+import { getSubscriptionAction } from "@/app/actions/subscription/getSubscription";
+import { PLANS, PlanKey } from "@/config/plans";
 import {
   LayoutDashboard,
   FileText,
@@ -64,55 +65,60 @@ const orgAdminItems = [
   },
 ];
 
+interface SubscriptionInfo {
+  isActive: boolean;
+  planName: string | null;
+  loading: boolean;
+}
+
 export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [collapsed, setCollapsed] = useState(false);
-  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
+  const [subInfo, setSubInfo] = useState<SubscriptionInfo>({
+    isActive: false,
+    planName: null,
+    loading: true,
+  });
 
   const firstName = session?.user?.name?.split(" ")[0] || "User";
   const schoolYear = getCurrentSchoolYear();
   const isOrgAdmin = session?.user?.role === "ORG_ADMIN";
 
   useEffect(() => {
-    if (!session?.user?.id) return;
-
     let cancelled = false;
-    const justPaid =
-      typeof window !== "undefined" &&
-      new URLSearchParams(window.location.search).get("subscription") ===
-        "success";
-    const maxAttempts = justPaid ? 8 : 1;
-    let attempt = 0;
-
-    const tick = async () => {
-      const res = await hasActiveAccessAction();
-      if (cancelled) return;
-
-      if (res.success && res.hasAccess) {
-        setHasActiveSubscription(true);
+    async function fetchSubscription() {
+      if (!session?.user?.id) {
+        if (!cancelled) {
+          setSubInfo({ isActive: false, planName: null, loading: false });
+        }
         return;
       }
-
-      if (++attempt < maxAttempts) {
-        setTimeout(tick, 2000);
+      try {
+        const res = await getSubscriptionAction();
+        if (cancelled) return;
+        const sub =
+          res.success && "subscription" in res ? res.subscription : null;
+        const isActive =
+          sub?.status === "ACTIVE" &&
+          sub.currentPeriodEnd != null &&
+          new Date(sub.currentPeriodEnd) >= new Date();
+        const planName =
+          sub?.planType && sub.planType in PLANS
+            ? PLANS[sub.planType as PlanKey].name
+            : null;
+        setSubInfo({ isActive, planName, loading: false });
+      } catch {
+        if (!cancelled) {
+          setSubInfo({ isActive: false, planName: null, loading: false });
+        }
       }
-    };
-
-    tick();
-
-    const onVisibility = () => {
-      if (document.visibilityState === "visible" && !hasActiveSubscription) {
-        tick();
-      }
-    };
-    document.addEventListener("visibilitychange", onVisibility);
-
+    }
+    fetchSubscription();
     return () => {
       cancelled = true;
-      document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [session?.user?.id, hasActiveSubscription]);
+  }, [session?.user?.id]);
 
   const handleLogout = async () => {
     await signOut({ redirect: true, callbackUrl: "/login" });
@@ -210,7 +216,9 @@ export function Sidebar() {
         )}
 
         {/* Scrollable menu content area + premium box */}
-        <div className={cn("flex-1 overflow-y-auto", collapsed ? "px-3" : "px-6")}>
+        <div
+          className={cn("flex-1 overflow-y-auto", collapsed ? "px-3" : "px-6")}
+        >
           {!collapsed && (
             <p className="mb-3 px-2 text-[11px] font-semibold tracking-[0.25em] text-white/90">
               MENU
@@ -306,34 +314,80 @@ export function Sidebar() {
                 );
               })}
           </nav>
-
-          {/* Premium box is now INSIDE the scrollable area */}
-          {!collapsed && !hasActiveSubscription && (
-            <div className="mt-8 rounded-2xl bg-white p-4 shadow-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <Zap className="h-5 w-5 text-[#6666FF]" />
-                <h3 className="text-sm font-bold text-[#6666FF]">
-                  Upgrade to Premium
-                </h3>
-              </div>
-              <p className="text-xs text-gray-600 mb-4">
-                Unlock all assessments
-              </p>
-              <Link
-                href="/dashboard/subscription"
-                className="block w-full rounded-lg bg-[#6666FF] px-4 py-2 text-center text-xs font-semibold text-white transition-all hover:bg-[#5555ee] hover:scale-105"
-                style={{ transition: "background 0.2s, transform 0.2s" }}
-              >
-                Get Started
-              </Link>
+          {/* Responsive Premium Box */}
+          {!collapsed && (
+            <div
+              className="mt-6 rounded-xl p-4 shadow-lg border border-[#a78bfa] bg-gradient-to-br from-[#ede9fe] via-[#f3e8ff] to-[#c4b5fd] relative overflow-hidden w-full max-w-xs mx-auto sm:max-w-sm md:max-w-md"
+              style={{
+                boxShadow: "0 4px 16px 0 rgba(139,92,246,0.10)",
+                minHeight: "120px",
+              }}
+            >
+              {subInfo.loading ? (
+                /* Loading skeleton — prevents flicker */
+                <div className="animate-pulse space-y-2">
+                  <div className="h-4 w-28 rounded bg-[#c4b5fd]/50" />
+                  <div className="h-3 w-36 rounded bg-[#c4b5fd]/30" />
+                  <div className="h-7 w-32 rounded-full bg-[#c4b5fd]/40 mt-3" />
+                </div>
+              ) : (
+                <>
+                  {/* Decorative icon background */}
+                  <div className="absolute right-1 top-1 opacity-15 pointer-events-none">
+                    <Zap className="h-10 w-10 text-[#a78bfa]" />
+                  </div>
+                  <h3 className="text-[15px] font-bold text-[#6735f0] mb-0.5 relative z-10">
+                    {subInfo.isActive ? "Premium Access" : "Upgrade to Premium"}
+                  </h3>
+                  <p className="text-[12px] text-[#6d28d9] mb-2 relative z-10">
+                    {subInfo.isActive
+                      ? "You have access to all features."
+                      : "Unlock all assessments"}
+                  </p>
+                  <div className="flex items-center gap-2 mt-3 mb-1 relative z-10">
+                    {subInfo.isActive && subInfo.planName ? (
+                      <span
+                        className={cn(
+                          "px-5 py-1 rounded-full text-[15px] font-bold tracking-wide shadow bg-gradient-to-r from-[#a78bfa] to-[#7c3aed] text-white",
+                        )}
+                      >
+                        {`${subInfo.planName} Plan`}
+                      </span>
+                    ) : (
+                      <span className="text-[12px] font-semibold tracking-wide text-[#7c3aed]">
+                        Free User Plan
+                      </span>
+                    )}
+                  </div>
+                  {!subInfo.isActive && (
+                    <Link
+                      href="/dashboard/subscription"
+                      className="block w-full rounded-md bg-gradient-to-r from-[#a78bfa] to-[#643aed] px-2 py-1 text-center text-[12px] font-semibold text-white shadow hover:from-[#7c3aed] hover:to-[#a78bfa] hover:scale-105 transition-all mt-2"
+                      style={{ transition: "background 0.2s, transform 0.2s" }}
+                    >
+                      Upgrade
+                    </Link>
+                  )}
+                </>
+              )}
             </div>
           )}
         </div>
 
         {/* Divider + Logout — pinned to bottom */}
-        <div className={cn("shrink-0 h-px bg-white/30", collapsed ? "mx-3" : "mx-8")} />
+        <div
+          className={cn(
+            "shrink-0 h-px bg-white/30",
+            collapsed ? "mx-3" : "mx-8",
+          )}
+        />
 
-        <div className={cn("shrink-0 px-6 py-4", collapsed && "flex justify-center")}>
+        <div
+          className={cn(
+            "shrink-0 px-6 py-4",
+            collapsed && "flex justify-center",
+          )}
+        >
           <button
             type="button"
             onClick={handleLogout}

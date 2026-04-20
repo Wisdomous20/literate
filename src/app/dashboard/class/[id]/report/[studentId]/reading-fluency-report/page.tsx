@@ -1,8 +1,13 @@
 "use client";
 
 import { useMemo, useState, useCallback } from "react";
-import { useParams, useSearchParams } from "next/navigation";
-import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
+import {
+  LayoutDashboard,
+  ChevronLeft,
+  Download,
+  Loader2,
+} from "lucide-react";
 import StudentInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/studentInfoCard";
 import PassageInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/passageInfoCard";
 import MetricCards from "@/components/reports/oral-reading-test/reading-fluency-report/metricCards";
@@ -16,6 +21,7 @@ import { fetchOralFluencyMiscues } from "@/app/actions/oral-fluency/getMiscues";
 import { updateMiscueAction } from "@/app/actions/oral-fluency/updateMiscue";
 import { useAssessmentsByStudent } from "@/lib/hooks/useStudentAssessments";
 import { useClassById } from "@/lib/hooks/useClassById";
+import { useQueryClient } from "@tanstack/react-query";
 import { exportFluencyReportPdf } from "@/lib/exportFluencyReportPdf";
 import type { BehaviorItem } from "@/components/reports/oral-reading-test/reading-fluency-report/readingBehaviorChecklist";
 import type {
@@ -72,7 +78,12 @@ function countMiscuesByType(miscues: MiscueResult[]): Record<string, number> {
   return counts;
 }
 
-function buildMiscueData(miscues: MiscueResult[], totalMiscues: number, oralFluencyScore: number, classificationLevel: string) {
+function buildMiscueData(
+  miscues: MiscueResult[],
+  totalMiscues: number,
+  oralFluencyScore: number,
+  classificationLevel: string,
+) {
   const counts = countMiscuesByType(miscues);
   return {
     mispronunciation: counts["MISPRONUNCIATION"] || 0,
@@ -92,6 +103,8 @@ function buildMiscueData(miscues: MiscueResult[], totalMiscues: number, oralFlue
 export default function ReadingFluencyReportPage() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const classId = params.id as string;
   const studentId = params.studentId as string;
   const assessmentId = searchParams.get("id");
@@ -100,10 +113,18 @@ export default function ReadingFluencyReportPage() {
   const [showEditModal, setShowEditModal] = useState(false);
 
   // Local overrides after editing miscues
-  const [localMiscues, setLocalMiscues] = useState<MiscueResult[] | null>(null);
-  const [localTotalMiscues, setLocalTotalMiscues] = useState<number | null>(null);
-  const [localOralFluencyScore, setLocalOralFluencyScore] = useState<number | null>(null);
-  const [localClassificationLevel, setLocalClassificationLevel] = useState<string | null>(null);
+  const [localMiscues, setLocalMiscues] = useState<MiscueResult[] | null>(
+    null,
+  );
+  const [localTotalMiscues, setLocalTotalMiscues] = useState<number | null>(
+    null,
+  );
+  const [localOralFluencyScore, setLocalOralFluencyScore] = useState<
+    number | null
+  >(null);
+  const [localClassificationLevel, setLocalClassificationLevel] = useState<
+    string | null
+  >(null);
 
   const { data: allAssessments = [], isLoading } =
     useAssessmentsByStudent(studentId);
@@ -120,7 +141,8 @@ export default function ReadingFluencyReportPage() {
 
   // Convert OralFluencyMiscue to MiscueResult
   const originalMiscues: MiscueResult[] = useMemo(() => {
-    const miscues: OralFluencyMiscue[] = assessment?.oralFluency?.miscues ?? [];
+    const miscues: OralFluencyMiscue[] =
+      assessment?.oralFluency?.miscues ?? [];
     return miscues.map((m) => ({
       miscueType: m.miscueType,
       expectedWord: m.expectedWord,
@@ -136,6 +158,10 @@ export default function ReadingFluencyReportPage() {
   const totalWords = assessment?.oralFluency?.totalWords ?? 0;
   const sessionId = assessment?.oralFluency?.id;
 
+  const invalidateAssessments = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["assessments", studentId] });
+  }, [queryClient, studentId]);
+
   const editMiscues = useEditMiscues({
     originalMiscues: activeMiscues,
     totalWords,
@@ -145,6 +171,7 @@ export default function ReadingFluencyReportPage() {
       setLocalTotalMiscues(metrics.totalMiscues);
       setLocalOralFluencyScore(metrics.oralFluencyScore);
       setLocalClassificationLevel(metrics.classificationLevel);
+      invalidateAssessments();
     },
   });
 
@@ -177,8 +204,9 @@ export default function ReadingFluencyReportPage() {
       setLocalTotalMiscues(result.updatedMetrics.totalMiscues);
       setLocalOralFluencyScore(result.updatedMetrics.oralFluencyScore);
       setLocalClassificationLevel(result.updatedMetrics.classificationLevel);
+      invalidateAssessments();
     },
-    [sessionId, activeMiscues],
+    [sessionId, activeMiscues, invalidateAssessments],
   );
 
   const handleUpdateMiscueType = useCallback(
@@ -210,21 +238,88 @@ export default function ReadingFluencyReportPage() {
       setLocalTotalMiscues(result.updatedMetrics.totalMiscues);
       setLocalOralFluencyScore(result.updatedMetrics.oralFluencyScore);
       setLocalClassificationLevel(result.updatedMetrics.classificationLevel);
+      invalidateAssessments();
     },
-    [sessionId, activeMiscues],
+    [sessionId, activeMiscues, invalidateAssessments],
   );
 
-  if (isLoading) return <div>Loading...</div>;
-  if (!assessment) return <div>No data found.</div>;
+  if (isLoading) {
+    return (
+      <div className="flex h-screen flex-col overflow-hidden">
+        <div className="flex items-center justify-between px-8 py-5 border-b-[3px] border-[#5D5DFB] bg-white">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#5D5DFB]/10">
+              <LayoutDashboard size={20} className="text-[#5D5DFB]" />
+            </div>
+            <h1 className="text-xl lg:text-2xl font-semibold text-[#31318A]">
+              Oral Fluency Test Report
+            </h1>
+          </div>
+        </div>
+        <div className="flex flex-1 items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-[#6666FF]" />
+            <span className="text-[#00306E] font-medium">
+              Loading report...
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const currentTotalMiscues = localTotalMiscues ?? (assessment.oralFluency?.totalMiscues ?? 0);
-  const currentOralFluencyScore = localOralFluencyScore ?? (assessment.oralFluency?.oralFluencyScore ?? 0);
-  const currentClassificationLevel = localClassificationLevel ?? (assessment.oralFluency?.classificationLevel ?? "");
+  if (!assessment) {
+    return (
+      <div className="flex h-screen flex-col overflow-hidden">
+        <div className="flex items-center justify-between px-8 py-5 border-b-[3px] border-[#5D5DFB] bg-white">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#5D5DFB]/10">
+              <LayoutDashboard size={20} className="text-[#5D5DFB]" />
+            </div>
+            <h1 className="text-xl lg:text-2xl font-semibold text-[#31318A]">
+              Oral Fluency Test Report
+            </h1>
+          </div>
+        </div>
+        <div className="flex flex-1 items-center justify-center">
+          <div className="flex flex-col items-center gap-4 text-center px-4">
+            <p className="text-[#00306E] font-semibold text-lg">
+              No report data found.
+            </p>
+            <p className="text-[#00306E]/60 text-sm">
+              Please complete an assessment session first.
+            </p>
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="rounded-lg bg-[#6666FF] px-6 py-2 text-sm font-semibold text-white hover:bg-[#5555EE] transition-colors"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const currentTotalMiscues =
+    localTotalMiscues ?? (assessment.oralFluency?.totalMiscues ?? 0);
+  const currentOralFluencyScore =
+    localOralFluencyScore ?? (assessment.oralFluency?.oralFluencyScore ?? 0);
+  const currentClassificationLevel =
+    localClassificationLevel ??
+    (assessment.oralFluency?.classificationLevel ?? "");
   const duration = assessment.oralFluency?.duration ?? 0;
   const wordsCorrect = Math.max(0, totalWords - currentTotalMiscues);
-  const wcpm = duration > 0 ? Math.round((wordsCorrect / duration) * 60) : 0;
+  const wcpm =
+    duration > 0 ? Math.round((wordsCorrect / duration) * 60) : 0;
 
-  const miscueData = buildMiscueData(activeMiscues, currentTotalMiscues, currentOralFluencyScore, currentClassificationLevel);
+  const miscueData = buildMiscueData(
+    activeMiscues,
+    currentTotalMiscues,
+    currentOralFluencyScore,
+    currentClassificationLevel,
+  );
 
   const studentName = assessment.student?.name ?? "";
   const gradeLevel = assessment.student?.level
@@ -268,47 +363,45 @@ export default function ReadingFluencyReportPage() {
     );
   };
 
-
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <div className="w-full">
-        <DashboardHeader title="Oral Fluency Test Report" />
-        <div className="mb-4 max-w-6xl mx-auto">
-          <div className="mt-6 flex items-center justify-between">
-            <button
-              onClick={() => window.history.back()}
-              className="flex items-center gap-1.5 rounded-full bg-[#6666FF] px-6 py-3 text-base font-semibold text-white transition hover:bg-[#5555EE] active:scale-95"
-              type="button"
-            >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-              Previous
-            </button>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleExport}
-                className="rounded-lg bg-[#297CEC] px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                type="button"
-              >
-                Export to PDF
-              </button>
-            </div>
+      {/* Header */}
+      <div className="flex items-center justify-between px-8 py-5 border-b-[3px] border-[#5D5DFB] bg-white">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#5D5DFB]/10">
+            <LayoutDashboard size={20} className="text-[#5D5DFB]" />
           </div>
+          <h1 className="text-xl lg:text-2xl font-semibold text-[#31318A]">
+            Oral Fluency Test Report
+          </h1>
+        </div>
+      </div>
+
+      {/* Nav row: Previous (purple bg rounded) on left, Export PDF on right */}
+      <div className="flex items-center justify-between px-8 pt-5 pb-2">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)] transition-all hover:bg-[#5555EE]"
+        >
+          <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
+          <span>Previous</span>
+        </button>
+
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleExport}
+            className="flex items-center gap-2 px-5 py-2 bg-[#2E2E68] text-white text-xs font-medium rounded-lg border border-[#5D5DFB] shadow-[0_1px_20px_rgba(65,155,180,0.47)] hover:bg-[#2E2E68]/90 transition-colors"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Export to PDF
+          </button>
         </div>
       </div>
 
       <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth max-w-300 mx-auto px-6 py-6 md:px-8 lg:px-12 space-y-6 w-full">
+        {/* Top row: Student Info + Metric Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
           <StudentInfoCard
             studentName={studentName}
@@ -322,17 +415,21 @@ export default function ReadingFluencyReportPage() {
           />
         </div>
 
+        {/* Three-column row */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Left column */}
           <div className="flex flex-col gap-6">
             <PassageInfoCard
               passageTitle={passage?.title ?? "—"}
-              passageLevel={passage?.level ? `Grade ${passage.level}` : "—"}
+              passageLevel={
+                passage?.level ? `Grade ${passage.level}` : "—"
+              }
               numberOfWords={numberOfWords}
               testType={formatTestType(passage?.testType)}
               assessmentType={assessmentTypeLabel}
             />
-            <AudioPlaybackCard audioSrc={assessment.oralFluency?.audioUrl} />
+            <AudioPlaybackCard
+              audioSrc={assessment.oralFluency?.audioUrl}
+            />
           </div>
 
           <BehaviorChecklist behaviors={behaviorItems} />
@@ -345,13 +442,16 @@ export default function ReadingFluencyReportPage() {
         </div>
       </main>
 
+      {/* View Miscues Modal */}
       <ViewMiscuesModal
         open={showMiscuesModal}
         onClose={() => setShowMiscuesModal(false)}
         passageContent={passage?.content ?? ""}
         miscues={activeMiscues}
         alignedWords={undefined}
-        passageLevel={passage?.level ? `Grade ${passage.level}` : undefined}
+        passageLevel={
+          passage?.level ? `Grade ${passage.level}` : undefined
+        }
       />
 
       {/* Edit Miscues Modal */}
@@ -376,7 +476,9 @@ export default function ReadingFluencyReportPage() {
                 expanded
                 resizable={false}
                 editMode={editMiscues}
-                onApproveMiscue={sessionId ? handleApproveMiscue : undefined}
+                onApproveMiscue={
+                  sessionId ? handleApproveMiscue : undefined
+                }
                 onUpdateMiscueType={
                   sessionId ? handleUpdateMiscueType : undefined
                 }

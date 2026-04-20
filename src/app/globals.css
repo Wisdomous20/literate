@@ -159,3 +159,14 @@ body {
   background-size: cover;
   background-position: center;
 }
+
+.welcome-ellipse-bg {
+  background: #D8D0FF;
+  clip-path: ellipse(100% 82% at 100% 50%);
+}
+
+.welcome-ellipse-light {
+  background: rgba(240, 236, 255, 0.80);
+  clip-path: ellipse(88% 72% at 95% 55%);
+  z-index: 5;
+}

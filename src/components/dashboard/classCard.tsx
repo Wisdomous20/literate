@@ -126,8 +126,8 @@ export function ClassCard({
         >
           {/* Top section with folder icon and label */}
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[#0728e0]">
-              <Folder className="h-4 w-4 text-white" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[#e0e7ff]">
+              <Folder className="h-4 w-4 text-[#7c3aed]" />
             </div>
             <span className="text-xs font-semibold text-[#0C1A6D]">Class</span>
           </div>
@@ -136,7 +136,9 @@ export function ClassCard({
             <h3 className="text-lg font-bold text-[#00306E] truncate mb-1">
               {name}
             </h3>
-            <p className="text-sm text-[#00306E]/60">{studentCount} students</p>
+            <p className="text-sm text-[#00306E]">
+              {studentCount} student{studentCount === 1 ? "" : "s"}
+            </p>
           </div>
 
           {/* Arrow indicator */}
