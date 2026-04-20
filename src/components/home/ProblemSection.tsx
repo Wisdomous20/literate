@@ -4,8 +4,6 @@ import { AnimatedSection, AnimatedList } from "./AnimatedSection";
 export default function ProblemSection() {
   return (
     <section className="py-36 -mt-[15vh] relative">
-      {/* Subtle alternating bg tint */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#F5F3FF]/60 to-transparent -z-10 pointer-events-none" />
 
       <div className="px-6 md:px-12 grid lg:grid-cols-2 gap-16 items-center">
         <AnimatedSection direction="left">
@@ -43,12 +41,20 @@ export default function ProblemSection() {
 
         <AnimatedSection direction="right" delay={0.15}>
           <div className="relative group">
+            {/* IMG_40 sits below, IMG_8_1 overlaps it from the top */}
             <Image
-              src="/assets/IMG_8.png"
+              src="/assets/IMG_40.svg"
+              alt=""
+              width={737}
+              height={459}
+              className="w-full"
+            />
+            <Image
+              src="/assets/IMG_8_1.svg"
               alt="Manual Assessment Illustration"
               width={737}
               height={459}
-              className="w-full rounded-2xl group-hover:scale-105 transition-transform duration-300"
+              className="w-full rounded-2xl scale-[1.3] group-hover:scale-[1.35] transition-transform duration-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
             />
           </div>
         </AnimatedSection>

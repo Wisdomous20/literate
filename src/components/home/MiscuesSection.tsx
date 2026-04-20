@@ -65,25 +65,25 @@ const miscues = [
 export default function MiscuesSection() {
 
   return (
-    <section className="py-24 relative overflow-hidden">
+    <section className="py-24 relative overflow-x-hidden">
       {/* IMG_7 flipped, leftmost */}
-      <div className="absolute top-0 left-0 -z-10 pointer-events-none">
+      <div className="absolute top-2 left-0 -z-10 pointer-events-none">
         <Image
-          src="/assets/IMG_7.png"
+          src="/assets/IMG_33_1.svg"
           alt=""
-          width={840}
-          height={840}
-          className="w-[840px] opacity-90 scale-x-[-1]"
+          width={924}
+          height={924}
+          className="w-[832px] opacity-90 scale-x-[-1]"
         />
       </div>
-      {/* IMG_22 flipped, leftmost */}
-      <div className="absolute top-0 -left-12 -z-10 pointer-events-none transition-transform duration-300 hover:scale-105">
+      {/* IMG_22 flipped, leftmost - above IMG_33_1 */}
+      <div className="absolute -top-52 -left-48 -z-[5] pointer-events-none">
         <Image
-          src="/assets/IMG_22.png"
+          src="/assets/IMG_22_3.svg"
           alt=""
           width={720}
           height={720}
-          className="w-[720px] opacity-100 scale-x-[-1]"
+          className="w-[950px] opacity-100 scale-x-[-1]"
         />
       </div>
 
@@ -95,7 +95,7 @@ export default function MiscuesSection() {
             Oral Reading Miscues
           </h2>
           <p className="text-[#323743] text-lg leading-relaxed">
-            We track the 8 critical reading miscues defined by Phil-IRI, giving
+            We track the 8 critical reading miscues, giving
             you a deep qualitative understanding of student struggles.
           </p>
         </div>

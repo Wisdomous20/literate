@@ -45,9 +45,9 @@ export default function HowItWorksSection() {
         />
       </div>
       {/* Background wave */}
-      <div className="absolute inset-0 -z-20 opacity-[0.82]">
+      <div className="absolute inset-0 -z-20 opacity-[0.82] translate-y-[10%]">
         <Image
-          src="/assets/IMG_13.png"
+          src="/assets/IMG_13_2.svg"
           alt=""
           fill
           className="object-cover"

@@ -3,17 +3,19 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 
 const navLinks = [
-  { href: "/", label: "Home", icon: "/assets/IMG_4.svg", section: "home" },
-  { href: "/assess", label: "Assessment", icon: "/assets/IMG_5.svg", section: "assess" },
-  { href: "#pricing", label: "Pricing", icon: "/assets/IMG_3.svg", section: "pricing" },
+  { href: "/", label: "Home", icon: "/assets/IMG_4.svg" },
+  { href: "/assessment", label: "Assessment", icon: "/assets/IMG_5.svg" },
+  { href: "/pricing", label: "Pricing", icon: "/assets/IMG_3.svg" },
 ];
 
 export default function Navbar() {
-  const [activeSection, setActiveSection] = useState("home");
+  const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
+  const [hovered, setHovered] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -23,14 +25,18 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const faded = scrolled && !hovered;
+
   return (
     <motion.nav
       className="fixed top-0 left-0 right-0 z-50 px-6 py-4"
       initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      animate={{ opacity: faded ? 0.2 : 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
-      <div className={`relative hover:-translate-y-1 transition-all active:translate-y-0 ${scrolled ? "drop-shadow-lg" : ""}`}>
+      <div className={`relative hover:-translate-y-1 transition-all active:translate-y-0 ${scrolled && !hovered ? "" : scrolled ? "drop-shadow-lg" : ""}`}>
         {/* 3D purple backing */}
         <div className="absolute inset-0 bg-[#6C4EEB] rounded-[10px] translate-y-1" />
         <div className="relative flex items-center justify-between bg-white border-2 border-[#6C4EEB] rounded-[10px] px-6 py-3">
@@ -47,17 +53,26 @@ export default function Navbar() {
         {/* Nav Links - absolutely centered */}
         <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-12">
           {navLinks.map((link) => {
-            const isActive = activeSection === link.section || (link.href === "/" && activeSection === "home");
+            const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                onClick={() => setActiveSection(link.section)}
-                className={`relative flex items-center gap-2 font-medium text-sm transition-colors ${
-                  isActive ? "text-[#6C4EEB]" : "text-[#323743] hover:text-[#6C4EEB]"
+                className={`group/link relative flex items-center gap-2 font-medium text-sm transition-colors ${
+                  isActive ? "text-[#6C4EEB]" : "text-[#575E6B] hover:text-[#6C4EEB]"
                 }`}
               >
-                <Image src={link.icon} alt={link.label} width={16} height={16} className="w-4 h-4" />
+                <Image
+                  src={link.icon}
+                  alt={link.label}
+                  width={16}
+                  height={16}
+                  className={`w-4 h-4 transition-all duration-200 ${
+                    isActive
+                      ? "[filter:brightness(0)_saturate(100%)_invert(40%)_sepia(70%)_saturate(800%)_hue-rotate(220deg)_brightness(95%)_contrast(100%)]"
+                      : "[filter:brightness(0)_opacity(0.45)] group-hover/link:[filter:brightness(0)_saturate(100%)_invert(40%)_sepia(70%)_saturate(800%)_hue-rotate(220deg)_brightness(95%)_contrast(100%)]"
+                  }`}
+                />
                 {link.label}
                 {isActive && (
                   <motion.span
@@ -85,7 +100,7 @@ export default function Navbar() {
               href="/signup"
               className="relative block bg-white border border-[#FF5DA2] text-[#FF5DA2] font-medium text-sm px-4 py-2 rounded-[10px] hover:-translate-y-0.5 transition-transform active:translate-y-0"
             >
-              Get Started Free
+              Sign Up
             </Link>
           </div>
         </div>

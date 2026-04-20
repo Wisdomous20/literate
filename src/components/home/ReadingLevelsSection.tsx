@@ -7,10 +7,8 @@ import { AnimatedSection, AnimatedList } from "./AnimatedSection";
 export default function ReadingLevelsSection() {
   return (
     <section className="py-24 relative overflow-hidden">
-      {/* Alternating background tint */}
-      <div className="absolute inset-0 bg-[#F5F3FF]/40 pointer-events-none" />
       {/* Decorative mascot image */}
-      <div className="absolute top-0 left-0 -z-10">
+      <div className="absolute top-0 left-0 -z-10 opacity-40">
         <Image
           src="/assets/IMG_18.png"
           alt=""
@@ -83,7 +81,7 @@ export default function ReadingLevelsSection() {
               alt=""
               width={330}
               height={310}
-              className="absolute bottom-0 right-0 w-[330px] opacity-50 group-hover:opacity-90 transition-opacity duration-300 z-0"
+              className="absolute bottom-0 right-0 w-[330px] opacity-50 z-0"
             />
           </div>
         </div>
@@ -128,7 +126,7 @@ export default function ReadingLevelsSection() {
               alt=""
               width={343}
               height={275}
-              className="absolute bottom-0 right-0 w-[343px] opacity-50 group-hover:opacity-90 transition-opacity duration-300 z-0"
+              className="absolute bottom-0 right-0 w-[343px] opacity-50 z-0"
             />
           </div>
         </div>
@@ -172,7 +170,7 @@ export default function ReadingLevelsSection() {
               alt=""
               width={285}
               height={302}
-              className="absolute bottom-0 right-0 w-[285px] opacity-50 group-hover:opacity-90 transition-opacity duration-300 z-0"
+              className="absolute bottom-0 right-0 w-[285px] opacity-50 z-0"
             />
           </div>
         </div>

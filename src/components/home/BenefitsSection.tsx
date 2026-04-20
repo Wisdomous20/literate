@@ -9,14 +9,14 @@ const benefits = [
 
 export default function BenefitsSection() {
   return (
-    <section className="py-24 bg-[#ffffff]/20 relative overflow-hidden">
+    <section className="py-24 relative overflow-hidden">
       {/* Decorative image top-right */}
       <Image
         src="/assets/IMG_24.png"
         alt=""
-        width={600}
-        height={600}
-        className="absolute right-0 top-0 -z-10 w-[600px] opacity-30 hover:opacity-60 hover:scale-105 transition-all duration-300"
+        width={900}
+        height={900}
+        className="absolute -right-16 top-0 -z-10 w-[900px] opacity-30 hover:opacity-60 hover:scale-105 transition-all duration-300"
       />
 
       <div className="px-6 md:px-12 grid lg:grid-cols-2 gap-16 items-center">
@@ -48,7 +48,7 @@ export default function BenefitsSection() {
         <AnimatedSection direction="right" delay={0.15}>
         <div className="relative group">
           <Image
-            src="/assets/IMG_25.png"
+            src="/assets/IMG_36.svg"
             alt="Mascot with Badges"
             width={600}
             height={600}
@@ -71,13 +71,13 @@ export default function BenefitsSection() {
                 </span>
               </div>
               <p className="text-sm italic text-[#575E6B] mb-6">
-                &quot;LiteRate changed how we look at reading scores. No more guessing.&quot;
+                &quot;This is the platform that Phil-IRI teachers need right now!&quot;
               </p>
               <div className="flex items-center gap-3 border-t pt-4">
                 <div className="w-10 h-10 bg-[#FDF5DE] rounded-full" />
                 <div>
-                  <h4 className="text-xs font-bold">Principal Maria Clara</h4>
-                  <p className="text-[10px] text-[#575E6B]">Rizal Elementary</p>
+                  <h4 className="text-xs font-bold">Teacher Acosta</h4>
+                  <p className="text-[10px] text-[#575E6B]">Moscoso-Rios Central School</p>
                 </div>
               </div>
             </div>
@@ -99,13 +99,13 @@ export default function BenefitsSection() {
                 </span>
               </div>
               <p className="text-sm italic text-[#575E6B] mb-6">
-                &quot;My students actually ask to be assessed now because of the badges!&quot;
+                &quot;Easy to use and makes reading assessments efficient and paper free.&quot;
               </p>
               <div className="flex items-center gap-3 border-t pt-4">
                 <div className="w-10 h-10 bg-[#FDF5DE] rounded-full" />
                 <div>
-                  <h4 className="text-xs font-bold">Teacher Ben Cruz</h4>
-                  <p className="text-[10px] text-[#575E6B]">Quezon High</p>
+                  <h4 className="text-xs font-bold">Teacher Gimeno</h4>
+                  <p className="text-[10px] text-[#575E6B]">Moscoso-Rios Central School</p>
                 </div>
               </div>
             </div>

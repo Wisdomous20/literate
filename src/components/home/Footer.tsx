@@ -4,26 +4,6 @@ import Image from "next/image";
 export default function Footer() {
   return (
     <footer className="bg-[#F3F1FD] pb-8 overflow-hidden">
-      {/* Mini-CTA Banner */}
-      <div className="bg-gradient-to-r from-[#5332E8] via-[#6C4EEB] to-[#eb4cb6] px-6 md:px-12 py-20 text-center">
-        <p className="text-white/60 text-xs uppercase tracking-widest font-semibold mb-4">
-          Join 300+ educators
-        </p>
-        <h3 className="text-3xl md:text-4xl font-bold text-white mb-4 leading-tight">
-          Start transforming literacy
-          <br className="hidden md:block" /> assessments today.
-        </h3>
-        <p className="text-white/70 mb-8 text-lg">
-          Free to get started. No credit card required.
-        </p>
-        <Link
-          href="/signup"
-          className="inline-block bg-white text-[#6C4EEB] font-semibold text-lg px-10 py-4 rounded-[10px] hover:bg-purple-50 transition-colors shadow-lg"
-        >
-          Get Started Free →
-        </Link>
-      </div>
-
       <div className="px-6 md:px-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-24 pt-16 border-t border-[#E0E2E6]">
         {/* Brand */}
         <div className="space-y-6">
@@ -55,21 +35,21 @@ export default function Footer() {
             Platform
           </h4>
           <ul className="space-y-4 text-[#575E6B] text-sm">
-            {[
-              "Oral Reading Test",
-              "Reading Fluency Test",
-              "Reading Behavior Analysis",
-              "Reading Comprehension Test",
-            ].map((item) => (
-              <li key={item}>
-                <Link
-                  href="#"
-                  className="hover:text-[#6C4EEB] transition-colors"
-                >
-                  {item}
-                </Link>
-              </li>
-            ))}
+            <li>
+              <Link href="/" className="hover:text-[#6C4EEB] transition-colors">
+                Home
+              </Link>
+            </li>
+            <li>
+              <Link href="/assess" className="hover:text-[#6C4EEB] transition-colors">
+                Assessment
+              </Link>
+            </li>
+            <li>
+              <Link href="/pricing" className="hover:text-[#6C4EEB] transition-colors">
+                Pricing
+              </Link>
+            </li>
           </ul>
         </div>
 

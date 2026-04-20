@@ -7,12 +7,13 @@ export default function CTASection() {
     <section className="py-24 px-6 md:px-12">
       <div className="group mx-auto rounded-[40px] p-12 md:p-24 relative overflow-hidden shadow-2xl bg-gradient-to-br from-[#eb4cb6] via-[#6C4EEB] to-[#6C4EEB]">
         {/* Decorative mascot right */}
-        <div className="absolute top-0 right-0 h-full w-[1100px] opacity-40 group-hover:opacity-70 group-hover:scale-110 transition-all duration-500 pointer-events-none translate-x-72">
+        <div className="absolute top-[-65%] right-[-15%] flex items-center opacity-40 group-hover:opacity-70 group-hover:scale-110 transition-all duration-500 pointer-events-none">
           <Image
-            src="/assets/IMG_30.png"
+            src="/assets/IMG_30_1.svg"
             alt=""
-            fill
-            className="object-contain object-right scale-x-[-1]"
+            width={1320}
+            height={1320}
+            className="w-[1320px] h-auto"
           />
         </div>
 
@@ -37,19 +38,7 @@ export default function CTASection() {
               and smart!
             </p>
 
-            {/* Trust stats */}
-            <div className="flex flex-wrap justify-center gap-8 mb-12">
-              {[
-                { value: "12,000+", label: "Assessments Run" },
-                { value: "300+", label: "Educators Onboarded" },
-                { value: "98%", label: "Accuracy Rate" },
-              ].map((s) => (
-                <div key={s.label} className="text-center">
-                  <div className="text-3xl font-black text-white">{s.value}</div>
-                  <div className="text-white/70 text-xs uppercase tracking-widest mt-1">{s.label}</div>
-                </div>
-              ))}
-            </div>
+            {/* Trust stats removed */}
 
             <Link
               href="/signup"
