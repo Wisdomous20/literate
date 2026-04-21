@@ -1,10 +1,9 @@
 import Link from "next/link";
-import Image from "next/image";
 
 export default function Footer() {
   return (
     <footer className="bg-[#F3F1FD] pb-8 overflow-hidden">
-      <div className="px-6 md:px-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-24 pt-16 border-t border-[#E0E2E6]">
+      <div className="px-6 md:px-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12 pt-12 border-t border-[#E0E2E6]">
         {/* Brand */}
         <div className="space-y-6">
           <div className="flex items-center gap-2">
@@ -17,21 +16,11 @@ export default function Footer() {
             AI-powered Phil-IRI assessments designed to empower educators and
             inspire young readers across the Philippines.
           </p>
-          <div className="flex gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div
-                key={i}
-                className="w-8 h-8 bg-[#F3F4F6] rounded-full flex items-center justify-center"
-              >
-                <Image src="/assets/IMG_32.svg" alt="Social" width={16} height={16} className="w-4 h-4" />
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* Platform */}
         <div>
-          <h4 className="text-[#16181D] font-['Outfit'] font-bold text-sm uppercase tracking-widest mb-8">
+          <h4 className="text-[#16181D] font-['Outfit'] font-bold text-sm uppercase tracking-widest mb-4">
             Platform
           </h4>
           <ul className="space-y-4 text-[#575E6B] text-sm">
@@ -55,7 +44,7 @@ export default function Footer() {
 
         {/* Resources */}
         <div>
-          <h4 className="text-[#16181D] font-['Outfit'] font-bold text-sm uppercase tracking-widest mb-8">
+          <h4 className="text-[#16181D] font-['Outfit'] font-bold text-sm uppercase tracking-widest mb-4">
             Resources
           </h4>
           <ul className="space-y-4 text-[#575E6B] text-sm">
@@ -76,10 +65,10 @@ export default function Footer() {
 
         {/* Newsletter */}
         <div>
-          <h4 className="text-[#16181D] font-['Outfit'] font-bold text-sm uppercase tracking-widest mb-8">
+          <h4 className="text-[#16181D] font-['Outfit'] font-bold text-sm uppercase tracking-widest mb-4">
             Newsletter
           </h4>
-          <p className="text-[#575E6B] text-sm mb-6">
+          <p className="text-[#575E6B] text-sm mb-4">
             Get tips on reading intervention and literacy strategies.
           </p>
           <div className="flex gap-2">
