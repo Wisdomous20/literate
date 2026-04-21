@@ -810,6 +810,7 @@ export default function ReadingComprehensionTestPage() {
             totalQuestions={questions.length}
             formattedTime={formattedTime}
             isPaused={isPaused}
+            isSubmitted={isSubmitted}
             onTogglePause={() => {
               if (!isSubmitted) setIsPaused((prev) => !prev);
             }}

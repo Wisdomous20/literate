@@ -7,6 +7,8 @@ interface ComprehensionInfoBarProps {
   formattedTime: string;
   isPaused: boolean;
   onTogglePause: () => void;
+  isSubmitted: boolean; 
+
 }
 
 export function ComprehensionInfoBar({

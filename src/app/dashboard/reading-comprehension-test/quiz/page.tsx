@@ -475,7 +475,7 @@ export default function ReadingComprehensionQuestionsPage() {
                   <QuestionCard
                     key={question.id}
                     question={question}
-                    answers={answers}
+                    answer={answers[question.id]} //changed for system build
                     isSubmitted={isSubmitted}
                     highlightedTag={highlightedTag}
                     onSelectOption={handleSelectOption}
