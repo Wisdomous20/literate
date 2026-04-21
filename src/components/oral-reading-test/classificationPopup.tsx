@@ -16,19 +16,42 @@ const LEVEL_CONFIG: Record<
   {
     label: string;
     message: string;
+    badge: string;
+    badgeBg: string;
+    badgeText: string;
+    accent: string;
+    mascot: string;
   }
 > = {
   INDEPENDENT: {
     label: "Independent Reader",
-    message: "You can read this all on your own!",
+    message:
+      "Amazing! You can read this all on your own. Keep up the great work!",
+    badge: "⭐ Independent",
+    badgeBg: "bg-[#e8f5e9]",
+    badgeText: "text-[#2e7d32]",
+    accent: "border-[#4CAF50]",
+    mascot: "/Independent.svg",
   },
   INSTRUCTIONAL: {
     label: "Instructional Reader",
-    message: "With a little help, you'll master this!",
+    message:
+      "Great effort! With a little guidance, you'll master this in no time.",
+    badge: "📘 Instructional",
+    badgeBg: "bg-[#e8eaff]",
+    badgeText: "text-[#27348B]",
+    accent: "border-[#6666FF]",
+    mascot: "/Instructional.svg",
   },
   FRUSTRATION: {
     label: "Keep Practicing!",
-    message: "Every reader grows one page at a time.",
+    message:
+      "Don't give up! Every reader grows one page at a time. You've got this!",
+    badge: "💪 Needs Practice",
+    badgeBg: "bg-[#fff3e0]",
+    badgeText: "text-[#e65100]",
+    accent: "border-[#FF9800]",
+    mascot: "/Frustrated.svg",
   },
 };
 
@@ -49,36 +72,57 @@ export function ClassificationPopup({
       onClick={onClose}
     >
       <div
-        className="relative mx-4 flex w-full max-w-xs flex-col items-center rounded-2xl bg-white p-6"
+        className={`relative mx-4 flex w-full max-w-sm flex-col items-center rounded-2xl border-l border-t border-r-[6px] border-b-[6px] ${config.accent} bg-white p-6 shadow-[0_8px_32px_rgba(102,102,255,0.18)]`}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Close button */}
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-3 top-3 rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-800"
+          className="absolute right-3 top-3 rounded-full p-1 text-[#6666FF]/60 hover:bg-[#e8eaff] hover:text-[#6666FF] transition-colors"
           aria-label="Close popup"
           title="Close popup"
         >
           <X className="h-5 w-5" />
         </button>
 
-        <div className="mb-4 flex items-center justify-center" style={{ height: 96, width: 96 }}>
+        <div className="flex items-center justify-center -mt-8 mb-0">
           <Image
-            src="/images/mascot.svg"
-            alt="LiteRate Mascot"
-            width={96}
-            height={96}
+            src={config.mascot}
+            alt={config.label}
+            width={200}
+            height={200}
             className="object-contain"
             priority
           />
         </div>
 
-        <div className="mb-2 text-center text-lg font-bold text-[#31318A]">
+        <span
+          className={`mb-1 inline-block rounded-full px-4 py-1 text-xs font-bold ${config.badgeBg} ${config.badgeText}`}
+        >
+          {config.badge}
+        </span>
+
+        <h2 className="mb-1 text-center text-xl font-bold text-[#27348B]">
           {config.label}
-        </div>
-        <div className="mb-1 text-center text-base text-[#4B5563]">
-          {firstName}, {config.message}
-        </div>
+        </h2>
+
+        <p className="mb-1 text-center text-sm font-semibold text-[#6666FF]">
+          Well done, {firstName}!
+        </p>
+        {/* Message */}
+        <p className="text-center text-sm text-[#27348B]/70 leading-relaxed">
+          {config.message}
+        </p>
+
+        {/* Dismiss button */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-5 w-full rounded-full bg-[#6666FF] hover:bg-[#5555ee] text-white font-bold py-2.5 text-sm border-l border-t border-r-[6px] border-b-[6px] border-[#4444CC] transition-colors"
+        >
+          Got it!
+        </button>
       </div>
     </div>
   );
