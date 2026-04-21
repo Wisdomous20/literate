@@ -35,7 +35,7 @@ function MetricCard({
   valueColorClass,
 }: MetricCardProps) {
   return (
-    <div className="flex flex-1 flex-col justify-center gap-1 rounded-xl border border-[#54A4FF] bg-[#EFFDFF] px-4 py-3 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
+    <div className="flex flex-1 flex-col justify-center gap-1 rounded-[10px] border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-white px-4 py-3 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
       <div className="flex items-center gap-2">
         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[#DAE6FF] bg-[rgba(74,74,252,0.06)]">
           <Icon size={14} className={iconColor} />

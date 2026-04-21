@@ -24,7 +24,7 @@ function MetricCard({
   subtitle,
 }: MetricCardProps) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-[#54A4FF] bg-[#EFFDFF] p-6 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
+    <div className="flex flex-col items-center justify-center gap-2 rounded-[10px] border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-white p-6 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
       <div className="flex items-center gap-2">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#DAE6FF] bg-[rgba(74,74,252,0.06)]">
           <Icon size={18} className={iconColor} />

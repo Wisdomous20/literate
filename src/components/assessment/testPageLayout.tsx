@@ -42,7 +42,7 @@ export function TestPageLayout({
       <main className="flex min-h-0 flex-1 px-4 py-4 md:px-6 lg:px-8">
         <div className="flex min-h-0 flex-1 gap-4">
           <div
-            className={`flex min-h-0 flex-1 flex-col overflow-y-auto rounded-2xl border border-[#6868f162] bg-white shadow-[0_8px_32px_rgba(168,85,247,0.18)] ${
+            className={`flex min-h-0 flex-1 flex-col overflow-y-auto rounded-2xl border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-white shadow-[0_8px_32px_rgba(168,85,247,0.18)] ${
               passageExpanded ? "gap-0 p-2" : "gap-3 p-5"
             }`}
           >

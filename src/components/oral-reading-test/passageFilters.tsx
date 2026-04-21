@@ -24,32 +24,16 @@ function FilterChip({
 }) {
   return (
     <div
-      className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+      className={`flex items-center gap-2 px-1.5 py-1 text-sm font-medium ${
         active ? "text-[#31318A]" : "text-[#00306E]/50"
       }`}
     >
       <span
-        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-colors ${
-          active ? "border-[#6666FF] bg-[#6666FF]" : "border-[#A5A5D6] bg-white"
-        }`}
+        className="flex h-7 w-7 items-center justify-center rounded-[8px] border-t border-l border-r-4 border-b-4 border-t-[#E0E7FF] border-l-[#E0E7FF] border-r-[#B4B4F9] border-b-[#B4B4F9] bg-[#F3F0FF] shadow-sm"
+        style={{ minWidth: 28, minHeight: 28 }}
       >
-        {active && (
-          <svg
-            className="h-2.5 w-2.5 text-white"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={3}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-        )}
+        <Icon className="h-4 w-4 text-[#5D5DFB]" />
       </span>
-      <Icon className="h-4 w-4 shrink-0 text-[#5D5DFB]" />
       <span>{label}</span>
     </div>
   );
@@ -87,19 +71,17 @@ export function PassageFilters({
           <button
             type="button"
             onClick={onShareLink}
-            className="flex items-center gap-1 px-2 py-1 text-sm font-semibold text-[#4F46E5] bg-transparent border-none shadow-none hover:underline hover:bg-transparent focus:outline-none"
-            style={{ boxShadow: "none", border: "none" }}
-            tabIndex={0}
+className="flex items-center gap-1 px-2 py-1 text-sm font-semibold text-[#4F46E5] bg-transparent border-none shadow-none hover:underline hover:bg-transparent focus:outline-none"            tabIndex={0}
             aria-label="Share Link"
           >
-            <Link2 className="h-4 w-4" />
+            <Link2 className="h-5 w-5 text-[#5D5DFB]" />
             <span>Share Link</span>
           </button>
         )}
         <button
           type="button"
           onClick={onOpenPassageModal}
-          className="flex items-center justify-center gap-2 rounded-full bg-[#6666FF] px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#4F46E5] min-w-[120px]"
+          className="flex items-center justify-center gap-2 rounded-[10px] border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#3B21CC] border-b-[#3B21CC] bg-[#6666FF] px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#4F46E5] min-w-[120px] shadow"
         >
           {hasPassage ? "Change Passage" : "Add Passage"}
         </button>

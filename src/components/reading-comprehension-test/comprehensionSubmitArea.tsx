@@ -40,7 +40,7 @@ export function ComprehensionSubmitArea({
         <button
           onClick={onSubmit}
           disabled={isSubmitting}
-          className="w-56.25 h-15.75 bg-[#6666FF] border border-[#7A7AFB] rounded-lg shadow-[0_0_20px_rgba(102,102,255,0.35)] text-white font-semibold text-xl hover:bg-[#5555EE] transition-colors disabled:opacity-60"
+          className="w-56.25 h-15.75 bg-[#6666FF] rounded-lg border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#3B21CC] border-b-[#3B21CC] shadow-[0_0_20px_rgba(102,102,255,0.35)] text-white font-semibold text-xl hover:bg-[#5555EE] transition-colors"
         >
           {isSubmitting ? "Submitting..." : "Submit"}
         </button>

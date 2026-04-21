@@ -697,7 +697,7 @@ export default function ReadingFluencyTestPage() {
     >
       {/* Nav row */}
       {!passageExpanded && (
-        <div className="flex items-center justify-between rounded-2xl border border-[#D5E7FE] bg-[#F3F0FF] px-4 py-3 shadow-[0px_2px_16px_rgba(108,164,239,0.18)]">
+        <div className="flex items-center justify-between rounded-2xl border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#F3F0FF] px-4 py-3 shadow-[0px_2px_16px_rgba(108,164,239,0.18)]">
           {" "}
           <div className="flex items-center gap-3">
             <button
@@ -705,7 +705,7 @@ export default function ReadingFluencyTestPage() {
               onClick={() => router.back()}
               aria-label="Go back"
               title="Go back"
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_2px_8px_rgba(102,102,255,0.4)] transition-colors hover:bg-[#5555EE]"
+              className="flex h-9 w-9 items-center justify-center rounded-3xl border-t border-l border-r-2 border-b- border-t-[#A855F7] border-l-[#A855F7] border-r-[#3B21CC] border-b-[#3B21CC] bg-[#6666FF] text-white transition-colors hover:bg-[#5555EE]"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -722,10 +722,10 @@ export default function ReadingFluencyTestPage() {
             type="button"
             onClick={handleStartNew}
             disabled={!hasPassage}
-            className={`flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-semibold transition-all ${
+            className={`flex items-center gap-2 rounded-[20px] border-t border-l border-r-3 border-b-3 px-5 py-2 text-sm font-semibold transition-all ${
               hasPassage
-                ? "border-[#6666FF] bg-[#6666FF] text-white shadow-[0_2px_12px_rgba(102,102,255,0.35)] hover:bg-[#5555EE]"
-                : "cursor-not-allowed border-[#C4C4FF] bg-white text-[#A5A5D6]"
+                ? "border-t-[#A855F7] border-l-[#A855F7] border-r-[#3B21CC] border-b-[#3B21CC] bg-[#6666FF] text-white shadow-[0_2px_12px_rgba(102,102,255,0.35)] hover:bg-[#5555EE]"
+                : "cursor-not-allowed border-t-[#A855F7]/30 border-l-[#A855F7]/30 border-r-[#C4C4FF] border-b-[#C4C4FF] bg-white text-[#A5A5D6]"
             }`}
           >
             <RotateCcw className="h-4 w-4" />

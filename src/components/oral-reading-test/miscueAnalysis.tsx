@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { useMemo, useRef, useEffect } from "react"
-import { Loader2, Download } from "lucide-react"
-import { useRouter } from "next/navigation"
-import type { MiscueResult } from "@/types/oral-reading"
+import { useMemo, useRef, useEffect } from "react";
+import { Loader2, Download } from "lucide-react";
+import { useRouter } from "next/navigation";
+import type { MiscueResult } from "@/types/oral-reading";
 
 const MISCUE_CONFIG = [
   {
@@ -78,19 +78,19 @@ const MISCUE_CONFIG = [
     activeClass: "bg-[rgba(250,230,140,0.18)]",
     textClass: "text-[#8A6D00]",
   },
-] as const
+] as const;
 
 interface MiscueAnalysisProps {
-  miscues?: MiscueResult[]
-  totalMiscue?: number
-  oralFluencyScore?: number | string
-  classificationLevel?: string
-  isAnalyzing?: boolean
-  disabled?: boolean
-  highlightedTypes?: Set<string>
-  onToggleHighlight?: (miscueType: string) => void
-  onResetHighlight?: () => void
-  onExportPdf?: () => void
+  miscues?: MiscueResult[];
+  totalMiscue?: number;
+  oralFluencyScore?: number | string;
+  classificationLevel?: string;
+  isAnalyzing?: boolean;
+  disabled?: boolean;
+  highlightedTypes?: Set<string>;
+  onToggleHighlight?: (miscueType: string) => void;
+  onResetHighlight?: () => void;
+  onExportPdf?: () => void;
 }
 
 export function MiscueAnalysis({
@@ -105,38 +105,41 @@ export function MiscueAnalysis({
   onResetHighlight,
   onExportPdf,
 }: MiscueAnalysisProps) {
-  const router = useRouter()
-  const cardRef = useRef<HTMLDivElement>(null)
+  const router = useRouter();
+  const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (highlightedTypes.size === 0 || !onResetHighlight) return
+    if (highlightedTypes.size === 0 || !onResetHighlight) return;
     const handleMouseDown = (e: MouseEvent) => {
       if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
-        onResetHighlight()
+        onResetHighlight();
       }
-    }
-    document.addEventListener("mousedown", handleMouseDown)
-    return () => document.removeEventListener("mousedown", handleMouseDown)
-  }, [highlightedTypes.size, onResetHighlight])
+    };
+    document.addEventListener("mousedown", handleMouseDown);
+    return () => document.removeEventListener("mousedown", handleMouseDown);
+  }, [highlightedTypes.size, onResetHighlight]);
 
   const miscueCounts = useMemo(() => {
-    const counts: Record<string, number> = {}
+    const counts: Record<string, number> = {};
     for (const m of miscues) {
-      counts[m.miscueType] = (counts[m.miscueType] || 0) + 1
+      counts[m.miscueType] = (counts[m.miscueType] || 0) + 1;
     }
-    return counts
-  }, [miscues])
+    return counts;
+  }, [miscues]);
 
-  const hasResults = miscues.length > 0 || (totalMiscue !== undefined && totalMiscue > 0)
+  const hasResults =
+    miscues.length > 0 || (totalMiscue !== undefined && totalMiscue > 0);
 
-  const displayTotalMiscue = totalMiscue ?? (hasResults ? miscues.filter((m) => !m.isSelfCorrected).length : 0)
+  const displayTotalMiscue =
+    totalMiscue ??
+    (hasResults ? miscues.filter((m) => !m.isSelfCorrected).length : 0);
   const displayScore =
     oralFluencyScore !== undefined
       ? typeof oralFluencyScore === "number"
         ? `${oralFluencyScore}%`
         : oralFluencyScore
-      : "--"
-  const displayClassification = classificationLevel || "--"
+      : "--";
+  const displayClassification = classificationLevel || "--";
 
   const classificationColor = (() => {
     switch (classificationLevel?.toUpperCase()) {
@@ -144,30 +147,32 @@ export function MiscueAnalysis({
         return {
           textClass: "text-[#1E7A35]",
           bgClass: "bg-[rgba(140,220,160,0.3)]",
-        }
+        };
       case "INSTRUCTIONAL":
         return {
           textClass: "text-[#1A5FB4]",
           bgClass: "bg-[rgba(160,200,255,0.3)]",
-        }
+        };
       case "FRUSTRATION":
         return {
           textClass: "text-[#C41048]",
           bgClass: "bg-[rgba(253,182,210,0.3)]",
-        }
+        };
       default:
         return {
           textClass: "text-[#2E2EA3]",
           bgClass: "bg-[rgba(230,230,250,0.2)]",
-        }
+        };
     }
-  })()
+  })();
 
   return (
     <div
       ref={cardRef}
-      className={`flex h-full flex-col rounded-[10px] border border-[#54A4FF] bg-[#EFFDFF] px-5 py-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)] transition-opacity duration-300 ${
-        disabled && !isAnalyzing ? "pointer-events-none opacity-60" : "opacity-100"
+      className={`flex h-full flex-col rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#ffffff] px-5 py-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)] transition-opacity duration-300 ${
+        disabled && !isAnalyzing
+          ? "pointer-events-none opacity-60"
+          : "opacity-100"
       }`}
     >
       <div className="mb-2 flex items-center justify-between">
@@ -188,60 +193,78 @@ export function MiscueAnalysis({
       {isAnalyzing ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-[#6666FF]" />
-          <span className="text-sm font-medium text-[#31318A]">Analyzing reading fluency...</span>
-          <span className="text-xs text-[#31318A]/60">This may take a moment</span>
+          <span className="text-sm font-medium text-[#31318A]">
+            Analyzing reading fluency...
+          </span>
+          <span className="text-xs text-[#31318A]/60">
+            This may take a moment
+          </span>
         </div>
       ) : (
         <>
           <div className="flex flex-1 flex-col">
             {MISCUE_CONFIG.map((item, index) => {
-              const isActive = highlightedTypes.has(item.key)
-              const count = miscueCounts[item.key] || 0
+              const isActive = highlightedTypes.has(item.key);
+              const count = miscueCounts[item.key] || 0;
 
               return (
                 <div key={item.key}>
                   <button
                     type="button"
                     className={`flex w-full items-center justify-between rounded-md px-1.5 py-1.5 transition-colors ${
-                      isActive ? item.activeClass : "bg-transparent hover:bg-[rgba(102,102,255,0.07)]"
+                      isActive
+                        ? item.activeClass
+                        : "bg-transparent hover:bg-[rgba(102,102,255,0.07)]"
                     }`}
                     onClick={() => onToggleHighlight?.(item.key)}
                   >
                     <div
-                      className={`flex h-6 w-7 shrink-0 items-center justify-center rounded-[5px] border border-[#DAE6FF] text-sm font-bold ${item.colorClass} ${item.textClass}`}
+                      className={`flex h-6 w-7 shrink-0 items-center justify-center rounded-[5px] border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] text-sm font-bold ${item.colorClass} ${item.textClass}`}
                     >
                       {count}
                     </div>
-                    <span className={`text-sm font-bold ${item.textClass}`}>{item.label}</span>
+                    <span className={`text-sm font-bold ${item.textClass}`}>
+                      {item.label}
+                    </span>
                   </button>
 
                   {index < MISCUE_CONFIG.length - 1 && (
                     <div className="h-px bg-[rgba(18,48,220,0.25)]" />
                   )}
                 </div>
-              )
+              );
             })}
           </div>
 
           <div className="mt-auto pt-2">
             <div className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between rounded bg-[rgba(230,230,250,0.5)] px-3 py-1.5">
-                <span className="text-xs font-bold text-[#31318A]">Total Miscue:</span>
+              <div className="flex items-center justify-between rounded-[10px] border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[rgba(230,230,250,0.5)] px-3 py-1.5">
+                <span className="text-xs font-bold text-[#31318A]">
+                  Total Miscue:
+                </span>
                 <span className="font-[Kanit,sans-serif] text-[17px] font-semibold text-[#2E2EA3]">
                   {displayTotalMiscue}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between rounded bg-[rgba(230,230,250,0.35)] px-3 py-1.5">
-                <span className="text-xs font-bold text-[#31318A]">Oral Fluency Score:</span>
+              <div className="flex items-center justify-between rounded-[10px] border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[rgba(230,230,250,0.35)] px-3 py-1.5">
+                <span className="text-xs font-bold text-[#31318A]">
+                  Oral Fluency Score:
+                </span>
                 <span className="font-[Kanit,sans-serif] text-[17px] font-semibold text-[#2E2EA3]">
                   {displayScore}
                 </span>
               </div>
 
-              <div className={`flex items-center justify-between rounded px-3 py-1.5 ${classificationColor.bgClass}`}>
-                <span className="text-xs font-bold text-[#31318A]">Classification Level:</span>
-                <span className={`font-[Kanit,sans-serif] text-[17px] font-semibold ${classificationColor.textClass}`}>
+              <div
+                className={`flex items-center justify-between rounded-[10px] border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] px-3 py-1.5 ${classificationColor.bgClass}`}
+              >
+                <span className="text-xs font-bold text-[#31318A]">
+                  Classification Level:
+                </span>
+                <span
+                  className={`font-[Kanit,sans-serif] text-[17px] font-semibold ${classificationColor.textClass}`}
+                >
                   {displayClassification}
                 </span>
               </div>
@@ -250,8 +273,12 @@ export function MiscueAnalysis({
             <div className="mt-2.5 flex justify-center">
               <button
                 type="button"
-                onClick={() => router.push("/dashboard/oral-reading-test/reading-fluency-report")}
-                className="mt-3 w-full rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90"
+                onClick={() =>
+                  router.push(
+                    "/dashboard/oral-reading-test/reading-fluency-report",
+                  )
+                }
+                className="mt-3 w-full rounded-[10px] border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#3B21CC] border-b-[#3B21CC] bg-[#6666FF] px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90"
               >
                 View Fluency Report
               </button>
@@ -260,5 +287,5 @@ export function MiscueAnalysis({
         </>
       )}
     </div>
-  )
+  );
 }

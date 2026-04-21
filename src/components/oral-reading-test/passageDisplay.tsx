@@ -794,7 +794,7 @@ export function PassageDisplay({
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") onToggleCollapsed?.();
         }}
-        className="flex w-full cursor-pointer items-center justify-center rounded-[10px] border border-[#54A4FF] bg-[#EFFDFF] py-2 shadow-[0px_1px_20px_rgba(108,164,239,0.37)] transition-colors hover:bg-[#DDE8FF]"
+        className="flex w-full cursor-pointer items-center justify-center rounded-[10px] border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#EFFDFF] py-2 shadow-[0px_1px_20px_rgba(108,164,239,0.37)] transition-colors hover:bg-[#DDE8FF]"
         title="Expand passage"
         aria-label="Expand passage"
       >
@@ -831,7 +831,7 @@ export function PassageDisplay({
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") onToggleCollapsed?.();
           }}
-          className="flex w-full cursor-pointer items-center justify-center rounded-t-[10px] border border-b-0 border-[#54A4FF] bg-[#EFFDFF] py-2 transition-colors hover:bg-[#DDE8FF]"
+          className="flex w-full cursor-pointer items-center justify-center rounded-t-[10px] border-t border-l border-r-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] bg-[#EFFDFF] py-2 transition-colors hover:bg-[#DDE8FF]"
           title="Collapse passage"
           aria-label="Collapse passage"
         >
@@ -885,7 +885,7 @@ export function PassageDisplay({
 
       <div
         ref={containerRef}
-        className={`oral-reading-scroll relative flex-1 overflow-auto rounded-[10px] border border-purple-400 bg-white p-4 shadow-lg md:p-5 ${collapsible && !collapsed && !expanded ? "rounded-t-none border-t-0" : ""}`}
+        className={`oral-reading-scroll relative flex-1 overflow-auto rounded-[10px] border-t border-l border-r-4 border-b-4 border-t-[#8315e9] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-white p-4 shadow-lg md:p-5 ${collapsible && !collapsed && !expanded ? "rounded-t-none border-t-0" : ""}`}
       >
         {content ? (
           <p

@@ -55,17 +55,14 @@ export function QuestionCard({
     | "critical"
     | undefined;
 
-  const highlight = highlightedTag && tagKey === highlightedTag
-    ? TAG_HIGHLIGHT[tagKey]
-    : null;
+  const highlight =
+    highlightedTag && tagKey === highlightedTag ? TAG_HIGHLIGHT[tagKey] : null;
 
-  const tagClass = highlight
-    ? ""
-    : "bg-white border-[#E0E0FF] shadow-sm";
+  const tagClass = highlight ? "" : "bg-white border-[#E0E0FF] shadow-sm";
 
   return (
     <div
-      className={`rounded-2xl border px-8 py-6 transition-all duration-300 ${tagClass}`}
+      className={`rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] px-8 py-6 transition-all duration-300 ${typeof tagClass === "string" ? tagClass : ""}`}
       style={
         highlight
           ? {
@@ -78,7 +75,7 @@ export function QuestionCard({
     >
       {/* Question Header */}
       <div className="mb-2 flex items-start gap-3">
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-[#2d50ec] bg-[#3939f4]">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#2030CC] border-b-[#2030CC] bg-[#3939f4]">
           <span className="text-xs font-semibold text-white">
             {question.questionNumber}
           </span>
@@ -102,7 +99,7 @@ export function QuestionCard({
                 disabled={isSubmitted}
                 className={`flex items-center gap-3 w-full text-left py-1 px-2 rounded-lg transition-all duration-200 ${
                   isSelected
-                    ? "bg-[#6666FF]/10 shadow-[0px_0px_10px_rgba(255,176,32,0.3)]"
+                    ? "bg-[#162DB0]/10 shadow-[0px_0px_10px_rgba(255,176,32,0.3)]"
                     : "hover:bg-[#162DB0]/5"
                 } ${isSubmitted ? "cursor-default" : ""}`}
               >
@@ -136,7 +133,7 @@ export function QuestionCard({
             onChange={(e) => onEssayChange(question.id, e.target.value)}
             disabled={isSubmitted}
             placeholder="Type your answer here..."
-            className="w-full min-h-12.5 bg-[rgba(108,164,239,0.09)] rounded-md px-4 py-3 text-[#00306E] text-[15px] placeholder:text-[#00306E]/40 outline-none resize-y disabled:opacity-60"
+            className="w-full min-h-12.5 bg-[rgba(108,164,239,0.09)] rounded-md border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] px-4 py-3 text-[#00306E] text-[15px] placeholder:text-[#00306E]/40 outline-none resize-y disabled:opacity-60"
           />
         </div>
       )}

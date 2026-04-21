@@ -10,6 +10,7 @@ import ComprehensionBreakdownReport from "@/components/reports/oral-reading-test
 import { useAssessmentById } from "@/lib/hooks/useAssessmentById";
 import { exportComprehensionReportPdf } from "@/lib/exportComprehensionReportPdf";
 
+
 const SESSION_KEY = "reading-comprehension-session";
 
 interface SessionState {
@@ -199,7 +200,7 @@ export default function ReadingComprehensionReportPage() {
     <div className="flex h-screen flex-col overflow-hidden">
       {/* Custom Header */}
       <div className="flex items-center justify-between px-8 py-5 border-b-[3px] border-[#5D5DFB] bg-white">
-        <h1 className="text-xl lg:text-2xl font-semibold text-[#31318A]">
+          <h1 className="text-base md:text-lg font-semibold text-[#483efa]">
           Reading Comprehension Test Report
         </h1>
       </div>

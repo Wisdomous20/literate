@@ -146,7 +146,7 @@ export function ReadingModePanel({
   }
 
   return (
-    <div className="flex h-full flex-col rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] px-5 py-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)]">
+    <div className="flex h-full flex-col rounded-4xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#EFFDFF] px-5 py-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)]">
       <span className="mb-3 block text-[10px] font-bold uppercase tracking-widest text-[#6666FF]">
         Read Aloud
       </span>
@@ -163,10 +163,10 @@ export function ReadingModePanel({
             type="button"
             onClick={() => setVoiceDropdownOpen((o) => !o)}
             disabled={!hasPassage || isSpeaking}
-            className={`flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left text-xs transition-all duration-200 ${
+            className={`flex w-full items-center justify-between gap-2 rounded-xl border-t border-l border-r-4 border-b-4 px-3 py-2.5 text-left text-xs transition-all duration-200 ${
               voiceDropdownOpen
-                ? "border-[#6666FF] bg-[rgba(102,102,255,0.08)] shadow-[0_0_10px_rgba(102,102,255,0.15)]"
-                : "border-[#DAE6FF] bg-white/50 hover:border-[#6666FF]/40"
+                ? "border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[rgba(102,102,255,0.08)] shadow-[0_0_10px_rgba(102,102,255,0.15)]"
+                : "border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-white/50"
             } ${!hasPassage || isSpeaking ? "cursor-not-allowed opacity-50" : ""}`}
           >
             <span className="truncate font-medium text-[#00306E]">
@@ -178,7 +178,7 @@ export function ReadingModePanel({
           </button>
 
           {voiceDropdownOpen && (
-            <div className="absolute left-0 right-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-xl border border-[#DAE6FF] bg-white shadow-lg">
+            <div className="absolute left-0 right-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-white shadow-lg">
               {availableVoices.map((voice) => {
                 const isActive = voice.name === selectedVoiceName;
                 return (

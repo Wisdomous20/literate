@@ -1,10 +1,8 @@
-// src/components/reports/reading-comprehension-test/reportHeader.tsx
+// src/components/reports/oral-reading-test/comprehension-report/reportHeader.tsx
 "use client";
 
-import { useState } from "react";
 import { LayoutDashboard, ChevronLeft, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { DeleteConfirmModal } from "@/components/ui/deleteConfirmModal";
 import { NavButton } from "@/components/ui/navButton";
 
 interface ReadingComprehensionReportHeaderProps {
@@ -13,16 +11,15 @@ interface ReadingComprehensionReportHeaderProps {
 
 export default function ReadingComprehensionReportHeader({ onExportPdf }: ReadingComprehensionReportHeaderProps) {
   const router = useRouter();
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between px-8 py-5 border-b-[3px] border-[#5D5DFB] bg-white">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#5D5DFB]/10">
-            <LayoutDashboard size={20} className="text-[#5D5DFB]" />
+      <header className="flex h-16 md:h-17.5 items-center justify-between border-b-[3px] border-[#5D5DFB] bg-white px-4 md:px-6">
+        <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg bg-[#5D5DFB]/10">
+            <LayoutDashboard className="h-4 w-4 md:h-5 md:w-5 text-[#5D5DFB]" />
           </div>
-          <h1 className="text-xl lg:text-2xl font-semibold text-[#31318A]">
+          <h1 className="text-base md:text-lg font-semibold text-[#483efa]">
             Reading Comprehension Test Report
           </h1>
         </div>
@@ -35,23 +32,10 @@ export default function ReadingComprehensionReportHeader({ onExportPdf }: Readin
           >
             Export to PDF
           </button>
-          <button
-            type="button"
-            onClick={() => setShowDeleteModal(true)}
-            className="px-5 py-2 bg-[#DE3B40] text-white text-xs font-medium rounded-lg border border-[#DE3B40] hover:bg-[#DE3B40]/90 transition-colors"
-          >
-            Delete
-          </button>
         </div>
-      </div>
+      </header>
 
-      <DeleteConfirmModal
-        open={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={() => { /* TODO: wire up actual delete handler */ }}
-      />
-
-      <div className="flex items-center justify-between px-8 pt-2">
+      <div className="flex items-center justify-between px-4 md:px-6 pt-2">
         <NavButton onClick={() => router.back()}>
           <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
           <span>Previous</span>

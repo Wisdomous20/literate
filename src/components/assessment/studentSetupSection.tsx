@@ -9,12 +9,12 @@ import { X } from "lucide-react";
 function LoadingSkeleton() {
   return (
     <>
-      <div className="h-18 animate-pulse rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] shadow-[0px_1px_20px_rgba(108,164,239,0.37)]" />
+      <div className="h-18 animate-pulse rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#EFFDFF]" />
       <div className="flex gap-3">
-        <div className="h-10.5 flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
-        <div className="h-10.5 flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
-        <div className="h-10.5 flex-1 animate-pulse rounded-[10px] border border-[#54A4FF] bg-[#D5E7FE]" />
-        <div className="h-10.5 w-35 shrink-0 animate-pulse rounded-lg bg-[#2E2E68]/30" />
+        <div className="h-10.5 flex-1 animate-pulse rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#D5E7FE]" />
+        <div className="h-10.5 flex-1 animate-pulse rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#D5E7FE]" />
+        <div className="h-10.5 flex-1 animate-pulse rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#D5E7FE]" />
+        <div className="h-10.5 w-35 shrink-0 animate-pulse rounded-2xl bg-[#2E2E68]/30" />
       </div>
     </>
   );

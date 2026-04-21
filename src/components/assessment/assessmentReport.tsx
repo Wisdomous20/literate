@@ -84,7 +84,10 @@ export function AssessmentReport({
       <DashboardHeader title="Assessment Report" schoolYear="" />
 
       <main className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 py-4 lg:px-8">
-        <div className="rounded-2xl bg-white p-0 overflow-hidden flex flex-col border border-[#E5E7EB] h-full">
+        <div
+          className="rounded-2xl bg-white p-0 overflow-hidden flex flex-col h-full
+            border-t border-l border-[#A855F7] border-r-[4px] border-b-[4px] border-r-[#5D5DFB] border-b-[#5D5DFB]"
+        >
           <div className="p-4 bg-indigo-100">
             <div className="flex items-center gap-4">
               <button

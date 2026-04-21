@@ -332,26 +332,26 @@ export default function StudentInfoBar({
 
       <div className="grid grid-cols-[1fr_160px_180px_auto] items-start gap-3">
         <div className="relative rounded-lg  px-3 py-2">
-         <label className="mb-0.5 block text-[10px] font-bold uppercase tracking-widest text-[#0C1A6D]">
-  STUDENT NAME
-</label>
-<div className="relative">
-  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#A855F7]" />
-  <input
-    ref={studentInputRef}
-    type="text"
-    value={studentName}
-    onChange={(e) => handleStudentNameInput(e.target.value)}
-    onFocus={() => setIsStudentInputFocused(true)}
-    placeholder="Search or type student name"
-    className="w-full rounded-full border-0 border-r-4 border-b-4 border-t border-r-[#6653f9] border-b-[#6653f9] border-t-[#6653f9]/60 bg-white pl-10 pr-4 py-1.5 text-xs text-[#00306E] outline-none placeholder:text-xs placeholder:text-[#00306E]/40 transition-all duration-200 focus:border-[#7C3AED] focus:ring-2 focus:ring-[#A855F7]/20"
-  />
-</div>
+          <label className="mb-0.5 block text-[10px] font-bold uppercase tracking-widest text-[#0C1A6D]">
+            STUDENT NAME
+          </label>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#A855F7]" />
+            <input
+              ref={studentInputRef}
+              type="text"
+              value={studentName}
+              onChange={(e) => handleStudentNameInput(e.target.value)}
+              onFocus={() => setIsStudentInputFocused(true)}
+              placeholder="Search or type student name"
+              className="w-full rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-white pl-10 pr-4 py-1.5 text-xs text-[#00306E] outline-none placeholder:text-xs placeholder:text-[#00306E]/40 transition-all duration-200 focus:border-[#7C3AED] focus:ring-2 focus:ring-[#A855F7]/20"
+            />
+          </div>
 
           {showSuggestions && (
             <div
               ref={studentDropdownRef}
-              className="absolute left-3 right-3 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-lg border border-[#54A4FF] bg-white py-1 shadow-[0px_4px_12px_rgba(84,164,255,0.2)]"
+              className="absolute left-3 right-3 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-white py-1 shadow-[0px_4px_12px_rgba(84,164,255,0.2)]"
             >
               {showCreateStudent && (
                 <div className="border-b border-[#EEEEFF]">
@@ -404,10 +404,10 @@ export default function StudentInfoBar({
                 setIsGradeDropdownOpen(!isGradeDropdownOpen);
                 setIsClassDropdownOpen(false);
               }}
-              className={`flex w-full items-center justify-between gap-2 rounded-full border px-4 py-1.5 text-xs font-medium transition-all ${
+              className={`flex w-full items-center justify-between gap-2 rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] px-4 py-1.5 text-xs font-medium transition-all ${
                 gradeLevel
-                  ? "border-purple-400 bg-purple-50 text-purple-700 shadow-sm"
-                  : "border-dashed border-purple-300 bg-white text-purple-700 hover:bg-purple-50 hover:border-purple-400"
+                  ? "bg-purple-50 text-purple-700"
+                  : "bg-white text-purple-700 hover:bg-purple-50"
               }`}
             >
               <span className="truncate">
@@ -428,7 +428,7 @@ export default function StudentInfoBar({
             </button>
 
             {isGradeDropdownOpen && (
-              <div className="absolute left-0 top-full z-10 mt-1.5 max-h-48 w-36 overflow-y-auto rounded-lg border border-[#6666FF] bg-white py-1 shadow-[0px_4px_12px_rgba(102,102,255,0.2)]">
+              <div className="absolute left-0 top-full z-10 mt-1.5 max-h-48 w-36 overflow-y-auto rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-white py-1 shadow-[0px_4px_12px_rgba(102,102,255,0.2)]">
                 {Array.from({ length: 10 }, (_, i) => {
                   const grade = String(i + 1);
                   const isActive = gradeLevel === grade;
@@ -473,10 +473,10 @@ export default function StudentInfoBar({
                 setIsClassDropdownOpen(!isClassDropdownOpen);
                 setIsGradeDropdownOpen(false);
               }}
-              className={`flex w-full items-center justify-between gap-2 rounded-full border px-4 py-1.5 text-xs font-medium transition-all ${
+              className={`flex w-full items-center justify-between gap-2 rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] px-4 py-1.5 text-xs font-medium transition-all ${
                 selectedClass
-                  ? "border-purple-400 bg-purple-50 text-purple-700 shadow-sm"
-                  : "border-dashed border-purple-300 bg-white text-purple-700 hover:bg-purple-50 hover:border-purple-400"
+                  ? "bg-purple-50 text-purple-700"
+                  : "bg-white text-purple-700 hover:bg-purple-50"
               }`}
             >
               <span className="truncate">{selectedClass || "Select"}</span>
@@ -546,7 +546,7 @@ export default function StudentInfoBar({
             <button
               type="button"
               onClick={onClear}
-              className="rounded-full border border-dashed border-[#6666FF]/60 px-8 py-1.5 text-xs font-medium text-[#6666FF] transition-all hover:border-[#6666FF] hover:bg-[#EEEEFF]"
+              className="rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#f51515] border-l-[#f51515] border-r-[#f51515] border-b-[#f51515] px-8 py-1.5 text-xs font-medium text-[#f51515] transition-all hover:bg-[#EEEEFF]"
             >
               Clear
             </button>
