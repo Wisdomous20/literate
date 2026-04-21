@@ -65,69 +65,67 @@ const miscues = [
 export default function MiscuesSection() {
 
   return (
-    <section className="py-24 relative overflow-x-hidden">
+    <section className="h-screen flex flex-col justify-center relative overflow-hidden py-6">
       {/* IMG_7 flipped, leftmost */}
-      <div className="absolute top-2 left-0 -z-10 pointer-events-none">
+      <div className="absolute -top-16 left-0 -z-10 pointer-events-none">
         <Image
           src="/assets/IMG_33_1.svg"
           alt=""
           width={924}
           height={924}
-          className="w-[832px] opacity-90 scale-x-[-1]"
+          className="w-[700px] opacity-90 scale-x-[-1]"
         />
       </div>
       {/* IMG_22 flipped, leftmost - above IMG_33_1 */}
-      <div className="absolute -top-52 -left-48 -z-[5] pointer-events-none">
+      <div className="absolute -top-[200px] -left-40 -z-[5] pointer-events-none">
         <Image
           src="/assets/IMG_22_3.svg"
           alt=""
           width={720}
           height={720}
-          className="w-[950px] opacity-100 scale-x-[-1]"
+          className="w-[800px] opacity-100 scale-x-[-1]"
         />
       </div>
 
-      {/* Header: text right-aligned */}
+      {/* Header */}
       <AnimatedSection direction="up" delay={0.05}>
-        <div className="pl-[26%] pr-6 md:pr-12 text-center mb-16">
-          <h2 className="text-4xl lg:text-5xl font-bold mb-8 tracking-[5px] leading-[50px] text-[#6C4EEB] translate-x-16">
-            Beyond Speed: Analyzing
-            Oral Reading Miscues
+        <div className="pl-[26%] pr-6 md:pr-12 text-center mb-4 -mt-24">
+          <h2 className="text-4xl md:text-5xl font-bold mb-2 tracking-[3.5px] leading-[1.2] text-[#323743] translate-x-16">
+            Beyond Speed: Analyzing Oral <span className="text-[#6C4EEB]">Reading Miscues</span>
           </h2>
-          <p className="text-[#323743] text-lg leading-relaxed">
-            We track the 8 critical reading miscues, giving
-            you a deep qualitative understanding of student struggles.
+          <p className="text-[#323743] text-xl leading-relaxed">
+            We track the 8 critical reading miscues, giving you a deep qualitative understanding of student struggles.
           </p>
         </div>
       </AnimatedSection>
 
       {/* 4×2 compact grid — all 8 miscues visible */}
-      <AnimatedList className="px-6 md:px-12 grid grid-cols-2 lg:grid-cols-4 gap-5" staggerDelay={0.08} baseDelay={0.05}>
+      <AnimatedList className="px-6 md:px-12 grid grid-cols-2 md:grid-cols-4 gap-2" staggerDelay={0.08} baseDelay={0.05}>
         {miscues.map((m) => (
-          <div key={m.name} className="relative group">
+          <div key={m.name} className="relative group h-[148px]">
             <div
-              className="absolute inset-0 rounded-[10px] translate-y-2"
+              className="absolute inset-0 rounded-[10px] translate-y-1.5"
               style={{ background: m.color }}
             />
             <div
-              className="relative bg-white rounded-[10px] p-5 h-full transition-transform hover:-translate-y-1 active:translate-y-0"
+              className="relative bg-white rounded-[10px] p-3 h-full transition-transform hover:-translate-y-1 active:translate-y-0"
               style={{ border: `2px solid ${m.borderColor}` }}
             >
-              <div className="flex items-center gap-3 mb-3">
+              <div className="flex items-center gap-2 mb-1.5">
                 <div
-                  className="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center text-white font-black text-lg shadow-inner"
+                  className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center text-white font-black text-xs shadow-inner"
                   style={{ background: m.color }}
                 >
                   {m.name[0]}
                 </div>
                 <h3
-                  className="text-base font-bold leading-tight"
+                  className="text-xs font-bold leading-tight"
                   style={{ color: m.color }}
                 >
                   {m.name}
                 </h3>
               </div>
-              <p className="text-xs leading-relaxed text-[#575E6B]">
+              <p className="text-[10px] leading-relaxed text-[#575E6B] line-clamp-3">
                 {m.description}
               </p>
             </div>

@@ -45,12 +45,11 @@ export default function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
           >
-            LiteRate automates manual reading assessments aligned with the Philippine Informal Reading Inventory. Generate instant results and
-            free up your classroom time for more pedagogical innovation.
+            LiteRate automates manual reading assessments aligned with the Philippine Informal Reading Inventory.
           </motion.p>
 
           <motion.div
-            className="flex flex-wrap gap-4"
+            className="flex flex-wrap gap-4 -mt-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}

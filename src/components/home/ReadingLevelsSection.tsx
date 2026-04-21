@@ -41,9 +41,9 @@ export default function ReadingLevelsSection() {
         </div>
       </AnimatedSection>
 
-      <AnimatedList className="px-6 md:px-12 grid lg:grid-cols-3 gap-8" staggerDelay={0.15} baseDelay={0.1}>
+      <AnimatedList className="px-6 md:px-12 grid lg:grid-cols-3 gap-8 items-stretch" staggerDelay={0.15} baseDelay={0.1}>
         {/* Independent */}
-        <div className="relative group">
+        <div className="relative group h-[420px]">
           <div className="absolute inset-0 rounded-[10px] translate-y-2 bg-[#28A745]" />
           <div className="relative bg-white rounded-[10px] p-8 h-full overflow-hidden border border-[#00BD6B] shadow-[0_2px_4px_rgba(0,0,0,0.06)] transition-transform hover:-translate-y-1 active:translate-y-0">
             <div className="flex justify-between items-start mb-6">
@@ -87,7 +87,7 @@ export default function ReadingLevelsSection() {
         </div>
 
         {/* Instructional */}
-        <div className="relative group">
+        <div className="relative group h-[420px]">
           <div className="absolute inset-0 rounded-[10px] translate-y-2 bg-[#1766D6]" />
           <div className="relative bg-white rounded-[12px] p-8 h-full overflow-hidden border-2 border-[#1766D6] shadow-[0_2px_4px_rgba(0,0,0,0.06)] transition-transform hover:-translate-y-1 active:translate-y-0">
             <div className="flex justify-between items-start mb-6">
@@ -132,7 +132,7 @@ export default function ReadingLevelsSection() {
         </div>
 
         {/* Frustration */}
-        <div className="relative group">
+        <div className="relative group h-[420px]">
           <div className="absolute inset-0 rounded-[10px] translate-y-2 bg-[#DC3545]" />
           <div className="relative bg-white rounded-[12px] p-8 h-full overflow-hidden border-2 border-[#DC3545] shadow-[0_2px_4px_rgba(0,0,0,0.06)] transition-transform hover:-translate-y-1 active:translate-y-0">
             <div className="flex justify-between items-start mb-6">
