@@ -1,19 +1,27 @@
+// src/app/dashboard/oral-reading-test/reading-level-report/page.tsx
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, useSyncExternalStore } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useSyncExternalStore,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
-  LayoutDashboard,
   ChevronLeft,
   FileText,
-  ClipboardCheck,
   Loader2,
-  RotateCcw,
 } from "lucide-react";
+import Image from "next/image";
 import type { OralFluencyAnalysis } from "@/types/oral-reading";
 import { DeleteConfirmModal } from "@/components/ui/deleteConfirmModal";
-import { NavButton } from "@/components/ui/navButton";
-import { buildFluencyReportData, exportFluencyReportPdf } from "@/lib/exportFluencyReportPdf";
+import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
+import {
+  buildFluencyReportData,
+  exportFluencyReportPdf,
+} from "@/lib/exportFluencyReportPdf";
 import { exportComprehensionReportPdf } from "@/lib/exportComprehensionReportPdf";
 import { useAssessmentById } from "@/lib/hooks/useAssessmentById";
 
@@ -52,44 +60,56 @@ function loadSession(): Partial<SessionState> {
   return {};
 }
 
-/** Format a LevelClassification enum value for display (e.g. "INDEPENDENT" → "Independent") */
 function formatLevel(level: string | undefined | null): string {
   if (!level) return "—";
   return level.charAt(0).toUpperCase() + level.slice(1).toLowerCase();
 }
 
-/** Derive a color palette from the reading level classification */
-function getLevelStyle(level: string) {
-  switch (level.toLowerCase()) {
+function getLevelColor(level: string): string {
+  switch (level?.toLowerCase()) {
     case "independent":
-      return {
-        text: "text-[#0F8B3A]",
-        bg: "bg-[#D4F6DF]",
-        border: "border-[#54A4FF]",
-        raw: "#0F8B3A",
-      };
+      return "text-emerald-600";
     case "instructional":
-      return {
-        text: "text-[#297CEC]",
-        bg: "bg-[#EAF3FF]",
-        border: "border-[#297CEC]",
-        raw: "#297CEC",
-      };
+      return "text-blue-600";
     case "frustration":
-      return {
-        text: "text-[#CE330C]",
-        bg: "bg-[#F6D1D2]",
-        border: "border-[#CE330C]",
-        raw: "#CE330C",
-      };
+      return "text-red-500";
     default:
-      return {
-        text: "text-[#2E2E68]",
-        bg: "bg-[#E8E8FF]",
-        border: "border-[#54A4FF]",
-        raw: "#2E2E68",
-      };
+      return "text-[#00306E]";
   }
+}
+
+function getProgressBarColor(level: string): string {
+  switch (level?.toLowerCase()) {
+    case "independent":
+      return "bg-emerald-400";
+    case "instructional":
+      return "bg-blue-400";
+    case "frustration":
+      return "bg-red-400";
+    default:
+      return "bg-emerald-400";
+  }
+}
+
+function getClassificationSubtext(level: string): string {
+  switch (level?.toLowerCase()) {
+    case "independent":
+      return "Student demonstrates strong reading ability across all areas.";
+    case "instructional":
+      return "Student is on track with appropriate instructional support.";
+    case "frustration":
+      return "Student requires intensive support to improve reading skills.";
+    default:
+      return "Student demonstrates strong reading ability across all areas.";
+  }
+}
+
+function getWidthClass(percent: number) {
+  if (percent >= 100) return "w-full";
+  if (percent >= 75) return "w-3/4";
+  if (percent >= 50) return "w-1/2";
+  if (percent >= 25) return "w-1/4";
+  return "w-0";
 }
 
 export default function ReadingLevelReportPage() {
@@ -104,51 +124,55 @@ export default function ReadingLevelReportPage() {
   );
 
   useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect -- Intentional mount-time hydration flag for SSR */
     setIsHydrated(true);
-    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
   const session = loadSession();
-const [overallLevelState, setOverallLevelState] = useState<string | null>(
-  session.oralReadingLevel ?? null
-);
+  const [overallLevelState, setOverallLevelState] = useState<string | null>(
+    session.oralReadingLevel ?? null,
+  );
 
-useEffect(() => {
-  if (overallLevelState) return;
+  useEffect(() => {
+    if (overallLevelState) return;
 
-  const assessmentId = sessionStorage.getItem("oral-reading-assessmentId");
-  if (!assessmentId) return;
+    const assessmentId = sessionStorage.getItem("oral-reading-assessmentId");
+    if (!assessmentId) return;
 
-  const poll = setInterval(async () => {
-    try {
-      const { getAssessmentByIdAction } = await import(
-        "@/app/actions/assessment/getAssessmentById"
-      );
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const assessment = (await getAssessmentByIdAction(assessmentId)) as any;
+    const poll = setInterval(async () => {
+      try {
+        const { getAssessmentByIdAction } =
+          await import("@/app/actions/assessment/getAssessmentById");
+        const assessment = (await getAssessmentByIdAction(
+          assessmentId,
+        )) as Record<string, unknown>;
 
-      if (assessment?.oralReadingResult?.classificationLevel) {
-        clearInterval(poll);
-        const level = assessment.oralReadingResult.classificationLevel;
-        setOverallLevelState(level);
+        if (
+          assessment?.oralReadingResult &&
+          typeof assessment.oralReadingResult === "object"
+        ) {
+          const oralResult = assessment.oralReadingResult as Record<
+            string,
+            unknown
+          >;
+          if (oralResult.classificationLevel) {
+            clearInterval(poll);
+            const level = oralResult.classificationLevel as string;
+            setOverallLevelState(level);
 
-        const raw = sessionStorage.getItem("oral-reading-session");
-        if (raw) {
-          const s = JSON.parse(raw);
-          s.oralReadingLevel = level;
-          sessionStorage.setItem("oral-reading-session", JSON.stringify(s));
+            const raw = sessionStorage.getItem("oral-reading-session");
+            if (raw) {
+              const s = JSON.parse(raw);
+              s.oralReadingLevel = level;
+              sessionStorage.setItem("oral-reading-session", JSON.stringify(s));
+            }
+          }
         }
-      }
-    } catch {}
-  }, 3000);
+      } catch {}
+    }, 3000);
 
-  return () => clearInterval(poll);
-}, [overallLevelState]);
+    return () => clearInterval(poll);
+  }, [overallLevelState]);
 
-
-
-  // Fetch assessment data for comprehension breakdown
   const assessmentId = useMemo(() => {
     if (!isClient) return null;
     return sessionStorage.getItem("oral-reading-assessmentId");
@@ -157,9 +181,11 @@ useEffect(() => {
   const { data: assessment } = useAssessmentById(assessmentId);
 
   const handleExportPdf = useCallback(() => {
-    const safeName = (session.studentName || "Unknown").replace(/[^a-zA-Z0-9]/g, "_");
+    const safeName = (session.studentName || "Unknown").replace(
+      /[^a-zA-Z0-9]/g,
+      "_",
+    );
 
-    // Export fluency report PDF
     if (session.analysisResult && session.passageContent) {
       const fluencyData = buildFluencyReportData({
         studentName: session.studentName || "Unknown",
@@ -176,17 +202,23 @@ useEffect(() => {
       exportFluencyReportPdf(fluencyData, `Oral_Fluency_Report_${safeName}`);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const test = (assessment as any)?.comprehension;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const passage = (assessment as any)?.passage;
+    const test = (assessment as Record<string, unknown>)?.comprehension as
+      | Record<string, unknown>
+      | undefined;
+    const passage = (assessment as Record<string, unknown>)?.passage as
+      | Record<string, unknown>
+      | undefined;
     if (test) {
+      const answers = test.answers as Array<{
+        tag: string;
+        isCorrect: boolean;
+      }>;
       const tagBreakdown = {
         literal: { correct: 0, total: 0 },
         inferential: { correct: 0, total: 0 },
         critical: { correct: 0, total: 0 },
       };
-      for (const answer of test.answers) {
+      for (const answer of answers) {
         const tag = answer.tag;
         if (tag === "Literal") {
           tagBreakdown.literal.total++;
@@ -199,9 +231,10 @@ useEffect(() => {
           if (answer.isCorrect) tagBreakdown.critical.correct++;
         }
       }
-      const percentage = test.totalItems > 0
-        ? Math.round((test.score / test.totalItems) * 100)
-        : 0;
+      const score = test.score as number;
+      const totalItems = test.totalItems as number;
+      const percentage =
+        totalItems > 0 ? Math.round((score / totalItems) * 100) : 0;
 
       setTimeout(() => {
         exportComprehensionReportPdf(
@@ -209,15 +242,17 @@ useEffect(() => {
             studentName: session.studentName || "Unknown",
             gradeLevel: session.gradeLevel || "Unknown",
             className: session.selectedClassName || "Unknown",
-            passageTitle: passage?.title || "Unknown",
+            passageTitle: (passage?.title as string) || "Unknown",
             passageLevel: String(passage?.level ?? ""),
-            numberOfWords: passage?.content?.split(/\s+/).filter(Boolean).length ?? 0,
-            testType: passage?.testType || "Unknown",
+            numberOfWords: ((passage?.content as string) || "")
+              .split(/\s+/)
+              .filter(Boolean).length,
+            testType: (passage?.testType as string) || "Unknown",
             assessmentType: "Oral Reading Test",
-            score: test.score,
-            totalItems: test.totalItems,
+            score,
+            totalItems,
             percentage,
-            classificationLevel: test.classificationLevel,
+            classificationLevel: test.classificationLevel as string,
             literal: tagBreakdown.literal,
             inferential: tagBreakdown.inferential,
             critical: tagBreakdown.critical,
@@ -228,43 +263,39 @@ useEffect(() => {
     }
   }, [session, assessment]);
 
-  // Loading state — wait for client hydration before reading from sessionStorage
+  // Loading state
   if (!isHydrated) {
     return (
-      <div className="flex flex-col h-screen overflow-hidden bg-[#E4F4FF]">
-        <div className="flex items-center gap-3 px-8 py-5 border-b border-[#8D8DEC] shadow-[0_4px_4px_#54A4FF]">
-          <LayoutDashboard size={24} className="text-[#00306E]" />
-          <h1 className="text-xl lg:text-[25px] font-semibold text-[#00306E] font-(family-name:--font-poppins)">
-            Oral Reading Test Report
-          </h1>
-        </div>
+      <div className="flex h-full flex-col overflow-hidden">
+        <DashboardHeader title="Reading Level" schoolYear="" />
         <div className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-[#6666FF]" />
-            <span className="text-[#00306E] font-medium">Loading report...</span>
+            <span className="text-[#00306E] font-medium">
+              Loading report...
+            </span>
           </div>
         </div>
       </div>
     );
   }
 
-  // Error state — no session data found
+  // No data state
   if (!session.analysisResult && !session.comprehensionResult) {
     return (
-      <div className="flex flex-col h-screen overflow-hidden bg-[#E4F4FF]">
-        <div className="flex items-center gap-3 px-8 py-5 border-b border-[#8D8DEC] shadow-[0_4px_4px_#54A4FF]">
-          <LayoutDashboard size={24} className="text-[#00306E]" />
-          <h1 className="text-xl lg:text-[25px] font-semibold text-[#00306E] font-(family-name:--font-poppins)">
-            Oral Reading Test Report
-          </h1>
-        </div>
+      <div className="flex h-full flex-col overflow-hidden">
+        <DashboardHeader title="Reading Level" schoolYear="" />
         <div className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-4 text-center px-4">
-            <p className="text-[#00306E] font-semibold text-lg">No report data found.</p>
-            <p className="text-[#00306E]/60 text-sm">Please complete an oral reading session first.</p>
+            <p className="text-[#00306E] font-semibold text-lg">
+              No report data found.
+            </p>
+            <p className="text-[#00306E]/60 text-sm">
+              Please complete an oral reading session first.
+            </p>
             <button
               onClick={() => router.back()}
-              className="rounded-lg bg-[#6666FF] px-6 py-2 text-sm font-semibold text-white hover:bg-[#5555EE] transition-colors"
+              className="rounded-lg bg-[#297CEC] px-6 py-2 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
             >
               Go Back
             </button>
@@ -274,192 +305,245 @@ useEffect(() => {
     );
   }
 
-  // Fluency data from analysisResult (stored by oral-reading-test page after fluency API call)
   const analysisResult = session.analysisResult;
-  const fluencyScore =
-    analysisResult?.oralFluencyScore != null
-      ? `${analysisResult.oralFluencyScore}%`
-      : "—";
   const fluencyLevel = formatLevel(analysisResult?.classificationLevel);
+  const fluencyPercent = analysisResult?.oralFluencyScore ?? 0;
 
-  // Comprehension data (stored by comprehension page after POST /api/oral-reading/comprehension)
   const comprehensionResult = session.comprehensionResult;
-  const comprehensionScore = comprehensionResult?.totalItems
-    ? `${Math.round((comprehensionResult.score / comprehensionResult.totalItems) * 100)}%`
-    : "—";
   const comprehensionLevel = formatLevel(comprehensionResult?.level);
+  const comprehensionPercent = comprehensionResult?.totalItems
+    ? Math.round(
+        (comprehensionResult.score / comprehensionResult.totalItems) * 100,
+      )
+    : 0;
 
-  // Overall oral reading level — computed by backend createOralReadingService,
-  // returned in the comprehension API response and stored in session
-const overallLevel = formatLevel(session.oralReadingLevel);
-
-  const fluencyStyle = getLevelStyle(fluencyLevel);
-  const comprehensionStyle = getLevelStyle(comprehensionLevel);
-  const overallStyle = getLevelStyle(overallLevel);
+  const overallLevel = formatLevel(
+    overallLevelState ?? session.oralReadingLevel,
+  );
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-[#E4F4FF]">
-      {/* ── Header Bar ───────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-8 py-5 border-b border-[#8D8DEC] shadow-[0_4px_4px_#54A4FF]">
-        <div className="flex items-center gap-3">
-          <LayoutDashboard size={24} className="text-[#00306E]" />
-          <h1 className="text-xl lg:text-[25px] font-semibold text-[#00306E] font-(family-name:--font-poppins)">
-            Oral Reading Test Report
-          </h1>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleExportPdf}
-            className="px-5 py-2 bg-[#297CEC] text-white text-xs font-medium rounded-lg border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#297CEC]/90 transition-colors"
-          >
-            Export to PDF
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowDeleteModal(true)}
-            className="px-5 py-2 bg-[#DE3B40] text-white text-xs font-medium rounded-lg border border-[#DE3B40] shadow-[0_1px_20px_rgba(108,164,239,0.37)] hover:bg-[#DE3B40]/90 transition-colors"
-          >
-            Delete
-          </button>
-        </div>
-      </div>
+    <div className="flex h-screen flex-col overflow-hidden">
+      <DashboardHeader title="Reading Level" schoolYear="" />
 
-      <DeleteConfirmModal
-        open={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={() => { /* TODO: wire up actual delete handler */ }}
-      />
-
-      <div className="flex items-center justify-between px-8 pt-4 pb-2">
-        <NavButton onClick={() => router.back()}>
-          <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
-          <span>Previous</span>
-        </NavButton>
-
-        <NavButton
-          variant="outlined"
-          onClick={() => {
-            sessionStorage.removeItem(STORAGE_KEY);
-            sessionStorage.removeItem("oral-reading-audio");
-            sessionStorage.removeItem("oral-reading-assessmentId");
-            sessionStorage.removeItem("oral-reading-comprehension-state");
-            sessionStorage.removeItem("oral-reading-comprehensionTestId");
-            router.push("/dashboard/oral-reading-test");
-          }}
-        >
-          <RotateCcw className="h-4 w-4 md:h-5 md:w-5" />
-          <span>Start New</span>
-        </NavButton>
-      </div>
-
-      {/* ── Main Content ─────────────────────── */}
-      <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth px-8 py-6 md:px-12 lg:px-16 animate-in fade-in slide-in-from-top-2 duration-300">
-        {/* Report Cards Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-250 mx-auto">
-          {/* ── Oral Fluency Test Report Card ──────────────────── */}
-          <div className="flex flex-col bg-[#FEFFFD] border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] rounded-4xl p-8 gap-3">
-            {/* Card header */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-12.25 h-12 bg-[rgba(74,74,252,0.06)] border border-[#DAE6FF] rounded-[10px]">
-                <FileText size={22} className="text-[#1A6673]" />
+      <main className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 py-4 lg:px-8">
+        <div className="rounded-2xl bg-white overflow-hidden border border-[#E5E7EB] h-full flex flex-col">
+          {/* Top bar — indigo header with back button, student info, export */}
+          <div className="px-6 py-4 bg-[#E0E7FF]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={() => router.back()}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white hover:bg-[#9333EA] transition-all shadow-sm active:scale-95"
+                  aria-label="Go back"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <div className="flex flex-col gap-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-semibold text-black uppercase tracking-widest">
+                      {session.gradeLevel
+                        ? `Grade ${session.gradeLevel}`
+                        : "—"}
+                    </span>
+                    <span className="rounded-full px-2 py-0.5 text-[11px] font-medium text-black bg-indigo-100">
+                      Oral Reading Test
+                    </span>
+                  </div>
+                  <h1 className="text-lg font-bold text-black leading-tight">
+                    {session.studentName || "Unknown Student"}
+                  </h1>
+                </div>
               </div>
-              <h2 className="text-lg font-bold text-[#003366] leading-tight">
-                Reading Fluency
-                <br />
-                Test Report
-              </h2>
-            </div>
-
-            {/* Score */}
-            <p className="text-[50px] font-bold text-[#1A6673] leading-18.75">
-              {fluencyScore}
-            </p>
-
-            {/* Level */}
-            <p
-              className={`text-[26px] font-bold leading-9.75 ${fluencyStyle.text}`}
-            >
-              {fluencyLevel}
-            </p>
-            {/* View Report button */}
-            <div className="mt-auto pt-4">
-              <button
-                onClick={() =>
-                  router.push(
-                    "/dashboard/oral-reading-test/reading-fluency-report",
-                  )
-                }
-                className="w-45.5 h-11 bg-[#2E2E68] text-white text-[15px] font-medium rounded-lg border border-[#5D5DFB] shadow-[0_1px_20px_rgba(65,155,180,0.47)] hover:bg-[#2E2E68]/90 transition-colors"
-              >
-                View Report
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleExportPdf}
+                  className="rounded-lg bg-[#297CEC] px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                  type="button"
+                >
+                  Export to PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(true)}
+                  className="rounded-lg bg-[#DE3B40] px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* ── Reading Comprehension Test Report Card ─────────── */}
-          <div className="flex flex-col bg-[#FEFFFD] border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] rounded-4xl p-8 gap-3">
-            {/* Card header */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-12.25 h-12 bg-[rgba(74,74,252,0.06)] border border-[#DAE6FF] rounded-[10px]">
-                <ClipboardCheck size={22} className="text-[#1A6673]" />
+          <DeleteConfirmModal
+            open={showDeleteModal}
+            onClose={() => setShowDeleteModal(false)}
+            onConfirm={() => {
+              /* TODO */
+            }}
+          />
+
+          {/* Scrollable content area */}
+          <div className="flex-1 overflow-y-auto px-6 py-6">
+            {/* Overall Reading Level Banner */}
+            {overallLevel && overallLevel !== "—" && (
+              <div className="relative rounded-2xl overflow-hidden mb-6 h-48">
+                <div className="absolute inset-0 bg-[url('/images/Class-bg.png')] bg-cover bg-center" />
+                <div className="absolute inset-0 bg-linear-to-r from-[#6666FF]/90 to-[#6666FF]/75" />
+
+                <div className="relative h-full flex items-center justify-between px-8 py-6">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-white" />
+                      <span className="text-sm font-semibold text-white uppercase tracking-wider">
+                        Reading Level
+                      </span>
+                    </div>
+                    <span className="text-xs text-white/80">
+                      Based on all assessments
+                    </span>
+                    <h2 className="text-4xl font-extrabold text-white mt-2">
+                      {overallLevel}
+                    </h2>
+                    <p className="text-sm text-white/90 mt-2 max-w-sm">
+                      {getClassificationSubtext(overallLevel)}
+                    </p>
+                  </div>
+
+                  <div className="relative -mr-8">
+                    <Image
+                      src="/images/Class.png"
+                      alt="Student mascot"
+                      width={200}
+                      height={200}
+                      className="h-auto w-auto"
+                      priority
+                    />
+                  </div>
+                </div>
               </div>
-              <h2 className="text-lg font-bold text-[#003366] leading-tight">
-                Reading Comprehension
-                <br />
-                Test Report
-              </h2>
-            </div>
+            )}
 
-            {/* Score */}
-            <p className="text-[50px] font-bold text-[#1A6673] leading-18.75">
-              {comprehensionScore}
-            </p>
+            <div className="border-t border-[#E5E7EB] my-6" />
 
-            {/* Level */}
-            <p
-              className={`text-[26px] font-bold leading-9.75 ${comprehensionStyle.text}`}
-            >
-              {comprehensionLevel}
-            </p>
-
-            {/* View Report button */}
-            <div className="mt-auto pt-4">
-              <button
-                onClick={() =>
-                  router.push(
-                    "/dashboard/oral-reading-test/comprehension/report",
-                  )
-                }
-                className="w-45.5 h-11 bg-[#2E2E68] text-white text-[15px] font-medium rounded-lg border border-[#5D5DFB] shadow-[0_1px_20px_rgba(65,155,180,0.47)] hover:bg-[#2E2E68]/90 transition-colors"
+            {/* Report Cards Grid */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {/* Oral Fluency Test Report Card */}
+              <div
+                className="
+                  rounded-xl overflow-hidden
+                  border-l-2 border-t-2 border-r-4 border-b-4
+                  border-l-[#E5E7EB] border-t-[#E5E7EB]
+                  border-r-[#2E2E68] border-b-[#2E2E68]
+                "
               >
-                View Report
-              </button>
-            </div>
-          </div>
-        </div>
+                <div className="bg-white p-6 flex flex-col h-full">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex flex-col">
+                      <h3 className="text-base font-bold text-[#00306E]">
+                        Oral Fluency Test Report
+                      </h3>
+                      <span className="text-xs text-[#00306E]/60 mt-1">
+                        Based on all assessments
+                      </span>
+                    </div>
+                    <button
+                      onClick={() =>
+                        router.push(
+                          "/dashboard/oral-reading-test/reading-fluency-report",
+                        )
+                      }
+                      className="rounded-full bg-[#A855F7] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#9333EA] transition whitespace-nowrap"
+                      type="button"
+                      aria-label="View Oral Fluency Test report"
+                    >
+                      View Report
+                    </button>
+                  </div>
 
-        <div className="max-w-250 mx-auto mt-8">
-          <div
-            className={`flex items-center gap-6 ${overallStyle.bg} border ${overallStyle.border} shadow-[0_1px_20px_rgba(108,164,239,0.37)] rounded-4xl px-10 py-8`}
-          >
-            {/* Icon box */}
-            <div
-              className={`flex h-12 w-12.25 shrink-0 items-center justify-center rounded-[10px] bg-[rgba(74,74,252,0.06)] border ${overallStyle.border}`}
-            >
-              <FileText size={22} className={overallStyle.text} />
-            </div>
+                  <div className="mb-4">
+                    <span
+                      className={`text-lg font-bold ${getLevelColor(fluencyLevel)}`}
+                    >
+                      {fluencyLevel}
+                    </span>
+                  </div>
 
-            {/* Text content */}
-            <div className="flex flex-col">
-              <h3 className="text-lg font-bold text-[#003366] leading-tight">
-                Reading Level
-              </h3>
-              <p
-                className={`text-[30px] font-bold leading-11.25 ${overallStyle.text}`}
+                  <div className="flex-1 flex items-center gap-4">
+                    <div className="flex-1">
+                      <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full ${getProgressBarColor(fluencyLevel)} transition-all duration-700 ${getWidthClass(fluencyPercent)}`}
+                        />
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-3xl font-extrabold text-[#00306E]">
+                        {fluencyPercent > 0 ? `${Math.round(fluencyPercent)}%` : "—"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Reading Comprehension Test Report Card */}
+              <div
+                className="
+                  rounded-xl overflow-hidden
+                  border-l-2 border-t-2 border-r-4 border-b-4
+                  border-l-[#E5E7EB] border-t-[#E5E7EB]
+                  border-r-[#2E2E68] border-b-[#2E2E68]
+                "
               >
-                {overallLevel}
-              </p>
+                <div className="bg-white p-6 flex flex-col h-full">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex flex-col">
+                      <h3 className="text-base font-bold text-[#00306E]">
+                        Reading Comprehension Test Report
+                      </h3>
+                      <span className="text-xs text-[#00306E]/60 mt-1">
+                        Based on all assessments
+                      </span>
+                    </div>
+                    <button
+                      onClick={() =>
+                        router.push(
+                          "/dashboard/oral-reading-test/comprehension/report",
+                        )
+                      }
+                      className="rounded-full bg-[#A855F7] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#9333EA] transition whitespace-nowrap"
+                      type="button"
+                      aria-label="View Reading Comprehension Test report"
+                    >
+                      View Report
+                    </button>
+                  </div>
+
+                  <div className="mb-4">
+                    <span
+                      className={`text-lg font-bold ${getLevelColor(comprehensionLevel)}`}
+                    >
+                      {comprehensionLevel}
+                    </span>
+                  </div>
+
+                  <div className="flex-1 flex items-center gap-4">
+                    <div className="flex-1">
+                      <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full ${getProgressBarColor(comprehensionLevel)} transition-all duration-700 ${getWidthClass(comprehensionPercent)}`}
+                        />
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-3xl font-extrabold text-[#00306E]">
+                        {comprehensionPercent > 0
+                          ? `${Math.round(comprehensionPercent)}%`
+                          : "—"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

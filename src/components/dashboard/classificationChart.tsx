@@ -142,8 +142,7 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
     testTypes.find((t) => t.value === selectedTestType)?.label || "Pre-Test";
 
   return (
-    <div className="flex h-full flex-col rounded-3xl bg-white p-4 md:p-6 shadow-[0px_0px_20px_1px_rgba(84,164,255,0.35)]">
-      <div className="flex flex-row items-center justify-between flex-wrap mb-4 gap-y-2">
+<div className="flex h-full flex-col rounded-3xl bg-white p-4 md:p-6 shadow-[0px_0px_20px_1px_rgba(84,164,255,0.35)] border-l border-t border-r-4 border-b-4 border-[#5D5DFB]">      <div className="flex flex-row items-center justify-between flex-wrap mb-4 gap-y-2">
         <div className="flex flex-col min-w-0">
           <h3 className="text-base md:text-lg font-bold text-[#00306E] truncate">
             Classification Distribution

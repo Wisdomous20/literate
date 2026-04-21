@@ -19,7 +19,7 @@ function InfoField({ label, value }: { label: string; value: string }) {
 
 export default function StudentInfoCard({ studentName, gradeLevel, className }: StudentInfoCardProps) {
   return (
-    <div className="bg-[#EFFDFF] border border-[#54A4FF] shadow-[0_1px_20px_rgba(108,164,239,0.37)] rounded-2xl p-5">
+    <div className="bg-white border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] shadow-[0_1px_20px_rgba(108,164,239,0.37)] rounded-[10px] p-5">
       {/* Header */}
       <div className="flex items-center gap-2 mb-1">
         <User size={18} className="text-[#5D5DFB]" />

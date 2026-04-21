@@ -2,10 +2,10 @@
 
 import { useMemo } from "react";
 import { useParams, useSearchParams } from "next/navigation";
+import { FileText, ClipboardCheck } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import StudentInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/studentInfoCard";
 import PassageInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/passageInfoCard";
-import ComprehensionMetricCards from "@/components/reports/oral-reading-test/comprehension-report/comprehensionMetricCards";
 import ComprehensionBreakdownReport from "@/components/reports/oral-reading-test/comprehension-report/comprehensionBreakdownReport";
 import { useAssessmentsByStudent } from "@/lib/hooks/useStudentAssessments";
 import { useClassById } from "@/lib/hooks/useClassById";
@@ -21,6 +21,20 @@ const assessmentTypeLabels: Record<string, string> = {
 function formatTestType(testType?: string): string {
   if (testType === "POST_TEST") return "Post-Test";
   return "Pre-Test";
+}
+
+function getLevelColorClass(level: string): string {
+  if (!level) return "text-[#CE330C]";
+  switch (level.toLowerCase()) {
+    case "frustration":
+      return "text-[#DC2626]";
+    case "instructional":
+      return "text-[#2563EB]";
+    case "independent":
+      return "text-[#16A34A]";
+    default:
+      return "text-[#CE330C]";
+  }
 }
 
 export default function ReadingComprehensionReportPage() {
@@ -77,6 +91,8 @@ export default function ReadingComprehensionReportPage() {
   const percentageGrade =
     totalItems > 0 ? Math.round((totalCorrect / totalItems) * 100) : 0;
 
+  const comprehensionLevel = comprehension?.classificationLevel ?? "";
+
   const assessmentTypeLabel =
     assessmentTypeLabels[assessment.type] ?? assessment.type;
 
@@ -95,7 +111,7 @@ export default function ReadingComprehensionReportPage() {
         score: totalCorrect,
         totalItems,
         percentage: percentageGrade,
-        classificationLevel: comprehension?.classificationLevel ?? "",
+        classificationLevel: comprehensionLevel,
         literal: { correct: literalCorrect, total: literalAnswers.length },
         inferential: {
           correct: inferentialCorrect,
@@ -107,72 +123,94 @@ export default function ReadingComprehensionReportPage() {
     );
   };
 
-  const handleDelete = () => {
-    alert("Delete clicked!");
-  };
-
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <div className="w-full">
-        <DashboardHeader
-          title="Reading Comprehension Test Report"
-          action={
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleExport}
-                className="rounded-lg bg-[#297CEC] px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                type="button"
-              >
-                Export to PDF
-              </button>
-              <button
-                onClick={handleDelete}
-                className="rounded-lg bg-red-500 px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                type="button"
-              >
-                Delete
-              </button>
-            </div>
-          }
-        />
-        <div className="mb-4 max-w-6xl mx-auto">
-          <button
-            onClick={() => window.history.back()}
-            className="flex items-center gap-1.5 rounded-lg mt-6 px-6 py-3 text-base font-semibold text-[#00306E] hover:underline transition"
-            type="button"
-          >
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              viewBox="0 0 24 24"
+        <DashboardHeader title="Reading Comprehension Test Report" />
+        <div className="mb-4 max-w-6xl mx-auto px-6 lg:px-12">
+          <div className="mt-6 flex items-center justify-between">
+            <button
+              onClick={() => window.history.back()}
+              className="flex items-center gap-1.5 rounded-full bg-[#6666FF] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5555EE] active:scale-95"
+              type="button"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-            Previous
-          </button>
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+              Previous
+            </button>
+            <button
+              onClick={handleExport}
+              className="rounded-full bg-[#297CEC] px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              type="button"
+            >
+              Export to PDF
+            </button>
+          </div>
         </div>
       </div>
-      <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth max-w-6xl mx-auto px-6 py-6 md:px-8 lg:px-12 space-y-6 w-full bg-[#f0f4ff]">
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto]">
+
+      <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth max-w-6xl mx-auto px-6 py-6 md:px-8 lg:px-12 space-y-6 w-full">
+        {/* Row 1: Student Info | Percentage Grade | Comprehension Level — 3 equal boxes */}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <div className="min-w-0">
             <StudentInfoCard
               studentName={studentName}
               gradeLevel={gradeLevel}
+              className={classData?.name}
             />
           </div>
-          <div className="min-w-0">
-            <ComprehensionMetricCards
-              percentageGrade={percentageGrade}
-              comprehensionLevel={comprehension?.classificationLevel ?? ""}
-            />
+
+          {/* Percentage Grade Card */}
+          <div className="flex flex-col justify-center gap-2 rounded-xl border border-[#54A4FF] bg-[#EFFDFF] px-5 py-5 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#DAE6FF] bg-[rgba(74,74,252,0.06)]">
+                <FileText size={16} className="text-[#1A6673]" />
+              </div>
+              <h3 className="text-sm font-bold leading-tight text-[#003366]">
+                Percentage Grade
+              </h3>
+            </div>
+            <p className="pl-10 text-4xl font-bold text-[#1A6673]">
+              {percentageGrade}%
+            </p>
+            <span className="pl-10 text-xs font-medium text-[#003366]/60">
+              Percentage
+            </span>
+          </div>
+
+          {/* Comprehension Level Card */}
+          <div className="flex flex-col justify-center gap-2 rounded-xl border border-[#54A4FF] bg-[#EFFDFF] px-5 py-5 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#DAE6FF] bg-[rgba(74,74,252,0.06)]">
+                <ClipboardCheck size={16} className="text-[#CE330C]" />
+              </div>
+              <h3 className="text-sm font-bold leading-tight text-[#003366]">
+                Comprehension Level
+              </h3>
+            </div>
+            <p
+              className={`pl-10 text-2xl font-bold ${getLevelColorClass(comprehensionLevel)}`}
+            >
+              {comprehensionLevel || "—"}
+            </p>
+            <span className="pl-10 text-xs font-medium text-[#003366]/60">
+              Comprehension Level
+            </span>
           </div>
         </div>
+
+        {/* Row 2: Passage Info | Comprehension Breakdown */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <div className="min-w-0">
             <PassageInfoCard
@@ -191,7 +229,7 @@ export default function ReadingComprehensionReportPage() {
               critical={criticalCorrect}
               mistakes={mistakes}
               numberOfItems={totalItems}
-              classificationLevel={comprehension?.classificationLevel ?? ""}
+              classificationLevel={comprehensionLevel}
             />
           </div>
         </div>

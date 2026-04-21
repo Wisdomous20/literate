@@ -2,14 +2,14 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
-import ReadingComprehensionReportHeader from "@/components/reports/reading-comprehension-test/reportHeader";
+import { Loader2, ChevronLeft, RotateCcw, Download } from "lucide-react";
 import StudentInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/studentInfoCard";
 import PassageInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/passageInfoCard";
 import ComprehensionMetricCards from "@/components/reports/oral-reading-test/comprehension-report/comprehensionMetricCards";
 import ComprehensionBreakdownReport from "@/components/reports/oral-reading-test/comprehension-report/comprehensionBreakdownReport";
 import { useAssessmentById } from "@/lib/hooks/useAssessmentById";
 import { exportComprehensionReportPdf } from "@/lib/exportComprehensionReportPdf";
+
 
 const SESSION_KEY = "reading-comprehension-session";
 
@@ -120,7 +120,11 @@ export default function ReadingComprehensionReportPage() {
   if (isLoading) {
     return (
       <div className="flex h-screen flex-col overflow-hidden">
-        <ReadingComprehensionReportHeader />
+        <div className="flex items-center justify-between px-8 py-5 border-b-[3px] border-[#5D5DFB] bg-white">
+          <h1 className="text-xl lg:text-2xl font-semibold text-[#31318A]">
+            Reading Comprehension Test Report
+          </h1>
+        </div>
         <div className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-[#6666FF]" />
@@ -144,7 +148,11 @@ export default function ReadingComprehensionReportPage() {
   if (error || !reportData) {
     return (
       <div className="flex h-screen flex-col overflow-hidden">
-        <ReadingComprehensionReportHeader />
+        <div className="flex items-center justify-between px-8 py-5 border-b-[3px] border-[#5D5DFB] bg-white">
+          <h1 className="text-xl lg:text-2xl font-semibold text-[#31318A]">
+            Reading Comprehension Test Report
+          </h1>
+        </div>
         <div className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-4 text-center px-4">
             <p className="text-red-600 font-medium">
@@ -190,7 +198,48 @@ export default function ReadingComprehensionReportPage() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <ReadingComprehensionReportHeader onExportPdf={handleExportPdf} />
+      {/* Custom Header */}
+      <div className="flex items-center justify-between px-8 py-5 border-b-[3px] border-[#5D5DFB] bg-white">
+          <h1 className="text-base md:text-lg font-semibold text-[#483efa]">
+          Reading Comprehension Test Report
+        </h1>
+      </div>
+
+      {/* Nav row */}
+      <div className="flex items-center justify-between px-8 pt-5 pb-2">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)] transition-all hover:bg-[#5555EE]"
+        >
+          <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
+          <span>Previous</span>
+        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleExportPdf}
+            className="flex items-center gap-2 px-5 py-2 bg-[#2E2E68] text-white text-xs font-medium rounded-lg border border-[#5D5DFB] shadow-[0_1px_20px_rgba(65,155,180,0.47)] hover:bg-[#2E2E68]/90 transition-colors"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Export to PDF
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                sessionStorage.removeItem("reading-comprehension-session");
+                sessionStorage.removeItem("reading-comprehension-assessmentId");
+              } catch {}
+              router.push("/dashboard/reading-comprehension-test");
+            }}
+            className="flex items-center gap-2 rounded-lg border border-[#6666FF]/30 bg-[rgba(102,102,255,0.06)] px-4 py-2 text-sm font-semibold text-[#6666FF] transition-all hover:bg-[rgba(102,102,255,0.12)]"
+          >
+            <RotateCcw className="h-4 w-4" />
+            <span>Start New</span>
+          </button>
+        </div>
+      </div>
 
       <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth max-w-300 mx-auto px-6 py-6 md:px-8 lg:px-12 space-y-6 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-[40%_1fr] gap-4">

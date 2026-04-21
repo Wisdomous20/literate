@@ -1,7 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { X, ChevronDown, List, LayoutGrid, FileText, Globe, BarChart3, ClipboardList, Search, type LucideIcon } from "lucide-react";
+import {
+  X,
+  ChevronDown,
+  List,
+  LayoutGrid,
+  FileText,
+  Globe,
+  BarChart3,
+  ClipboardList,
+  Search,
+  type LucideIcon,
+} from "lucide-react";
 import { usePassageList } from "@/lib/hooks/usePassageList";
 
 interface Passage {
@@ -79,20 +90,28 @@ function FilterDropdown({
         onClick={() => setIsOpen(!isOpen)}
         aria-label={label}
         title={label}
-        className={`flex w-full items-center gap-2 rounded-[10px] border px-3 py-2 text-sm font-medium shadow-[0px_1px_20px_rgba(108,164,239,0.37)] transition-colors duration-150 hover:border-[#6666FF] ${
+        className={`flex w-full items-center gap-2 rounded-[10px] border-t border-l border-r-4 border-b-4 px-3 py-2 text-sm font-medium shadow-[0px_1px_20px_rgba(108,164,239,0.37)] transition-colors duration-150 ${
           isFiltered
-            ? "border-[#6666FF] bg-[#EEEEFF] text-[#31318A]"
-            : "border-[#54A4FF] bg-[#EFFDFF] text-[#00306E]"
+            ? "border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#EEEEFF] text-[#31318A]"
+            : "border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#EFFDFF] text-[#00306E]"
         }`}
       >
         <Icon className="h-4 w-4 shrink-0 text-[#5D5DFB]" />
         <span className="flex-1 text-left">
           <span className="font-normal text-[#00306E]/60">{label}:</span>{" "}
-          <span className={isFiltered ? "font-semibold text-[#31318A]" : "italic text-[#00306E]/35"}>
+          <span
+            className={
+              isFiltered
+                ? "font-semibold text-[#31318A]"
+                : "italic text-[#00306E]/35"
+            }
+          >
             {isFiltered ? value : "All"}
           </span>
         </span>
-        <ChevronDown className={`h-4 w-4 shrink-0 text-[#03438D] transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-[#03438D] transition-transform ${isOpen ? "rotate-180" : ""}`}
+        />
       </button>
 
       {isOpen && (
@@ -163,8 +182,16 @@ export function AddPassageModal({
       const matchesContent = p.content.toLowerCase().includes(q);
       const matchesLevel = formatLevel(p.level).toLowerCase().includes(q);
       const matchesLanguage = p.language.toLowerCase().includes(q);
-      const matchesTestType = formatTestType(p.testType).toLowerCase().includes(q);
-      if (!matchesTitle && !matchesContent && !matchesLevel && !matchesLanguage && !matchesTestType)
+      const matchesTestType = formatTestType(p.testType)
+        .toLowerCase()
+        .includes(q);
+      if (
+        !matchesTitle &&
+        !matchesContent &&
+        !matchesLevel &&
+        !matchesLanguage &&
+        !matchesTestType
+      )
         return false;
     }
     return true;
@@ -185,7 +212,8 @@ export function AddPassageModal({
         onClick={onClose}
       />
 
-      <div className="relative z-10 flex w-205 max-h-[85vh] flex-col overflow-hidden rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] shadow-[0px_1px_20px_rgba(108,164,239,0.37)]">
+      <div className="relative z-10 flex w-205 max-h-[85vh] flex-col overflow-hidden rounded-3xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#ffffff] shadow-[0px_1px_20px_rgba(108,164,239,0.37)]">
+        {" "}
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between px-8 pb-4 pt-6">
           <h2 className="font-[Poppins,sans-serif] text-[25px] font-bold text-[#5D5DFB]">
@@ -198,7 +226,9 @@ export function AddPassageModal({
                 type="button"
                 onClick={() => setViewMode("list")}
                 className={`flex h-9 w-10 items-center justify-center transition-colors ${
-                  viewMode === "list" ? "bg-[#5D5DFB]" : "bg-[#EFFDFF] hover:bg-[#E4F4FF]"
+                  viewMode === "list"
+                    ? "bg-[#5D5DFB]"
+                    : "bg-[#EFFDFF] hover:bg-[#E4F4FF]"
                 }`}
                 title="List view"
                 aria-label="List view"
@@ -214,7 +244,9 @@ export function AddPassageModal({
                 type="button"
                 onClick={() => setViewMode("grid")}
                 className={`flex h-9 w-10 items-center justify-center transition-colors ${
-                  viewMode === "grid" ? "bg-[#5D5DFB]" : "bg-[#EFFDFF] hover:bg-[#E4F4FF]"
+                  viewMode === "grid"
+                    ? "bg-[#5D5DFB]"
+                    : "bg-[#EFFDFF] hover:bg-[#E4F4FF]"
                 }`}
                 title="Grid view"
                 aria-label="Grid view"
@@ -238,7 +270,6 @@ export function AddPassageModal({
             </button>
           </div>
         </div>
-
         {/* Scrollable content area */}
         <div className="flex min-h-0 flex-1 flex-col px-8 pb-6">
           {/* Search Bar */}
@@ -313,7 +344,11 @@ export function AddPassageModal({
               </div>
             ) : error ? (
               <div className="flex h-32 items-center justify-center">
-                <p className="text-sm text-red-500">{error instanceof Error ? error.message : "Failed to load passages"}</p>
+                <p className="text-sm text-red-500">
+                  {error instanceof Error
+                    ? error.message
+                    : "Failed to load passages"}
+                </p>
               </div>
             ) : filteredPassages.length === 0 ? (
               <div className="flex h-32 items-center justify-center">

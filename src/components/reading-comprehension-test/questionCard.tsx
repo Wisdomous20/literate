@@ -1,3 +1,5 @@
+"use client";
+
 const OPTION_LABELS = ["A", "B", "C", "D"];
 
 const TAG_HIGHLIGHT: Record<
@@ -32,18 +34,18 @@ export interface QuestionData {
 
 interface QuestionCardProps {
   question: QuestionData;
-  answers: Record<string, string>;
-  isSubmitted: boolean;
+  answer: string | undefined;
   highlightedTag: "literal" | "inferential" | "critical" | null;
+  isSubmitted: boolean;
   onSelectOption: (questionId: string, option: string) => void;
   onEssayChange: (questionId: string, value: string) => void;
 }
 
 export function QuestionCard({
   question,
-  answers,
-  isSubmitted,
+  answer,
   highlightedTag,
+  isSubmitted,
   onSelectOption,
   onEssayChange,
 }: QuestionCardProps) {
@@ -53,17 +55,27 @@ export function QuestionCard({
     | "critical"
     | undefined;
 
-  const tagClass =
-    highlightedTag && tagKey === highlightedTag
-      ? TAG_HIGHLIGHT[tagKey]
-      : "bg-[#EFFDFF] border-[#10AABF] shadow-[0px_1px_20px_rgba(65,155,180,0.47)]";
+  const highlight =
+    highlightedTag && tagKey === highlightedTag ? TAG_HIGHLIGHT[tagKey] : null;
+
+  const tagClass = highlight ? "" : "bg-white border-[#E0E0FF] shadow-sm";
 
   return (
     <div
-      className={`rounded-4xl border px-8 py-6 transition-all duration-300 ${tagClass}`}
+      className={`rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] px-8 py-6 transition-all duration-300 ${typeof tagClass === "string" ? tagClass : ""}`}
+      style={
+        highlight
+          ? {
+              backgroundColor: highlight.bg,
+              borderColor: highlight.border,
+              boxShadow: highlight.shadow,
+            }
+          : undefined
+      }
     >
+      {/* Question Header */}
       <div className="mb-2 flex items-start gap-3">
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-[#00306E] bg-[#0C1A6D]">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#2030CC] border-b-[#2030CC] bg-[#3939f4]">
           <span className="text-xs font-semibold text-white">
             {question.questionNumber}
           </span>
@@ -73,11 +85,12 @@ export function QuestionCard({
         </h3>
       </div>
 
+      {/* Multiple Choice Options */}
       {question.type === "MULTIPLE_CHOICE" && question.options && (
         <div className="space-y-1 ml-10">
           {question.options.map((option, index) => {
             const label = OPTION_LABELS[index];
-            const isSelected = answers[question.id] === option;
+            const isSelected = answer === option;
 
             return (
               <button
@@ -93,7 +106,7 @@ export function QuestionCard({
                 <div
                   className={`shrink-0 w-7 h-6.5 rounded-full flex items-center justify-center transition-all duration-200 ${
                     isSelected
-                      ? "bg-[#0C1A6D] border-2 border-[#00306E] shadow-[0px_0px_8px_rgba(255,176,32,0.5)]"
+                      ? "bg-[#6666FF] border-2 border-[#753eeb] shadow-[0px_0px_8px_rgba(255,176,32,0.5)]"
                       : "bg-[rgba(185,188,207,0.36)]"
                   }`}
                 >
@@ -112,14 +125,15 @@ export function QuestionCard({
         </div>
       )}
 
+      {/* Essay Input */}
       {question.type === "ESSAY" && (
         <div className="ml-10">
           <textarea
-            value={answers[question.id] || ""}
+            value={answer || ""}
             onChange={(e) => onEssayChange(question.id, e.target.value)}
             disabled={isSubmitted}
             placeholder="Type your answer here..."
-            className="w-full min-h-12.5 bg-[rgba(108,164,239,0.09)] rounded-md px-4 py-3 text-[#00306E] text-[15px] placeholder:text-[#00306E]/40 outline-none resize-y disabled:opacity-60"
+            className="w-full min-h-12.5 bg-[rgba(108,164,239,0.09)] rounded-md border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] px-4 py-3 text-[#00306E] text-[15px] placeholder:text-[#00306E]/40 outline-none resize-y disabled:opacity-60"
           />
         </div>
       )}

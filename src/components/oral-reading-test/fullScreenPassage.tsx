@@ -387,6 +387,7 @@ export function FullScreenPassage({
           {/* Top fade edge */}
           <div className="pointer-events-none absolute inset-x-0 top-0 z-1 h-12 rounded-t-[25px] bg-[linear-gradient(to_bottom,#EFFDFF_0%,transparent_100%)] md:h-16" />
 
+          
           {/* Passage Content */}
           <div className="flex flex-1 flex-col overflow-auto px-6 pt-14 md:px-12 md:pt-16 lg:px-16 lg:pt-20">
             <p className="whitespace-pre-wrap text-center leading-relaxed text-[#00306E]" style={passageLevel ? passageTextStyle : undefined}>
