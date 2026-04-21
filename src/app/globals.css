@@ -162,12 +162,12 @@ body {
 }
 
 .welcome-ellipse-bg {
-  background: #d8d0ff;
+  background: #6666FF;
   clip-path: ellipse(100% 82% at 100% 50%);
 }
 
 .welcome-ellipse-light {
-  background: rgba(240, 236, 255, 0.8);
+  background: #edeaff; /* a very light purple for the highlight */
   clip-path: ellipse(88% 72% at 95% 55%);
   z-index: 5;
 }

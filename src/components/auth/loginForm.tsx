@@ -12,7 +12,7 @@ const EyeIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     {...props}
     fill="none"
-    stroke="#E0E7FF"
+    stroke="#6666FF"
     viewBox="0 0 24 24"
     xmlns="http://www.w3.org/2000/svg"
   >
@@ -119,25 +119,29 @@ export function LoginForm() {
     }
   };
 
-  // Consistent, darker purple-blue for input text, placeholder, border, and background
   const inputClass =
-    "h-12 rounded-full bg-[#27348B] border border-[#27348B] text-[#E0E7FF] placeholder:text-[#E0E7FF]/60 focus-visible:ring-[#E0E7FF]/30 focus-visible:border-[#E0E7FF] disabled:opacity-60";
+    "h-12 rounded-full bg-white border-l border-t border-r-[6px] border-b-[6px] border-[#6666FF] text-[#27348B] placeholder:text-[#6666FF]/50 focus-visible:ring-[#6666FF]/30 focus-visible:border-[#6666FF] disabled:opacity-60";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <h1 className="text-3xl font-bold text-white text-center mb-2">
-        Login
-      </h1>
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-[#6666FF] mb-3 text-left">
+          Login to your account
+        </h1>
+        <p className="text-sm text-[#6666FF] text-left">
+          Please enter your details to continue.
+        </p>
+      </div>
 
       {error && (
-        <div className="p-3 rounded-lg bg-red-500/20 border border-red-300/50 text-white text-sm">
+        <div className="p-3 rounded-lg bg-red-500/20 border border-red-300/50 text-[#27348B] text-sm">
           {error}
         </div>
       )}
 
       <div className="space-y-4">
         <div className="space-y-1.5">
-          <Label htmlFor="email" className="text-white font-semibold">
+          <Label htmlFor="email" className="text-[#27348B] font-semibold">
             Email
           </Label>
           <Input
@@ -153,7 +157,7 @@ export function LoginForm() {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="password" className="text-white font-semibold">
+          <Label htmlFor="password" className="text-[#27348B] font-semibold">
             Password
           </Label>
           <div className="relative">
@@ -170,7 +174,7 @@ export function LoginForm() {
             <button
               type="button"
               tabIndex={-1}
-              className="absolute inset-y-0 right-4 flex items-center text-[#E0E7FF]/70 hover:text-[#E0E7FF] focus:outline-none"
+              className="absolute inset-y-0 right-4 flex items-center text-[#6666FF]/70 hover:text-[#6666FF] focus:outline-none"
               onClick={() => setShowPassword((prev) => !prev)}
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
@@ -188,11 +192,11 @@ export function LoginForm() {
               onChange={(e) => setRememberMe(e.target.checked)}
               disabled={isLoading}
             />
-            <span className="text-sm text-white">Remember me</span>
+            <span className="text-sm text-[#27348B]">Remember me</span>
           </label>
           <Link
             href="/forgot-password"
-            className="text-sm text-white hover:underline font-medium"
+            className="text-sm text-[#27348B] hover:underline font-medium"
           >
             Forgot Password?
           </Link>
@@ -201,41 +205,44 @@ export function LoginForm() {
 
       <Button
         type="submit"
-        className="w-full h-12 rounded-full bg-[#1A2288] hover:bg-[#131870] text-white font-bold disabled:opacity-60 flex items-center justify-center"
+        className="w-full h-12 rounded-full bg-[#6666FF] hover:bg-[#5555ee] text-white font-bold disabled:opacity-60 flex items-center justify-center gap-2 border-l border-t border-r-[6px] border-b-[6px] border-[#4444CC]"
         disabled={isLoading}
       >
         {isLoading ? (
-          <svg
-            className="animate-spin h-5 w-5 text-white"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-            />
-          </svg>
+          <>
+            <svg
+              className="animate-spin h-5 w-5 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              />
+            </svg>
+            Logging you in...
+          </>
         ) : (
           "Login"
         )}
       </Button>
 
       <div className="text-center space-y-1 mt-8">
-        <p className="text-sm text-white">Don&apos;t have an account?</p>
+        <p className="text-sm text-[#27348B]">Don&apos;t have an account?</p>
         <Link
           href="/signup"
-          className="text-sm text-white font-semibold hover:underline"
+          className="text-sm text-[#27348B] font-semibold hover:underline"
         >
           Register now!
         </Link>
