@@ -11,12 +11,8 @@ function computePopoverStyle(
   containerRect: DOMRect,
   scrollTop: number,
 ): CSSProperties {
-  const xPos =
-    anchorRect.left -
-    containerRect.left +
-    anchorRect.width / 2;
-  const yPos =
-    anchorRect.bottom - containerRect.top + scrollTop + 6;
+  const xPos = anchorRect.left - containerRect.left + anchorRect.width / 2;
+  const yPos = anchorRect.bottom - containerRect.top + scrollTop + 6;
   return {
     position: "absolute",
     left: xPos,
@@ -47,7 +43,11 @@ interface TextInputPopoverProps {
   miscueType: MiscueType;
   anchorEl: HTMLElement | null;
   containerEl: HTMLElement | null;
-  onConfirm: (wordIndex: number, expectedWord: string, spokenWord: string) => void;
+  onConfirm: (
+    wordIndex: number,
+    expectedWord: string,
+    spokenWord: string,
+  ) => void;
   onCancel: () => void;
 }
 
@@ -87,7 +87,10 @@ export function TextInputPopover({
   };
 
   return (
-    <div style={style} className="w-48 rounded-lg border border-[#54A4FF] bg-white p-2 shadow-lg">
+    <div
+      style={style}
+      className="w-48 rounded-lg border border-[#54A4FF] bg-white p-2 shadow-lg"
+    >
       <div className="mb-1 text-[10px] font-bold uppercase" style={{ color }}>
         {miscueType.replace(/_/g, " ")}
       </div>
@@ -107,7 +110,9 @@ export function TextInputPopover({
           if (e.key === "Enter") handleSubmit();
           if (e.key === "Escape") onCancel();
         }}
-        placeholder={expectedWord ? "What was spoken?" : "Type the inserted word"}
+        placeholder={
+          expectedWord ? "What was spoken?" : "Type the inserted word"
+        }
         className="mb-1.5 w-full rounded border border-[#54A4FF]/50 px-2 py-1 text-xs text-[#00306E] outline-none focus:border-[#6666FF]"
       />
       <div className="flex gap-1">
@@ -161,7 +166,10 @@ export function RepetitionPopover({
       : { position: "absolute" as const, zIndex: 40 };
 
   return (
-    <div style={style} className="w-44 rounded-lg border border-[#54A4FF] bg-white p-2 shadow-lg">
+    <div
+      style={style}
+      className="w-44 rounded-lg border border-[#54A4FF] bg-white p-2 shadow-lg"
+    >
       <div className="mb-1 text-[10px] font-bold uppercase text-[#B85C00]">
         Repetition
       </div>
@@ -169,16 +177,18 @@ export function RepetitionPopover({
         Word: &ldquo;{expectedWord}&rdquo;
       </div>
       <div className="mb-1.5 flex items-center justify-center gap-2">
-        <button
-          type="button"
-          onClick={() => setCount((c) => Math.max(2, c - 1))}
-          className="flex h-6 w-6 items-center justify-center rounded bg-gray-100 text-gray-600 hover:bg-gray-200"
-        >
-          <Minus className="h-3 w-3" />
-        </button>
+       <button
+  type="button"
+  aria-label="Decrease count"
+  onClick={() => setCount((c) => Math.max(2, c - 1))}
+  className="flex h-6 w-6 items-center justify-center rounded bg-gray-100 text-gray-600 hover:bg-gray-200"
+>
+  <Minus className="h-3 w-3" />
+</button>
         <span className="text-sm font-bold text-[#B85C00]">{count}×</span>
         <button
           type="button"
+          aria-label="Increase count"
           onClick={() => setCount((c) => Math.min(10, c + 1))}
           className="flex h-6 w-6 items-center justify-center rounded bg-gray-100 text-gray-600 hover:bg-gray-200"
         >
@@ -260,15 +270,60 @@ export function ContextMenuPopover({
 
 // ─── Miscue Action Popover (approve / change type on system-generated miscues) ───
 
-const TYPE_OPTIONS: { type: MiscueType; label: string; color: string; bg: string }[] = [
-  { type: "OMISSION", label: "Omission", color: "#4B3BA3", bg: "rgba(180,170,240,0.18)" },
-  { type: "INSERTION", label: "Insertion", color: "#1E7A35", bg: "rgba(140,220,160,0.18)" },
-  { type: "MISPRONUNCIATION", label: "Mispronunciation", color: "#C41048", bg: "rgba(253,182,210,0.2)" },
-  { type: "SUBSTITUTION", label: "Substitution", color: "#1A5FB4", bg: "rgba(160,200,255,0.18)" },
-  { type: "REVERSAL", label: "Reversal", color: "#6E4023", bg: "rgba(200,165,130,0.15)" },
-  { type: "TRANSPOSITION", label: "Transposition", color: "#8B008B", bg: "rgba(220,120,220,0.18)" },
-  { type: "REPETITION", label: "Repetition", color: "#B85C00", bg: "rgba(255,200,140,0.2)" },
-  { type: "SELF_CORRECTION", label: "Self-Correction", color: "#8A6D00", bg: "rgba(250,230,140,0.2)" },
+const TYPE_OPTIONS: {
+  type: MiscueType;
+  label: string;
+  color: string;
+  bg: string;
+}[] = [
+  {
+    type: "OMISSION",
+    label: "Omission",
+    color: "#4B3BA3",
+    bg: "rgba(180,170,240,0.18)",
+  },
+  {
+    type: "INSERTION",
+    label: "Insertion",
+    color: "#1E7A35",
+    bg: "rgba(140,220,160,0.18)",
+  },
+  {
+    type: "MISPRONUNCIATION",
+    label: "Mispronunciation",
+    color: "#C41048",
+    bg: "rgba(253,182,210,0.2)",
+  },
+  {
+    type: "SUBSTITUTION",
+    label: "Substitution",
+    color: "#1A5FB4",
+    bg: "rgba(160,200,255,0.18)",
+  },
+  {
+    type: "REVERSAL",
+    label: "Reversal",
+    color: "#6E4023",
+    bg: "rgba(200,165,130,0.15)",
+  },
+  {
+    type: "TRANSPOSITION",
+    label: "Transposition",
+    color: "#8B008B",
+    bg: "rgba(220,120,220,0.18)",
+  },
+  {
+    type: "REPETITION",
+    label: "Repetition",
+    color: "#B85C00",
+    bg: "rgba(255,200,140,0.2)",
+  },
+  {
+    type: "SELF_CORRECTION",
+    label: "Self-Correction",
+    color: "#8A6D00",
+    bg: "rgba(250,230,140,0.2)",
+  },
 ];
 
 interface MiscueActionPopoverProps {
@@ -305,7 +360,10 @@ export function MiscueActionPopover({
   const color = MISCUE_TEXT_COLORS[miscueType] || "#31318A";
 
   return (
-    <div ref={ref} className="w-56 rounded-lg border border-[#54A4FF] bg-white p-2.5 shadow-lg">
+    <div
+      ref={ref}
+      className="w-56 rounded-lg border border-[#54A4FF] bg-white p-2.5 shadow-lg"
+    >
       {/* Current type */}
       <div className="mb-1.5 text-center">
         <span
@@ -356,20 +414,18 @@ export function MiscueActionPopover({
         Change type:
       </div>
       <div className="flex flex-wrap gap-1">
-        {TYPE_OPTIONS.filter((t) => t.type !== miscueType).map(
-          (opt) => (
-            <button
-              key={opt.type}
-              type="button"
-              disabled={isLoading}
-              onClick={() => onChangeType(opt.type)}
-              className="rounded-md px-1.5 py-0.5 text-[10px] font-bold transition-all hover:brightness-90 disabled:opacity-50"
-              style={{ color: opt.color, backgroundColor: opt.bg }}
-            >
-              {opt.label}
-            </button>
-          ),
-        )}
+        {TYPE_OPTIONS.filter((t) => t.type !== miscueType).map((opt) => (
+          <button
+            key={opt.type}
+            type="button"
+            disabled={isLoading}
+            onClick={() => onChangeType(opt.type)}
+            className="rounded-md px-1.5 py-0.5 text-[10px] font-bold transition-all hover:brightness-90 disabled:opacity-50"
+            style={{ color: opt.color, backgroundColor: opt.bg }}
+          >
+            {opt.label}
+          </button>
+        ))}
       </div>
     </div>
   );

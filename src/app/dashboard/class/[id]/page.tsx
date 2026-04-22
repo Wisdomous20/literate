@@ -291,6 +291,13 @@ export default function ClassListsPage() {
     }
   });
 
+  const sortLabels: Record<typeof sortOption, string> = {
+    nameAsc: "Alphabetically (A-Z)",
+    nameDesc: "Alphabetically (Z-A)",
+    gradeAsc: "Grade (Low-High)",
+    gradeDesc: "Grade (High-Low)",
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-linear-to-br from-white via-[#F8F9FF] to-[#EEF0FF]">
       <ClassListsHeader />
@@ -354,7 +361,8 @@ export default function ClassListsPage() {
                   setSortOption(options[(currentIndex + 1) % options.length]);
                 }}
                 className="flex items-center justify-center w-10 h-10 rounded-lg border border-[#6666FF]/30 bg-[#F8F9FF] text-[#6666FF] hover:bg-[#EEF0FF] transition-colors"
-                title={`Sort: ${sortOption}`}
+                title={`Sort: ${sortLabels[sortOption]}`}
+                aria-label={`Sort students: ${sortLabels[sortOption]}`}
               >
                 <ArrowUpDown className="h-4 w-4" />
               </button>
@@ -384,7 +392,7 @@ export default function ClassListsPage() {
           />
         </div>
 
-        <div className="w-80 flex flex-col gap-4">
+        <div className="w-80 flex flex-col gap-4 self-start">
           <WelcomeBox assessmentType={assessmentType} />
           <StatisticsSidebar stats={stats} assessmentType={assessmentType} />
         </div>

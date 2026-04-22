@@ -21,9 +21,8 @@ const EyeIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     {...props}
     fill="none"
-    stroke="currentColor"
+    stroke="#6666FF"
     viewBox="0 0 24 24"
-    className={props.className}
     xmlns="http://www.w3.org/2000/svg"
   >
     <path
@@ -45,9 +44,8 @@ const EyeOffIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     {...props}
     fill="none"
-    stroke="currentColor"
+    stroke="#6666FF"
     viewBox="0 0 24 24"
-    className={props.className}
     xmlns="http://www.w3.org/2000/svg"
   >
     <path
@@ -58,6 +56,9 @@ const EyeOffIcon = (props: React.SVGProps<SVGSVGElement>) => (
     />
   </svg>
 );
+
+const inputClass =
+  "h-12 rounded-full bg-white border-l border-t border-r-[6px] border-b-[6px] border-[#6666FF] text-[#27348B] placeholder:text-[#6666FF]/50 focus-visible:ring-[#6666FF]/30 focus-visible:border-[#6666FF] disabled:opacity-60";
 
 export function SignupForm() {
   const router = useRouter();
@@ -73,27 +74,29 @@ export function SignupForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Verification code state
   const [userId, setUserId] = useState<string | null>(null);
-  const [codeDigits, setCodeDigits] = useState<string[]>(["", "", "", "", "", ""]);
+  const [codeDigits, setCodeDigits] = useState<string[]>([
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+  ]);
   const [verifyError, setVerifyError] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Resend cooldown timer
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const timer = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
     return () => clearTimeout(timer);
   }, [resendCooldown]);
 
-  // Focus first input when verification screen shows
   useEffect(() => {
-    if (success && inputRefs.current[0]) {
-      inputRefs.current[0].focus();
-    }
+    if (success && inputRefs.current[0]) inputRefs.current[0].focus();
   }, [success]);
 
   const validate = () => {
@@ -118,14 +121,12 @@ export function SignupForm() {
     setError(null);
     setFieldErrors({});
     setIsLoading(true);
-
     const errors = validate();
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       setIsLoading(false);
       return;
     }
-
     try {
       const result = await registerUserAction({
         firstName,
@@ -133,7 +134,6 @@ export function SignupForm() {
         email,
         password,
       });
-
       if (!result.success) {
         setError(result.error || "Registration failed. Please try again.");
       } else {
@@ -149,65 +149,46 @@ export function SignupForm() {
   };
 
   const handleCodeChange = (index: number, value: string) => {
-    // Only allow digits
     if (value && !/^\d$/.test(value)) return;
-
     const newDigits = [...codeDigits];
     newDigits[index] = value;
     setCodeDigits(newDigits);
     setVerifyError(null);
-
-    // Auto-focus next input
-    if (value && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-
-    // Auto-submit when all 6 digits are entered
+    if (value && index < 5) inputRefs.current[index + 1]?.focus();
     if (value && index === 5) {
       const fullCode = newDigits.join("");
-      if (fullCode.length === 6) {
-        handleVerifyCode(fullCode);
-      }
+      if (fullCode.length === 6) handleVerifyCode(fullCode);
     }
   };
 
   const handleKeyDown = (
     index: number,
-    e: React.KeyboardEvent<HTMLInputElement>
+    e: React.KeyboardEvent<HTMLInputElement>,
   ) => {
-    if (e.key === "Backspace" && !codeDigits[index] && index > 0) {
+    if (e.key === "Backspace" && !codeDigits[index] && index > 0)
       inputRefs.current[index - 1]?.focus();
-    }
   };
 
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
     if (!pasted) return;
-
     const newDigits = [...codeDigits];
-    for (let i = 0; i < 6; i++) {
-      newDigits[i] = pasted[i] || "";
-    }
+    for (let i = 0; i < 6; i++) newDigits[i] = pasted[i] || "";
     setCodeDigits(newDigits);
     setVerifyError(null);
-
-    // Focus the next empty input or the last one
     const nextEmpty = newDigits.findIndex((d) => !d);
-    const focusIndex = nextEmpty === -1 ? 5 : nextEmpty;
-    inputRefs.current[focusIndex]?.focus();
-
-    // Auto-submit if all 6 digits pasted
-    if (pasted.length === 6) {
-      handleVerifyCode(pasted);
-    }
+    inputRefs.current[nextEmpty === -1 ? 5 : nextEmpty]?.focus();
+    if (pasted.length === 6) handleVerifyCode(pasted);
   };
 
   const handleVerifyCode = async (code: string) => {
     if (!userId) return;
     setIsVerifying(true);
     setVerifyError(null);
-
     try {
       const result = await verifyCodeAction(userId, code);
       if (result.success) {
@@ -230,7 +211,6 @@ export function SignupForm() {
     if (!userId || resendCooldown > 0) return;
     setIsResending(true);
     setVerifyError(null);
-
     try {
       const result = await resendVerificationCodeAction(userId);
       if (result.success) {
@@ -247,14 +227,14 @@ export function SignupForm() {
     }
   };
 
-  // ── Verification Code Screen ──
+  // ── Verification Screen ──
   if (success) {
     return (
       <div className="space-y-6">
         <div className="space-y-4 text-center py-8">
           <div className="flex justify-center mb-4">
             <svg
-              className="w-16 h-16 text-[#2e2e68]"
+              className="w-16 h-16 text-[#6666FF]"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -267,20 +247,21 @@ export function SignupForm() {
               />
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-[#040029]">
+          <h2 className="text-xl font-bold text-[#6666FF]">
             Verify your email
           </h2>
-          <p className="text-[#040029]/70">
+          <p className="text-[#27348B]/80 text-sm">
             We&apos;ve sent a 6-digit code to{" "}
-            <span className="font-medium text-[#040029]">{email}</span>
+            <span className="font-semibold text-[#27348B]">{email}</span>
           </p>
 
-          {/* Code Input */}
           <div className="flex justify-center gap-2 pt-4" onPaste={handlePaste}>
             {codeDigits.map((digit, index) => (
               <input
                 key={index}
-                ref={(el) => { inputRefs.current[index] = el; }}
+                ref={(el) => {
+                  inputRefs.current[index] = el;
+                }}
                 type="text"
                 inputMode="numeric"
                 maxLength={1}
@@ -288,54 +269,74 @@ export function SignupForm() {
                 onChange={(e) => handleCodeChange(index, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(index, e)}
                 disabled={isVerifying}
-                className={`w-12 h-14 text-center text-2xl font-bold border-2 rounded-lg outline-none transition-all
-                  ${
-                    verifyError
-                      ? "border-red-400 focus:border-red-500"
-                      : "border-gray-300 focus:border-[#2e2e68]"
-                  }
-                  ${isVerifying ? "opacity-50 cursor-not-allowed" : ""}
-                `}
+                title={`Digit ${index + 1} of 6`}
+                placeholder="•"
+                aria-label={`Digit ${index + 1} of 6`}
+                className={`w-12 h-14 text-center text-2xl font-bold border-l border-t border-r-[6px] border-b-[6px] rounded-lg outline-none transition-all bg-white text-[#27348B] placeholder:text-[#6666FF]/40 ${
+                  verifyError
+                    ? "border-red-400"
+                    : "border-[#6666FF] focus:border-[#4444CC]"
+                } ${isVerifying ? "opacity-50 cursor-not-allowed" : ""}`}
               />
             ))}
           </div>
 
-          {/* Error message */}
           {verifyError && (
-            <p className="text-sm text-red-600 mt-2">{verifyError}</p>
+            <p className="text-sm text-red-500 mt-2">{verifyError}</p>
           )}
-
-          {/* Loading indicator */}
           {isVerifying && (
-            <p className="text-sm text-[#040029]/60 mt-2">Verifying...</p>
+            <p className="text-sm text-[#6666FF]/60 mt-2">Verifying...</p>
           )}
 
-          {/* Verify button (for manual submit) */}
           <div className="pt-2">
             <Button
               onClick={() => handleVerifyCode(codeDigits.join(""))}
-              disabled={
-                isVerifying || codeDigits.join("").length !== 6
-              }
-              className="w-full bg-[#2e2e68] hover:bg-[#1e1e58] text-white py-2 rounded-lg"
+              disabled={isVerifying || codeDigits.join("").length !== 6}
+              className="w-full h-12 rounded-full bg-[#6666FF] hover:bg-[#5555ee] text-white font-bold disabled:opacity-60 flex items-center justify-center gap-2 border-l border-t border-r-[6px] border-b-[6px] border-[#4444CC]"
             >
-              {isVerifying ? "Verifying..." : "Verify Email"}
+              {isVerifying ? (
+                <>
+                  <svg
+                    className="animate-spin h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    />
+                  </svg>
+                  Verifying...
+                </>
+              ) : (
+                "Verify Email"
+              )}
             </Button>
           </div>
 
-          {/* Resend */}
           <div className="pt-2">
-            <p className="text-sm text-[#040029]/60">
+            <p className="text-sm text-[#27348B]/80">
               Didn&apos;t receive the code?{" "}
               {resendCooldown > 0 ? (
-                <span className="text-[#040029]/40">
+                <span className="text-[#27348B]/50">
                   Resend in {resendCooldown}s
                 </span>
               ) : (
                 <button
                   onClick={handleResendCode}
                   disabled={isResending}
-                  className="text-[#162db0] hover:underline font-medium disabled:opacity-50"
+                  className="text-[#6666FF] font-semibold hover:underline disabled:opacity-50"
                 >
                   {isResending ? "Sending..." : "Resend code"}
                 </button>
@@ -344,11 +345,11 @@ export function SignupForm() {
           </div>
         </div>
 
-        <p className="text-center text-sm text-[#040029]">
+        <p className="text-center text-sm text-[#27348B]">
           Already verified?{" "}
           <Link
             href="/login"
-            className="text-[#162db0] hover:underline font-medium"
+            className="text-[#6666FF] font-semibold hover:underline"
           >
             Log in
           </Link>
@@ -359,58 +360,24 @@ export function SignupForm() {
 
   // ── Signup Form ──
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-2 mb-2">
-        <h1 className="text-2xl font-bold text-[#040029]">Create Account</h1>
-        <p className="text-[#040029]/70 text-sm">
-          Sign up to get started with Literate
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-[#6666FF] mb-3 text-left">
+          Create an account
+        </h1>
+        <p className="text-sm text-[#6666FF] text-left">
+          Fill in your details to get started.
         </p>
       </div>
+
       {error && (
-        <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm border border-red-200">
+        <div className="p-3 rounded-lg bg-red-500/20 border border-red-300/50 text-[#27348B] text-sm">
           {error}
         </div>
       )}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="firstName" className="text-[#040029] font-medium">
-            First Name
-          </Label>
-          <Input
-            id="firstName"
-            placeholder="Juan"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            className={`bg-white border-gray-200 ${
-              fieldErrors.firstName ? "border-red-400" : ""
-            }`}
-            disabled={isLoading}
-          />
-          {fieldErrors.firstName && (
-            <p className="text-xs text-red-500">{fieldErrors.firstName}</p>
-          )}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="lastName" className="text-[#040029] font-medium">
-            Last Name
-          </Label>
-          <Input
-            id="lastName"
-            placeholder="Dela Cruz"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            className={`bg-white border-gray-200 ${
-              fieldErrors.lastName ? "border-red-400" : ""
-            }`}
-            disabled={isLoading}
-          />
-          {fieldErrors.lastName && (
-            <p className="text-xs text-red-500">{fieldErrors.lastName}</p>
-          )}
-        </div>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="email" className="text-[#040029] font-medium">
+
+      <div className="space-y-1.5">
+        <Label htmlFor="email" className="text-[#27348B] font-semibold">
           Email
         </Label>
         <Input
@@ -419,17 +386,51 @@ export function SignupForm() {
           placeholder="juandelacruz@email.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className={`bg-white border-gray-200 ${
-            fieldErrors.email ? "border-red-400" : ""
-          }`}
+          className={`${inputClass} ${fieldErrors.email ? "border-red-400" : ""}`}
           disabled={isLoading}
         />
         {fieldErrors.email && (
           <p className="text-xs text-red-500">{fieldErrors.email}</p>
         )}
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="password" className="text-[#040029] font-medium">
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="firstName" className="text-[#27348B] font-semibold">
+            First Name
+          </Label>
+          <Input
+            id="firstName"
+            placeholder="Juan"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            className={`${inputClass} ${fieldErrors.firstName ? "border-red-400" : ""}`}
+            disabled={isLoading}
+          />
+          {fieldErrors.firstName && (
+            <p className="text-xs text-red-500">{fieldErrors.firstName}</p>
+          )}
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="lastName" className="text-[#27348B] font-semibold">
+            Last Name
+          </Label>
+          <Input
+            id="lastName"
+            placeholder="Dela Cruz"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            className={`${inputClass} ${fieldErrors.lastName ? "border-red-400" : ""}`}
+            disabled={isLoading}
+          />
+          {fieldErrors.lastName && (
+            <p className="text-xs text-red-500">{fieldErrors.lastName}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="password" className="text-[#27348B] font-semibold">
           Password
         </Label>
         <div className="relative">
@@ -439,15 +440,13 @@ export function SignupForm() {
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className={`bg-white border-gray-200 pr-10 ${
-              fieldErrors.password ? "border-red-400" : ""
-            }`}
+            className={`${inputClass} pr-11 ${fieldErrors.password ? "border-red-400" : ""}`}
             disabled={isLoading}
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6666FF]/70 hover:text-[#6666FF]"
             tabIndex={-1}
           >
             {showPassword ? (
@@ -461,10 +460,11 @@ export function SignupForm() {
           <p className="text-xs text-red-500">{fieldErrors.password}</p>
         )}
       </div>
-      <div className="space-y-2">
+
+      <div className="space-y-1.5">
         <Label
           htmlFor="confirmPassword"
-          className="text-[#040029] font-medium"
+          className="text-[#27348B] font-semibold"
         >
           Confirm Password
         </Label>
@@ -475,15 +475,13 @@ export function SignupForm() {
             placeholder="••••••••"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className={`bg-white border-gray-200 pr-10 ${
-              fieldErrors.confirmPassword ? "border-red-400" : ""
-            }`}
+            className={`${inputClass} pr-11 ${fieldErrors.confirmPassword ? "border-red-400" : ""}`}
             disabled={isLoading}
           />
           <button
             type="button"
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6666FF]/70 hover:text-[#6666FF]"
             tabIndex={-1}
           >
             {showConfirmPassword ? (
@@ -497,22 +495,51 @@ export function SignupForm() {
           <p className="text-xs text-red-500">{fieldErrors.confirmPassword}</p>
         )}
       </div>
+
       <Button
         type="submit"
-        className="w-full bg-[#2e2e68] hover:bg-[#1e1e58] text-white py-2 rounded-lg"
+        className="w-full h-12 rounded-full bg-[#6666FF] hover:bg-[#5555ee] text-white font-bold disabled:opacity-60 flex items-center justify-center gap-2 border-l border-t border-r-[6px] border-b-[6px] border-[#4444CC]"
         disabled={isLoading}
       >
-        {isLoading ? "Creating Account..." : "Sign Up"}
+        {isLoading ? (
+          <>
+            <svg
+              className="animate-spin h-5 w-5 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              />
+            </svg>
+            Creating Account...
+          </>
+        ) : (
+          "Register"
+        )}
       </Button>
-      <p className="text-center text-sm text-[#040029]">
-        Already have an account?{" "}
+
+      <div className="text-center space-y-1 pt-1">
+        <p className="text-sm text-[#27348B]">Already have an account?</p>
         <Link
           href="/login"
-          className="text-[#162db0] hover:underline font-medium"
+          className="text-sm text-[#27348B] font-semibold hover:underline"
         >
-          Log in
+          Login now!
         </Link>
-      </p>
+      </div>
     </form>
   );
 }

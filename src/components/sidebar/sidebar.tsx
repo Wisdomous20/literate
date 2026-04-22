@@ -121,71 +121,32 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "relative flex h-screen flex-col bg-[#6666FF] shadow-[4px_0_20px_rgba(102,102,255,0.3)] transition-all duration-300 overflow-hidden",
+        "relative flex h-screen flex-col bg-[#6e55fd] shadow-[4px_0_20px_rgba(102,102,255,0.3)] transition-all duration-300 overflow-hidden",
         collapsed ? "w-20 min-w-20" : "w-65 min-w-65",
       )}
     >
-      {/* Soft Wavy Background Pattern - More Visible */}
-      <div className="absolute inset-0 opacity-25">
+      {/* SVG background */}
+      <div className="absolute inset-0 pointer-events-none z-0">
         <svg
-          viewBox="0 0 260 800"
+          viewBox="0 0 320 800"
           preserveAspectRatio="none"
           className="h-full w-full"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <defs>
-            <filter id="softBlur">
-              <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" />
-            </filter>
-          </defs>
-          {/* Soft wavy fills instead of lines */}
           <path
-            d="M0,150 Q65,100 130,130 T260,150 L260,0 L0,0 Z"
-            fill="white"
-            opacity="0.8"
-            filter="url(#softBlur)"
+            d="M0,120 Q80,180 320,60 L320,800 L0,800 Z"
+            fill="#7878FF"
+            opacity="0.35"
           />
           <path
-            d="M0,250 Q65,200 130,230 T260,250 L260,80 Q65,130 0,100 Z"
-            fill="white"
-            opacity="0.6"
-            filter="url(#softBlur)"
-          />
-          <path
-            d="M0,350 Q65,300 130,330 T260,350 L260,180 Q65,230 0,200 Z"
-            fill="white"
-            opacity="0.5"
-            filter="url(#softBlur)"
-          />
-          <path
-            d="M0,450 Q65,400 130,430 T260,450 L260,280 Q65,330 0,300 Z"
-            fill="white"
-            opacity="0.4"
-            filter="url(#softBlur)"
-          />
-          <path
-            d="M0,550 Q65,500 130,530 T260,550 L260,380 Q65,430 0,400 Z"
-            fill="white"
-            opacity="0.3"
-            filter="url(#softBlur)"
-          />
-          <path
-            d="M0,650 Q65,600 130,630 T260,650 L260,480 Q65,530 0,500 Z"
-            fill="white"
+            d="M0,300 Q120,400 320,220 L320,800 L0,800 Z"
+            fill="#5555EE"
             opacity="0.25"
-            filter="url(#softBlur)"
           />
           <path
-            d="M0,750 Q65,700 130,730 T260,750 L260,580 Q65,630 0,600 Z"
-            fill="white"
-            opacity="0.2"
-            filter="url(#softBlur)"
-          />
-          <path
-            d="M0,800 Q65,750 130,780 T260,800 L260,680 Q65,730 0,700 Z"
-            fill="white"
-            opacity="0.15"
-            filter="url(#softBlur)"
+            d="M0,600 Q160,700 320,540 L320,800 L0,800 Z"
+            fill="#8888FF"
+            opacity="0.20"
           />
         </svg>
       </div>
@@ -219,14 +180,14 @@ export function Sidebar() {
               <span className="text-xl font-bold tracking-[0.02em] text-white">LiteRate</span>
             </div>
           )}
-          
-          {/* Toggle Button - Left Side Visible */}
+
+          {/* Toggle Button - Now Purple */}
           <button
             type="button"
             onClick={() => setCollapsed(!collapsed)}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className="z-50 flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#6666FF] shadow-lg ring-2 ring-[#6666FF] hover:bg-gray-100 transition-all"
+            className="z-50 flex h-9 w-9 items-center justify-center rounded-full bg-[#5D5DFB] text-white shadow-lg ring-2 ring-[#5D5DFB] hover:bg-[#6652fb] transition-all"
           >
             {collapsed ? <ChevronsRight className="h-6 w-6" /> : <ChevronsLeft className="h-6 w-6" />}
           </button>
@@ -254,7 +215,9 @@ export function Sidebar() {
                   className={cn(
                     "flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-all duration-200",
                     collapsed ? "justify-center px-0" : "px-2",
-                    isActive ? "bg-[rgba(93,93,251,0.6)] text-white" : "text-white/90 hover:text-white",
+                    isActive
+                      ? "bg-[rgba(93,93,251,0.6)] text-white"
+                      : "text-white/90 hover:bg-[#6652fb] hover:text-white",
                   )}
                 >
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#5D5DFB]">
@@ -282,7 +245,9 @@ export function Sidebar() {
                   className={cn(
                     "flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-all duration-200",
                     collapsed ? "justify-center px-0" : "px-2",
-                    isActive ? "bg-[rgba(93,93,251,0.6)] text-white" : "text-white/90 hover:text-white",
+                    isActive
+                      ? "bg-[rgba(93,93,251,0.6)] text-white"
+                      : "text-white/90 hover:bg-[#6652fb] hover:text-white",
                   )}
                 >
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#5D5DFB]">
@@ -303,7 +268,9 @@ export function Sidebar() {
                     className={cn(
                       "flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-all duration-200",
                       collapsed ? "justify-center px-0" : "px-2",
-                      isActive ? "bg-[rgba(93,93,251,0.6)] text-white" : "text-white/90 hover:text-white",
+                      isActive
+                        ? "bg-[rgba(93,93,251,0.6)] text-white"
+                        : "text-white/90 hover:bg-[#6652fb] hover:text-white",
                     )}
                   >
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#5D5DFB]">
@@ -341,8 +308,8 @@ export function Sidebar() {
             onClick={handleLogout}
             title={collapsed ? "Logout Account" : undefined}
             className={cn(
-              "flex items-center gap-3 rounded-lg px-2 py-2 text-sm font-medium text-white/90 transition-all duration-200 hover:text-white",
-              collapsed ? "w-auto justify-center" : "w-full",
+              "flex items-center gap-3 rounded-lg px-2 py-2 text-sm font-medium text-white/90 transition-all duration-200 hover:bg-[#6652fb] hover:text-white",
+              collapsed ? "w-auto justify-center" : "w-full"
             )}
           >
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#5D5DFB]">

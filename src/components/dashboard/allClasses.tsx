@@ -43,7 +43,7 @@ interface AllClassesPageProps {
   currentYear?: string;
 }
 
-const CLASSES_PER_PAGE = 15; 
+const CLASSES_PER_PAGE = 15;
 
 export default function AllClassesPage({
   allClasses,
@@ -182,15 +182,19 @@ export default function AllClassesPage({
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
               {paginatedClasses.map((c, idx) => (
-                <ClassCard
+                <div
                   key={c.id}
-                  classRoomId={c.id}
-                  name={c.name}
-                  studentCount={c.studentCount}
-                  variant={getVariant(idx)}
-                  onClick={() => handleClassClick(c.id)}
-                  onClassUpdated={refetch || (() => {})}
-                />
+                  className="border-l border-t border-r-4 border-b-4 border-[#6666FF] rounded-2xl overflow-hidden bg-white min-h-35 shadow-lg shadow-[#6666FF]/10"
+                >
+                  <ClassCard
+                    classRoomId={c.id}
+                    name={c.name}
+                    studentCount={c.studentCount}
+                    variant={getVariant(idx)}
+                    onClick={() => handleClassClick(c.id)}
+                    onClassUpdated={refetch || (() => {})}
+                  />
+                </div>
               ))}
             </div>
             {totalPages > 1 && (

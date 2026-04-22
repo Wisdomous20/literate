@@ -1,39 +1,42 @@
-"use client"
+"use client";
 
-import { Globe, BarChart3, ClipboardList, type LucideIcon } from "lucide-react"
+import { Globe, BarChart3, ClipboardList, Link2 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 interface PassageFiltersProps {
-  language?: string
-  passageLevel?: string
-  testType?: string
-  hasPassage: boolean
-  onOpenPassageModal: () => void
+  language?: string;
+  passageLevel?: string;
+  testType?: string;
+  hasPassage: boolean;
+  onOpenPassageModal: () => void;
+  onShareLink?: () => void;
+  showShareLink?: boolean;
 }
 
-function FilterLabel({
+function FilterChip({
   icon: Icon,
   label,
-  value,
+  active,
 }: {
-  icon: LucideIcon
-  label: string
-  value?: string
+  icon: LucideIcon;
+  label: string;
+  active: boolean;
 }) {
   return (
     <div
-      className={`flex flex-1 items-center gap-2 rounded-[10px] border px-3 py-2 text-sm font-medium shadow-[0px_1px_20px_rgba(108,164,239,0.37)] ${
-        value
-          ? "border-[#6666FF] bg-[#EEEEFF] text-[#31318A]"
-          : "border-[#54A4FF] bg-[#D5E7FE] text-[#00306E]/50"
+      className={`flex items-center gap-2 px-1.5 py-1 text-sm font-medium ${
+        active ? "text-[#31318A]" : "text-[#00306E]/50"
       }`}
     >
-      <Icon className="h-4 w-4 shrink-0 text-[#5D5DFB]" />
-      <span className="text-left">
-        <span className="text-[#00306E]/60 font-normal">{label}:</span>{" "}
-        <span className={value ? "font-semibold text-[#31318A]" : "italic text-[#00306E]/35"}>{value || "—"}</span>
+      <span
+        className="flex h-7 w-7 items-center justify-center rounded-[8px] border-t border-l border-r-4 border-b-4 border-t-[#E0E7FF] border-l-[#E0E7FF] border-r-[#B4B4F9] border-b-[#B4B4F9] bg-[#F3F0FF] shadow-sm"
+        style={{ minWidth: 28, minHeight: 28 }}
+      >
+        <Icon className="h-4 w-4 text-[#5D5DFB]" />
       </span>
+      <span>{label}</span>
     </div>
-  )
+  );
 }
 
 export function PassageFilters({
@@ -42,19 +45,47 @@ export function PassageFilters({
   testType,
   hasPassage,
   onOpenPassageModal,
+  onShareLink,
+  showShareLink = false,
 }: PassageFiltersProps) {
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <FilterLabel icon={Globe} label="Language" value={language} />
-      <FilterLabel icon={BarChart3} label="Passage Level" value={passageLevel} />
-      <FilterLabel icon={ClipboardList} label="Test Type" value={testType} />
-     <button
-  type="button"
-  onClick={onOpenPassageModal}
-  className="shrink-0 rounded-lg border border-[#7A7AFB] bg-[#2E2E68] px-4 py-2 text-sm font-semibold text-white shadow-[0px_1px_20px_rgba(65,155,180,0.47)] transition-colors hover:opacity-90 md:px-6 md:text-[15px]"
->
-  {hasPassage ? "Change Passage" : "Add Passage"}
-</button>
+    <div className="flex flex-wrap items-center gap-4">
+      <FilterChip
+        icon={Globe}
+        label={language ? `${language} Passage` : "English Passage"}
+        active={!!language}
+      />
+      <FilterChip
+        icon={ClipboardList}
+        label={testType || "Pre-Test"}
+        active={!!testType}
+      />
+      <FilterChip
+        icon={BarChart3}
+        label={passageLevel || "Level 3"}
+        active={!!passageLevel}
+      />
+
+      <div className="ml-auto flex items-center gap-2">
+        {showShareLink && onShareLink && (
+          <button
+            type="button"
+            onClick={onShareLink}
+className="flex items-center gap-1 px-2 py-1 text-sm font-semibold text-[#4F46E5] bg-transparent border-none shadow-none hover:underline hover:bg-transparent focus:outline-none"            tabIndex={0}
+            aria-label="Share Link"
+          >
+            <Link2 className="h-5 w-5 text-[#5D5DFB]" />
+            <span>Share Link</span>
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={onOpenPassageModal}
+          className="flex items-center justify-center gap-2 rounded-[10px] border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#3B21CC] border-b-[#3B21CC] bg-[#6666FF] px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#4F46E5] min-w-[120px] shadow"
+        >
+          {hasPassage ? "Change Passage" : "Add Passage"}
+        </button>
+      </div>
     </div>
-  )
+  );
 }

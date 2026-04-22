@@ -46,6 +46,10 @@ export function QuickActions({ schoolYear, minimal }: QuickActionsProps) {
     }
   };
 
+  // Card border style: thick left & bottom, thin top & right
+  const cardBorder =
+    "border-l-4 border-b-4 border-t border-r border-[#5D5DFB] rounded-xl bg-white shadow-lg";
+
   // Minimal mode: just the list, no card, no header
   if (minimal) {
     return (
@@ -77,7 +81,7 @@ export function QuickActions({ schoolYear, minimal }: QuickActionsProps) {
                 key={item.id}
                 onClick={() => handleAssessmentClick(item)}
                 type="button"
-                className={`flex items-center justify-between rounded-xl border border-[#E0E7FF] ${pastelBg} px-4 py-2.5 shadow-lg transition-all hover:shadow-xl hover:border-[#6666FF]/50 hover:bg-white`}
+                className={`flex items-center justify-between px-4 py-2.5 transition-all hover:shadow-xl hover:border-[#6666FF]/50 hover:bg-white ${cardBorder} ${pastelBg}`}
                 style={{ transition: "box-shadow 0.2s, background 0.2s" }}
               >
                 <div className="flex min-w-0 items-center gap-3">
@@ -149,7 +153,7 @@ export function QuickActions({ schoolYear, minimal }: QuickActionsProps) {
                 key={item.id}
                 onClick={() => handleAssessmentClick(item)}
                 type="button"
-                className={`flex items-center justify-between rounded-xl border border-[#E0E7FF] ${pastelBg} px-4 py-2.5 shadow-lg transition-all hover:shadow-xl hover:border-[#6666FF]/50 hover:bg-white`}
+                className={`flex items-center justify-between px-4 py-2.5 transition-all hover:shadow-xl hover:border-[#6666FF]/50 hover:bg-white ${cardBorder} ${pastelBg}`}
                 style={{ transition: "box-shadow 0.2s, background 0.2s" }}
               >
                 <div className="flex min-w-0 items-center gap-3">

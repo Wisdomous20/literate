@@ -98,7 +98,7 @@ export default function ComprehensionBreakdownReport({
   const levelStyle = getLevelStyle(classificationLevel)
 
   return (
-    <div className="flex flex-col rounded-4xl border border-[#54A4FF] bg-[#EFFDFF] px-5 py-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)]">
+    <div className="flex flex-col rounded-[10px] border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-white px-5 py-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)]">
       {/* Title */}
       <span className="mb-3 block text-[10px] font-bold uppercase tracking-widest text-[#6666FF]">
         Comprehension Breakdown

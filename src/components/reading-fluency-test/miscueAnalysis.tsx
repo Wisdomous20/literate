@@ -131,8 +131,7 @@ export function MiscueAnalysis({
     miscues.length > 0 || (totalMiscue !== undefined && totalMiscue > 0)
 
   const displayTotalMiscue =
-    totalMiscue ??
-    (hasResults ? miscues.filter((m) => !m.isSelfCorrected).length : 0)
+    totalMiscue ?? (hasResults ? miscues.filter((m) => !m.isSelfCorrected).length : 0)
 
   const displayScore =
     oralFluencyScore !== undefined
@@ -147,7 +146,7 @@ export function MiscueAnalysis({
   return (
     <div
       ref={cardRef}
-      className={`flex h-full flex-col rounded-[10px] border border-[#54A4FF] bg-[#EFFDFF] px-5 py-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)] transition-opacity duration-300 ${
+      className={`flex h-full flex-col rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#ffffff] px-5 py-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)] transition-opacity duration-300 ${
         disabled && !isAnalyzing
           ? "pointer-events-none opacity-60"
           : "opacity-100"
@@ -163,7 +162,7 @@ export function MiscueAnalysis({
           title="Download as PDF"
           onClick={() => onExportPdf?.()}
           disabled={disabled || !onExportPdf}
-          className="rounded p-0.5 text-[#6666FF] transition-colors hover:bg-[rgba(102,102,255,0.1)] disabled:pointer-events-none disabled:opacity-40"
+          className="rounded-none border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] p-0.5 text-[#6666FF] transition-colors hover:bg-[rgba(102,102,255,0.1)] disabled:pointer-events-none disabled:opacity-40"
         >
           <Download className="h-4 w-4" />
         </button>
@@ -197,7 +196,7 @@ export function MiscueAnalysis({
                   >
                     {/* Left: count badge */}
                     <div
-                      className={`flex h-6 w-7 shrink-0 items-center justify-center rounded-[5px] border border-[#DAE6FF] text-sm font-bold ${item.colorClass} ${item.textClass}`}
+                      className={`flex h-6 w-7 shrink-0 items-center justify-center rounded-[5px] border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] text-sm font-bold ${item.colorClass} ${item.textClass}`}
                     >
                       {count}
                     </div>
@@ -220,7 +219,7 @@ export function MiscueAnalysis({
           <div className="mt-auto pt-2">
             <div className="flex flex-col gap-1.5">
               {/* Total Miscue */}
-              <div className="flex items-center justify-between rounded bg-[rgba(230,230,250,0.5)] px-3 py-1.5">
+              <div className="flex items-center justify-between rounded-[10px] border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[rgba(230,230,250,0.5)] px-3 py-1.5">
                 <span className="text-xs font-bold text-[#31318A]">
                   Total Miscue:
                 </span>
@@ -230,7 +229,7 @@ export function MiscueAnalysis({
               </div>
 
               {/* Oral Fluency Score */}
-              <div className="flex items-center justify-between rounded bg-[rgba(230,230,250,0.35)] px-3 py-1.5">
+              <div className="flex items-center justify-between rounded-[10px] border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[rgba(230,230,250,0.35)] px-3 py-1.5">
                 <span className="text-xs font-bold text-[#31318A]">
                   Oral Fluency Score:
                 </span>
@@ -241,7 +240,7 @@ export function MiscueAnalysis({
 
               {/* Classification Level */}
               <div
-                className={`flex items-center justify-between rounded px-3 py-1.5 ${classificationClasses.bgClass}`}
+                className={`flex items-center justify-between rounded-[10px] border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] px-3 py-1.5 ${classificationClasses.bgClass}`}
               >
                 <span className="text-xs font-bold text-[#31318A]">
                   Classification Level:
@@ -259,7 +258,7 @@ export function MiscueAnalysis({
               <button
                 type="button"
                 onClick={() => router.push("/dashboard/reading-fluency-test/report")}
-                className="mt-3 w-full rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90"
+                className="mt-3 w-full rounded-[10px] border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#3B21CC] border-b-[#3B21CC] bg-[#6666FF] px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90"
               >
                 View Fluency Report
               </button>

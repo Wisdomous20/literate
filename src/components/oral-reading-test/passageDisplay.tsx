@@ -1,12 +1,37 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef, useCallback, Fragment, type CSSProperties } from "react";
-import { Maximize2, Minimize2, Play, GripHorizontal, ChevronDown, Pencil } from "lucide-react";
+import {
+  useState,
+  useMemo,
+  useEffect,
+  useRef,
+  useCallback,
+  Fragment,
+  type CSSProperties,
+} from "react";
+import {
+  Maximize2,
+  Minimize2,
+  Play,
+  GripHorizontal,
+  ChevronDown,
+  Pencil,
+} from "lucide-react";
 import type { MiscueResult, AlignedWord } from "@/types/oral-reading";
 import { normalizeWord } from "@/utils/textUtils";
-import type { EditableMiscueResult, EditTool, ClickResult, MiscueType } from "./useEditMiscues";
+import type {
+  EditableMiscueResult,
+  EditTool,
+  ClickResult,
+  MiscueType,
+} from "./useEditMiscues";
 import { MiscueToolbar } from "./miscueToolbar";
-import { TextInputPopover, RepetitionPopover, ContextMenuPopover, MiscueActionPopover } from "./miscueEditPopover";
+import {
+  TextInputPopover,
+  RepetitionPopover,
+  ContextMenuPopover,
+  MiscueActionPopover,
+} from "./miscueEditPopover";
 
 type MiscueColor = {
   bg: string;
@@ -144,8 +169,16 @@ export interface EditModeCallbacks {
   undo: () => void;
   redo: () => void;
   handleWordClick: (wordIndex: number, expectedWord: string) => ClickResult;
-  confirmTextMiscue: (wordIndex: number, expectedWord: string, spokenWord: string) => void;
-  confirmRepetitionMiscue: (wordIndex: number, expectedWord: string, count: number) => void;
+  confirmTextMiscue: (
+    wordIndex: number,
+    expectedWord: string,
+    spokenWord: string,
+  ) => void;
+  confirmRepetitionMiscue: (
+    wordIndex: number,
+    expectedWord: string,
+    count: number,
+  ) => void;
   removeMiscue: (index: number) => void;
 }
 
@@ -165,7 +198,10 @@ interface PassageDisplayProps {
   initialHeight?: number;
   editMode?: EditModeCallbacks;
   onApproveMiscue?: (miscue: MiscueResult) => Promise<void>;
-  onUpdateMiscueType?: (miscue: MiscueResult, newType: MiscueResult["miscueType"]) => Promise<void>;
+  onUpdateMiscueType?: (
+    miscue: MiscueResult,
+    newType: MiscueResult["miscueType"],
+  ) => Promise<void>;
 }
 
 export function getPassageTextStyle(passageLevel?: string): CSSProperties {
@@ -214,7 +250,7 @@ export function PassageDisplay({
   onApproveMiscue,
   onUpdateMiscueType,
 }: PassageDisplayProps) {
-  const passageTextStyle = getPassageTextStyle(passageLevel);
+  // const passageTextStyle = getPassageTextStyle(passageLevel);
   const [popup, setPopup] = useState<PopupState | null>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -361,10 +397,15 @@ export function PassageDisplay({
     // Collect miscues that are "inserted" words (not in the passage)
     const insertedMiscues = miscues.filter(
       (m) =>
-        (m.miscueType === "INSERTION" || (m.miscueType === "REPETITION" && !m.expectedWord)) &&
+        (m.miscueType === "INSERTION" ||
+          (m.miscueType === "REPETITION" && !m.expectedWord)) &&
         m.spokenWord &&
         // Suppress repetitions that are actually the insertion half of a transposition
-        !(m.miscueType === "REPETITION" && !m.expectedWord && transpositionExpectedWords.has(normalizeWord(m.spokenWord!))),
+        !(
+          m.miscueType === "REPETITION" &&
+          !m.expectedWord &&
+          transpositionExpectedWords.has(normalizeWord(m.spokenWord!))
+        ),
     );
     if (insertedMiscues.length === 0) return null;
 
@@ -388,7 +429,11 @@ export function PassageDisplay({
           // place the inline insertion after the matching passage word instead
           if (miscue.miscueType === "REPETITION" && miscue.spokenWord) {
             const spokenNorm = normalizeWord(miscue.spokenWord);
-            for (let k = idx + 1; k < alignedWords.length && k <= idx + 3; k++) {
+            for (
+              let k = idx + 1;
+              k < alignedWords.length && k <= idx + 3;
+              k++
+            ) {
               const next = alignedWords[k];
               if (next.expectedIndex != null && next.expected) {
                 if (normalizeWord(next.expected) === spokenNorm) {
@@ -421,16 +466,13 @@ export function PassageDisplay({
       if (!map.has(m.wordIndex)) {
         map.set(m.wordIndex, m);
       }
-    if (m.miscueType === "TRANSPOSITION" && m.wordIndexB != null) {
-      if (!map.has(m.wordIndexB)) {
-        map.set(m.wordIndexB, m); // same miscue record, second index
+      if (m.miscueType === "TRANSPOSITION" && m.wordIndexB != null) {
+        if (!map.has(m.wordIndexB)) {
+          map.set(m.wordIndexB, m); // same miscue record, second index
+        }
       }
     }
-    }
 
-    // For TRANSPOSITION miscues, also highlight the adjacent swap-partner word.
-    // The alignment may classify one word as OMISSION→TRANSPOSITION while the
-    // partner aligns as EXACT and stays un-highlighted.
     if (alignedWords) {
       for (const m of miscues) {
         if (m.miscueType !== "TRANSPOSITION") continue;
@@ -442,7 +484,7 @@ export function PassageDisplay({
         for (const partner of [idx + 1, idx - 1]) {
           if (partner < 0 || map.has(partner)) continue;
           const partnerAligned = alignedWords.find(
-            (aw) => aw.expectedIndex === partner
+            (aw) => aw.expectedIndex === partner,
           );
           if (partnerAligned?.match === "EXACT" && partnerAligned.expected) {
             map.set(partner, {
@@ -462,12 +504,15 @@ export function PassageDisplay({
     return map;
   }, [miscues, alignedWords]);
 
-  // Map wordIndex → user-added insertion miscues (INSERTION with empty expectedWord)
   const userAddedInsertions = useMemo(() => {
     if (!miscues?.length) return null;
     const map = new Map<number, MiscueResult[]>();
     for (const m of miscues) {
-      if (m.miscueType === "INSERTION" && m.expectedWord === "" && m.spokenWord) {
+      if (
+        m.miscueType === "INSERTION" &&
+        m.expectedWord === "" &&
+        m.spokenWord
+      ) {
         const list = map.get(m.wordIndex) || [];
         list.push(m);
         map.set(m.wordIndex, list);
@@ -486,45 +531,36 @@ export function PassageDisplay({
     return content.split(/(\s+)/).filter(Boolean);
   }, [content]);
 
-  const openPopup = useCallback(
-    (e: React.MouseEvent, miscue: MiscueResult) => {
-      const rect = (e.target as HTMLElement).getBoundingClientRect();
-      const container = containerRef.current;
-      if (!container) return;
-      const containerRect = container.getBoundingClientRect();
-      const xPos =
-        rect.left -
-        containerRect.left +
-        rect.width / 2 +
-        container.scrollLeft;
-      const yAbove =
-        rect.top - containerRect.top + container.scrollTop - 4;
-      const yBelow =
-        rect.bottom - containerRect.top + container.scrollTop + 4;
-      const spaceAbove = rect.top - containerRect.top;
-      const flip = spaceAbove < 95;
+  const openPopup = useCallback((e: React.MouseEvent, miscue: MiscueResult) => {
+    const rect = (e.target as HTMLElement).getBoundingClientRect();
+    const container = containerRef.current;
+    if (!container) return;
+    const containerRect = container.getBoundingClientRect();
+    const xPos =
+      rect.left - containerRect.left + rect.width / 2 + container.scrollLeft;
+    const yAbove = rect.top - containerRect.top + container.scrollTop - 4;
+    const yBelow = rect.bottom - containerRect.top + container.scrollTop + 4;
+    const spaceAbove = rect.top - containerRect.top;
+    const flip = spaceAbove < 95;
 
-      const popupHalfWidth = 90;
-      const spaceLeft = rect.left - containerRect.left + rect.width / 2;
-      const spaceRight =
-        containerRect.right - rect.left - rect.width / 2;
-      let hAlign: "center" | "left" | "right" = "center";
-      if (spaceLeft < popupHalfWidth) {
-        hAlign = "left";
-      } else if (spaceRight < popupHalfWidth) {
-        hAlign = "right";
-      }
+    const popupHalfWidth = 90;
+    const spaceLeft = rect.left - containerRect.left + rect.width / 2;
+    const spaceRight = containerRect.right - rect.left - rect.width / 2;
+    let hAlign: "center" | "left" | "right" = "center";
+    if (spaceLeft < popupHalfWidth) {
+      hAlign = "left";
+    } else if (spaceRight < popupHalfWidth) {
+      hAlign = "right";
+    }
 
-      setPopup({
-        miscue,
-        x: xPos,
-        y: flip ? yBelow : yAbove,
-        flipped: flip,
-        hAlign,
-      });
-    },
-    [],
-  );
+    setPopup({
+      miscue,
+      x: xPos,
+      y: flip ? yBelow : yAbove,
+      flipped: flip,
+      hAlign,
+    });
+  }, []);
 
   const renderHighlightedContent = () => {
     let wordIndex = 0;
@@ -532,7 +568,11 @@ export function PassageDisplay({
       const isSpace = /^\s+$/.test(token);
       if (isSpace) {
         const precedingWordIndex = wordIndex - 1;
-        if (isEditing && editMode?.activeTool === "INSERTION" && precedingWordIndex >= 0) {
+        if (
+          isEditing &&
+          editMode?.activeTool === "INSERTION" &&
+          precedingWordIndex >= 0
+        ) {
           return (
             <span
               key={i}
@@ -628,7 +668,11 @@ export function PassageDisplay({
         wordEl = (
           <span
             key={`w-${i}`}
-            className={isEditing ? "cursor-pointer rounded-sm px-0.5 transition-colors hover:bg-[#DAE6FF]/40" : ""}
+            className={
+              isEditing
+                ? "cursor-pointer rounded-sm px-0.5 transition-colors hover:bg-[#DAE6FF]/40"
+                : ""
+            }
             onClick={isEditing ? handleEditClick : undefined}
           >
             {token}
@@ -640,7 +684,11 @@ export function PassageDisplay({
       const userIns = userAddedInsertions?.get(currentWordIndex);
 
       // If no inline insertions AND no user insertions follow, return just the word
-      if ((!insertions || insertions.length === 0) && (!userIns || userIns.length === 0)) return wordEl;
+      if (
+        (!insertions || insertions.length === 0) &&
+        (!userIns || userIns.length === 0)
+      )
+        return wordEl;
 
       // Render word + inline inserted/repeated words + user-added insertions
       return (
@@ -649,7 +697,8 @@ export function PassageDisplay({
           {insertions?.map((ins, j) => {
             const hasTs = ins.miscue.timestamp != null;
             const isRepetition = ins.miscue.miscueType === "REPETITION";
-            const colors = MISCUE_COLORS[ins.miscue.miscueType] || FALLBACK_COLOR;
+            const colors =
+              MISCUE_COLORS[ins.miscue.miscueType] || FALLBACK_COLOR;
             const label = isRepetition
               ? `REPETITION — repeated: "${ins.spokenWord}"`
               : `INSERTION — inserted: "${ins.spokenWord}"`;
@@ -678,21 +727,36 @@ export function PassageDisplay({
                 <span
                   title={`INSERTION — inserted: "${ins.spokenWord}"`}
                   className={`relative inline-block rounded-sm px-0.5 font-semibold italic transition-all ${colors.bgClass} ${colors.textClass} border-b-2 border-dashed ${colors.borderBottomClass.replace("border-b-2 ", "")} ${
-                    isEditing ? "cursor-pointer hover:brightness-90" : "cursor-help"
+                    isEditing
+                      ? "cursor-pointer hover:brightness-90"
+                      : "cursor-help"
                   }`}
-                  onContextMenu={isEditing ? (e) => {
-                    e.preventDefault();
-                    const idx = editMode!.editedMiscues.findIndex((m) => m === ins);
-                    if (idx === -1) return;
-                    const container = containerRef.current;
-                    if (!container) return;
-                    const containerRect = container.getBoundingClientRect();
-                    setContextMenu({
-                      x: e.clientX - containerRect.left + container.scrollLeft,
-                      y: e.clientY - containerRect.top + container.scrollTop,
-                      miscueIndex: idx,
-                    });
-                  } : undefined}
+                  onContextMenu={
+                    isEditing
+                      ? (e) => {
+                          e.preventDefault();
+                          const idx = editMode!.editedMiscues.findIndex(
+                            (m) => m === ins,
+                          );
+                          if (idx === -1) return;
+                          const container = containerRef.current;
+                          if (!container) return;
+                          const containerRect =
+                            container.getBoundingClientRect();
+                          setContextMenu({
+                            x:
+                              e.clientX -
+                              containerRect.left +
+                              container.scrollLeft,
+                            y:
+                              e.clientY -
+                              containerRect.top +
+                              container.scrollTop,
+                            miscueIndex: idx,
+                          });
+                        }
+                      : undefined
+                  }
                 >
                   {ins.spokenWord}
                 </span>
@@ -715,26 +779,42 @@ export function PassageDisplay({
     if (expanded) setDragHeight(null);
   }, [expanded]);
 
-  // When uncollapsing, restore to the initial height (captured before quiz mode)
   useEffect(() => {
     if (collapsible && !collapsed) {
       setDragHeight(initialHeight ?? null);
     }
   }, [collapsed, collapsible, initialHeight]);
 
-  // When collapsible and collapsed, render the container itself as a clickable bar
   if (collapsible && collapsed) {
     return (
       <div
         role="button"
         tabIndex={0}
         onClick={onToggleCollapsed}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onToggleCollapsed?.(); }}
-        className="flex w-full cursor-pointer items-center justify-center rounded-[10px] border border-[#54A4FF] bg-[#EFFDFF] py-2 shadow-[0px_1px_20px_rgba(108,164,239,0.37)] transition-colors hover:bg-[#DDE8FF]"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") onToggleCollapsed?.();
+        }}
+        className="flex w-full cursor-pointer items-center justify-center rounded-[10px] border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#EFFDFF] py-2 shadow-[0px_1px_20px_rgba(108,164,239,0.37)] transition-colors hover:bg-[#DDE8FF]"
+        title="Expand passage"
+        aria-label="Expand passage"
       >
         <ChevronDown className="h-5 w-5 rotate-0 text-[#1A5FB4]" />
       </div>
     );
+  }
+
+  function getPassageTextClasses(passageLevel?: string) {
+    if (!passageLevel) return "";
+    const num = parseInt(passageLevel.replace(/\D/g, ""), 10);
+    if (isNaN(num) || num === 0) {
+      return "text-[30px] font-comic";
+    } else if (num <= 3) {
+      return "text-[26px] font-comic";
+    } else if (num <= 6) {
+      return "text-[24px] font-comic";
+    } else {
+      return "text-[22px] font-comic";
+    }
   }
 
   return (
@@ -748,8 +828,12 @@ export function PassageDisplay({
           role="button"
           tabIndex={0}
           onClick={onToggleCollapsed}
-          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onToggleCollapsed?.(); }}
-          className="flex w-full cursor-pointer items-center justify-center rounded-t-[10px] border border-b-0 border-[#54A4FF] bg-[#EFFDFF] py-2 transition-colors hover:bg-[#DDE8FF]"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") onToggleCollapsed?.();
+          }}
+          className="flex w-full cursor-pointer items-center justify-center rounded-t-[10px] border-t border-l border-r-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] bg-[#EFFDFF] py-2 transition-colors hover:bg-[#DDE8FF]"
+          title="Collapse passage"
+          aria-label="Collapse passage"
         >
           <ChevronDown className="h-5 w-5 rotate-180 text-[#1A5FB4]" />
         </div>
@@ -801,10 +885,12 @@ export function PassageDisplay({
 
       <div
         ref={containerRef}
-        className={`oral-reading-scroll relative flex-1 overflow-auto rounded-[10px] border border-[#54A4FF] bg-[#EFFDFF] p-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)] md:p-5 ${collapsible && !collapsed && !expanded ? "rounded-t-none border-t-0" : ""}`}
+        className={`oral-reading-scroll relative flex-1 overflow-auto rounded-[10px] border-t border-l border-r-4 border-b-4 border-t-[#8315e9] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-white p-4 shadow-lg md:p-5 ${collapsible && !collapsed && !expanded ? "rounded-t-none border-t-0" : ""}`}
       >
         {content ? (
-          <p className="whitespace-pre-wrap text-center leading-relaxed text-[#00306E] px-8 md:px-10" style={passageLevel ? passageTextStyle : undefined}>
+          <p
+            className={`whitespace-pre-wrap text-center leading-relaxed text-[#00306E] px-8 md:px-10 ${getPassageTextClasses(passageLevel)}`}
+          >
             {hasMiscues ? renderHighlightedContent() : content}
           </p>
         ) : (
@@ -896,7 +982,8 @@ export function PassageDisplay({
                         className="flex w-full items-center justify-center gap-1.5 rounded-md bg-[#6666FF] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:brightness-110"
                       >
                         <Play className="h-3 w-3" />
-                        Jump to Word ({formatTimestamp(popup.miscue.timestamp!)})
+                        Jump to Word ({formatTimestamp(popup.miscue.timestamp!)}
+                        )
                       </button>
                     )}
                   </div>

@@ -121,38 +121,24 @@ export function ClassCard({
           onKeyDown={handleCardKeyDown}
           tabIndex={0}
           className={cn(
-            "group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-[#E0E7FF] bg-white p-4 min-h-35 shadow-[0px_0px_16px_1px_rgba(84,164,255,0.25)] transition-all hover:shadow-[0px_0px_20px_2px_rgba(84,164,255,0.4)] hover:border-[#5D5DFB]/40 cursor-pointer"
+            "group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-[#E0E7FF] bg-white p-4 min-h-35 shadow-[0px_0px_16px_1px_rgba(84,164,255,0.25)] transition-all hover:shadow-[0px_0px_20px_2px_rgba(84,164,255,0.4)] hover:border-[#5D5DFB]/40 cursor-pointer",
           )}
         >
           {/* Top section with folder icon and label */}
-          <div className="flex items-start gap-3">
-            <div
-              className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-lg",
-                styles.iconBg
-              )}
-            >
-              <Folder className={cn("h-5 w-5", styles.iconColor)} />
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[#e0e7ff]">
+              <Folder className="h-4 w-4 text-[#7c3aed]" />
             </div>
-            <div className="flex-1">
-              <span
-                className={cn(
-                  "inline-block rounded-md px-2 py-0.5 text-xs font-medium",
-                  styles.badgeBg,
-                  styles.badgeText
-                )}
-              >
-                Class
-              </span>
-            </div>
+            <span className="text-xs font-semibold text-[#0C1A6D]">Class</span>
           </div>
-
           {/* Bottom section with class name and student count */}
           <div className="mt-4">
             <h3 className="text-lg font-bold text-[#00306E] truncate mb-1">
               {name}
             </h3>
-            <p className="text-sm text-[#00306E]/60">{studentCount} students</p>
+            <p className="text-sm text-[#00306E]">
+              {studentCount} student{studentCount === 1 ? "" : "s"}
+            </p>
           </div>
 
           {/* Arrow indicator */}
@@ -234,7 +220,7 @@ export function ClassCard({
               </div>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
 
       <UpdateClassModal
