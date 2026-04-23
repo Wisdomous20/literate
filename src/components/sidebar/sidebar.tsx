@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
@@ -66,18 +66,28 @@ const orgAdminItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [collapsed, setCollapsed] = useState(false);
-  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState<boolean | null>(null);
+  const hasActiveSubscriptionRef = useRef<boolean | null>(null);
 
   const firstName = session?.user?.name?.split(" ")[0] || "User";
   const schoolYear = getCurrentSchoolYear();
   const isOrgAdmin = session?.user?.role === "ORG_ADMIN";
 
   useEffect(() => {
-    if (!session?.user?.id) return;
+    hasActiveSubscriptionRef.current = hasActiveSubscription;
+  }, [hasActiveSubscription]);
+
+  useEffect(() => {
+    if (status === "loading") return;
+    if (!session?.user?.id) {
+      setHasActiveSubscription(false);
+      return;
+    }
 
     let cancelled = false;
+    setHasActiveSubscription(null);
     const justPaid =
       typeof window !== "undefined" &&
       new URLSearchParams(window.location.search).get("subscription") ===
@@ -96,13 +106,19 @@ export function Sidebar() {
 
       if (++attempt < maxAttempts) {
         setTimeout(tick, 2000);
+        return;
       }
+
+      setHasActiveSubscription(false);
     };
 
     tick();
 
     const onVisibility = () => {
-      if (document.visibilityState === "visible" && !hasActiveSubscription) {
+      if (
+        document.visibilityState === "visible" &&
+        hasActiveSubscriptionRef.current !== true
+      ) {
         tick();
       }
     };
@@ -112,7 +128,7 @@ export function Sidebar() {
       cancelled = true;
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [session?.user?.id, hasActiveSubscription]);
+  }, [session?.user?.id, status]);
 
   const handleLogout = async () => {
     await signOut({ redirect: true, callbackUrl: "/login" });
@@ -283,7 +299,7 @@ export function Sidebar() {
           </nav>
 
           {/* Upgrade Premium Box */}
-          {!collapsed && !hasActiveSubscription && (
+          {!collapsed && hasActiveSubscription === false && (
             <div className="mt-8 rounded-2xl bg-white p-4 shadow-lg">
               <div className="flex items-center gap-2 mb-2">
                 <Zap className="h-5 w-5 text-[#6666FF]" />
