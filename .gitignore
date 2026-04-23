@@ -45,6 +45,7 @@ next-env.d.ts
 #AI Rules
 claude.md
 airules.txt
+.claude
 
 coverage
 .vitest-cache
