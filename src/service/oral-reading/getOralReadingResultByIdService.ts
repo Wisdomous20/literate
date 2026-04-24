@@ -4,14 +4,6 @@ import { OralReadingResultData, OralReading } from "@/types/oral-reading-result"
 export async function getOralReadingResultByIdService(
   oralReadingResultId: string
 ): Promise<OralReading> {
-  if (!oralReadingResultId) {
-    return {
-      success: false,
-      error: "Oral Reading Result ID is required.",
-      code: "VALIDATION_ERROR",
-    };
-  }
-
   try {
     const oralReadingResult = await prisma.oralReadingResult.findUnique({
       where: { id: oralReadingResultId },

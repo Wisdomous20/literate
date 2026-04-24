@@ -15,7 +15,6 @@ export async function deleteQuestionService(
 ): Promise<DeleteQuestionResult> {
   const { id } = input;
 
-  // Validate input
   if (!id) {
     return {
       success: false,

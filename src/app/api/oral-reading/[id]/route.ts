@@ -3,23 +3,30 @@ import { createAssessmentService } from "@/service/assessment/createAssessmentSe
 import { prisma } from "@/lib/prisma";
 import { transcriptionQueue } from "@/lib/queues";
 import type { TranscriptionJobData } from "@/lib/queues";
+import { createAudioAssessmentSchema } from "@/lib/validation/media";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
 
 export const maxDuration = 10;
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    const studentId = formData.get("studentId") as string;
-    const passageId = formData.get("passageId") as string;
-    const audioFile = formData.get("audio") as File;
-    const audioUrl = (formData.get("audioUrl") as string) || "";
+    const validationResult = createAudioAssessmentSchema.safeParse({
+      studentId: formData.get("studentId"),
+      passageId: formData.get("passageId"),
+      audio: formData.get("audio"),
+      audioUrl: formData.get("audioUrl") ?? undefined,
+    });
 
-    if (!studentId || !passageId || !audioFile) {
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: "studentId, passageId, and audio file are required" },
+        { error: getFirstZodErrorMessage(validationResult.error) },
         { status: 400 },
       );
     }
+
+    const { studentId, passageId, audio: audioFile, audioUrl = "" } =
+      validationResult.data;
 
     // 1. Create assessment
     const assessmentResult = await createAssessmentService({

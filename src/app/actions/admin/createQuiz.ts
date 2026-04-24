@@ -1,6 +1,8 @@
 "use server";
 
 import { createQuizService } from "@/service/admin/createQuizService";
+import { createQuizSchema } from "@/lib/validation/admin";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
 
 interface CreateQuizActionInput {
   passageId: string;
@@ -15,15 +17,17 @@ interface CreateQuizActionInput {
 }
 
 export async function createQuizAction(input: CreateQuizActionInput) {
-  const { passageId, totalScore, questions } = input;
+  const validationResult = createQuizSchema.safeParse({
+    ...input,
+    totalNumber: input.questions.length,
+  });
+
+  if (!validationResult.success) {
+    throw new Error(getFirstZodErrorMessage(validationResult.error));
+  }
 
   // Call the service to create the quiz
-  const result = await createQuizService({
-    passageId,
-    totalScore,
-    totalNumber: questions.length, // Automatically calculate totalNumber
-    questions,
-  });
+  const result = await createQuizService(validationResult.data);
 
   if (!result.success) {
     throw new Error(result.error || "Failed to create quiz.");

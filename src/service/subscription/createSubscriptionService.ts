@@ -12,7 +12,8 @@ interface CreateSubscriptionInput {
 }
 
 export async function createSubscriptionService(input: CreateSubscriptionInput) {
-  const { userId, userName, userEmail, planType, memberCount } = input;
+  const { userId, userName, userEmail } = input;
+  const { planType, memberCount } = input;
 
   if (!["SOLO", "KASALO", "PANALO", "PAMILYA"].includes(planType)) {
     return { success: false, error: "Invalid plan type" };

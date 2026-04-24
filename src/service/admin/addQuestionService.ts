@@ -28,7 +28,6 @@ export async function addQuestionService(
 ): Promise<AddQuestionResult> {
   const { passageId, questionText, tags, type, options, correctAnswer } = input;
 
-  // Validate input
   if (!passageId || !questionText || !tags || !type) {
     return {
       success: false,

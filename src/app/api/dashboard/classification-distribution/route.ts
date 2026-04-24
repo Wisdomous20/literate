@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
+import { classificationDistributionQuerySchema } from "@/lib/validation/assessment";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import {
   getClassificationDistribution,
   type AssessmentTypeFilter,
@@ -8,14 +10,6 @@ import {
 } from "@/service/dashboard/getClassificationDistribution";
 
 export const dynamic = "force-dynamic";
-
-const VALID_ASSESSMENT: AssessmentTypeFilter[] = [
-  "ALL",
-  "ORAL_READING",
-  "READING_FLUENCY",
-  "COMPREHENSION",
-];
-const VALID_TEST: TestTypeFilter[] = ["PRE", "POST"];
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,35 +19,24 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const schoolYear = searchParams.get("schoolYear");
-    const assessmentTypeRaw = searchParams.get("assessmentType") ?? "ALL";
-    const testTypeRaw = searchParams.get("testType") ?? "PRE";
-
-    if (!schoolYear) {
+    const validationResult = classificationDistributionQuerySchema.safeParse({
+      schoolYear: searchParams.get("schoolYear"),
+      assessmentType: searchParams.get("assessmentType") ?? undefined,
+      testType: searchParams.get("testType") ?? undefined,
+    });
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: "schoolYear is required" },
+        { error: getFirstZodErrorMessage(validationResult.error) },
         { status: 400 }
       );
     }
-
-    if (!VALID_ASSESSMENT.includes(assessmentTypeRaw as AssessmentTypeFilter)) {
-      return NextResponse.json(
-        { error: "Invalid assessmentType" },
-        { status: 400 }
-      );
-    }
-    if (!VALID_TEST.includes(testTypeRaw as TestTypeFilter)) {
-      return NextResponse.json(
-        { error: "Invalid testType" },
-        { status: 400 }
-      );
-    }
+    const { schoolYear, assessmentType, testType } = validationResult.data;
 
     const distribution = await getClassificationDistribution(
       session.user.id,
       schoolYear,
-      assessmentTypeRaw as AssessmentTypeFilter,
-      testTypeRaw as TestTypeFilter
+      assessmentType as AssessmentTypeFilter,
+      testType as TestTypeFilter
     );
 
     return NextResponse.json(distribution);

@@ -4,19 +4,11 @@ import { OralReadingResultData, OralReadingList } from "@/types/oral-reading-res
 export async function getOralReadingResultsByStudentService(
   studentId: string
 ): Promise<OralReadingList> {
-  if (!studentId) {
-    return {
-      success: false,
-      error: "Student ID is required.",
-      code: "VALIDATION_ERROR",
-    };
-  }
-
   try {
     const oralReadingResults = await prisma.oralReadingResult.findMany({
       where: {
         assessment: {
-          studentId: studentId,
+          studentId,
         },
       },
       include: {

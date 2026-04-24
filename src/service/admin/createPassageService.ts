@@ -28,8 +28,7 @@ export async function createPassageService(
 ): Promise<CreatePassageResult> {
   const { title, content, language, level, testType } = input;
 
-  // Validate input
-  if (!title || !content || !language || !level || !testType) {
+  if (!title || !content || !language || level === undefined || !testType) {
     return {
       success: false,
       error: "All fields are required.",

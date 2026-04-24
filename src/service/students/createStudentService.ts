@@ -25,7 +25,7 @@ export async function createStudentService(
 ): Promise<CreateStudentResult> {
   const { name, level, userId, className, schoolYear } = input;
 
-  if (!name || !name.trim()) {
+  if (!name?.trim()) {
     return {
       success: false,
       error: "Student name is required",
@@ -41,7 +41,7 @@ export async function createStudentService(
     };
   }
 
-  if (!className || !className.trim()) {
+  if (!className?.trim()) {
     return {
       success: false,
       error: "Class name is required",
@@ -49,10 +49,10 @@ export async function createStudentService(
     };
   }
 
-  if (!schoolYear || !schoolYear.trim()) {
+  if (!schoolYear?.trim()) {
     return {
       success: false,
-      error: "School year is required to disambiguate classes",
+      error: "School year is required",
       code: "VALIDATION_ERROR",
     };
   }

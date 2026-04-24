@@ -22,10 +22,6 @@ export interface InvitationDetails {
 export async function getInvitationDetailsService(
   token: string
 ): Promise<InvitationDetails> {
-  if (!token?.trim()) {
-    return { status: "not_found" };
-  }
-
   const invitation = await prisma.organizationInvitation.findUnique({
     where: { token },
     include: {

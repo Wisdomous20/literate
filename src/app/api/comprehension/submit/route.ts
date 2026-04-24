@@ -5,6 +5,8 @@ import { gradingQueue } from "@/lib/queues";
 import type { GradingJobData } from "@/lib/queues";
 import classifyComprehensionLevel from "@/service/comprehension-test/classifyComprehensionLevel";
 import { Tags } from "@/generated/prisma/enums";
+import { comprehensionSubmitSchema } from "@/lib/validation/assessment";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
 
 
 
@@ -13,14 +15,16 @@ export const maxDuration = 10;
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { studentId, passageId, answers } = body;
+    const validationResult = comprehensionSubmitSchema.safeParse(body);
 
-    if (!studentId || !passageId || !Array.isArray(answers)) {
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: "Missing required fields: studentId, passageId, answers" },
+        { error: getFirstZodErrorMessage(validationResult.error) },
         { status: 400 },
       );
     }
+
+    const { studentId, passageId, answers } = validationResult.data;
 
     // 1. Create assessment
     const assessmentResult = await createAssessmentService({

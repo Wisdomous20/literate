@@ -5,31 +5,22 @@ import type { GradingJobData } from "@/lib/queues";
 import classifyComprehensionLevel from "@/service/comprehension-test/classifyComprehensionLevel";
 import { createOralReadingService } from "@/service/oral-reading/createOralReadingService";
 import { Tags } from "@/generated/prisma/enums";
+import { oralReadingComprehensionSubmitSchema } from "@/lib/validation/assessment";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { assessmentId, answers } = body as {
-      assessmentId: string;
-      answers: { questionId: string; answer: string }[];
-    };
+    const validationResult = oralReadingComprehensionSubmitSchema.safeParse(body);
 
-    if (!assessmentId || !Array.isArray(answers) || answers.length === 0) {
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: "Missing required fields: assessmentId, answers" },
+        { error: getFirstZodErrorMessage(validationResult.error) },
         { status: 400 },
       );
     }
 
-    const isValidAnswers = answers.every(
-      (a) => typeof a.questionId === "string" && typeof a.answer === "string",
-    );
-    if (!isValidAnswers) {
-      return NextResponse.json(
-        { error: "Each answer must have questionId and answer fields" },
-        { status: 400 },
-      );
-    }
+    const { assessmentId, answers } = validationResult.data;
 
     // 1. Get assessment + passage + quiz
     const assessment = await prisma.assessment.findUnique({

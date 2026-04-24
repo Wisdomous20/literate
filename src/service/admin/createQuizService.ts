@@ -30,7 +30,6 @@ export async function createQuizService(
 ): Promise<CreateQuizResult> {
   const { passageId, totalScore, totalNumber, questions } = input;
 
-  // Validate required fields
   if (!passageId) {
     return {
       success: false,

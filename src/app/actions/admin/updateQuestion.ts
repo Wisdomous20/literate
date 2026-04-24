@@ -1,6 +1,8 @@
 "use server";
 
 import { updateQuestionService } from "@/service/admin/updateQuestionService";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
+import { updateQuestionSchema } from "@/lib/validation/admin";
 
 interface UpdateQuestionActionInput {
   id: string;
@@ -14,17 +16,14 @@ interface UpdateQuestionActionInput {
 export async function updateQuestionAction(
   input: UpdateQuestionActionInput,
 ) {
-  const { id, questionText, tags, type, options, correctAnswer } = input;
+  const validationResult = updateQuestionSchema.safeParse(input);
+
+  if (!validationResult.success) {
+    throw new Error(getFirstZodErrorMessage(validationResult.error));
+  }
 
   // Call the service to update the question
-  const result = await updateQuestionService({
-    id,
-    questionText,
-    tags,
-    type,
-    options,
-    correctAnswer,
-  });
+  const result = await updateQuestionService(validationResult.data);
 
   if (!result.success) {
     throw new Error(result.error || "Failed to update question.");

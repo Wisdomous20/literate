@@ -2,22 +2,32 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { transcriptionQueue } from "@/lib/queues";
 import type { TranscriptionJobData } from "@/lib/queues";
+import {
+  assessmentIdQuerySchema,
+  transcriptionRequestSchema,
+} from "@/lib/validation/media";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
 
 export const maxDuration = 10; 
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    const assessmentId = formData.get("assessmentId") as string;
-    const audioFile = formData.get("audio") as File;
-    const audioUrl = (formData.get("audioUrl") as string) || "";
+    const validationResult = transcriptionRequestSchema.safeParse({
+      assessmentId: formData.get("assessmentId"),
+      audio: formData.get("audio"),
+      audioUrl: formData.get("audioUrl") ?? undefined,
+    });
 
-    if (!assessmentId || !audioFile) {
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: "assessmentId and audio file are required" },
+        { error: getFirstZodErrorMessage(validationResult.error) },
         { status: 400 },
       );
     }
+
+    const { assessmentId, audio: audioFile, audioUrl = "" } =
+      validationResult.data;
 
     // Validate assessment exists
     const assessment = await prisma.assessment.findUnique({
@@ -81,11 +91,18 @@ export async function POST(request: NextRequest) {
 
 
 export async function GET(request: NextRequest) {
-  const assessmentId = request.nextUrl.searchParams.get("assessmentId");
+  const validationResult = assessmentIdQuerySchema.safeParse({
+    assessmentId: request.nextUrl.searchParams.get("assessmentId"),
+  });
 
-  if (!assessmentId) {
-    return NextResponse.json({ error: "assessmentId is required" }, { status: 400 });
+  if (!validationResult.success) {
+    return NextResponse.json(
+      { error: getFirstZodErrorMessage(validationResult.error) },
+      { status: 400 }
+    );
   }
+
+  const { assessmentId } = validationResult.data;
 
   const session = await prisma.oralFluencySession.findUnique({
     where: { assessmentId },

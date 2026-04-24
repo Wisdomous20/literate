@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
+import { loginUserSchema } from "@/lib/validation/auth";
 
 export interface LoginUserInput {
   email: string;
@@ -21,16 +22,15 @@ export interface LoginResult {
 }
 
 export async function loginUser(input: LoginUserInput): Promise<LoginResult> {
-  const { email, password } = input;
-
-  // Validate required fields
-  if (!email || !password) {
+  const validationResult = loginUserSchema.safeParse(input);
+  if (!validationResult.success) {
     return {
       success: false,
       error: "Email and password are required",
       code: "INVALID_CREDENTIALS",
     };
   }
+  const { email, password } = validationResult.data;
 
   try {
     // Find user

@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { getRecentAssessmentsService } from "@/service/assessment/getRecentAssessmentsService";
 import { getSchoolYear } from "@/utils/getSchoolYear";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
+import { recentAssessmentsSchema } from "@/lib/validation/assessment";
 
 export async function getRecentAssessments(schoolYear?: string) {
   const session = await getServerSession(authOptions);
@@ -12,5 +14,19 @@ export async function getRecentAssessments(schoolYear?: string) {
     return { success: false, error: "Unauthorized" };
   }
 
-  return getRecentAssessmentsService(session.user.id, schoolYear || getSchoolYear());
+  const validationResult = recentAssessmentsSchema.safeParse({
+    schoolYear: schoolYear || getSchoolYear(),
+  });
+
+  if (!validationResult.success) {
+    return {
+      success: false,
+      error: getFirstZodErrorMessage(validationResult.error),
+    };
+  }
+
+  return getRecentAssessmentsService(
+    session.user.id,
+    validationResult.data.schoolYear || getSchoolYear()
+  );
 }

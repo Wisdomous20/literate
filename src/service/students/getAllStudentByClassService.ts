@@ -9,7 +9,7 @@ interface GetStudentsByClassNameResult {
     level?: number;
   }[];
   error?: string;
-  code?: "UNAUTHORIZED" | "CLASS_NOT_FOUND" | "INTERNAL_ERROR";
+  code?: "VALIDATION_ERROR" | "UNAUTHORIZED" | "CLASS_NOT_FOUND" | "INTERNAL_ERROR";
 }
 
 export async function getStudentsByClassNameService(
