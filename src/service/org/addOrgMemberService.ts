@@ -16,15 +16,6 @@ const INVITATION_TTL_MS = INVITATION_TTL_DAYS * 24 * 60 * 60 * 1000;
 export async function addOrgMemberService(input: AddMemberInput) {
   const { email, firstName, lastName, organizationId, requestedByUserId } = input;
 
-  if (!email?.trim() || !firstName?.trim() || !lastName?.trim()) {
-    return { success: false, error: "Email, first name, and last name are required" };
-  }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return { success: false, error: "Invalid email format" };
-  }
-
   const normalizedEmail = email.toLowerCase().trim();
   const trimmedFirstName = firstName.trim();
   const trimmedLastName = lastName.trim();

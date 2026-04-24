@@ -29,10 +29,6 @@ export async function acceptInvitationService(
 ): Promise<AcceptInvitationResult> {
   const { token, password } = input;
 
-  if (!token?.trim()) {
-    return { success: false, error: "Missing invitation token" };
-  }
-
   const invitation = await prisma.organizationInvitation.findUnique({
     where: { token },
     include: {

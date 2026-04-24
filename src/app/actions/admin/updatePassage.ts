@@ -2,6 +2,8 @@
 
 import { updatePassageService } from "@/service/admin/UpdatePassageService";
 import {  testType } from "@/generated/prisma/enums";
+import { updatePassageSchema } from "@/lib/validation/admin";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
 
 interface UpdatePassageActionInput {
   id: string;
@@ -13,17 +15,14 @@ interface UpdatePassageActionInput {
 }
 
 export async function updatePassageAction(input: UpdatePassageActionInput) {
-  const { id, title, content, language, level,  testType } = input;
+  const validationResult = updatePassageSchema.safeParse(input);
+
+  if (!validationResult.success) {
+    throw new Error(getFirstZodErrorMessage(validationResult.error));
+  }
 
   // Call the service to update the passage
-  const result = await updatePassageService({
-    id,
-    title,
-    content,
-    language,
-    level,
-    testType,
-  });
+  const result = await updatePassageService(validationResult.data);
 
   if (!result.success) {
     throw new Error(result.error || "Failed to update passage.");

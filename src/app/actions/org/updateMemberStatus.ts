@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { prisma } from "@/lib/prisma";
 import { updateMemberPasswordService } from "@/service/org/updateMemberPasswordService";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
+import { updateMemberPasswordSchema } from "@/lib/validation/org";
 
 export async function updateMemberPasswordAction(
   memberId: string,
@@ -23,10 +25,24 @@ export async function updateMemberPasswordAction(
     return { success: false, error: "No organization found" };
   }
 
-  return await updateMemberPasswordService(
+  const validationResult = updateMemberPasswordSchema.safeParse({
     memberId,
     newPassword,
-    org.id,
-    session.user.id
+    organizationId: org.id,
+    requestedByUserId: session.user.id,
+  });
+
+  if (!validationResult.success) {
+    return {
+      success: false,
+      error: getFirstZodErrorMessage(validationResult.error),
+    };
+  }
+
+  return await updateMemberPasswordService(
+    validationResult.data.memberId,
+    validationResult.data.newPassword,
+    validationResult.data.organizationId,
+    validationResult.data.requestedByUserId
   );
 }

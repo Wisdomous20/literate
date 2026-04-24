@@ -1,7 +1,5 @@
 import { prisma } from "@/lib/prisma";
 import { checkDailyLimit } from "@/service/assessment/checkDailyLimitService";
-import { createAssessmentSchema } from "@/lib/validation/assessment";
-import { getFirstZodErrorMessage } from "@/lib/validation/common";
 
 interface CreateAssessmentInput {
   studentId: string;
@@ -25,15 +23,15 @@ interface CreateAssessmentResult {
 export async function createAssessmentService(
   input: CreateAssessmentInput
 ): Promise<CreateAssessmentResult> {
-  const validationResult = createAssessmentSchema.safeParse(input);
-  if (!validationResult.success) {
+  const { studentId, type, passageId } = input;
+
+  if (!studentId || !type || !passageId) {
     return {
       success: false,
-      error: getFirstZodErrorMessage(validationResult.error),
+      error: "studentId, type, and passageId are required.",
       code: "VALIDATION_ERROR",
     };
   }
-  const { studentId, type, passageId } = validationResult.data;
 
   try {
     // Look up the student's classroom to find the owning user

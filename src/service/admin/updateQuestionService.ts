@@ -28,7 +28,6 @@ export async function updateQuestionService(
 ): Promise<UpdateQuestionResult> {
   const { id, questionText, tags, type, options, correctAnswer } = input;
 
-  // Validate input
   if (!id) {
     return {
       success: false,
@@ -37,7 +36,6 @@ export async function updateQuestionService(
     };
   }
 
-  // Validate MULTIPLE_CHOICE requirements
   if (type === "MULTIPLE_CHOICE" && (!options || !correctAnswer)) {
     return {
       success: false,

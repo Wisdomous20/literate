@@ -25,7 +25,6 @@ export async function getPassageByIdService(
 ): Promise<GetPassageByIdResult> {
   const { id } = input;
 
-  // Validate input
   if (!id) {
     return {
       success: false,

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { xenditWebhookSchema } from "@/lib/validation/subscription";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
 
 export const dynamic = "force-dynamic";
 
@@ -14,15 +16,25 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const event = body.event as string;
+  const validationResult = xenditWebhookSchema.safeParse(body);
+
+  if (!validationResult.success) {
+    return NextResponse.json(
+      { error: getFirstZodErrorMessage(validationResult.error) },
+      { status: 400 }
+    );
+  }
+
+  const payload = validationResult.data;
+  const event = payload.event;
 
   console.log(`[Xendit Webhook] ${event}`);
 
   try {
     switch (event) {
       case "recurring.plan.activated": {
-        const planId = body.data?.id;
-        const metadata = body.data?.metadata;
+        const planId = payload.data.id;
+        const metadata = payload.data.metadata;
 
         if (planId) {
           const maxMembers = parseInt(metadata?.maxMembers || "1", 10);
@@ -98,7 +110,7 @@ export async function POST(req: NextRequest) {
       }
 
       case "recurring.plan.inactivated": {
-        const planId = body.data?.id;
+        const planId = payload.data.id;
         if (planId) {
           // Preserve ACTIVE until the paid period ends when the user explicitly
           // stopped renewal (e.g. accepted an org invite). The natural expiry
@@ -112,7 +124,7 @@ export async function POST(req: NextRequest) {
       }
 
       case "recurring.cycle.succeeded": {
-        const planId = body.data?.plan_id;
+        const planId = payload.data.plan_id;
         if (planId) {
           await prisma.subscription.updateMany({
             where: { xenditPlanId: planId },
@@ -127,7 +139,7 @@ export async function POST(req: NextRequest) {
       }
 
       case "recurring.cycle.retrying": {
-        const planId = body.data?.plan_id;
+        const planId = payload.data.plan_id;
         if (planId) {
           await prisma.subscription.updateMany({
             where: { xenditPlanId: planId },
@@ -138,7 +150,7 @@ export async function POST(req: NextRequest) {
       }
 
       case "recurring.cycle.failed": {
-        const planId = body.data?.plan_id;
+        const planId = payload.data.plan_id;
         if (planId) {
           await prisma.subscription.updateMany({
             where: { xenditPlanId: planId },

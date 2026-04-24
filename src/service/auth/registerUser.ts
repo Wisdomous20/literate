@@ -1,7 +1,5 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
-import { getFirstZodErrorMessage } from "@/lib/validation/common";
-import { registerUserSchema } from "@/lib/validation/auth";
 import { RegisterUserInput, RegisterErrorCode } from "@/types/auth";
 
 interface RegisterUserResult {
@@ -19,16 +17,31 @@ interface RegisterUserResult {
 
 
 export async function registerUser(input: RegisterUserInput): Promise<RegisterUserResult> {
-  const validationResult = registerUserSchema.safeParse(input);
-  if (!validationResult.success) {
+  const { firstName, lastName, email, password } = input;
+
+  if (!firstName?.trim() || !lastName?.trim() || !email?.trim() || !password) {
     return {
       success: false,
-      error: getFirstZodErrorMessage(validationResult.error),
+      error: "All fields are required",
       code: "VALIDATION_ERROR",
     };
   }
 
-  const { firstName, lastName, email, password } = validationResult.data;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return {
+      success: false,
+      error: "Invalid email format",
+      code: "VALIDATION_ERROR",
+    };
+  }
+
+  if (password.length < 8) {
+    return {
+      success: false,
+      error: "Password must be at least 8 characters long",
+      code: "VALIDATION_ERROR",
+    };
+  }
 
   // Check if user already exists
   const existingUser = await prisma.user.findUnique({

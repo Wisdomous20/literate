@@ -81,14 +81,18 @@ export async function getAllClassServiceBySchoolYear(
   }
 
   if (!schoolYear) {
-    return { success: false, error: "School year is required", code: "VALIDATION_ERROR" };
+    return {
+      success: false,
+      error: "School year is required",
+      code: "VALIDATION_ERROR",
+    };
   }
 
   try {
     const classes = await prisma.classRoom.findMany({
       where: { 
-        userId, 
-        schoolYear, 
+        userId,
+        schoolYear,
         archived: false 
       },
       select: {

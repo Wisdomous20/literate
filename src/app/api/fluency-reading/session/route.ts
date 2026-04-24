@@ -1,14 +1,23 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { sessionIdQuerySchema } from "@/lib/validation/media";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const id = searchParams.get("id")
+    const validationResult = sessionIdQuerySchema.safeParse({
+      id: searchParams.get("id"),
+    })
 
-    if (!id) {
-      return NextResponse.json({ error: "Missing session id" }, { status: 400 })
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { error: getFirstZodErrorMessage(validationResult.error) },
+        { status: 400 }
+      )
     }
+
+    const { id } = validationResult.data
 
     const session = await prisma.oralFluencySession.findUnique({
       where: { id },

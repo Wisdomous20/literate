@@ -1,12 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { shareableAssessmentTokenSchema } from "@/lib/validation/assessment";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
-    const { token } = await params;
+    const rawParams = await params;
+    const validationResult = shareableAssessmentTokenSchema.safeParse(rawParams);
+
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { success: false, error: getFirstZodErrorMessage(validationResult.error) },
+        { status: 400 }
+      );
+    }
+
+    const { token } = validationResult.data;
 
     const link = await prisma.assessmentLink.findUnique({
       where: { token },

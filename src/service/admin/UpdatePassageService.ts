@@ -27,9 +27,8 @@ interface UpdatePassageResult {
 export async function updatePassageService(
   input: UpdatePassageInput
 ): Promise<UpdatePassageResult> {
-  const { id, title, content, language, level,testType } = input;
+  const { id, title, content, language, level, testType } = input;
 
-  // Validate input
   if (!id) {
     return {
       success: false,

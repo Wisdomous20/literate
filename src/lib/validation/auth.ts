@@ -1,5 +1,7 @@
 import { z } from "zod";
 import {
+  emailString,
+  idString,
   passwordString,
   requiredString,
   requiredUntrimmedString,
@@ -10,9 +12,7 @@ const nameSchema = (label: string) =>
     z.string().max(50, `${label} must be 50 characters or fewer`)
   );
 
-const emailSchema = requiredString("Email").pipe(
-  z.string().email("Invalid email format")
-);
+const emailSchema = emailString();
 
 const verificationCodeSchema = requiredString("Verification code").pipe(
   z.string().regex(/^\d{6}$/, "Please enter a valid 6-digit code.")
@@ -48,7 +48,7 @@ export const verifyCodeInputSchema = z.object({
 });
 
 export const resendVerificationCodeSchema = z.object({
-  userId: requiredString("User ID"),
+  userId: idString("User ID"),
 });
 
 export const requestPasswordChangeSchema = z.object({
@@ -63,6 +63,19 @@ export const confirmPasswordChangeSchema = z.object({
 export const resetPasswordSchema = z.object({
   token: requiredString("Token"),
   password: passwordString(),
+});
+
+export const updateProfileSchema = z.object({
+  firstName: nameSchema("First name").pipe(
+    z.string().max(60, "First name must be 60 characters or fewer")
+  ),
+  lastName: nameSchema("Last name").pipe(
+    z.string().max(60, "Last name must be 60 characters or fewer")
+  ),
+});
+
+export const sendResetPasswordSchema = z.object({
+  email: emailSchema,
 });
 
 export const resetPasswordFormSchema = z

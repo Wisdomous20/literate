@@ -2,6 +2,8 @@
 
 import { createPassageService } from "@/service/admin/createPassageService";
 import {  testType } from "@/generated/prisma/enums";
+import { createPassageSchema } from "@/lib/validation/admin";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
 
 interface CreatePassageActionInput {
   title: string;
@@ -13,16 +15,14 @@ interface CreatePassageActionInput {
 }
 
 export async function createPassageAction(input: CreatePassageActionInput) {
-  const { title, content, language, level, testType } = input;
+  const validationResult = createPassageSchema.safeParse(input);
+
+  if (!validationResult.success) {
+    throw new Error(getFirstZodErrorMessage(validationResult.error));
+  }
 
   // Call the service to create the passage
-  const result = await createPassageService({
-    title,
-    content,
-    language,
-    level,
-    testType,
-  });
+  const result = await createPassageService(validationResult.data);
 
   if (!result.success) {
     throw new Error(result.error || "Failed to create passage.");

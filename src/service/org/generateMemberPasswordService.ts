@@ -27,7 +27,12 @@ export async function generateMemberPasswordService(
   }
 
   const membership = await prisma.organizationMember.findUnique({
-    where: { userId_organizationId: { userId: memberId, organizationId } },
+    where: {
+      userId_organizationId: {
+        userId: memberId,
+        organizationId,
+      },
+    },
     include: {
       user: { select: { email: true, lastName: true } },
     },

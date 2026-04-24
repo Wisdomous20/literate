@@ -6,6 +6,8 @@ import {
   checkDailyLimit,
   getDailyLimitStatus,
 } from "@/service/assessment/checkDailyLimitService";
+import { checkDailyLimitSchema } from "@/lib/validation/assessment";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
 
 export async function checkDailyLimitAction(assessmentType: string) {
   const session = await getServerSession(authOptions);
@@ -14,7 +16,19 @@ export async function checkDailyLimitAction(assessmentType: string) {
     return { success: false, error: "Unauthorized" };
   }
 
-  const result = await checkDailyLimit(session.user.id, assessmentType);
+  const validationResult = checkDailyLimitSchema.safeParse({ assessmentType });
+
+  if (!validationResult.success) {
+    return {
+      success: false,
+      error: getFirstZodErrorMessage(validationResult.error),
+    };
+  }
+
+  const result = await checkDailyLimit(
+    session.user.id,
+    validationResult.data.assessmentType
+  );
 
   return {
     success: true,
