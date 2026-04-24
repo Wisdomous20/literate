@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   AlertCircle,
+  Building2,
   Check,
   Copy,
   KeyRound,
@@ -11,7 +12,6 @@ import {
   RefreshCw,
   ShieldCheck,
   UserPlus,
-  Users,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import {
@@ -101,7 +101,11 @@ export default function OrganizationPage() {
   }, []);
 
   useEffect(() => {
-    refresh();
+    const timer = window.setTimeout(() => {
+      void refresh();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [refresh]);
 
   if (loading) {
@@ -136,22 +140,80 @@ export default function OrganizationPage() {
   }
 
   const seatsRemaining = Math.max(org.maxMembers - org.currentMembers, 0);
+  const disabledMembers = Math.max(org.totalMembers - org.currentMembers, 0);
 
   return (
     <div className="flex min-h-full flex-col">
       <DashboardHeader title="Organization" />
 
-      <main className="flex-1 overflow-auto bg-[#F7F7FF] px-6 py-8 md:px-10">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-          <OrgSummaryCard org={org} onRenamed={refresh} />
+      <main className="flex-1 overflow-auto bg-[radial-gradient(circle_at_top_left,rgba(102,102,255,0.14),transparent_28%),linear-gradient(180deg,#F8F9FF_0%,#EFF3FF_100%)] px-4 py-5 sm:px-6 sm:py-6 xl:px-8">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+          <section className="overflow-hidden rounded-[32px] border border-[rgba(102,102,255,0.12)] bg-[linear-gradient(135deg,#FFFFFF_0%,#F6F8FF_52%,#EEF2FF_100%)] shadow-[0_22px_60px_rgba(15,23,88,0.08)]">
+            <div className="grid gap-8 px-6 py-6 sm:px-7 sm:py-7 xl:grid-cols-[minmax(0,1.28fr)_360px] xl:items-end">
+              <div className="flex items-start gap-5">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[24px] bg-[#5D5DFB] shadow-[0_18px_32px_rgba(93,93,251,0.24)]">
+                  <Building2 className="h-7 w-7 text-white" />
+                </div>
 
-          <AddMemberCard
-            seatsRemaining={seatsRemaining}
-            onInvited={(info) => {
-              setInvitationSent(info);
-              refresh();
-            }}
-          />
+                <div className="max-w-3xl">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#5D5DFB]">
+                    Organization workspace
+                  </p>
+                  <h2 className="mt-3 text-3xl font-bold tracking-[-0.03em] text-[#16215C] sm:text-[2.5rem]">
+                    Keep team management clear, organized, and easy to scan.
+                  </h2>
+                  <p className="mt-3 max-w-2xl text-sm leading-7 text-[#6072A6] sm:text-[15px]">
+                    Use this page to handle invitations, access changes, and
+                    account support without repeating the same information in
+                    multiple places.
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-[28px] border border-[rgba(102,102,255,0.14)] bg-white/92 p-5 shadow-[0_14px_32px_rgba(15,23,88,0.06)]">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#6072A6]">
+                  Workspace status
+                </p>
+                <div className="mt-4 space-y-4">
+                  <StatusRow
+                    label="Seats available"
+                    value={String(seatsRemaining)}
+                    hint={
+                      seatsRemaining > 0
+                        ? "Ready for new invitations."
+                        : "No open seats right now."
+                    }
+                  />
+                  <StatusRow
+                    label="Disabled accounts"
+                    value={String(disabledMembers)}
+                    hint={
+                      disabledMembers > 0
+                        ? "These can be reviewed in the roster below."
+                        : "Everyone in the directory is active."
+                    }
+                  />
+                  <StatusRow
+                    label="Team directory"
+                    value={String(org.totalMembers)}
+                    hint="Total member records in the organization."
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.82fr)] xl:items-start">
+            <OrgSummaryCard org={org} onRenamed={refresh} />
+
+            <AddMemberCard
+              seatsRemaining={seatsRemaining}
+              onInvited={(info) => {
+                setInvitationSent(info);
+                refresh();
+              }}
+            />
+          </div>
 
           <MembersCard
             members={members}
@@ -235,21 +297,25 @@ function CreateOrgPanel({ onCreated }: { onCreated: () => void }) {
   }
 
   return (
-    <main className="flex flex-1 items-center justify-center bg-[#F7F7FF] px-6 py-12">
+    <main className="flex flex-1 items-center justify-center bg-[radial-gradient(circle_at_top_left,rgba(102,102,255,0.14),transparent_25%),linear-gradient(180deg,#F8F9FF_0%,#EEF3FF_100%)] px-6 py-12">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-md rounded-2xl border border-[#BDBDFF] bg-white p-8 shadow-sm"
+        className="w-full max-w-xl rounded-[32px] border border-[rgba(102,102,255,0.14)] bg-[linear-gradient(180deg,#FFFFFF_0%,#F8FAFF_100%)] p-8 shadow-[0_24px_64px_rgba(12,26,109,0.1)]"
       >
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#6666FF]">
-            <Users className="h-5 w-5 text-white" />
+        <div className="mb-8 flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#5D5DFB] shadow-[0_16px_28px_rgba(102,102,255,0.24)]">
+            <Building2 className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-[#31318A]">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#5D5DFB]">
+              Organization
+            </p>
+            <h2 className="mt-1 text-3xl font-bold tracking-[-0.02em] text-[#16215C]">
               Create your organization
             </h2>
-            <p className="text-sm text-[#6B7DB3]">
-              Give it a name to start adding members.
+            <p className="mt-2 max-w-md text-sm leading-7 text-[#6072A6]">
+              Set up your workspace first, then you can invite members and
+              manage access from one place.
             </p>
           </div>
         </div>
@@ -265,7 +331,7 @@ function CreateOrgPanel({ onCreated }: { onCreated: () => void }) {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g. Maria's Reading Academy"
-          className="mt-2 w-full rounded-lg border-2 border-[#BDBDFF] px-3 py-2 text-sm font-medium text-[#31318A] outline-none focus:border-[#6666FF]"
+          className="mt-2 h-12 w-full rounded-2xl border border-[#CBD4FF] bg-white px-4 text-sm font-medium text-[#1B2A63] outline-none transition focus:border-[#5D5DFB] focus:ring-4 focus:ring-[#5D5DFB]/10"
         />
 
         {error && (
@@ -275,7 +341,7 @@ function CreateOrgPanel({ onCreated }: { onCreated: () => void }) {
         <button
           type="submit"
           disabled={!name.trim() || submitting}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#6666FF] px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#5555EE] disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#5D5DFB] px-4 text-sm font-bold text-white transition hover:bg-[#4D4DEA] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
           {submitting ? "Creating..." : "Create organization"}
@@ -296,6 +362,7 @@ function OrgSummaryCard({
   const [draft, setDraft] = useState(org.name);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const workspaceCode = `ORG-${org.id.slice(0, 8).toUpperCase()}`;
 
   async function handleSave() {
     if (!draft.trim() || saving) return;
@@ -318,16 +385,19 @@ function OrgSummaryCard({
   }
 
   return (
-    <section className="rounded-2xl border border-[#BDBDFF] bg-white p-6 shadow-sm">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#6666FF]">
-            <Users className="h-6 w-6 text-white" />
+    <section className="overflow-hidden rounded-[32px] border border-[rgba(102,102,255,0.18)] bg-white shadow-[0_24px_64px_rgba(15,23,88,0.09)]">
+      <div className="border-b border-[rgba(102,102,255,0.12)] bg-white px-6 py-6 sm:px-7 sm:py-7">
+        <div className="flex items-start gap-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] bg-[#5D5DFB] shadow-[0_16px_32px_rgba(93,93,251,0.22)]">
+            <Building2 className="h-6 w-6 text-white" />
           </div>
 
           <div className="flex-1">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#5D5DFB]">
+              Organization details
+            </p>
             {editing ? (
-              <div className="flex items-center gap-2">
+              <div className="mt-3 flex flex-wrap items-center gap-2">
                 <input
                   autoFocus
                   value={draft}
@@ -339,13 +409,13 @@ function OrgSummaryCard({
                       setEditing(false);
                     }
                   }}
-                  className="w-64 rounded-lg border-2 border-[#BDBDFF] px-3 py-1.5 text-lg font-bold text-[#31318A] outline-none focus:border-[#6666FF]"
+                  className="h-12 w-full max-w-lg rounded-2xl border border-[#CBD4FF] bg-white px-4 text-lg font-bold text-[#16215C] outline-none transition focus:border-[#5D5DFB] focus:ring-4 focus:ring-[#5D5DFB]/10"
                 />
                 <button
                   type="button"
                   onClick={handleSave}
                   disabled={saving}
-                  className="rounded-lg bg-[#6666FF] px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[#5555EE] disabled:opacity-50"
+                  className="rounded-2xl bg-[#5D5DFB] px-4 py-3 text-xs font-bold uppercase tracking-[0.1em] text-white transition hover:bg-[#4D4DEA] disabled:opacity-50"
                 >
                   {saving ? "Saving..." : "Save"}
                 </button>
@@ -356,75 +426,104 @@ function OrgSummaryCard({
                     setEditing(false);
                     setError(null);
                   }}
-                  className="rounded-lg px-2 py-1.5 text-xs font-semibold text-[#6B7DB3] hover:bg-[#F0F0FF]"
+                  className="rounded-2xl border border-[#D8DEFF] bg-white px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#6072A6] transition hover:bg-[#F7F8FF]"
                 >
                   Cancel
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-[#31318A]">{org.name}</h2>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <h2 className="text-3xl font-bold tracking-[-0.03em] text-[#16215C] sm:text-[2.4rem]">
+                  {org.name}
+                </h2>
                 <button
                   type="button"
                   onClick={() => setEditing(true)}
                   aria-label="Rename organization"
                   title="Rename"
-                  className="rounded-full p-1.5 text-[#6666FF] transition-colors hover:bg-[#6666FF]/10"
+                  className="inline-flex h-10 items-center justify-center rounded-full border border-[#D8DEFF] bg-white px-4 text-sm font-semibold text-[#5D5DFB] transition hover:border-[#5D5DFB]/30 hover:bg-[#F6F7FF]"
                 >
-                  <Pencil className="h-4 w-4" />
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Rename
                 </button>
               </div>
             )}
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-[#6072A6]">
+              Keep the organization name, subscription, and workspace settings in
+              one clean reference area.
+            </p>
             {error && (
-              <p className="mt-1 text-xs font-medium text-red-600">{error}</p>
+              <p className="mt-2 text-xs font-medium text-red-600">{error}</p>
             )}
           </div>
         </div>
+      </div>
 
-        <div className="flex gap-3">
-          <StatPill
-            label="Plan"
-            value={org.plan ?? "—"}
-            accent={!!org.plan}
-          />
-          <StatPill
-            label="Active seats"
-            value={`${org.currentMembers} / ${org.maxMembers}`}
-            accent
-          />
-          {org.totalMembers > org.currentMembers && (
-            <StatPill
-              label="Disabled"
-              value={String(org.totalMembers - org.currentMembers)}
-            />
-          )}
-        </div>
+      <div className="grid gap-4 px-6 py-6 sm:grid-cols-2 xl:grid-cols-3 sm:px-7">
+        <DetailCard
+          label="Current plan"
+          value={org.plan ?? "No active plan"}
+          hint={
+            org.plan
+              ? "This plan sets the current member capacity."
+              : "Choose a plan before expanding the team."
+          }
+        />
+        <DetailCard
+          label="Workspace ID"
+          value={workspaceCode}
+          hint="Useful when matching support notes or internal records."
+        />
+        <DetailCard
+          label="Seat limit"
+          value={`${org.maxMembers} member${org.maxMembers === 1 ? "" : "s"}`}
+          hint="Maximum active members allowed at one time."
+        />
       </div>
     </section>
   );
 }
 
-function StatPill({
+function StatusRow({
   label,
   value,
-  accent = false,
+  hint,
 }: {
   label: string;
   value: string;
-  accent?: boolean;
+  hint: string;
 }) {
   return (
-    <div
-      className={`rounded-xl border px-4 py-2 text-right ${
-        accent
-          ? "border-[#6666FF]/30 bg-[#6666FF]/8"
-          : "border-[#BDBDFF] bg-white"
-      }`}
-    >
-      <p className="text-[10px] font-bold uppercase tracking-widest text-[#6B7DB3]">
+    <div className="flex items-start justify-between gap-4 border-b border-[rgba(102,102,255,0.08)] pb-4 last:border-b-0 last:pb-0">
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-[#16215C]">{label}</p>
+        <p className="mt-1 text-xs leading-6 text-[#6E7FAF]">{hint}</p>
+      </div>
+      <p className="text-2xl font-bold tracking-[-0.02em] text-[#16215C]">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function DetailCard({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint: string;
+}) {
+  return (
+    <div className="rounded-[24px] border border-[rgba(102,102,255,0.12)] bg-[linear-gradient(180deg,#FFFFFF_0%,#F7F9FF_100%)] px-5 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#6072A6]">
         {label}
       </p>
-      <p className="text-sm font-bold text-[#31318A]">{value}</p>
+      <p className="mt-2 text-2xl font-bold tracking-[-0.02em] text-[#16215C]">
+        {value}
+      </p>
+      <p className="mt-1 text-xs leading-6 text-[#6E7FAF]">{hint}</p>
     </div>
   );
 }
@@ -483,37 +582,43 @@ function AddMemberCard({
   }
 
   return (
-    <section className="rounded-2xl border border-[#BDBDFF] bg-white p-6 shadow-sm">
-      <div className="mb-4 flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#6666FF]">
+    <section className="rounded-[32px] border border-[rgba(102,102,255,0.14)] bg-[linear-gradient(180deg,#FFFFFF_0%,#F8FAFF_100%)] p-6 shadow-[0_22px_56px_rgba(15,23,88,0.06)] xl:sticky xl:top-6">
+      <div className="mb-5 flex items-start gap-3">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#5D5DFB] shadow-[0_16px_28px_rgba(93,93,251,0.2)]">
           <UserPlus className="h-5 w-5 text-white" />
         </div>
         <div>
-          <h3 className="text-base font-bold text-[#31318A]">Invite member</h3>
-          <p className="text-xs text-[#6B7DB3]">
-            {seatsExhausted
-              ? "Active seats full. Disable a member or upgrade to add more."
-              : `We'll email them a link to join. ${seatsRemaining} seat${seatsRemaining === 1 ? "" : "s"} remaining.`}
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#5D5DFB]">
+            Invite member
           </p>
+          <h3 className="mt-1 text-xl font-bold tracking-[-0.02em] text-[#16215C]">
+            Add someone to the organization
+          </h3>
+          {seatsExhausted ? (
+            <SeatLimitHint message="All active seats are being used. Free up a seat or upgrade the plan before sending another invite." />
+          ) : (
+            <p className="mt-2 text-sm leading-7 text-[#6072A6]">
+              You have {seatsRemaining} open seat{seatsRemaining === 1 ? "" : "s"} available for new members.
+            </p>
+          )}
         </div>
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr_1.2fr_auto]"
-      >
-        <TextField
-          label="First name"
-          value={firstName}
-          onChange={setFirstName}
-          disabled={seatsExhausted || submitting}
-        />
-        <TextField
-          label="Last name"
-          value={lastName}
-          onChange={setLastName}
-          disabled={seatsExhausted || submitting}
-        />
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <TextField
+            label="First name"
+            value={firstName}
+            onChange={setFirstName}
+            disabled={seatsExhausted || submitting}
+          />
+          <TextField
+            label="Last name"
+            value={lastName}
+            onChange={setLastName}
+            disabled={seatsExhausted || submitting}
+          />
+        </div>
         <TextField
           label="Email"
           type="email"
@@ -521,29 +626,46 @@ function AddMemberCard({
           onChange={setEmail}
           disabled={seatsExhausted || submitting}
         />
-
-        <div className="flex items-end">
-          <button
-            type="submit"
-            disabled={
-              seatsExhausted ||
-              submitting ||
-              !email.trim() ||
-              !firstName.trim() ||
-              !lastName.trim()
-            }
-            className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[#6666FF] px-5 text-sm font-bold text-white transition-colors hover:bg-[#5555EE] disabled:cursor-not-allowed disabled:opacity-50 md:w-auto"
-          >
-            {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-            {submitting ? "Inviting..." : "Invite"}
-          </button>
-        </div>
+        <button
+          type="submit"
+          disabled={
+            seatsExhausted ||
+            submitting ||
+            !email.trim() ||
+            !firstName.trim() ||
+            !lastName.trim()
+          }
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#5D5DFB] px-5 text-sm font-bold text-white transition hover:bg-[#4D4DEA] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+          {submitting ? "Sending..." : "Send invite"}
+        </button>
       </form>
 
       {error && (
         <p className="mt-3 text-xs font-medium text-red-600">{error}</p>
       )}
     </section>
+  );
+}
+
+function SeatLimitHint({ message }: { message: string }) {
+  return (
+    <div className="mt-3">
+      <div className="group relative inline-flex">
+        <button
+          type="button"
+          aria-label="Seat limit reached"
+          className="inline-flex items-center gap-2 rounded-full border border-[rgba(245,158,11,0.28)] bg-[rgba(255,248,235,0.92)] px-3 py-1.5 text-xs font-semibold text-[#9A6700] transition hover:border-[rgba(245,158,11,0.42)] hover:bg-[rgba(255,244,219,1)] focus:outline-none focus:ring-4 focus:ring-[rgba(245,158,11,0.16)]"
+        >
+          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+          No seats available
+        </button>
+        <div className="pointer-events-none absolute left-0 top-full z-10 mt-3 w-[280px] rounded-2xl border border-[rgba(243,199,118,0.45)] bg-[#FFF8EA] p-3 text-xs leading-6 text-[#704B00] opacity-0 shadow-[0_16px_36px_rgba(96,70,8,0.14)] transition duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
+          {message}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -561,8 +683,8 @@ function TextField({
   disabled?: boolean;
 }) {
   return (
-    <label className="flex flex-col gap-1">
-      <span className="text-[11px] font-bold uppercase tracking-wider text-[#6B7DB3]">
+    <label className="flex flex-col gap-1.5">
+      <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#6072A6]">
         {label}
       </span>
       <input
@@ -570,7 +692,7 @@ function TextField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="h-10 rounded-lg border-2 border-[#BDBDFF] px-3 text-sm font-medium text-[#31318A] outline-none transition-colors focus:border-[#6666FF] disabled:bg-[#F0F0FF] disabled:opacity-60"
+        className="h-12 rounded-2xl border border-[#CBD4FF] bg-white px-4 text-sm font-medium text-[#16215C] outline-none transition focus:border-[#5D5DFB] focus:ring-4 focus:ring-[#5D5DFB]/10 disabled:bg-[#F2F5FF] disabled:text-[#8290B8] disabled:opacity-70"
       />
     </label>
   );
@@ -588,20 +710,31 @@ function MembersCard({
   onGeneratePassword: (member: Member) => Promise<void>;
 }) {
   return (
-    <section className="rounded-2xl border border-[#BDBDFF] bg-white shadow-sm">
-      <header className="flex items-center justify-between border-b border-[#F0F0FF] px-6 py-4">
-        <h3 className="text-base font-bold text-[#31318A]">Members</h3>
-        <span className="text-xs font-semibold text-[#6B7DB3]">
-          {members.length} total
+    <section className="rounded-[32px] border border-[rgba(102,102,255,0.14)] bg-white shadow-[0_22px_56px_rgba(15,23,88,0.06)]">
+      <header className="flex flex-col gap-4 border-b border-[rgba(102,102,255,0.08)] px-6 py-5 sm:flex-row sm:items-end sm:justify-between sm:px-7">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#5D5DFB]">
+            Team directory
+          </p>
+          <h3 className="mt-1 text-2xl font-bold tracking-[-0.02em] text-[#16215C]">
+            Members
+          </h3>
+          <p className="mt-2 text-sm leading-7 text-[#6072A6]">
+            Review access, generate new passwords, and make status changes with a
+            clearer account list.
+          </p>
+        </div>
+        <span className="inline-flex w-fit rounded-full border border-[#DCE2FF] bg-[#F6F8FF] px-3 py-1.5 text-xs font-semibold text-[#56679D]">
+          {members.length} total member{members.length === 1 ? "" : "s"}
         </span>
       </header>
 
       {members.length === 0 ? (
-        <div className="px-6 py-10 text-center text-sm text-[#6B7DB3]">
-          No members yet. Add one above.
+        <div className="px-6 py-14 text-center text-sm text-[#6B7DB3]">
+          No members yet. Send your first invitation to start building the team.
         </div>
       ) : (
-        <ul className="divide-y divide-[#F0F0FF]">
+        <ul className="space-y-3 px-4 py-4 sm:px-5 sm:py-5">
           {members.map((member) => (
             <MemberRow
               key={member.membershipId}
@@ -633,6 +766,7 @@ function MemberRow({
   const fullName = [member.firstName, member.lastName]
     .filter(Boolean)
     .join(" ");
+  const initials = (member.firstName?.[0] ?? member.email?.[0] ?? "?").toUpperCase();
 
   async function handleToggle() {
     if (busy || member.isOwner) return;
@@ -653,74 +787,85 @@ function MemberRow({
   }
 
   return (
-    <li className="flex flex-col gap-3 px-6 py-4 md:flex-row md:items-center md:justify-between">
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#6666FF]/10 text-sm font-bold text-[#6666FF]">
-          {(member.firstName?.[0] ?? "?").toUpperCase()}
-        </div>
-
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-[#31318A]">
-              {fullName || member.email}
-            </span>
-            {member.isOwner && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-[#6666FF]/10 px-2 py-0.5 text-[10px] font-bold text-[#6666FF]">
-                <ShieldCheck className="h-3 w-3" /> Owner
-              </span>
-            )}
-            {member.isDisabled && !member.isOwner && (
-              <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-700">
-                Disabled
-              </span>
-            )}
+    <li className="rounded-[26px] border border-[rgba(21,35,95,0.08)] bg-[linear-gradient(180deg,#FFFFFF_0%,#FBFCFF_100%)] px-4 py-4 transition hover:border-[rgba(93,93,251,0.2)] hover:shadow-[0_14px_36px_rgba(15,23,88,0.05)] sm:px-5">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-[#EEF1FF] text-sm font-bold text-[#5D5DFB]">
+            {initials}
           </div>
-          <p className="text-xs text-[#6B7DB3]">{member.email}</p>
-        </div>
-      </div>
 
-      <div className="flex items-center gap-2">
-        {!member.isOwner && (
-          <>
-            <button
-              type="button"
-              onClick={handleGenerate}
-              disabled={generating}
-              className="flex items-center gap-1.5 rounded-lg border border-[#BDBDFF] px-3 py-1.5 text-xs font-semibold text-[#31318A] transition-colors hover:border-[#6666FF] hover:bg-[#6666FF]/5 disabled:opacity-50"
-            >
-              {generating ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <RefreshCw className="h-3.5 w-3.5" />
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-base font-bold text-[#16215C]">
+                {fullName || member.email}
+              </span>
+              {member.isOwner && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#EEF1FF] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-[#5D5DFB]">
+                  <ShieldCheck className="h-3 w-3" /> Owner
+                </span>
               )}
-              {generating ? "Generating..." : "Generate password"}
-            </button>
-            <button
-              type="button"
-              onClick={() => onResetPassword(member)}
-              className="flex items-center gap-1.5 rounded-lg border border-[#BDBDFF] px-3 py-1.5 text-xs font-semibold text-[#31318A] transition-colors hover:border-[#6666FF] hover:bg-[#6666FF]/5"
-            >
-              <KeyRound className="h-3.5 w-3.5" />
-              Set custom
-            </button>
-            <button
-              type="button"
-              onClick={handleToggle}
-              disabled={busy}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${
-                member.isDisabled
-                  ? "bg-[#6666FF] text-white hover:bg-[#5555EE]"
-                  : "border border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
-              }`}
-            >
-              {busy
-                ? "..."
-                : member.isDisabled
-                  ? "Enable"
-                  : "Disable"}
-            </button>
-          </>
-        )}
+              {member.isDisabled && !member.isOwner && (
+                <span className="rounded-full bg-red-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-red-700">
+                  Disabled
+                </span>
+              )}
+              {!member.isDisabled && !member.isOwner && (
+                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-emerald-700">
+                  Active
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-sm text-[#6072A6]">{member.email}</p>
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#8B97C1]">
+              <span>Joined {new Date(member.joinedAt).toLocaleDateString()}</span>
+              <span>Member record active in directory</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {!member.isOwner && (
+            <>
+              <button
+                type="button"
+                onClick={handleGenerate}
+                disabled={generating}
+                className="flex h-10 items-center gap-1.5 rounded-2xl border border-[#D4DBFF] bg-white px-3.5 text-xs font-semibold text-[#24356E] transition hover:border-[#5D5DFB]/35 hover:bg-[#F6F8FF] disabled:opacity-50"
+              >
+                {generating ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3.5 w-3.5" />
+                )}
+                {generating ? "Generating..." : "Generate password"}
+              </button>
+              <button
+                type="button"
+                onClick={() => onResetPassword(member)}
+                className="flex h-10 items-center gap-1.5 rounded-2xl border border-[#D4DBFF] bg-white px-3.5 text-xs font-semibold text-[#24356E] transition hover:border-[#5D5DFB]/35 hover:bg-[#F6F8FF]"
+              >
+                <KeyRound className="h-3.5 w-3.5" />
+                Set custom
+              </button>
+              <button
+                type="button"
+                onClick={handleToggle}
+                disabled={busy}
+                className={`h-10 rounded-2xl px-3.5 text-xs font-bold transition disabled:opacity-50 ${
+                  member.isDisabled
+                    ? "bg-[#5D5DFB] text-white hover:bg-[#4D4DEA]"
+                    : "border border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+                }`}
+              >
+                {busy
+                  ? "Working..."
+                  : member.isDisabled
+                    ? "Enable member"
+                    : "Disable member"}
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </li>
   );
@@ -778,7 +923,10 @@ function TempPasswordDialog({
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (!info) setCopied(false);
+    if (!info) {
+      const timer = window.setTimeout(() => setCopied(false), 0);
+      return () => window.clearTimeout(timer);
+    }
   }, [info]);
 
   async function copy() {
@@ -851,9 +999,13 @@ function ResetPasswordDialog({
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    setValue("");
-    setError(null);
-    setDone(false);
+    const timer = window.setTimeout(() => {
+      setValue("");
+      setError(null);
+      setDone(false);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [member]);
 
   async function handleSubmit() {
