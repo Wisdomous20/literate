@@ -11,7 +11,6 @@ import {
   Loader2,
   AlertCircle,
   X,
-  Info,
   FileText,
   BookOpen,
 } from "lucide-react";
@@ -33,27 +32,47 @@ type Subscription = {
   cancelAtPeriodEnd: boolean;
 };
 
+const inputClassName =
+  "w-full rounded-xl border-2 border-[#BDBDFF] bg-white px-3.5 py-2.5 text-sm font-medium text-[#31318A] outline-none transition-colors placeholder:text-[#98A5D6] focus:border-[#6666FF]";
+
+function splitName(name: string) {
+  const [firstName, ...rest] = name.split(" ");
+  return {
+    firstName: firstName ?? "",
+    lastName: rest.join(" "),
+  };
+}
+
 function SectionCard({
   title,
   description,
   icon,
   children,
+  className = "",
 }: {
   title: string;
   description?: string;
   icon: React.ReactNode;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <section className="mb-8 rounded-2xl border border-[rgba(0,48,110,0.08)] bg-white px-6 py-6">
-      <div className="mb-5 flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#6666FF]">
+    <section
+      className={`rounded-3xl border border-[rgba(0,48,110,0.08)] bg-white px-5 py-5 shadow-[0_10px_30px_rgba(12,26,109,0.05)] sm:px-6 sm:py-6 ${className}`}
+    >
+      <div className="mb-5 flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#6666FF] shadow-[0_10px_20px_rgba(102,102,255,0.18)]">
           {icon}
         </div>
-        <div>
-          <h3 className="text-sm font-bold text-[#0C1A6D]">{title}</h3>
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6666FF]">
+            Settings
+          </p>
+          <h3 className="mt-1 text-base font-bold text-[#0C1A6D]">{title}</h3>
           {description && (
-            <p className="mt-0.5 text-xs text-[#6B7DB3]">{description}</p>
+            <p className="mt-1 text-sm leading-relaxed text-[#6B7DB3]">
+              {description}
+            </p>
           )}
         </div>
       </div>
@@ -100,23 +119,20 @@ function Banner({
 
 function ProfileSection() {
   const { data: session, update } = useSession();
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const currentProfile = splitName(session?.user?.name ?? "");
+  const [draftName, setDraftName] = useState<{
+    firstName: string;
+    lastName: string;
+  } | null>(null);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  useEffect(() => {
-    const name = session?.user?.name ?? "";
-    const [f, ...rest] = name.split(" ");
-    setFirstName(f ?? "");
-    setLastName(rest.join(" "));
-  }, [session?.user?.name]);
-
-  const currentFirst = session?.user?.name?.split(" ")[0] ?? "";
-  const currentLast = session?.user?.name?.split(" ").slice(1).join(" ") ?? "";
+  const firstName = draftName?.firstName ?? currentProfile.firstName;
+  const lastName = draftName?.lastName ?? currentProfile.lastName;
   const dirty =
-    firstName.trim() !== currentFirst || lastName.trim() !== currentLast;
+    firstName.trim() !== currentProfile.firstName ||
+    lastName.trim() !== currentProfile.lastName;
 
   function onSave() {
     setError(null);
@@ -131,15 +147,17 @@ function ProfileSection() {
       await update({
         name: `${updatedUser?.firstName ?? ""} ${updatedUser?.lastName ?? ""}`.trim(),
       });
+      setDraftName(null);
       setSuccess("Name updated");
     });
   }
 
   return (
     <SectionCard
-      title="PROFILE"
+      title="Profile"
       description="Update your display name"
       icon={<UserIcon className="h-4 w-4 text-white" />}
+      className="h-full"
     >
       {error && <Banner kind="error" message={error} onClose={() => setError(null)} />}
       {success && (
@@ -154,8 +172,13 @@ function ProfileSection() {
           <input
             type="text"
             value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            className="w-full rounded-lg border-2 border-[#BDBDFF] px-3 py-2 text-sm font-medium text-[#31318A] outline-none focus:border-[#6666FF]"
+            onChange={(e) =>
+              setDraftName({
+                firstName: e.target.value,
+                lastName,
+              })
+            }
+            className={inputClassName}
           />
         </label>
         <label className="block">
@@ -165,10 +188,28 @@ function ProfileSection() {
           <input
             type="text"
             value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            className="w-full rounded-lg border-2 border-[#BDBDFF] px-3 py-2 text-sm font-medium text-[#31318A] outline-none focus:border-[#6666FF]"
+            onChange={(e) =>
+              setDraftName({
+                firstName,
+                lastName: e.target.value,
+              })
+            }
+            className={inputClassName}
           />
         </label>
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-[rgba(102,102,255,0.18)] bg-[rgba(102,102,255,0.05)] px-4 py-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#6666FF]">
+          Sign-in identity
+        </p>
+        <p className="mt-1 text-sm font-semibold text-[#31318A]">
+          {session?.user?.email ?? "No email available"}
+        </p>
+        <p className="mt-1 text-xs leading-relaxed text-[#6B7DB3]">
+          Your email is used for account access and verification during
+          sensitive changes.
+        </p>
       </div>
 
       <div className="mt-4 flex justify-end">
@@ -245,9 +286,10 @@ function PasswordSection() {
 
   return (
     <SectionCard
-      title="PASSWORD"
+      title="Password"
       description="We'll email a 6-digit code to confirm the change"
       icon={<Lock className="h-4 w-4 text-white" />}
+      className="h-full"
     >
       {error && <Banner kind="error" message={error} onClose={() => setError(null)} />}
       {success && (
@@ -256,6 +298,15 @@ function PasswordSection() {
 
       {step === "idle" ? (
         <div className="space-y-4">
+          <div className="rounded-2xl border border-[rgba(102,102,255,0.18)] bg-[rgba(102,102,255,0.05)] px-4 py-3">
+            <p className="text-sm font-semibold text-[#31318A]">
+              Password requirements
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-[#6B7DB3]">
+              Use at least 8 characters and make sure the new password matches
+              the confirmation field before requesting a verification code.
+            </p>
+          </div>
           <label className="block">
             <span className="mb-1 block text-xs font-semibold text-[#31318A]">
               Current password
@@ -265,7 +316,7 @@ function PasswordSection() {
               autoComplete="current-password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              className="w-full rounded-lg border-2 border-[#BDBDFF] px-3 py-2 text-sm outline-none focus:border-[#6666FF]"
+              className={inputClassName}
             />
           </label>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -278,7 +329,7 @@ function PasswordSection() {
                 autoComplete="new-password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full rounded-lg border-2 border-[#BDBDFF] px-3 py-2 text-sm outline-none focus:border-[#6666FF]"
+                className={inputClassName}
               />
             </label>
             <label className="block">
@@ -290,7 +341,7 @@ function PasswordSection() {
                 autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full rounded-lg border-2 border-[#BDBDFF] px-3 py-2 text-sm outline-none focus:border-[#6666FF]"
+                className={inputClassName}
               />
             </label>
           </div>
@@ -313,6 +364,15 @@ function PasswordSection() {
         </div>
       ) : (
         <div className="space-y-4">
+          <div className="rounded-2xl border border-[rgba(102,102,255,0.18)] bg-[rgba(102,102,255,0.05)] px-4 py-3">
+            <p className="text-sm font-semibold text-[#31318A]">
+              Check your email
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-[#6B7DB3]">
+              Enter the 6-digit verification code sent to your inbox to confirm
+              the password update.
+            </p>
+          </div>
           <label className="block">
             <span className="mb-1 block text-xs font-semibold text-[#31318A]">
               Verification code
@@ -323,7 +383,7 @@ function PasswordSection() {
               maxLength={6}
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-              className="w-full rounded-lg border-2 border-[#BDBDFF] px-3 py-2 text-center text-lg font-bold tracking-[0.5em] outline-none focus:border-[#6666FF]"
+              className={`${inputClassName} text-center text-lg font-bold tracking-[0.5em]`}
               placeholder="000000"
             />
           </label>
@@ -367,7 +427,23 @@ function SubscriptionSection() {
   }
 
   useEffect(() => {
-    refresh();
+    let active = true;
+
+    async function loadSubscription() {
+      const res = await getSubscriptionAction();
+      if (!active) return;
+
+      if ("subscription" in res) {
+        setSubscription((res.subscription as Subscription | null) ?? null);
+      }
+      setLoading(false);
+    }
+
+    void loadSubscription();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   function onStopRenewal() {
@@ -398,12 +474,19 @@ function SubscriptionSection() {
   const hasActive =
     subscription &&
     (subscription.status === "ACTIVE" || subscription.status === "PAST_DUE");
+  const statusTone =
+    subscription?.status === "ACTIVE"
+      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+      : subscription?.status === "PAST_DUE"
+        ? "bg-amber-50 text-amber-700 border-amber-200"
+        : "bg-slate-50 text-slate-700 border-slate-200";
 
   return (
     <SectionCard
-      title="SUBSCRIPTION"
+      title="Subscription"
       description="View and manage your plan"
       icon={<CreditCard className="h-4 w-4 text-white" />}
+      className="h-full"
     >
       {error && <Banner kind="error" message={error} onClose={() => setError(null)} />}
       {success && (
@@ -426,7 +509,7 @@ function SubscriptionSection() {
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4 rounded-xl border border-[rgba(0,48,110,0.08)] bg-[#F8F8FF] px-4 py-4">
+          <div className="grid grid-cols-1 gap-4 rounded-2xl border border-[rgba(0,48,110,0.08)] bg-[#F8F8FF] px-4 py-4 sm:grid-cols-2">
             <div>
               <p className="text-xs font-semibold text-[#6B7DB3]">Plan</p>
               <p className="text-sm font-bold text-[#31318A]">
@@ -435,10 +518,18 @@ function SubscriptionSection() {
             </div>
             <div>
               <p className="text-xs font-semibold text-[#6B7DB3]">Status</p>
-              <p className="text-sm font-bold text-[#31318A]">
-                {subscription.status}
-                {subscription.cancelAtPeriodEnd && " (ends at period)"}
-              </p>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <span
+                  className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${statusTone}`}
+                >
+                  {subscription.status}
+                </span>
+                {subscription.cancelAtPeriodEnd && (
+                  <span className="text-xs font-semibold text-[#6B7DB3]">
+                    Ends at period close
+                  </span>
+                )}
+              </div>
             </div>
             <div>
               <p className="text-xs font-semibold text-[#6B7DB3]">Seats</p>
@@ -489,47 +580,104 @@ interface ToggleRowProps {
   description: string;
   enabled: boolean;
   onToggle: () => void;
+  statusLabel?: string;
 }
 
-function ToggleRow({ icon, label, description, enabled, onToggle }: ToggleRowProps) {
+function ToggleRow({
+  icon,
+  label,
+  description,
+  enabled,
+  onToggle,
+  statusLabel,
+}: ToggleRowProps) {
   return (
     <div
-      className={`flex items-center justify-between rounded-xl border px-5 py-4 transition-all duration-200 ${
+      className={`flex flex-col gap-4 rounded-2xl border px-5 py-4 transition-all duration-200 sm:flex-row sm:items-center sm:justify-between ${
         enabled
-          ? "border-[rgba(102,102,255,0.2)] bg-[rgba(102,102,255,0.06)]"
-          : "border-[rgba(0,48,110,0.08)] bg-white"
+          ? "border-[rgba(102,102,255,0.24)] bg-[rgba(102,102,255,0.06)]"
+          : "border-[rgba(0,48,110,0.08)] bg-[#FCFCFF]"
       }`}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-start gap-4">
         <div
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors duration-200 ${
-            enabled ? "bg-[rgba(102,102,255,0.12)]" : "bg-[rgba(0,48,110,0.05)]"
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition-colors duration-200 ${
+            enabled
+              ? "bg-[rgba(102,102,255,0.14)]"
+              : "bg-[rgba(0,48,110,0.05)]"
           }`}
         >
           {icon}
         </div>
-        <div>
-          <p className="text-sm font-semibold text-[#00306E]">{label}</p>
-          <p className="mt-0.5 text-xs leading-relaxed text-[#6B7DB3]">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm font-semibold text-[#00306E]">{label}</p>
+            <span
+              className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.12em] ${
+                enabled
+                  ? "bg-[#6666FF] text-white"
+                  : "bg-[#E8EBFF] text-[#5E6EA8]"
+              }`}
+            >
+              {statusLabel ?? (enabled ? "Enabled" : "Disabled")}
+            </span>
+          </div>
+          <p className="mt-1 text-xs leading-relaxed text-[#6B7DB3]">
             {description}
           </p>
         </div>
       </div>
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-label={enabled ? `Disable ${label}` : `Enable ${label}`}
-        className={`relative ml-4 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 ${
-          enabled ? "bg-[#6666FF]" : "bg-[#C4C4FF]"
-        }`}
-      >
-        <span
-          className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
-            enabled ? "translate-x-6" : "translate-x-1"
+      <div className="flex items-center justify-between sm:min-w-[140px] sm:justify-end sm:gap-3">
+        <span className="text-xs font-semibold text-[#6B7DB3]">
+          {enabled ? "On" : "Off"}
+        </span>
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-label={enabled ? `Disable ${label}` : `Enable ${label}`}
+          className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 ${
+            enabled ? "bg-[#6666FF]" : "bg-[#C4C4FF]"
           }`}
-        />
-      </button>
+        >
+          <span
+            className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
+              enabled ? "translate-x-6" : "translate-x-1"
+            }`}
+          />
+        </button>
+      </div>
     </div>
+  );
+}
+
+function TestSettingsCard({
+  title,
+  description,
+  icon,
+  children,
+}: {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-3xl border border-[rgba(0,48,110,0.08)] bg-white px-5 py-5 shadow-[0_10px_30px_rgba(12,26,109,0.04)] sm:px-6 sm:py-6">
+      <div className="mb-4 flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#6666FF] shadow-[0_10px_20px_rgba(102,102,255,0.18)]">
+          {icon}
+        </div>
+        <div>
+          <h3 className="text-sm font-bold tracking-[0.12em] text-[#31318A]">
+            {title}
+          </h3>
+          <p className="mt-1 text-sm leading-relaxed text-[#6B7DB3]">
+            {description}
+          </p>
+        </div>
+      </div>
+      {children}
+    </section>
   );
 }
 
@@ -540,86 +688,96 @@ export default function SettingsPage() {
     <div className="flex h-screen flex-col overflow-hidden">
       <DashboardHeader title="Settings" />
 
-      <main className="flex-1 overflow-auto px-8 py-8">
-        <div className="mx-auto max-w-3xl">
-          <div className="mb-10">
-            <h2 className="text-2xl font-bold text-[#0C1A6D]">Account</h2>
-            <p className="mt-2 text-sm leading-relaxed text-[#6B7DB3]">
-              Manage your profile, password, and subscription.
-            </p>
-          </div>
-
-          <ProfileSection />
-          <PasswordSection />
-          <SubscriptionSection />
-
-          <div className="mb-10 mt-10">
-            <h2 className="text-2xl font-bold text-[#0C1A6D]">
-              Test Configurations
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-[#6B7DB3]">
-              Manage how reading assessments behave during testing sessions.
-            </p>
-          </div>
-
-          <section className="mb-8">
-            <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#6666FF]">
-                <FileText className="h-4 w-4 text-white" />
-              </div>
-              <h3 className="text-xs font-bold tracking-[0.15em] text-[#31318A]">
-                ORAL READING TEST
-              </h3>
+      <main className="flex-1 overflow-auto bg-[#F7F8FF] px-4 py-4 sm:px-6 sm:py-6 xl:px-8">
+        <div className="mx-auto max-w-5xl space-y-8">
+          <section>
+            <div className="mb-5">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#6666FF]">
+                Account
+              </p>
+              <h2 className="mt-2 text-2xl font-bold text-[#0C1A6D]">
+                Your account settings
+              </h2>
             </div>
-            <ToggleRow
-              icon={
-                <CheckCircle
-                  className={`h-5 w-5 ${
-                    autoFinishEnabled ? "text-[#6666FF]" : "text-[#6B7DB3]"
-                  }`}
-                />
-              }
-              label="Auto-Finish Reading"
-              description="Automatically stop recording and finish the test when the student reads the last word of the passage."
-              enabled={autoFinishEnabled}
-              onToggle={() => setAutoFinishEnabled(!autoFinishEnabled)}
-            />
+
+            <div className="grid gap-6 2xl:grid-cols-2">
+              <ProfileSection />
+              <PasswordSection />
+            </div>
+
+            <div className="mt-6">
+              <SubscriptionSection />
+            </div>
           </section>
 
-          <section className="mb-8">
-            <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#6666FF]">
-                <BookOpen className="h-4 w-4 text-white" />
+          <section>
+            <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#6666FF]">
+                  Testing
+                </p>
+                <h2 className="mt-2 text-2xl font-bold text-[#0C1A6D]">
+                  Reading controls
+                </h2>
               </div>
-              <h3 className="text-xs font-bold tracking-[0.15em] text-[#31318A]">
-                READING FLUENCY TEST
-              </h3>
+              <div className="rounded-2xl border border-[rgba(102,102,255,0.16)] bg-white px-4 py-3 shadow-[0_10px_24px_rgba(12,26,109,0.04)]">
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#6B7DB3]">
+                  Auto-finish
+                </p>
+                <p className="mt-1 text-sm font-bold text-[#0C1A6D]">
+                  {autoFinishEnabled ? "Enabled" : "Disabled"}
+                </p>
+              </div>
             </div>
-            <ToggleRow
-              icon={
-                <CheckCircle
-                  className={`h-5 w-5 ${
-                    autoFinishEnabled ? "text-[#6666FF]" : "text-[#6B7DB3]"
-                  }`}
-                />
-              }
-              label="Auto-Finish Reading"
-              description="Automatically stop the fluency test recording when the last word is detected."
-              enabled={autoFinishEnabled}
-              onToggle={() => setAutoFinishEnabled(!autoFinishEnabled)}
-            />
-          </section>
 
-          <div className="flex items-start gap-3 rounded-xl border border-dashed border-[rgba(102,102,255,0.2)] bg-[rgba(102,102,255,0.04)] px-5 py-4">
-            <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#6666FF]" />
-            <p className="text-xs leading-relaxed text-[#6B7DB3]">
-              <span className="font-semibold text-[#31318A]">Note:</span>{" "}
-              Auto-Finish relies on the Web Speech API for real-time speech
-              detection. This feature works best on{" "}
-              <span className="font-medium text-[#31318A]">Chrome</span> and{" "}
-              <span className="font-medium text-[#31318A]">Edge</span>.
-            </p>
-          </div>
+            <div className="grid gap-6 2xl:grid-cols-2">
+              <TestSettingsCard
+                title="ORAL READING TEST"
+                description="Controls that affect recording behavior during oral reading sessions."
+                icon={<FileText className="h-4 w-4 text-white" />}
+              >
+                <ToggleRow
+                  icon={
+                    <CheckCircle
+                      className={`h-5 w-5 ${
+                        autoFinishEnabled ? "text-[#6666FF]" : "text-[#6B7DB3]"
+                      }`}
+                    />
+                  }
+                  label="Auto-Finish Reading"
+                  description="Automatically stop recording and finish the test when the student reads the last word of the passage."
+                  enabled={autoFinishEnabled}
+                  onToggle={() => setAutoFinishEnabled(!autoFinishEnabled)}
+                  statusLabel={
+                    autoFinishEnabled ? "Auto-finish on" : "Auto-finish off"
+                  }
+                />
+              </TestSettingsCard>
+
+              <TestSettingsCard
+                title="READING FLUENCY TEST"
+                description="Controls that keep fluency assessments consistent across student sessions."
+                icon={<BookOpen className="h-4 w-4 text-white" />}
+              >
+                <ToggleRow
+                  icon={
+                    <CheckCircle
+                      className={`h-5 w-5 ${
+                        autoFinishEnabled ? "text-[#6666FF]" : "text-[#6B7DB3]"
+                      }`}
+                    />
+                  }
+                  label="Auto-Finish Reading"
+                  description="Automatically stop the fluency test recording when the last word is detected."
+                  enabled={autoFinishEnabled}
+                  onToggle={() => setAutoFinishEnabled(!autoFinishEnabled)}
+                  statusLabel={
+                    autoFinishEnabled ? "Auto-finish on" : "Auto-finish off"
+                  }
+                />
+              </TestSettingsCard>
+            </div>
+          </section>
         </div>
       </main>
     </div>
