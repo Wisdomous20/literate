@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { createClassSchema } from "@/lib/validation/classroom";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { getSchoolYear } from "@/utils/getSchoolYear";
 
 interface CreateClassInput {
@@ -21,24 +23,15 @@ interface CreateClassResult {
 export async function createClassService(
   input: CreateClassInput
 ): Promise<CreateClassResult> {
-  const { name, userId } = input;
-
-  // Validate required fields
-  if (!name || !name.trim()) {
+  const validationResult = createClassSchema.safeParse(input);
+  if (!validationResult.success) {
     return {
       success: false,
-      error: "Class name is required",
+      error: getFirstZodErrorMessage(validationResult.error),
       code: "VALIDATION_ERROR",
     };
   }
-
-  if (!userId) {
-    return {
-      success: false,
-      error: "User ID is required",
-      code: "VALIDATION_ERROR",
-    };
-  }
+  const { name, userId } = validationResult.data;
 
   // Determine the school year based on the current date
   const schoolYear = getSchoolYear();

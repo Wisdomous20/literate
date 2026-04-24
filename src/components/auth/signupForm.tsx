@@ -8,14 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { registerUserAction } from "@/app/actions/auth/register";
+import { registerUserFormSchema } from "@/lib/validation/auth";
+import { getZodFieldErrors } from "@/lib/validation/common";
 import {
   verifyCodeAction,
   resendVerificationCodeAction,
 } from "@/app/actions/auth/verifyCode";
-
-function validateEmail(email: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
 
 const EyeIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -99,41 +97,31 @@ export function SignupForm() {
     if (success && inputRefs.current[0]) inputRefs.current[0].focus();
   }, [success]);
 
-  const validate = () => {
-    const errors: { [key: string]: string } = {};
-    if (!firstName.trim()) errors.firstName = "First name is required.";
-    if (!lastName.trim()) errors.lastName = "Last name is required.";
-    if (!email.trim()) errors.email = "Email is required.";
-    else if (!validateEmail(email))
-      errors.email = "Enter a valid email address.";
-    if (!password) errors.password = "Password is required.";
-    else if (password.length < 8)
-      errors.password = "Password must be at least 8 characters.";
-    if (!confirmPassword)
-      errors.confirmPassword = "Please confirm your password.";
-    else if (password !== confirmPassword)
-      errors.confirmPassword = "Passwords do not match.";
-    return errors;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setFieldErrors({});
     setIsLoading(true);
-    const errors = validate();
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
+    const validationResult = registerUserFormSchema.safeParse({
+      firstName,
+      lastName,
+      email,
+      password,
+      confirmPassword,
+    });
+    if (!validationResult.success) {
+      setFieldErrors(getZodFieldErrors(validationResult.error));
       setIsLoading(false);
       return;
     }
     try {
-      const result = await registerUserAction({
-        firstName,
-        lastName,
-        email,
-        password,
-      });
+      const registerInput = {
+        firstName: validationResult.data.firstName,
+        lastName: validationResult.data.lastName,
+        email: validationResult.data.email,
+        password: validationResult.data.password,
+      };
+      const result = await registerUserAction(registerInput);
       if (!result.success) {
         setError(result.error || "Registration failed. Please try again.");
       } else {

@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAssessmentService } from "@/service/assessment/createAssessmentService";
+import { createAssessmentSchema } from "@/lib/validation/assessment";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { studentId, passageId, type } = body;
-
-    if (!studentId || !passageId || !type) {
+    const validationResult = createAssessmentSchema.safeParse(body);
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: "studentId, passageId, and type are required" },
+        { error: getFirstZodErrorMessage(validationResult.error) },
         { status: 400 }
       );
     }
+    const { studentId, passageId, type } = validationResult.data;
 
     const result = await createAssessmentService({
       studentId,

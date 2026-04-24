@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { createStudentSchema } from "@/lib/validation/classroom";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
 
 interface CreateStudentInput {
   name: string;
@@ -23,39 +25,15 @@ interface CreateStudentResult {
 export async function createStudentService(
   input: CreateStudentInput
 ): Promise<CreateStudentResult> {
-  const { name, level, userId, className, schoolYear } = input;
-
-  if (!name || !name.trim()) {
+  const validationResult = createStudentSchema.safeParse(input);
+  if (!validationResult.success) {
     return {
       success: false,
-      error: "Student name is required",
+      error: getFirstZodErrorMessage(validationResult.error),
       code: "VALIDATION_ERROR",
     };
   }
-
-  if (!userId) {
-    return {
-      success: false,
-      error: "User ID is required",
-      code: "VALIDATION_ERROR",
-    };
-  }
-
-  if (!className || !className.trim()) {
-    return {
-      success: false,
-      error: "Class name is required",
-      code: "VALIDATION_ERROR",
-    };
-  }
-
-  if (!schoolYear || !schoolYear.trim()) {
-    return {
-      success: false,
-      error: "School year is required to disambiguate classes",
-      code: "VALIDATION_ERROR",
-    };
-  }
+  const { name, level, userId, className, schoolYear } = validationResult.data;
 
   try {
     const userClass = await prisma.classRoom.findFirst({
