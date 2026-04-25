@@ -7,9 +7,13 @@ import { NavButton } from "@/components/ui/navButton";
 
 interface ReportHeaderProps {
   onExportPdf?: () => void;
+  assessmentId?: string | null;
 }
 
-export default function ReportHeader({ onExportPdf }: ReportHeaderProps) {
+export default function ReportHeader({
+  onExportPdf,
+  assessmentId,
+}: ReportHeaderProps) {
   const router = useRouter();
 
   return (
@@ -19,9 +23,19 @@ export default function ReportHeader({ onExportPdf }: ReportHeaderProps) {
           <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg bg-[#5D5DFB]/10">
             <LayoutDashboard className="h-4 w-4 md:h-5 md:w-5 text-[#5D5DFB]" />
           </div>
-          <h1 className="text-base md:text-lg font-semibold text-[#483efa]">
-            Oral Fluency Test Report
-          </h1>
+          <div className="flex flex-col">
+            <h1 className="text-base md:text-lg font-semibold text-[#483efa]">
+              Oral Fluency Test Report
+            </h1>
+            {assessmentId && (
+              <p className="text-[11px] md:text-xs font-medium text-[#2E2E68]/65">
+                Assessment ID:{" "}
+                <span className="font-semibold text-[#2E2E68]">
+                  {assessmentId}
+                </span>
+              </p>
+            )}
+          </div>
         </div>
         <button
           type="button"
