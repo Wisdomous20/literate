@@ -12,7 +12,10 @@ import AudioPlaybackCard from "@/components/reports/oral-reading-test/reading-fl
 import BehaviorChecklist from "@/components/reports/oral-reading-test/reading-fluency-report/readingBehaviorChecklist";
 import ViewMiscuesModal from "@/components/reports/oral-reading-test/reading-fluency-report/viewMiscuesModal";
 import type { MiscueData } from "@/components/reports/oral-reading-test/reading-fluency-report/miscueAnalysis";
-import type { BehaviorItem } from "@/components/reports/oral-reading-test/reading-fluency-report/readingBehaviorChecklist";
+import type {
+  BehaviorItem,
+  BehaviorType,
+} from "@/components/reports/oral-reading-test/reading-fluency-report/readingBehaviorChecklist";
 import type {
   OralFluencyAnalysis,
   MiscueResult,
@@ -23,6 +26,7 @@ import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay";
 import { useEditMiscues } from "@/components/oral-reading-test/useEditMiscues";
 import { fetchOralFluencyMiscues } from "@/app/actions/oral-fluency/getMiscues";
 import { updateMiscueAction } from "@/app/actions/oral-fluency/updateMiscue";
+import { updateBehaviorsAction } from "@/app/actions/oral-fluency/updateBehaviors";
 
 const STORAGE_KEY = "oral-reading-session";
 const AUDIO_STORAGE_KEY = "oral-reading-audio";
@@ -117,16 +121,19 @@ function buildBehaviorItems(
 
   return [
     {
+      key: "WORD_BY_WORD_READING",
       label: "Does word-by-word reading",
       description: "(Nagbabasa nang pa-isa isang salita)",
       checked: detectedTypes.has("WORD_BY_WORD_READING"),
     },
     {
+      key: "MONOTONOUS_READING",
       label: "Lacks expression: reads in a monotonous tone",
       description: "(Walang damdamin; walang pagbabago ang tono)",
       checked: detectedTypes.has("MONOTONOUS_READING"),
     },
     {
+      key: "DISMISSAL_OF_PUNCTUATION",
       label: "Disregards Punctuation",
       description: "(Hindi pinapansin ang mga bantas)",
       checked: detectedTypes.has("DISMISSAL_OF_PUNCTUATION"),
@@ -207,6 +214,43 @@ export default function OralReadingReportPage() {
   const miscueData = useMemo(() => buildMiscueData(analysis), [analysis]);
   const behaviorItems = useMemo(() => buildBehaviorItems(analysis), [analysis]);
 
+  const handleSaveBehaviors = useCallback(
+    async (behaviorTypes: BehaviorType[]) => {
+      if (!session.sessionId) return;
+      const result = await updateBehaviorsAction({
+        sessionId: session.sessionId,
+        behaviorTypes,
+      });
+      if (!result.success) return;
+
+      const behaviors = behaviorTypes.map((behaviorType) => ({
+        behaviorType,
+        startIndex: null,
+        endIndex: null,
+        startTime: null,
+        endTime: null,
+        notes: null,
+      }));
+
+      setLocalAnalysis((prev) => {
+        const base = prev ?? (analysis as OralFluencyAnalysis);
+        return { ...base, behaviors };
+      });
+
+      try {
+        const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
+        if (sessionRaw) {
+          const s = JSON.parse(sessionRaw);
+          if (s.analysisResult) {
+            s.analysisResult.behaviors = behaviors;
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+          }
+        }
+      } catch {}
+    },
+    [analysis, session.sessionId],
+  );
+
   const editMiscues = useEditMiscues({
     originalMiscues: analysis?.miscues ?? [],
     totalWords,
@@ -241,7 +285,7 @@ export default function OralReadingReportPage() {
 
   const reportSessionId = session.sessionId;
 
-  const handleApproveMiscue = useCallback(
+  const handleDeleteMiscue = useCallback(
     async (miscue: MiscueResult) => {
       if (!reportSessionId) return;
       const dbResult = await fetchOralFluencyMiscues(reportSessionId);
@@ -255,7 +299,7 @@ export default function OralReadingReportPage() {
       if (!match?.id) return;
       const result = await updateMiscueAction({
         miscueId: match.id,
-        action: "approve",
+        action: "delete",
       });
       if (!result.success) return;
       setLocalAnalysis((prev) => {
@@ -456,7 +500,10 @@ export default function OralReadingReportPage() {
             <AudioPlaybackCard audioSrc={audioSrc} />
           </div>
 
-          <BehaviorChecklist behaviors={behaviorItems} />
+          <BehaviorChecklist
+            behaviors={behaviorItems}
+            onSave={session.sessionId ? handleSaveBehaviors : undefined}
+          />
 
           <MiscueAnalysisReport
             miscueData={miscueData}
@@ -495,7 +542,7 @@ export default function OralReadingReportPage() {
                 expanded
                 resizable={false}
                 editMode={editMiscues}
-                onApproveMiscue={reportSessionId ? handleApproveMiscue : undefined}
+                onDeleteMiscue={reportSessionId ? handleDeleteMiscue : undefined}
                 onUpdateMiscueType={reportSessionId ? handleUpdateMiscueType : undefined}
               />
             </div>

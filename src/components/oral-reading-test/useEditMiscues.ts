@@ -81,7 +81,7 @@ async function syncEditsToBackend(
 
   let lastMetrics: EditMetrics | null = null;
 
-  // 3. Find removed miscues (in original but not in edited) → approve
+  // 3. Find removed miscues (in original but not in edited) → delete
   for (const orig of originalMiscues) {
     const key = miscueKey(orig);
     if (!editedMap.has(key)) {
@@ -89,7 +89,7 @@ async function syncEditsToBackend(
       if (dbEntry) {
         const result = await updateMiscueAction({
           miscueId: dbEntry.id,
-          action: "approve",
+          action: "delete",
         });
         if (result.success && result.updatedMetrics) {
           lastMetrics = {

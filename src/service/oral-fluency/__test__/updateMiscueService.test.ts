@@ -40,11 +40,11 @@ describe("updateMiscueService", () => {
     expect(mockPrisma.oralFluencyMiscue.findUnique).not.toHaveBeenCalled();
   });
 
-  it("returns VALIDATION_ERROR when action is not approve or update", async () => {
+  it("returns VALIDATION_ERROR when action is not approve, delete, or update", async () => {
     const result = await updateMiscueService({
       miscueId: "m-1",
       // @ts-expect-error intentional bad action for test
-      action: "delete",
+      action: "invalid",
     });
 
     expect(result.success).toBe(false);
@@ -67,11 +67,11 @@ describe("updateMiscueService", () => {
     expect(result.code).toBe("NOT_FOUND");
   });
 
-  it("deletes the miscue when action is approve", async () => {
+  it("deletes the miscue when action is delete", async () => {
     mockPrisma.oralFluencyMiscue.findUnique.mockResolvedValue(baseMiscue);
     setupTransactionWith([], 10);
 
-    await updateMiscueService({ miscueId: "m-1", action: "approve" });
+    await updateMiscueService({ miscueId: "m-1", action: "delete" });
 
     expect(mockTx.oralFluencyMiscue.delete).toHaveBeenCalledWith({ where: { id: "m-1" } });
     expect(mockTx.oralFluencyMiscue.update).not.toHaveBeenCalled();

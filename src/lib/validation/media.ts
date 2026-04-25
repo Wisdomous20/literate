@@ -5,7 +5,7 @@ import {
   optionalUrlString,
   requiredString,
 } from "@/lib/validation/common";
-import { MiscueType } from "@/generated/prisma/enums";
+import { MiscueType, OralFluencyBehaviorType } from "@/generated/prisma/enums";
 
 export const uploadAudioSchema = z.object({
   file: fileSchema("File"),
@@ -36,7 +36,7 @@ export const assessmentIdQuerySchema = z.object({
 export const updateMiscueSchema = z
   .object({
     miscueId: idString("miscueId"),
-    action: z.enum(["approve", "update"]),
+    action: z.enum(["approve", "delete", "update"]),
     newMiscueType: z.nativeEnum(MiscueType).optional(),
   })
   .superRefine((data, ctx) => {
@@ -48,3 +48,8 @@ export const updateMiscueSchema = z
       });
     }
   });
+
+export const updateBehaviorsSchema = z.object({
+  sessionId: idString("sessionId"),
+  behaviorTypes: z.array(z.nativeEnum(OralFluencyBehaviorType)),
+});

@@ -19,11 +19,15 @@ import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay";
 import { useEditMiscues } from "@/components/oral-reading-test/useEditMiscues";
 import { fetchOralFluencyMiscues } from "@/app/actions/oral-fluency/getMiscues";
 import { updateMiscueAction } from "@/app/actions/oral-fluency/updateMiscue";
+import { updateBehaviorsAction } from "@/app/actions/oral-fluency/updateBehaviors";
 import { useAssessmentsByStudent } from "@/lib/hooks/useStudentAssessments";
 import { useClassById } from "@/lib/hooks/useClassById";
 import { useQueryClient } from "@tanstack/react-query";
 import { exportFluencyReportPdf } from "@/lib/exportFluencyReportPdf";
-import type { BehaviorItem } from "@/components/reports/oral-reading-test/reading-fluency-report/readingBehaviorChecklist";
+import type {
+  BehaviorItem,
+  BehaviorType,
+} from "@/components/reports/oral-reading-test/reading-fluency-report/readingBehaviorChecklist";
 import type {
   AssessmentData,
   OralFluencyMiscue,
@@ -48,16 +52,19 @@ function buildBehaviorItems(
   const detectedTypes = new Set(behaviors.map((b) => b.behaviorType));
   return [
     {
+      key: "WORD_BY_WORD_READING",
       label: "Does word-by-word reading",
       description: "(Nagbabasa nang pa-isa isang salita)",
       checked: detectedTypes.has("WORD_BY_WORD_READING"),
     },
     {
+      key: "MONOTONOUS_READING",
       label: "Lacks expression: reads in a monotonous tone",
       description: "(Walang damdamin; walang pagbabago ang tono)",
       checked: detectedTypes.has("MONOTONOUS_READING"),
     },
     {
+      key: "DISMISSAL_OF_PUNCTUATION",
       label: "Disregards Punctuation",
       description: "(Hindi pinapansin ang mga bantas)",
       checked: detectedTypes.has("DISMISSAL_OF_PUNCTUATION"),
@@ -125,6 +132,9 @@ export default function ReadingFluencyReportPage() {
   const [localClassificationLevel, setLocalClassificationLevel] = useState<
     string | null
   >(null);
+  const [localBehaviors, setLocalBehaviors] = useState<
+    OralFluencyBehaviorData[] | null
+  >(null);
 
   const { data: allAssessments = [], isLoading } =
     useAssessmentsByStudent(studentId);
@@ -157,6 +167,8 @@ export default function ReadingFluencyReportPage() {
 
   const totalWords = assessment?.oralFluency?.totalWords ?? 0;
   const sessionId = assessment?.oralFluency?.id;
+  const activeBehaviors =
+    localBehaviors ?? assessment?.oralFluency?.behaviors ?? [];
 
   const invalidateAssessments = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ["assessments", studentId] });
@@ -175,7 +187,7 @@ export default function ReadingFluencyReportPage() {
     },
   });
 
-  const handleApproveMiscue = useCallback(
+  const handleDeleteMiscue = useCallback(
     async (miscue: MiscueResult) => {
       if (!sessionId) return;
       const dbResult = await fetchOralFluencyMiscues(sessionId);
@@ -189,7 +201,7 @@ export default function ReadingFluencyReportPage() {
       if (!match?.id) return;
       const result = await updateMiscueAction({
         miscueId: match.id,
-        action: "approve",
+        action: "delete",
       });
       if (!result.success || !result.updatedMetrics) return;
       const updated = activeMiscues.filter(
@@ -241,6 +253,26 @@ export default function ReadingFluencyReportPage() {
       invalidateAssessments();
     },
     [sessionId, activeMiscues, invalidateAssessments],
+  );
+
+  const handleSaveBehaviors = useCallback(
+    async (behaviorTypes: BehaviorType[]) => {
+      if (!sessionId) return;
+      const result = await updateBehaviorsAction({
+        sessionId,
+        behaviorTypes,
+      });
+      if (!result.success) return;
+
+      setLocalBehaviors(
+        behaviorTypes.map((behaviorType) => ({
+          id: `${sessionId}:${behaviorType}`,
+          behaviorType,
+        })),
+      );
+      invalidateAssessments();
+    },
+    [sessionId, invalidateAssessments],
   );
 
   if (isLoading) {
@@ -330,9 +362,7 @@ export default function ReadingFluencyReportPage() {
     ? passage.content.split(/\s+/).filter(Boolean).length
     : (assessment.oralFluency?.totalWords ?? 0);
 
-  const behaviorItems = buildBehaviorItems(
-    assessment.oralFluency?.behaviors ?? [],
-  );
+  const behaviorItems = buildBehaviorItems(activeBehaviors);
 
   const assessmentTypeLabel =
     assessmentTypeLabels[assessment.type] ?? assessment.type;
@@ -432,7 +462,10 @@ export default function ReadingFluencyReportPage() {
             />
           </div>
 
-          <BehaviorChecklist behaviors={behaviorItems} />
+          <BehaviorChecklist
+            behaviors={behaviorItems}
+            onSave={sessionId ? handleSaveBehaviors : undefined}
+          />
 
           <MiscueAnalysisReport
             miscueData={miscueData}
@@ -476,8 +509,8 @@ export default function ReadingFluencyReportPage() {
                 expanded
                 resizable={false}
                 editMode={editMiscues}
-                onApproveMiscue={
-                  sessionId ? handleApproveMiscue : undefined
+                onDeleteMiscue={
+                  sessionId ? handleDeleteMiscue : undefined
                 }
                 onUpdateMiscueType={
                   sessionId ? handleUpdateMiscueType : undefined
