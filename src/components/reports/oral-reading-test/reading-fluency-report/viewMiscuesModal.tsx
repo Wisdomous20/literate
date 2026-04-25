@@ -133,6 +133,7 @@ export default function ViewMiscuesModal({
   const [highlightedTypes, setHighlightedTypes] = useState<Set<string>>(
     new Set(),
   );
+  const [activeTab, setActiveTab] = useState<"passage" | "list">("passage");
   const [showMiscues, setShowMiscues] = useState(true);
   const [popup, setPopup] = useState<PopupState | null>(null);
   const popupRef = useRef<HTMLDivElement>(null);
@@ -297,12 +298,11 @@ export default function ViewMiscuesModal({
   useEffect(() => {
     if (!open) {
       setHighlightedTypes(new Set());
+      setActiveTab("passage");
       setShowMiscues(true);
       setPopup(null);
     }
   }, [open]);
-
-  if (!open) return null;
 
   const getMiscueConfig = (miscueType: string) =>
     MISCUE_CONFIG.find((c) => c.key === miscueType) ?? MISCUE_CONFIG[0];
@@ -324,6 +324,40 @@ export default function ViewMiscuesModal({
     const s = Math.floor(secs % 60);
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
+
+  const getMiscuePrimaryWord = (miscue: MiscueResult) => {
+    if (miscue.miscueType === "REPETITION") return getRepetitionWord(miscue);
+    return miscue.expectedWord || miscue.spokenWord || "-";
+  };
+
+  const getMiscueSecondaryLabel = (miscue: MiscueResult) => {
+    switch (miscue.miscueType) {
+      case "OMISSION":
+        return "Omitted from passage";
+      case "INSERTION":
+        return miscue.spokenWord ? `Inserted: "${miscue.spokenWord}"` : "Inserted word";
+      case "REPETITION":
+        return miscue.spokenWord ? `Spoken again: "${miscue.spokenWord}"` : "Repeated word";
+      case "SELF_CORRECTION":
+        return miscue.spokenWord ? `Correction from: "${miscue.spokenWord}"` : "Self-corrected";
+      default:
+        return miscue.spokenWord ? `Spoken: "${miscue.spokenWord}"` : "No spoken word captured";
+    }
+  };
+
+  const listMiscues = useMemo(
+    () =>
+      filteredMiscues.map((miscue, index) => ({
+        id: `${miscue.miscueType}-${miscue.wordIndex}-${miscue.expectedWord}-${miscue.spokenWord ?? "none"}-${index}`,
+        miscue,
+        config: getMiscueConfig(miscue.miscueType),
+        primaryWord: getMiscuePrimaryWord(miscue),
+        secondaryLabel: getMiscueSecondaryLabel(miscue),
+      })),
+    [filteredMiscues],
+  );
+
+  if (!open) return null;
 
   const renderHighlightedContent = () => {
     let wordIndex = 0;
@@ -459,6 +493,58 @@ export default function ViewMiscuesModal({
     });
   };
 
+  const renderMiscueList = () => {
+    if (listMiscues.length === 0) {
+      return (
+        <div className="rounded-xl border border-dashed border-[#BFD7FF] bg-[#F8FBFF] px-6 py-10 text-center">
+          <p className="text-sm font-semibold text-[#00306E]">
+            No miscued words found for the selected filters.
+          </p>
+          <p className="mt-1 text-xs text-[#31318A]/65">
+            Try enabling another miscue type above.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 gap-3">
+        {listMiscues.map(({ id, miscue, config, primaryWord, secondaryLabel }) => (
+          <div
+            key={id}
+            className="rounded-xl border border-[#D7E6FF] bg-white px-4 py-3 shadow-[0_1px_10px_rgba(84,164,255,0.08)]"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ${config.colorClass} ${config.textClass}`}
+                  >
+                    {config.label}
+                  </span>
+                  <span className="text-xs font-medium text-[#31318A]/70">
+                    Word #{miscue.wordIndex + 1}
+                  </span>
+                </div>
+                <p className="mt-2 break-words text-sm font-semibold text-[#00306E]">
+                  {primaryWord}
+                </p>
+                <p className="mt-1 text-xs text-[#31318A]/70">
+                  {secondaryLabel}
+                </p>
+              </div>
+              {miscue.timestamp != null && (
+                <div className="shrink-0 rounded-full bg-[#F3F7FF] px-2.5 py-1 text-[11px] font-medium text-[#31318A]/70">
+                  {formatTimestamp(miscue.timestamp)}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center">
       {/* Backdrop — clicking closes the modal */}
@@ -508,45 +594,83 @@ export default function ViewMiscuesModal({
           })}
         </div>
 
-        {/* Passage content with highlighted words */}
+        <div className="border-b border-[#DAE6FF] px-6 py-3">
+          <div className="inline-flex rounded-lg bg-[#F3F7FF] p-1">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab("passage");
+                setPopup(null);
+              }}
+              className={`min-w-[118px] rounded-md px-3 py-2 text-xs font-semibold transition-colors ${
+                activeTab === "passage"
+                  ? "bg-white text-[#00306E] shadow-sm"
+                  : "text-[#31318A]/70 hover:text-[#00306E]"
+              }`}
+            >
+              Passage View
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab("list");
+                setPopup(null);
+              }}
+              className={`min-w-[118px] rounded-md px-3 py-2 text-xs font-semibold transition-colors ${
+                activeTab === "list"
+                  ? "bg-white text-[#00306E] shadow-sm"
+                  : "text-[#31318A]/70 hover:text-[#00306E]"
+              }`}
+            >
+              Miscued Words
+            </button>
+          </div>
+        </div>
+
+                {/* Passage content with highlighted words */}
         <div
           ref={containerRef}
           className="oral-reading-scroll relative flex-1 overflow-auto px-6 py-5"
         >
-          <div className="rounded-xl border border-[#54A4FF] bg-[#EFFDFF] p-5 shadow-[0px_1px_20px_rgba(108,164,239,0.37)]">
-            <p
-              className="whitespace-pre-wrap text-center leading-relaxed text-[#00306E]"
-              style={passageLevel ? passageTextStyle : undefined}
-            >
-              {hasMiscues && showMiscues ? renderHighlightedContent() : passageContent}
-            </p>
-          </div>
-          {/* Original / Miscues toggle — bottom right */}
-          <div className="mt-2 flex justify-end">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-[#31318A]">
-                {showMiscues ? "Miscues" : "Original"}
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowMiscues((prev) => !prev)}
-                aria-label={showMiscues ? "Show original passage" : "Show miscue highlights"}
-                title={showMiscues ? "Show original passage" : "Show miscue highlights"}
-                className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
-                  showMiscues ? "bg-[#6666FF]" : "bg-[#C4C4FF]"
-                }`}
-              >
-                <span
-                  className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-                    showMiscues ? "translate-x-4.25" : "translate-x-0.75"
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
+          {activeTab === "passage" ? (
+            <>
+              <div className="rounded-xl border border-[#54A4FF] bg-[#EFFDFF] p-5 shadow-[0px_1px_20px_rgba(108,164,239,0.37)]">
+                <p
+                  className="whitespace-pre-wrap text-center leading-relaxed text-[#00306E]"
+                  style={passageLevel ? passageTextStyle : undefined}
+                >
+                  {hasMiscues && showMiscues ? renderHighlightedContent() : passageContent}
+                </p>
+              </div>
+              <div className="mt-2 flex justify-end">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-[#31318A]">
+                    {showMiscues ? "Miscues" : "Original"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowMiscues((prev) => !prev)}
+                    aria-label={showMiscues ? "Show original passage" : "Show miscue highlights"}
+                    title={showMiscues ? "Show original passage" : "Show miscue highlights"}
+                    className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+                      showMiscues ? "bg-[#6666FF]" : "bg-[#C4C4FF]"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+                        showMiscues ? "translate-x-4.25" : "translate-x-0.75"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            renderMiscueList()
+          )}
 
           {/* Word detail popup */}
-          {popup &&
+          {activeTab === "passage" && popup &&
             (() => {
               const cfg = getMiscueConfig(popup.miscue.miscueType);
               const arrowAlign =
