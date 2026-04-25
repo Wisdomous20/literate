@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   ChevronDown,
   ChevronLeft,
@@ -49,7 +49,7 @@ export function ClassInventory({
   const queryClient = useQueryClient();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const {
     data: rawClasses,
@@ -90,16 +90,23 @@ export function ClassInventory({
 
   // Fixed 4 items per page (2 columns x 2 rows)
   const itemsPerPage = 4;
-  const totalPages = Math.ceil(classes.length / itemsPerPage);
-  const startIndex = currentPage * itemsPerPage;
+  const totalPages = Math.max(1, Math.ceil(classes.length / itemsPerPage));
+  const startIndex = (currentPage - 1) * itemsPerPage;
   const visibleClasses = classes.slice(startIndex, startIndex + itemsPerPage);
 
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages === 0 ? 1 : totalPages);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalPages]);
+
   const goToPrevPage = () => {
-    setCurrentPage((prev) => Math.max(0, prev - 1));
+    setCurrentPage((prev) => Math.max(1, prev - 1));
   };
 
   const goToNextPage = () => {
-    setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1));
+    setCurrentPage((prev) => Math.min(totalPages, prev + 1));
   };
 
   const refreshClasses = () => {
@@ -245,60 +252,46 @@ export function ClassInventory({
               </div>
             ))}
           </div>
-
-          {/* Carousel Navigation Arrows */}
-          {totalPages > 1 && (
-            <>
-              <button
-                type="button"
-                onClick={goToPrevPage}
-                disabled={currentPage === 0}
-                className={cn(
-                  "absolute left-0 top-1/2 -translate-y-1/2 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-[#5D5DFB] text-white shadow-2xl ring-2 ring-white transition-all hover:scale-110 hover:bg-[#4a4deb]",
-                  currentPage === 0 && "cursor-not-allowed",
-                )}
-                aria-label="Previous page"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <button
-                type="button"
-                onClick={goToNextPage}
-                disabled={currentPage === totalPages - 1}
-                className={cn(
-                  "absolute right-0 top-1/2 -translate-y-1/2 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-[#5D5DFB] text-white shadow-2xl ring-2 ring-white transition-all hover:scale-110 hover:bg-[#4a4deb]",
-                  currentPage === totalPages - 1 && "cursor-not-allowed",
-                )}
-                aria-label="Next page"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            </>
-          )}
         </div>
       )}
 
-      {/* Pagination always below the boxes */}
-      {totalPages > 1 && (
-        <div className="flex justify-center gap-2 mt-6">
-          {Array.from({ length: totalPages }).map((_, index) => (
-            <button
-              key={index}
-              type="button"
-              onClick={() => setCurrentPage(index)}
-              className={cn(
-                "flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium transition-all",
-                currentPage === index
-                  ? "bg-[#0C1A6D] text-white"
-                  : "border-2 border-[#5D5DFB] text-[#5D5DFB] hover:bg-[#5D5DFB]/10",
-              )}
-              aria-label={`Go to page ${index + 1}`}
-            >
-              {index + 1}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="flex items-center justify-center gap-2 pt-6">
+        <button
+          onClick={goToPrevPage}
+          disabled={currentPage === 1}
+          className="flex items-center gap-1 rounded-lg border-2 border-[#6666FF]/25 bg-white px-3 py-2 text-xs font-bold text-[#6666FF] transition-all hover:bg-[#F8F9FF] hover:border-[#6666FF]/40 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Prev
+        </button>
+
+        {totalPages > 1 && (
+          <div className="flex items-center gap-1.5">
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <button
+                key={i + 1}
+                onClick={() => setCurrentPage(i + 1)}
+                className={`h-8 w-8 rounded-full text-xs font-bold transition-all flex items-center justify-center ${
+                  currentPage === i + 1
+                    ? "bg-[#6666FF] text-white shadow-[0_4px_12px_rgba(102,102,255,0.3)]"
+                    : "bg-white border-2 border-[#6666FF]/25 text-[#6666FF] hover:bg-[#F8F9FF] hover:border-[#6666FF]/40"
+                }`}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <button
+          onClick={goToNextPage}
+          disabled={currentPage === totalPages}
+          className="flex items-center gap-1 rounded-lg border-2 border-[#6666FF]/25 bg-white px-3 py-2 text-xs font-bold text-[#6666FF] transition-all hover:bg-[#F8F9FF] hover:border-[#6666FF]/40 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Next
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
 
       <CreateClassModal
         isOpen={isModalOpen}

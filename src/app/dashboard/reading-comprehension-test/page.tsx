@@ -2,13 +2,14 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Clock, Loader2, RotateCcw } from "lucide-react";
+import { Clock, Loader2 } from "lucide-react";
 import { TestPageLayout } from "@/components/assessment/testPageLayout";
 import { StudentSetupSection } from "@/components/assessment/studentSetupSection";
 import { ClassificationPopup } from "@/components/oral-reading-test/classificationPopup";
 import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay";
 import { AddPassageModal } from "@/components/oral-reading-test/addPassageModal";
 import { ComprehensionBreakdown } from "@/components/oral-reading-test/comprehensionBreakdown";
+import { OralReadingNavRow } from "@/components/oral-reading-test/oralReadingNavRow";
 import { ComprehensionInfoBar } from "@/components/reading-comprehension-test/comprehensionInfoBar";
 import {
   QuestionCard,
@@ -199,7 +200,6 @@ export default function ReadingComprehensionTestPage() {
     if (loaded.selectedPassage !== undefined)
       setSelectedPassage(loaded.selectedPassage);
 
-    // Restore comprehension progress
     if (loaded.selectedPassage) {
       const saved = loadComprehensionState();
       if (saved && saved.passageId === loaded.selectedPassage) {
@@ -639,45 +639,32 @@ export default function ReadingComprehensionTestPage() {
         />
       }
     >
-      {!passageExpanded && (
-        <div className="flex items-center justify-between rounded-2xl border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#F3F0FF] px-4 py-3 shadow-[0px_2px_16px_rgba(108,164,239,0.18)]">
-          {" "}
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              aria-label="Go back"
-              title="Go back"
-              className="flex h-9 w-9 items-center justify-center rounded-3xl border-t border-l border-r-2 border-b- border-t-[#A855F7] border-l-[#A855F7] border-r-[#3B21CC] border-b-[#3B21CC] bg-[#6666FF] text-white transition-colors hover:bg-[#5555EE]"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#6B7280]">
-                Details
-              </p>
-              <p className="text-sm font-semibold text-[#1E1B4B]">
-                Student Information
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={handleStartNew}
-            disabled={!hasPassage}
-            className={`flex items-center gap-2 rounded-[20px] border-t border-l border-r-3 border-b-3 px-5 py-2 text-sm font-semibold transition-all ${
-              hasPassage
-                ? "border-t-[#A855F7] border-l-[#A855F7] border-r-[#3B21CC] border-b-[#3B21CC] bg-[#6666FF] text-white shadow-[0_2px_12px_rgba(102,102,255,0.35)] hover:bg-[#5555EE]"
-                : "cursor-not-allowed border-t-[#A855F7]/30 border-l-[#A855F7]/30 border-r-[#C4C4FF] border-b-[#C4C4FF] bg-white text-[#A5A5D6]"
-            }`}
-          >
-            <RotateCcw className="h-4 w-4" />
-            <span>Start New</span>
-          </button>
-        </div>
-      )}
+      {/* Nav row — inline student fields when no passage, compact info when passage selected */}
+      <OralReadingNavRow
+        onGoBack={() => router.back()}
+        onContinue={() => {}}
+        continueEnabled={false}
+        showContinue={false}
+        onClear={handleStartNew}
+        studentName={studentName}
+        gradeLevel={gradeLevel}
+        selectedClassName={selectedClassName}
+        hasPassage={hasPassage}
+        classes={classNames}
+        onStudentNameChange={setStudentName}
+        onGradeLevelChange={setGradeLevel}
+        onClassCreated={() =>
+          queryClient.invalidateQueries({
+            queryKey: ["classes", schoolYear],
+          })
+        }
+        onStudentSelected={(studentId: string) =>
+          setSelectedStudentId(studentId)
+        }
+        onClassChange={setSelectedClassName}
+      />
 
-      {/* Student info + passage filters + shareable link */}
+      {/* Passage filters + share link (student info lives in nav row) */}
       {!passageExpanded && (
         <StudentSetupSection
           isLoading={isLoadingClasses}
@@ -711,6 +698,7 @@ export default function ReadingComprehensionTestPage() {
                 }
               : undefined
           }
+          hideStudentInfo
         />
       )}
 

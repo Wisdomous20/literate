@@ -14,6 +14,7 @@ import { MiscueAnalysis } from "@/components/reading-fluency-test/miscueAnalysis
 import { FullScreenPassage } from "@/components/oral-reading-test/fullScreenPassage";
 import { AddPassageModal } from "@/components/oral-reading-test/addPassageModal";
 import { CountdownToggle } from "@/components/oral-reading-test/countdownToggle";
+import { OralReadingNavRow } from "@/components/oral-reading-test/oralReadingNavRow";
 import { ReadinessCheckButton } from "@/components/oral-reading-test/readinessCheck";
 import { useClassList } from "@/lib/hooks/useClassList";
 import { useQueryClient } from "@tanstack/react-query";
@@ -24,7 +25,6 @@ import {
   exportFluencyReportPdf,
   buildFluencyReportData,
 } from "@/lib/exportFluencyReportPdf";
-import { ChevronLeft, RotateCcw } from "lucide-react";
 
 function getCurrentSchoolYear(): string {
   const now = new Date();
@@ -143,7 +143,6 @@ export default function ReadingFluencyTestPage() {
   const [showClassificationPopup, setShowClassificationPopup] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  // TanStack-cached class list
   const schoolYear = getCurrentSchoolYear();
   const { data: classListData = [], isLoading: isLoadingClasses } =
     useClassList(schoolYear);
@@ -294,7 +293,6 @@ export default function ReadingFluencyTestPage() {
     assessmentId,
   ]);
 
-  // Show classification popup when analysis results first arrive
   useEffect(() => {
     if (analysisResult?.classificationLevel && !isRestoredRef.current) {
       setShowClassificationPopup(true);
@@ -423,7 +421,6 @@ export default function ReadingFluencyTestPage() {
       return;
     }
 
-    // Auto-create student if none selected
     let studentId = selectedStudentId;
     if (!studentId) {
       if (!studentName.trim() || !gradeLevel || !selectedClassName) {
@@ -506,13 +503,11 @@ export default function ReadingFluencyTestPage() {
         return;
       }
 
-      // Store IDs immediately
       if (result.sessionId) setSessionId(result.sessionId);
       if (result.assessmentId) setAssessmentId(result.assessmentId);
 
       const targetAssessmentId = result.assessmentId;
 
-      // If the response already has analysis (shouldn't with queue, but handle gracefully)
       if (result.analysis) {
         setAnalysisResult(result.analysis as OralFluencyAnalysis);
         setToast({
@@ -520,7 +515,6 @@ export default function ReadingFluencyTestPage() {
           type: "success",
         });
       } else {
-        // Poll for results
         setToast({
           message: "Analyzing recording... This may take a moment.",
           type: "success",
@@ -538,7 +532,6 @@ export default function ReadingFluencyTestPage() {
               setAnalysisResult(statusData.analysis as OralFluencyAnalysis);
               if (statusData.sessionId) setSessionId(statusData.sessionId);
 
-              // Update session storage
               try {
                 const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
                 if (sessionRaw) {
@@ -565,7 +558,6 @@ export default function ReadingFluencyTestPage() {
           }
         }, 3000);
 
-        // Safety timeout
         setTimeout(() => clearInterval(pollInterval), 120000);
       }
 
@@ -695,46 +687,32 @@ export default function ReadingFluencyTestPage() {
         />
       }
     >
-      {/* Nav row */}
-      {!passageExpanded && (
-        <div className="flex items-center justify-between rounded-2xl border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#F3F0FF] px-4 py-3 shadow-[0px_2px_16px_rgba(108,164,239,0.18)]">
-          {" "}
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              aria-label="Go back"
-              title="Go back"
-              className="flex h-9 w-9 items-center justify-center rounded-3xl border-t border-l border-r-2 border-b- border-t-[#A855F7] border-l-[#A855F7] border-r-[#3B21CC] border-b-[#3B21CC] bg-[#6666FF] text-white transition-colors hover:bg-[#5555EE]"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#6B7280]">
-                Details
-              </p>
-              <p className="text-sm font-semibold text-[#1E1B4B]">
-                Student Information
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={handleStartNew}
-            disabled={!hasPassage}
-            className={`flex items-center gap-2 rounded-[20px] border-t border-l border-r-3 border-b-3 px-5 py-2 text-sm font-semibold transition-all ${
-              hasPassage
-                ? "border-t-[#A855F7] border-l-[#A855F7] border-r-[#3B21CC] border-b-[#3B21CC] bg-[#6666FF] text-white shadow-[0_2px_12px_rgba(102,102,255,0.35)] hover:bg-[#5555EE]"
-                : "cursor-not-allowed border-t-[#A855F7]/30 border-l-[#A855F7]/30 border-r-[#C4C4FF] border-b-[#C4C4FF] bg-white text-[#A5A5D6]"
-            }`}
-          >
-            <RotateCcw className="h-4 w-4" />
-            <span>Start New</span>
-          </button>
-        </div>
-      )}
+      {/* Nav row — inline student fields when no passage, compact info when passage selected */}
+      <OralReadingNavRow
+        onGoBack={() => router.back()}
+        onContinue={() => {}}
+        continueEnabled={false}
+        showContinue={false}
+        onClear={handleStartNew}
+        studentName={studentName}
+        gradeLevel={gradeLevel}
+        selectedClassName={selectedClassName}
+        hasPassage={hasPassage}
+        classes={classNames}
+        onStudentNameChange={setStudentName}
+        onGradeLevelChange={setGradeLevel}
+        onClassCreated={() =>
+          queryClient.invalidateQueries({
+            queryKey: ["classes", schoolYear],
+          })
+        }
+        onStudentSelected={(studentId: string) =>
+          setSelectedStudentId(studentId)
+        }
+        onClassChange={setSelectedClassName}
+      />
 
-      {/* Student info + passage filters + shareable link */}
+      {/* Passage filters + share link (student info lives in nav row) */}
       {!passageExpanded && (
         <StudentSetupSection
           isLoading={isLoadingClasses}
@@ -768,6 +746,7 @@ export default function ReadingFluencyTestPage() {
                 }
               : undefined
           }
+          hideStudentInfo
         />
       )}
 

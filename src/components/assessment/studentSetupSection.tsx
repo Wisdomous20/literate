@@ -42,6 +42,7 @@ interface StudentSetupSectionProps {
     passageId: string;
     assessmentType: string;
   };
+  hideStudentInfo?: boolean;
 }
 
 export function StudentSetupSection({
@@ -62,6 +63,7 @@ export function StudentSetupSection({
   selectedTestType,
   onOpenPassageModal,
   shareableLink,
+  hideStudentInfo = false,
 }: StudentSetupSectionProps) {
   const [showShareModal, setShowShareModal] = useState(false);
 
@@ -73,18 +75,20 @@ export function StudentSetupSection({
 
   return (
     <>
-      <StudentInfoBar
-        studentName={studentName}
-        gradeLevel={gradeLevel}
-        classes={classes}
-        selectedClassName={selectedClassName}
-        onStudentNameChange={onStudentNameChange}
-        onGradeLevelChange={onGradeLevelChange}
-        onClassCreated={onClassCreated}
-        onStudentSelected={onStudentSelected}
-        onClassChange={onClassChange}
-        onClear={onClear}
-      />
+      {!hideStudentInfo && (
+        <StudentInfoBar
+          studentName={studentName}
+          gradeLevel={gradeLevel}
+          classes={classes}
+          selectedClassName={selectedClassName}
+          onStudentNameChange={onStudentNameChange}
+          onGradeLevelChange={onGradeLevelChange}
+          onClassCreated={onClassCreated}
+          onStudentSelected={onStudentSelected}
+          onClassChange={onClassChange}
+          onClear={onClear}
+        />
+      )}
 
       <PassageFilters
         language={hasPassage ? selectedLanguage : undefined}

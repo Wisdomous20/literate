@@ -1009,25 +1009,40 @@ export default function OralReadingTestPage() {
         />
       }
     >
-      {/* Nav row */}
-      {!passageExpanded && (
-        <OralReadingNavRow
-          onGoBack={() => router.back()}
-          onContinue={() =>
-            hasRecording &&
-            studentName.trim() &&
-            gradeLevel &&
-            selectedClassName &&
-            router.push("/dashboard/oral-reading-test/comprehension")
-          }
-          continueEnabled={
-            hasRecording &&
-            !!(studentName.trim() && gradeLevel && selectedClassName)
-          }
-        />
-      )}
+      {/* Nav row — contains fields when no passage, compact info when passage selected */}
+      <OralReadingNavRow
+        onGoBack={() => router.back()}
+        onContinue={() =>
+          hasRecording &&
+          studentName.trim() &&
+          gradeLevel &&
+          selectedClassName &&
+          router.push("/dashboard/oral-reading-test/comprehension")
+        }
+        continueEnabled={
+          hasRecording &&
+          !!(studentName.trim() && gradeLevel && selectedClassName)
+        }
+        onClear={handleStartNew}
+        studentName={studentName}
+        gradeLevel={gradeLevel}
+        selectedClassName={selectedClassName}
+        hasPassage={hasPassage}
+        classes={classNames}
+        onStudentNameChange={setStudentName}
+        onGradeLevelChange={setGradeLevel}
+        onClassCreated={() =>
+          queryClient.invalidateQueries({
+            queryKey: ["classes", schoolYear],
+          })
+        }
+        onStudentSelected={(studentId: string) =>
+          setSelectedStudentId(studentId)
+        }
+        onClassChange={setSelectedClassName}
+      />
 
-      {/* Student info + passage filters + shareable link */}
+      {/* Passage filters + share link (student info now lives in nav row) */}
       {!passageExpanded && (
         <StudentSetupSection
           isLoading={isLoadingClasses}
@@ -1061,6 +1076,7 @@ export default function OralReadingTestPage() {
                 }
               : undefined
           }
+          hideStudentInfo
         />
       )}
 

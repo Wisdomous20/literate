@@ -172,7 +172,7 @@ export default function ReadingComprehensionReportPage() {
           </div>
 
           {/* Percentage Grade Card */}
-          <div className="flex flex-col justify-center gap-2 rounded-xl border border-[#54A4FF] bg-[#EFFDFF] px-5 py-5 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
+          <div className="flex flex-col justify-center gap-2 rounded-xl border-t border-l border-r-4 border-b-4 border-t-[#54A4FF] border-l-[#54A4FF] border-r-[#297CEC] border-b-[#297CEC] bg-[#EFFDFF] px-5 py-5 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#DAE6FF] bg-[rgba(74,74,252,0.06)]">
                 <FileText size={16} className="text-[#1A6673]" />
@@ -190,7 +190,7 @@ export default function ReadingComprehensionReportPage() {
           </div>
 
           {/* Comprehension Level Card */}
-          <div className="flex flex-col justify-center gap-2 rounded-xl border border-[#54A4FF] bg-[#EFFDFF] px-5 py-5 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
+          <div className="flex flex-col justify-center gap-2 rounded-xl border-t border-l border-r-4 border-b-4 border-t-[#54A4FF] border-l-[#54A4FF] border-r-[#297CEC] border-b-[#297CEC] bg-[#EFFDFF] px-5 py-5 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#DAE6FF] bg-[rgba(74,74,252,0.06)]">
                 <ClipboardCheck size={16} className="text-[#CE330C]" />
