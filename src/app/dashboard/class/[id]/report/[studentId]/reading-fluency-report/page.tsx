@@ -401,9 +401,19 @@ export default function ReadingFluencyReportPage() {
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#5D5DFB]/10">
             <LayoutDashboard size={20} className="text-[#5D5DFB]" />
           </div>
-          <h1 className="text-xl lg:text-2xl font-semibold text-[#31318A]">
-            Oral Fluency Test Report
-          </h1>
+          <div className="flex flex-col">
+            <h1 className="text-xl lg:text-2xl font-semibold text-[#31318A]">
+              Oral Fluency Test Report
+            </h1>
+            {assessmentId && (
+              <p className="text-xs font-medium text-[#2E2E68]/65">
+                Assessment ID:{" "}
+                <span className="font-semibold text-[#2E2E68]">
+                  {assessmentId}
+                </span>
+              </p>
+            )}
+          </div>
         </div>
       </div>
 

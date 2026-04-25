@@ -307,6 +307,18 @@ export default function ViewMiscuesModal({
   const getMiscueConfig = (miscueType: string) =>
     MISCUE_CONFIG.find((c) => c.key === miscueType) ?? MISCUE_CONFIG[0];
 
+  const getRepetitionWord = (miscue: MiscueResult) =>
+    miscue.expectedWord || miscue.spokenWord || "";
+
+  const getMiscueTitle = (miscue: MiscueResult, hasTimestamp: boolean) => {
+    if (miscue.miscueType === "REPETITION") {
+      const repeatedWord = getRepetitionWord(miscue);
+      return `REPETITION${repeatedWord ? ` - repeated word: "${repeatedWord}"` : ""}${hasTimestamp ? " (click for details)" : ""}`;
+    }
+
+    return `${miscue.miscueType.replace(/_/g, " ")}${miscue.spokenWord ? ` - spoken: "${miscue.spokenWord}"` : ""}${hasTimestamp ? " (click for details)" : ""}`;
+  };
+
   const formatTimestamp = (secs: number) => {
     const m = Math.floor(secs / 60);
     const s = Math.floor(secs % 60);
@@ -334,7 +346,7 @@ export default function ViewMiscuesModal({
         wordEl = (
           <span
             key={`w-${i}`}
-            title={`${miscue.miscueType.replace(/_/g, " ")}${miscue.spokenWord ? ` — spoken: "${miscue.spokenWord}"` : ""}${hasTimestamp ? " (click for details)" : ""}`}
+            title={getMiscueTitle(miscue, hasTimestamp)}
             className={`relative inline-block rounded-sm px-0.5 font-semibold transition-all ${cfg.colorClass} ${cfg.textClass} ${cfg.borderBottomClass} cursor-pointer hover:brightness-90`}
             onClick={(e) => {
               const rect = (e.target as HTMLElement).getBoundingClientRect();
@@ -391,8 +403,8 @@ export default function ViewMiscuesModal({
             const isRepetition = ins.miscue.miscueType === "REPETITION";
             const insCfg = getMiscueConfig(ins.miscue.miscueType);
             const label = isRepetition
-              ? `REPETITION — repeated: "${ins.spokenWord}"`
-              : `INSERTION — inserted: "${ins.spokenWord}"`;
+              ? `REPETITION - repeated word: "${getRepetitionWord(ins.miscue) || ins.spokenWord}"`
+              : `INSERTION - inserted: "${ins.spokenWord}"`;
             return (
               <span key={`ins-${i}-${j}`}>
                 {" "}
@@ -567,7 +579,14 @@ export default function ViewMiscuesModal({
                       >
                         {popup.miscue.miscueType.replace(/_/g, " ")}
                       </span>
-                      {popup.miscue.spokenWord && (
+                      {popup.miscue.miscueType === "REPETITION" &&
+                        getRepetitionWord(popup.miscue) && (
+                        <div className="text-[10px] text-[#31318A]/70">
+                          Repeated word: &ldquo;{getRepetitionWord(popup.miscue)}&rdquo;
+                        </div>
+                      )}
+                      {popup.miscue.miscueType !== "REPETITION" &&
+                        popup.miscue.spokenWord && (
                         <div className="text-[10px] text-[#31318A]/70">
                           Spoken: &ldquo;{popup.miscue.spokenWord}&rdquo;
                         </div>

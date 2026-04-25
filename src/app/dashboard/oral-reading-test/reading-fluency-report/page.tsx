@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, useSyncExternalStore } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import ReportHeader from "@/components/reports/oral-reading-test/reading-fluency-report/reportHeader";
 import StudentInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/studentInfoCard";
@@ -147,6 +147,8 @@ function buildBehaviorItems(
 
 export default function OralReadingReportPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const assessmentId = searchParams.get("id");
   const [showMiscuesModal, setShowMiscuesModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [localAnalysis, setLocalAnalysis] = useState<OralFluencyAnalysis | null>(null);
@@ -431,7 +433,7 @@ export default function OralReadingReportPage() {
   if (!isClient) {
     return (
       <div className="flex flex-col h-screen overflow-hidden">
-        <ReportHeader />
+        <ReportHeader assessmentId={assessmentId} />
         <div className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-[#6666FF]" />
@@ -447,7 +449,7 @@ export default function OralReadingReportPage() {
   if (!analysis) {
     return (
       <div className="flex flex-col h-screen overflow-hidden">
-        <ReportHeader />
+        <ReportHeader assessmentId={assessmentId} />
         <div className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-4 text-center px-4">
             <p className="text-[#00306E] font-semibold text-lg">
@@ -470,7 +472,10 @@ export default function OralReadingReportPage() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <ReportHeader onExportPdf={handleExportPdf} />
+      <ReportHeader
+        onExportPdf={handleExportPdf}
+        assessmentId={assessmentId}
+      />
 
       <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth max-w-300 mx-auto px-6 py-6 md:px-8 lg:px-12 space-y-6 w-full">
         {/* Top row: Student Info + Metric Cards */}
