@@ -241,7 +241,7 @@ export default function OralReadingReportPage() {
 
   const reportSessionId = session.sessionId;
 
-  const handleApproveMiscue = useCallback(
+  const handleDeleteMiscue = useCallback(
     async (miscue: MiscueResult) => {
       if (!reportSessionId) return;
       const dbResult = await fetchOralFluencyMiscues(reportSessionId);
@@ -255,7 +255,7 @@ export default function OralReadingReportPage() {
       if (!match?.id) return;
       const result = await updateMiscueAction({
         miscueId: match.id,
-        action: "approve",
+        action: "delete",
       });
       if (!result.success) return;
       setLocalAnalysis((prev) => {
@@ -495,7 +495,7 @@ export default function OralReadingReportPage() {
                 expanded
                 resizable={false}
                 editMode={editMiscues}
-                onApproveMiscue={reportSessionId ? handleApproveMiscue : undefined}
+                onDeleteMiscue={reportSessionId ? handleDeleteMiscue : undefined}
                 onUpdateMiscueType={reportSessionId ? handleUpdateMiscueType : undefined}
               />
             </div>

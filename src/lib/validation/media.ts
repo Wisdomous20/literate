@@ -36,7 +36,7 @@ export const assessmentIdQuerySchema = z.object({
 export const updateMiscueSchema = z
   .object({
     miscueId: idString("miscueId"),
-    action: z.enum(["approve", "update"]),
+    action: z.enum(["approve", "delete", "update"]),
     newMiscueType: z.nativeEnum(MiscueType).optional(),
   })
   .superRefine((data, ctx) => {

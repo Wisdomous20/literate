@@ -341,7 +341,7 @@ export default function OralReadingTestPage() {
     },
   });
 
-  const handleApproveMiscue = useCallback(
+  const handleDeleteMiscue = useCallback(
     async (miscue: MiscueResult) => {
       if (!sessionId) return;
       const dbResult = await fetchOralFluencyMiscues(sessionId);
@@ -355,7 +355,7 @@ export default function OralReadingTestPage() {
       if (!match?.id) return;
       const result = await updateMiscueAction({
         miscueId: match.id,
-        action: "approve",
+        action: "delete",
       });
       if (!result.success) return;
       setAnalysisResult((prev) => {
@@ -1080,7 +1080,7 @@ export default function OralReadingTestPage() {
         onToggleExpand={() => setPassageExpanded((prev) => !prev)}
         passageLevel={selectedLevel}
         editMode={analysisResult ? editMiscues : undefined}
-        onApproveMiscue={sessionId ? handleApproveMiscue : undefined}
+        onDeleteMiscue={sessionId ? handleDeleteMiscue : undefined}
         onUpdateMiscueType={sessionId ? handleUpdateMiscueType : undefined}
       />
 

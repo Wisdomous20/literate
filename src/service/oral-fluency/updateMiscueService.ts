@@ -24,8 +24,8 @@ function classifyReadingLevel(
 export interface UpdateMiscueInput {
   /** The ID of the miscue to update */
   miscueId: string;
-  /** "approve" = mark as not a miscue (delete it), "update" = change its type */
-  action: "approve" | "update";
+  /** "delete" = permanently remove the miscue, "update" = change its type. "approve" is kept for older callers. */
+  action: "approve" | "delete" | "update";
   /** Required when action is "update" — the new miscue type */
   newMiscueType?: MiscueType;
 }
@@ -58,10 +58,10 @@ export async function updateMiscueService(
     };
   }
 
-  if (action !== "approve" && action !== "update") {
+  if (action !== "approve" && action !== "delete" && action !== "update") {
     return {
       success: false,
-      error: 'action must be "approve" or "update".',
+      error: 'action must be "approve", "delete", or "update".',
       code: "VALIDATION_ERROR",
     };
   }
@@ -89,8 +89,8 @@ export async function updateMiscueService(
   try {
     // 2. Perform the action + recalculate in a single transaction
     const updatedMetrics = await prisma.$transaction(async (tx) => {
-      if (action === "approve") {
-        // User says this word was read correctly → remove the miscue
+      if (action === "approve" || action === "delete") {
+        // Permanently remove the miscue row from the session.
         await tx.oralFluencyMiscue.delete({
           where: { id: miscueId },
         });

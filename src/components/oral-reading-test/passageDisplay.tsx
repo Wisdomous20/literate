@@ -197,7 +197,7 @@ interface PassageDisplayProps {
   passageTitle?: string;
   initialHeight?: number;
   editMode?: EditModeCallbacks;
-  onApproveMiscue?: (miscue: MiscueResult) => Promise<void>;
+  onDeleteMiscue?: (miscue: MiscueResult) => Promise<void>;
   onUpdateMiscueType?: (
     miscue: MiscueResult,
     newType: MiscueResult["miscueType"],
@@ -247,7 +247,7 @@ export function PassageDisplay({
   passageTitle,
   initialHeight,
   editMode,
-  onApproveMiscue,
+  onDeleteMiscue,
   onUpdateMiscueType,
 }: PassageDisplayProps) {
   // const passageTextStyle = getPassageTextStyle(passageLevel);
@@ -288,7 +288,7 @@ export function PassageDisplay({
     setContextMenu(null);
   }, [isEditing, editMode?.activeTool]);
 
-  // ─── Approve/update action state ───
+  // ─── Delete/update action state ───
   const [actionLoading, setActionLoading] = useState(false);
 
   const handleDragStart = useCallback((e: React.MouseEvent) => {
@@ -915,7 +915,7 @@ export function PassageDisplay({
             const hasTimestamp =
               popup.miscue.timestamp !== null &&
               popup.miscue.timestamp !== undefined;
-            const hasActions = !!(onApproveMiscue || onUpdateMiscueType);
+            const hasActions = !!(onDeleteMiscue || onUpdateMiscueType);
 
             return (
               <div
@@ -933,12 +933,11 @@ export function PassageDisplay({
                     miscueType={popup.miscue.miscueType}
                     spokenWord={popup.miscue.spokenWord}
                     isLoading={actionLoading}
-                    onApprove={() => setPopup(null)}
-                    onDisapprove={async () => {
-                      if (!onApproveMiscue) return;
+                    onDelete={async () => {
+                      if (!onDeleteMiscue) return;
                       setActionLoading(true);
                       try {
-                        await onApproveMiscue(popup.miscue);
+                        await onDeleteMiscue(popup.miscue);
                         setPopup(null);
                       } finally {
                         setActionLoading(false);

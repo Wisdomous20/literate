@@ -175,7 +175,7 @@ export default function ReadingFluencyReportPage() {
     },
   });
 
-  const handleApproveMiscue = useCallback(
+  const handleDeleteMiscue = useCallback(
     async (miscue: MiscueResult) => {
       if (!sessionId) return;
       const dbResult = await fetchOralFluencyMiscues(sessionId);
@@ -189,7 +189,7 @@ export default function ReadingFluencyReportPage() {
       if (!match?.id) return;
       const result = await updateMiscueAction({
         miscueId: match.id,
-        action: "approve",
+        action: "delete",
       });
       if (!result.success || !result.updatedMetrics) return;
       const updated = activeMiscues.filter(
@@ -476,8 +476,8 @@ export default function ReadingFluencyReportPage() {
                 expanded
                 resizable={false}
                 editMode={editMiscues}
-                onApproveMiscue={
-                  sessionId ? handleApproveMiscue : undefined
+                onDeleteMiscue={
+                  sessionId ? handleDeleteMiscue : undefined
                 }
                 onUpdateMiscueType={
                   sessionId ? handleUpdateMiscueType : undefined

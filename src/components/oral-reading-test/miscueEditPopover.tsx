@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, type CSSProperties } from "react";
-import { Minus, Plus, Trash2, Check, X, Loader2 } from "lucide-react";
+import { Minus, Plus, Trash2, Loader2 } from "lucide-react";
 import type { MiscueType } from "./useEditMiscues";
 
 // ─── Position helpers ───
@@ -268,7 +268,7 @@ export function ContextMenuPopover({
   );
 }
 
-// ─── Miscue Action Popover (approve / change type on system-generated miscues) ───
+// ─── Miscue Action Popover (delete / change type on system-generated miscues) ───
 
 const TYPE_OPTIONS: {
   type: MiscueType;
@@ -330,8 +330,7 @@ interface MiscueActionPopoverProps {
   miscueType: MiscueType;
   spokenWord?: string | null;
   isLoading: boolean;
-  onApprove: () => void;
-  onDisapprove: () => void;
+  onDelete: () => void;
   onChangeType: (newType: MiscueType) => void;
   onClose: () => void;
 }
@@ -340,8 +339,7 @@ export function MiscueActionPopover({
   miscueType,
   spokenWord,
   isLoading,
-  onApprove,
-  onDisapprove,
+  onDelete,
   onChangeType,
   onClose,
 }: MiscueActionPopoverProps) {
@@ -379,33 +377,20 @@ export function MiscueActionPopover({
         )}
       </div>
 
-      {/* Approve / Disapprove buttons */}
-      <div className="mb-2 flex gap-1.5">
+      {/* Permanent delete */}
+      <div className="mb-2">
         <button
           type="button"
           disabled={isLoading}
-          onClick={onApprove}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-[#1E7A35] px-2 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#166B2B] disabled:opacity-50"
+          onClick={onDelete}
+          className="flex w-full items-center justify-center gap-1.5 rounded-md bg-[#C41048] px-2 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#A30D3B] disabled:opacity-50"
         >
           {isLoading ? (
             <Loader2 className="h-3 w-3 animate-spin" />
           ) : (
-            <Check className="h-3 w-3" />
+            <Trash2 className="h-3 w-3" />
           )}
-          Approve
-        </button>
-        <button
-          type="button"
-          disabled={isLoading}
-          onClick={onDisapprove}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-[#C41048] px-2 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#A30D3B] disabled:opacity-50"
-        >
-          {isLoading ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : (
-            <X className="h-3 w-3" />
-          )}
-          Disapprove
+          Delete permanently
         </button>
       </div>
 
