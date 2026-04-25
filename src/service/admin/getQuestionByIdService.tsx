@@ -26,7 +26,6 @@ export async function getQuestionByIdService(
 ): Promise<GetQuestionByIdResult> {
   const { id } = input;
 
-  // Validate input
   if (!id) {
     return {
       success: false,

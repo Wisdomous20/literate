@@ -30,7 +30,6 @@ export async function updateQuizService(
 ): Promise<EditQuizResult> {
   const { id, totalScore, totalNumber, questions } = input;
 
-  // Validate input
   if (!id) {
     return {
       success: false,

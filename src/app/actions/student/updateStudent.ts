@@ -3,6 +3,8 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { updateStudentService } from "@/service/students/updateStudentService";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
+import { updateStudentSchema } from "@/lib/validation/classroom";
 import { revalidatePath } from "next/cache";
 
 export async function updateStudent(
@@ -16,16 +18,25 @@ export async function updateStudent(
     return { success: false, error: "Unauthorized" };
   }
 
-  const result = await updateStudentService({
+  const validationResult = updateStudentSchema.safeParse({
     userId: session.user.id,
     studentId,
     name,
     level,
   });
 
-    if (result.success) {
+  if (!validationResult.success) {
+    return {
+      success: false,
+      error: getFirstZodErrorMessage(validationResult.error),
+    };
+  }
+
+  const result = await updateStudentService(validationResult.data);
+
+  if (result.success) {
     revalidatePath("/students");
   }
 
-    return result;
-}  
+  return result;
+}

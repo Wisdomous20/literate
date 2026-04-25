@@ -1,6 +1,11 @@
 "use server";
 
 import { verifyUser } from "@/service/auth/verifyUser";
+import {
+  resendVerificationCodeSchema,
+  verifyCodeInputSchema,
+} from "@/lib/validation/auth";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { generateVerificationToken } from "@/service/auth/generateVerificationToken";
 import { sendUserVerificationEmail } from "@/service/notification/sendUserVerificationEmail";
 import { prisma } from "@/lib/prisma";
@@ -14,15 +19,16 @@ export async function verifyCodeAction(
   userId: string,
   code: string
 ): Promise<VerifyCodeResult> {
-  if (!userId || !code) {
-    return { success: false, error: "User ID and verification code are required." };
+  const validationResult = verifyCodeInputSchema.safeParse({ userId, code });
+  if (!validationResult.success) {
+    return {
+      success: false,
+      error: getFirstZodErrorMessage(validationResult.error),
+    };
   }
+  const { userId: validatedUserId, code: validatedCode } = validationResult.data;
 
-  if (code.length !== 6 || !/^\d{6}$/.test(code)) {
-    return { success: false, error: "Please enter a valid 6-digit code." };
-  }
-
-  const result = await verifyUser(code, userId);
+  const result = await verifyUser(validatedCode, validatedUserId);
 
   if (!result.success) {
     switch (result.error) {
@@ -48,13 +54,18 @@ interface ResendCodeResult {
 export async function resendVerificationCodeAction(
   userId: string
 ): Promise<ResendCodeResult> {
-  if (!userId) {
-    return { success: false, error: "User ID is required." };
+  const validationResult = resendVerificationCodeSchema.safeParse({ userId });
+  if (!validationResult.success) {
+    return {
+      success: false,
+      error: getFirstZodErrorMessage(validationResult.error),
+    };
   }
+  const { userId: validatedUserId } = validationResult.data;
 
   try {
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: validatedUserId },
       select: { email: true, firstName: true, isVerified: true },
     });
 
@@ -67,7 +78,7 @@ export async function resendVerificationCodeAction(
     }
 
     // Generate new 6-digit code
-    const tokenResult = await generateVerificationToken(userId);
+    const tokenResult = await generateVerificationToken(validatedUserId);
 
     if (!tokenResult.success || !tokenResult.token) {
       return { success: false, error: "Failed to generate verification code." };

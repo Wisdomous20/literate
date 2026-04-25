@@ -51,12 +51,15 @@ export async function confirmPasswordChangeService(
   code: string,
   newPassword: string
 ) {
-  if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
-    return { success: false, error: "Invalid verification code" };
+  if (!/^\d{6}$/.test(code)) {
+    return { success: false, error: "Please enter a valid 6-digit code." };
   }
 
   if (!newPassword || newPassword.length < 8) {
-    return { success: false, error: "New password must be at least 8 characters" };
+    return {
+      success: false,
+      error: "New password must be at least 8 characters long",
+    };
   }
 
   const tokenResult = await validateVerificationToken(userId, code);

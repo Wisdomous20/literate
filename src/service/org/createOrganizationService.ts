@@ -14,7 +14,9 @@ export async function createOrganizationService(name: string, ownerId: string) {
     return { success: false, error: "Only ORG_ADMIN users can create organizations" };
   }
 
-  const existing = await prisma.organization.findFirst({ where: { ownerId } });
+  const existing = await prisma.organization.findFirst({
+    where: { ownerId },
+  });
   if (existing) {
     return { success: false, error: "You already own an organization" };
   }

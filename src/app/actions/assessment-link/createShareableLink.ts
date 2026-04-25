@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { createShareableLinkService } from "@/service/assessment-link/createShareableLinkService";
 import type { AssessmentType } from "@/generated/prisma/enums";
+import { createShareableLinkSchema } from "@/lib/validation/org";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
 
 export async function createShareableLink(input: {
   studentId: string;
@@ -17,10 +19,19 @@ export async function createShareableLink(input: {
     return { success: false, error: "Unauthorized" };
   }
 
-  const result = await createShareableLinkService({
+  const validationResult = createShareableLinkSchema.safeParse({
     teacherId: session.user.id,
     ...input,
   });
+
+  if (!validationResult.success) {
+    return {
+      success: false,
+      error: getFirstZodErrorMessage(validationResult.error),
+    };
+  }
+
+  const result = await createShareableLinkService(validationResult.data);
 
   if (!result.success) {
     return {

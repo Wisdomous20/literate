@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { prisma } from "@/lib/prisma";
 import { toggleMemberStatusService } from "@/service/org/toggleMemberStatusService";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
+import { toggleMemberStatusSchema } from "@/lib/validation/org";
 
 export async function toggleMemberAction(memberId: string, disable: boolean) {
   const session = await getServerSession(authOptions);
@@ -20,10 +22,24 @@ export async function toggleMemberAction(memberId: string, disable: boolean) {
     return { success: false, error: "No organization found" };
   }
 
-  return await toggleMemberStatusService(
+  const validationResult = toggleMemberStatusSchema.safeParse({
     memberId,
-    org.id,
-    session.user.id,
-    disable
+    organizationId: org.id,
+    requestedByUserId: session.user.id,
+    disable,
+  });
+
+  if (!validationResult.success) {
+    return {
+      success: false,
+      error: getFirstZodErrorMessage(validationResult.error),
+    };
+  }
+
+  return await toggleMemberStatusService(
+    validationResult.data.memberId,
+    validationResult.data.organizationId,
+    validationResult.data.requestedByUserId,
+    validationResult.data.disable
   );
 }

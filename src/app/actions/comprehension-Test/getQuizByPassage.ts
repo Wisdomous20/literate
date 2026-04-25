@@ -1,11 +1,18 @@
 "use server";
 
 import { getQuizByPassageService } from "@/service/comprehension-test/getQuizByPassageService";
+import { getQuizByPassageSchema } from "@/lib/validation/admin";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
 
 export async function getQuizByPassageAction(passageId: string) {
-  if (!passageId) {
-    return { success: false, error: "Passage ID is required" };
+  const validationResult = getQuizByPassageSchema.safeParse({ passageId });
+
+  if (!validationResult.success) {
+    return {
+      success: false,
+      error: getFirstZodErrorMessage(validationResult.error),
+    };
   }
 
-  return await getQuizByPassageService(passageId);
+  return await getQuizByPassageService(validationResult.data.passageId);
 }

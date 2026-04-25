@@ -23,8 +23,7 @@ export async function createClassService(
 ): Promise<CreateClassResult> {
   const { name, userId } = input;
 
-  // Validate required fields
-  if (!name || !name.trim()) {
+  if (!name?.trim()) {
     return {
       success: false,
       error: "Class name is required",
@@ -46,8 +45,8 @@ export async function createClassService(
     const newClass = await prisma.classRoom.create({
       data: {
         name: name.trim(),
-        userId: userId,
-        schoolYear: schoolYear,
+        userId,
+        schoolYear,
       },
       select: {
         id: true,

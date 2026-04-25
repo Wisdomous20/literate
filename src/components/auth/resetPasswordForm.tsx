@@ -6,6 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { resetPasswordFormSchema } from "@/lib/validation/auth"
+import { getFirstZodErrorMessage } from "@/lib/validation/common"
 
 // SVG icons for show/hide password
 const EyeIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -84,35 +86,16 @@ export function ResetPasswordForm() {
     validateToken()
   }, [token])
 
-  const validateForm = () => {
-    if (!password) {
-      setError("Password is required.")
-      return false
-    }
-    
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters long.")
-      return false
-    }
-    
-    if (!confirmPassword) {
-      setError("Please confirm your password.")
-      return false
-    }
-    
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.")
-      return false
-    }
-    
-    return true
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
 
-    if (!validateForm()) {
+    const validationResult = resetPasswordFormSchema.safeParse({
+      password,
+      confirmPassword,
+    })
+    if (!validationResult.success) {
+      setError(getFirstZodErrorMessage(validationResult.error))
       return
     }
 
@@ -126,7 +109,7 @@ export function ResetPasswordForm() {
         },
         body: JSON.stringify({
           token,
-          password,
+          password: validationResult.data.password,
         }),
       })
 

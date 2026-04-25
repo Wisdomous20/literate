@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/prisma";
 
 export async function getAssessmentComprehensionService(assessmentId: string) {
-  if (!assessmentId) return { success: false, error: "ID required." };
+  if (!assessmentId) {
+    return { success: false, error: "ID required." };
+  }
 
   try {
     const assessment = await prisma.assessment.findUnique({

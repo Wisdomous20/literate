@@ -20,7 +20,12 @@ export async function toggleMemberStatusService(
   }
 
   const membership = await prisma.organizationMember.findUnique({
-    where: { userId_organizationId: { userId: memberId, organizationId } },
+    where: {
+      userId_organizationId: {
+        userId: memberId,
+        organizationId,
+      },
+    },
   });
 
   if (!membership) {
@@ -32,5 +37,8 @@ export async function toggleMemberStatusService(
     data: { isDisabled: disable },
   });
 
-  return { success: true, message: disable ? "Member disabled" : "Member enabled" };
+  return {
+    success: true,
+    message: disable ? "Member disabled" : "Member enabled",
+  };
 }

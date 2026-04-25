@@ -19,18 +19,15 @@ interface RegisterUserResult {
 export async function registerUser(input: RegisterUserInput): Promise<RegisterUserResult> {
   const { firstName, lastName, email, password } = input;
 
-  // Validate required fields
-  if ( !firstName || !lastName || !email || !password) {
+  if (!firstName?.trim() || !lastName?.trim() || !email?.trim() || !password) {
     return {
       success: false,
-      error: "Name, email, and password are required",
+      error: "All fields are required",
       code: "VALIDATION_ERROR",
     };
   }
 
-  // Validate email format
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return {
       success: false,
       error: "Invalid email format",
@@ -38,7 +35,6 @@ export async function registerUser(input: RegisterUserInput): Promise<RegisterUs
     };
   }
 
-  // Validate password strength
   if (password.length < 8) {
     return {
       success: false,

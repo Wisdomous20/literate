@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
+import { uploadAudioSchema } from "@/lib/validation/media";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
 
 const GCS_BUCKET = process.env.GOOGLE_CLOUD_STORAGE_BUCKET ?? "cpuliterate-v2";
 
@@ -39,12 +41,22 @@ async function getAccessToken(): Promise<string> {
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    const file = formData.get("file") as File;
-    const filePath = formData.get("filePath") as string;
+    const validationResult = uploadAudioSchema.safeParse({
+      file: formData.get("file"),
+      filePath: formData.get("filePath"),
+    });
 
-    if (!file || !filePath) {
-      return NextResponse.json({ success: false, error: "Missing file or filePath" }, { status: 400 });
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: getFirstZodErrorMessage(validationResult.error),
+        },
+        { status: 400 }
+      );
     }
+
+    const { file, filePath } = validationResult.data;
 
     console.log(`[GCS] Uploading: ${filePath}, size: ${file.size}, type: ${file.type}`);
 

@@ -34,7 +34,11 @@ export async function updateClassService(
   }
 
   if (name !== undefined && !name.trim()) {
-    return { success: false, error: "If provided, name must not be empty", code: "VALIDATION_ERROR" };
+    return {
+      success: false,
+      error: "If provided, name must not be empty",
+      code: "VALIDATION_ERROR",
+    };
   }
 
   if (name === undefined && archived === undefined) {

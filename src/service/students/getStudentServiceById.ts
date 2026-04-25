@@ -11,7 +11,7 @@ interface GetStudentResult {
     assessments?: any[];
   };
   error?: string;
-  code?: "STUDENT_NOT_FOUND" | "INTERNAL_ERROR";
+  code?: "VALIDATION_ERROR" | "STUDENT_NOT_FOUND" | "INTERNAL_ERROR";
 }
 
 export async function getStudentServiceById(

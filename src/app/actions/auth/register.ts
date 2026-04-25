@@ -5,10 +5,24 @@ import { sendUserVerificationEmail } from "@/service/notification/sendUserVerifi
 import { generateVerificationToken } from "@/service/auth/generateVerificationToken";
 import { RegisterUserInput } from "@/types/auth";
 import { createClassService } from "@/service/class/createClassService";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
+import { registerUserSchema } from "@/lib/validation/auth";
 
 export async function registerUserAction(input: RegisterUserInput) {
+  const validationResult = registerUserSchema.safeParse(input);
+
+  if (!validationResult.success) {
+    return {
+      success: false,
+      error: getFirstZodErrorMessage(validationResult.error),
+      code: "VALIDATION_ERROR" as const,
+    };
+  }
+
+  const validatedInput = validationResult.data;
+
   // 1. Register user
-  const result = await registerUser(input);
+  const result = await registerUser(validatedInput);
 
   if (!result.success || !result.user) {
     return result;
@@ -20,8 +34,8 @@ export async function registerUserAction(input: RegisterUserInput) {
   if (tokenResult.success && tokenResult.token) {
     // 3. Send verification email with code (NON-BLOCKING)
     sendUserVerificationEmail({
-      to: input.email,
-      userName: input.firstName,
+      to: validatedInput.email,
+      userName: validatedInput.firstName,
       verificationCode: tokenResult.token,
     }).catch((error) => {
       console.error("Failed to send verification email:", error);

@@ -1,16 +1,24 @@
 import { verifyUser } from "@/service/auth/verifyUser";
 import { NextRequest, NextResponse } from "next/server";
+import { verifyCodeInputSchema } from "@/lib/validation/auth";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
 
 export async function POST(req: NextRequest) {
   try {
-    const { code, userId } = await req.json();
+    const body = await req.json();
+    const validationResult = verifyCodeInputSchema.safeParse(body);
 
-    if (!code || !userId) {
+    if (!validationResult.success) {
       return NextResponse.json(
-        { success: false, error: "Verification code and user ID are required." },
+        {
+          success: false,
+          error: getFirstZodErrorMessage(validationResult.error),
+        },
         { status: 400 }
       );
     }
+
+    const { code, userId } = validationResult.data;
 
     const result = await verifyUser(code, userId);
 

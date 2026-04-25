@@ -1,15 +1,23 @@
 "use server";
 
 import { getOralFluencyMiscues } from "@/service/oral-fluency/getMiscuesService";
+import { getFirstZodErrorMessage } from "@/lib/validation/common";
+import { sessionIdQuerySchema } from "@/lib/validation/media";
 
 
 export async function fetchOralFluencyMiscues(sessionId: string) {
-  if (!sessionId) {
-    return { success: false, error: "Session ID is required", data: null };
+  const validationResult = sessionIdQuerySchema.safeParse({ id: sessionId });
+
+  if (!validationResult.success) {
+    return {
+      success: false,
+      error: getFirstZodErrorMessage(validationResult.error),
+      data: null,
+    };
   }
 
   try {
-    const miscues = await getOralFluencyMiscues(sessionId);
+    const miscues = await getOralFluencyMiscues(validationResult.data.id);
 
     return { success: true, error: null, data: miscues };
   } catch (error) {
