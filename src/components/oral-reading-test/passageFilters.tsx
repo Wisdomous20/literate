@@ -29,7 +29,7 @@ function FilterChip({
       }`}
     >
       <span
-        className="flex h-7 w-7 items-center justify-center rounded-[8px] border-t border-l border-r-4 border-b-4 border-t-[#E0E7FF] border-l-[#E0E7FF] border-r-[#B4B4F9] border-b-[#B4B4F9] bg-[#F3F0FF] shadow-sm"
+        className="flex h-7 w-7 items-center justify-center rounded-[8px] border-t border-l border-r-2 border-b-2 border-t-[#C7D2FE] border-l-[#C7D2FE] border-r-[#5D5DFB] border-b-[#5D5DFB] bg-[#F3F0FF] shadow-sm"
         style={{ minWidth: 28, minHeight: 28 }}
       >
         <Icon className="h-4 w-4 text-[#5D5DFB]" />
@@ -71,7 +71,8 @@ export function PassageFilters({
           <button
             type="button"
             onClick={onShareLink}
-className="flex items-center gap-1 px-2 py-1 text-sm font-semibold text-[#4F46E5] bg-transparent border-none shadow-none hover:underline hover:bg-transparent focus:outline-none"            tabIndex={0}
+            className="flex items-center gap-1 px-2 py-1 text-sm font-semibold text-[#4F46E5] bg-transparent border-none shadow-none hover:underline hover:bg-transparent focus:outline-none"
+            tabIndex={0}
             aria-label="Share Link"
           >
             <Link2 className="h-5 w-5 text-[#5D5DFB]" />
@@ -81,7 +82,13 @@ className="flex items-center gap-1 px-2 py-1 text-sm font-semibold text-[#4F46E5
         <button
           type="button"
           onClick={onOpenPassageModal}
-          className="flex items-center justify-center gap-2 rounded-[10px] border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#3B21CC] border-b-[#3B21CC] bg-[#6666FF] px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#4F46E5] min-w-[120px] shadow"
+          className={`flex items-center justify-center gap-2 rounded-[10px] border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#3B21CC] border-b-[#3B21CC] px-4 py-1.5 text-xs font-medium min-w-[120px] shadow transition-colors
+    ${
+      hasPassage
+        ? "bg-white text-[#6666FF] hover:bg-[#6666FF] hover:text-white"
+        : "bg-[#6666FF] text-white hover:bg-[#4F46E5]"
+    }
+  `}
         >
           {hasPassage ? "Change Passage" : "Add Passage"}
         </button>

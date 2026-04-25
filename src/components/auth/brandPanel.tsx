@@ -4,7 +4,7 @@ import React from "react";
 
 export function BrandPanel({
   children,
-  imageSrc = "/Login1.svg", // Default image for login
+  imageSrc = "/Login1.svg", 
 }: {
   children: React.ReactNode;
   imageSrc?: string;
@@ -38,12 +38,12 @@ export function BrandPanel({
               backdropFilter: "blur(4px)",
             }}
           >
-            <span style={{ fontSize: "1em", lineHeight: "1" }}>←</span>
+            <span style={{ fontSize: "1em", lineHeight: "1" }}></span>
             Back to Home
           </button>
         </Link>
       </div>
-      <div className="flex flex-1 items-center justify-center px-12 py-12 [background:linear-gradient(120deg,white_40%,#a084e8_85%,#e0d7ff_100%)] shadow-[0_4px_32px_0_rgba(102,102,255,0.10)]">
+      <div className="flex flex-1 items-center justify-center px-12 py-12 [background:linear-gradient(120deg,white_55%,#cfc1f5_90%,#ede8ff_100%)]">
         <div className="w-full max-w-sm">{children}</div>
       </div>
     </div>

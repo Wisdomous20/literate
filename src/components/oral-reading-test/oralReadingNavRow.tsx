@@ -397,7 +397,7 @@ export function OralReadingNavRow({
               <button
                 type="button"
                 onClick={onClear}
-                className="flex items-center gap-1 rounded-lg border border-[#A855F7]/30 bg-white px-3 py-1.5 text-xs font-medium text-[#6666FF] transition-colors hover:bg-[#F3F0FF] hover:border-[#A855F7]/60"
+  className="ml-2 inline-flex items-center gap-1 rounded-full border-t border-l border-r-2 border-b-2 border-t-[#ed1a1a] border-l-[#F87171] border-r-[#F87171] border-b-[#F87171] bg-white px-4 py-1 text-xs font-normal text-[#DC2626] transition-colors hover:bg-[#FEF2F2] hover:border-[#DC2626]"
               >
                 <X className="h-3 w-3" />
                 Clear
@@ -622,14 +622,14 @@ export function OralReadingNavRow({
               <span className="select-none text-[10px] font-bold uppercase tracking-widest text-transparent">
                 &nbsp;
               </span>
-              <button
-                type="button"
-                onClick={onClear}
-                className="flex flex-shrink-0 items-center gap-1 rounded-lg border border-[#A855F7]/30 bg-white px-3 py-1.5 text-xs font-medium text-[#6666FF] transition-colors hover:bg-[#F3F0FF] hover:border-[#A855F7]/60"
-              >
-                <X className="h-3 w-3" />
-                Clear
-              </button>
+          <button
+  type="button"
+  onClick={onClear}
+  className="ml-2 inline-flex items-center gap-1 rounded-full border-t border-l border-r-2 border-b-2 border-t-[#ed1a1a] border-l-[#F87171] border-r-[#F87171] border-b-[#F87171] bg-white px-4 py-1 text-xs font-normal text-[#DC2626] transition-colors hover:bg-[#FEF2F2] hover:border-[#DC2626]"
+>
+  <X className="h-3 w-3" />
+  Clear
+</button>
             </div>
           </div>
         )}

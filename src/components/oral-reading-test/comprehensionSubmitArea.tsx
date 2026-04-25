@@ -24,7 +24,7 @@ export function ComprehensionSubmitArea({
         onTryAgain ? (
           <button
             onClick={onTryAgain}
-            className="w-56.25 h-15.75 bg-[#7A7AFB] border border-[#7A7AFB] rounded-lg shadow-[0px_1px_20px_rgba(65,155,180,0.47)] text-white font-semibold text-xl hover:bg-[#2E2E68]/90 transition-colors"
+            className="w-56.25 h-15.75 bg-[#6666FF] border border-[#7A7AFB] rounded-lg shadow-[0_0_20px_rgba(102,102,255,0.35)] text-white font-semibold text-xl hover:bg-[#5555EE] transition-colors"
           >
             Try Again
           </button>
