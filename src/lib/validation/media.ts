@@ -5,7 +5,7 @@ import {
   optionalUrlString,
   requiredString,
 } from "@/lib/validation/common";
-import { MiscueType } from "@/generated/prisma/enums";
+import { MiscueType, OralFluencyBehaviorType } from "@/generated/prisma/enums";
 
 export const uploadAudioSchema = z.object({
   file: fileSchema("File"),
@@ -48,3 +48,8 @@ export const updateMiscueSchema = z
       });
     }
   });
+
+export const updateBehaviorsSchema = z.object({
+  sessionId: idString("sessionId"),
+  behaviorTypes: z.array(z.nativeEnum(OralFluencyBehaviorType)),
+});

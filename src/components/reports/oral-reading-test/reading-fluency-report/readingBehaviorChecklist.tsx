@@ -1,8 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
+
+export type BehaviorType =
+  | "WORD_BY_WORD_READING"
+  | "MONOTONOUS_READING"
+  | "DISMISSAL_OF_PUNCTUATION";
 
 export interface BehaviorItem {
+  key?: BehaviorType;
   label: string;
   description: string;
   checked?: boolean;
@@ -11,6 +18,7 @@ export interface BehaviorItem {
 interface BehaviorChecklistProps {
   behaviors: BehaviorItem[];
   otherObservations?: string;
+  onSave?: (behaviorTypes: BehaviorType[]) => Promise<void> | void;
 }
 
 const defaultBehaviors: BehaviorItem[] = [
@@ -35,11 +43,21 @@ const defaultBehaviors: BehaviorItem[] = [
 export default function BehaviorChecklist({
   behaviors = defaultBehaviors,
   otherObservations = "",
+  onSave,
 }: BehaviorChecklistProps) {
   const [checkedItems, setCheckedItems] = useState<boolean[]>(
     behaviors.map((b) => b.checked ?? false),
   );
   const [observations, setObservations] = useState(otherObservations);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    setCheckedItems(behaviors.map((b) => b.checked ?? false));
+  }, [behaviors]);
+
+  useEffect(() => {
+    setObservations(otherObservations);
+  }, [otherObservations]);
 
   const toggleItem = (index: number) => {
     setCheckedItems((prev) => {
@@ -47,6 +65,26 @@ export default function BehaviorChecklist({
       next[index] = !next[index];
       return next;
     });
+  };
+
+  const selectedBehaviorTypes = () =>
+    behaviors
+      .filter((item, index) => item.key && checkedItems[index])
+      .map((item) => item.key!);
+
+  const saveChanges = async (behaviorTypes = selectedBehaviorTypes()) => {
+    if (!onSave) return;
+    setIsSaving(true);
+    try {
+      await onSave(behaviorTypes);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const clearBehaviors = async () => {
+    setCheckedItems(behaviors.map(() => false));
+    await saveChanges([]);
   };
 
   return (
@@ -115,15 +153,23 @@ export default function BehaviorChecklist({
       <div className="flex items-center justify-end gap-2 mt-2">
         <button
           type="button"
+          disabled={!onSave || isSaving}
+          onClick={() => saveChanges()}
           className="px-3 py-1 text-[7px] font-bold italic text-[#31318A] bg-[rgba(108,164,239,0.19)] rounded hover:bg-[rgba(108,164,239,0.3)] transition-colors"
         >
-          Save
+          {isSaving ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            "Save"
+          )}
         </button>
         <button
           type="button"
+          disabled={!onSave || isSaving}
+          onClick={clearBehaviors}
           className="px-3 py-1 text-[7px] font-bold italic text-[#31318A] bg-[rgba(108,164,239,0.19)] rounded hover:bg-[rgba(108,164,239,0.3)] transition-colors"
         >
-          Delete
+          Clear
         </button>
       </div>
     </div>
