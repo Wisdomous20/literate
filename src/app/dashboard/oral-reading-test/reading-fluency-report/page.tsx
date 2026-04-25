@@ -525,6 +525,7 @@ export default function OralReadingReportPage() {
         miscues={analysis?.miscues || []}
         alignedWords={analysis?.alignedWords}
         passageLevel={session.selectedLevel}
+        onDeleteMiscue={reportSessionId ? handleDeleteMiscue : undefined}
       />
 
       {/* Edit Miscues Modal */}

@@ -495,6 +495,7 @@ export default function ReadingFluencyReportPage() {
         passageLevel={
           passage?.level ? `Grade ${passage.level}` : undefined
         }
+        onDeleteMiscue={sessionId ? handleDeleteMiscue : undefined}
       />
 
       {/* Edit Miscues Modal */}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect, useCallback, Fragment } from "react";
-import { X, Play } from "lucide-react";
+import { X, Play, Trash2 } from "lucide-react";
 import type { MiscueResult, AlignedWord } from "@/types/oral-reading";
 import { getPassageTextStyle } from "@/components/oral-reading-test/passageDisplay";
 import { normalizeWord } from "@/utils/textUtils";
@@ -120,6 +120,7 @@ interface ViewMiscuesModalProps {
   miscues: MiscueResult[];
   alignedWords?: AlignedWord[];
   passageLevel?: string;
+  onDeleteMiscue?: (miscue: MiscueResult) => Promise<void>;
 }
 
 export default function ViewMiscuesModal({
@@ -129,6 +130,7 @@ export default function ViewMiscuesModal({
   miscues,
   alignedWords,
   passageLevel,
+  onDeleteMiscue,
 }: ViewMiscuesModalProps) {
   const [highlightedTypes, setHighlightedTypes] = useState<Set<string>>(
     new Set(),
@@ -164,9 +166,30 @@ export default function ViewMiscuesModal({
     return counts;
   }, [miscues]);
 
+  const passageWordEntries = useMemo(() => {
+    if (!passageContent) return [] as {
+      token: string;
+      wordIndex: number;
+      normalized: string;
+    }[];
+
+    let wordIndex = 0;
+    return passageContent.split(/(\s+)/).filter(Boolean).flatMap((token) => {
+      if (/^\s+$/.test(token)) return [];
+
+      const entry = {
+        token,
+        wordIndex,
+        normalized: normalizeWord(token),
+      };
+      wordIndex += 1;
+      return [entry];
+    });
+  }, [passageContent]);
+
   // Map passage word index → inline inserted words (REPETITION and INSERTION miscues)
   const inlineInsertions = useMemo(() => {
-    if (!filteredMiscues?.length || !alignedWords?.length) return null;
+    if (!filteredMiscues?.length) return null;
 
     const insertedMiscues = filteredMiscues.filter(
       (m) =>
@@ -175,46 +198,78 @@ export default function ViewMiscuesModal({
     );
     if (insertedMiscues.length === 0) return null;
 
-    const bySpokenIdx = new Map<number, MiscueResult>();
-    for (const m of insertedMiscues) bySpokenIdx.set(m.wordIndex, m);
-
     const map = new Map<number, { spokenWord: string; miscue: MiscueResult }[]>();
-    let lastExpectedIndex = -1;
 
-    for (let idx = 0; idx < alignedWords.length; idx++) {
-      const aw = alignedWords[idx];
-      if (aw.expectedIndex != null) lastExpectedIndex = aw.expectedIndex;
+    if (alignedWords?.length) {
+      const bySpokenIdx = new Map<number, MiscueResult>();
+      for (const m of insertedMiscues) bySpokenIdx.set(m.wordIndex, m);
 
-      if (aw.match === "INSERTION" && aw.spokenIndex != null) {
-        const miscue = bySpokenIdx.get(aw.spokenIndex);
-        if (miscue && lastExpectedIndex >= 0) {
-          let placement = lastExpectedIndex;
+      let lastExpectedIndex = -1;
 
-          // For repetitions that precede the word they repeat (INSERTION → EXACT),
-          // place the inline insertion after the matching passage word instead
-          if (miscue.miscueType === "REPETITION" && miscue.spokenWord) {
-            const spokenNorm = normalizeWord(miscue.spokenWord);
-            for (let k = idx + 1; k < alignedWords.length && k <= idx + 3; k++) {
-              const next = alignedWords[k];
-              if (next.expectedIndex != null && next.expected) {
-                if (normalizeWord(next.expected) === spokenNorm) {
-                  placement = next.expectedIndex;
+      for (let idx = 0; idx < alignedWords.length; idx++) {
+        const aw = alignedWords[idx];
+        if (aw.expectedIndex != null) lastExpectedIndex = aw.expectedIndex;
+
+        if (aw.match === "INSERTION" && aw.spokenIndex != null) {
+          const miscue = bySpokenIdx.get(aw.spokenIndex);
+          if (miscue && lastExpectedIndex >= 0) {
+            let placement = lastExpectedIndex;
+
+            if (miscue.miscueType === "REPETITION" && miscue.spokenWord) {
+              const spokenNorm = normalizeWord(miscue.spokenWord);
+              for (let k = idx + 1; k < alignedWords.length && k <= idx + 3; k++) {
+                const next = alignedWords[k];
+                if (next.expectedIndex != null && next.expected) {
+                  if (normalizeWord(next.expected) === spokenNorm) {
+                    placement = next.expectedIndex;
+                  }
+                  break;
                 }
-                break;
               }
             }
-          }
 
-          const list = map.get(placement) || [];
-          list.push({ spokenWord: miscue.spokenWord!, miscue });
-          map.set(placement, list);
-          bySpokenIdx.delete(aw.spokenIndex);
+            const list = map.get(placement) || [];
+            list.push({ spokenWord: miscue.spokenWord!, miscue });
+            map.set(placement, list);
+            bySpokenIdx.delete(aw.spokenIndex);
+          }
         }
       }
+
+      return map.size > 0 ? map : null;
+    }
+
+    if (passageWordEntries.length === 0) return null;
+
+    for (const miscue of insertedMiscues) {
+      if (!miscue.spokenWord) continue;
+
+      const spokenNorm = normalizeWord(miscue.spokenWord);
+      const matchingEntries = passageWordEntries.filter(
+        (entry) => entry.normalized === spokenNorm,
+      );
+
+      let placement = Math.min(
+        Math.max(miscue.wordIndex - 1, 0),
+        Math.max(passageWordEntries.length - 1, 0),
+      );
+
+      if (matchingEntries.length > 0) {
+        placement = matchingEntries.reduce((best, current) =>
+          Math.abs(current.wordIndex - miscue.wordIndex) <
+          Math.abs(best.wordIndex - miscue.wordIndex)
+            ? current
+            : best,
+        ).wordIndex;
+      }
+
+      const list = map.get(placement) || [];
+      list.push({ spokenWord: miscue.spokenWord!, miscue });
+      map.set(placement, list);
     }
 
     return map.size > 0 ? map : null;
-  }, [filteredMiscues, alignedWords]);
+  }, [filteredMiscues, alignedWords, passageWordEntries]);
 
   const miscueMap = useMemo(() => {
     if (!filteredMiscues || filteredMiscues.length === 0) return null;
@@ -533,11 +588,24 @@ export default function ViewMiscuesModal({
                   {secondaryLabel}
                 </p>
               </div>
-              {miscue.timestamp != null && (
-                <div className="shrink-0 rounded-full bg-[#F3F7FF] px-2.5 py-1 text-[11px] font-medium text-[#31318A]/70">
-                  {formatTimestamp(miscue.timestamp)}
-                </div>
-              )}
+              <div className="flex shrink-0 items-center gap-2">
+                {miscue.timestamp != null && (
+                  <div className="rounded-full bg-[#F3F7FF] px-2.5 py-1 text-[11px] font-medium text-[#31318A]/70">
+                    {formatTimestamp(miscue.timestamp)}
+                  </div>
+                )}
+                {onDeleteMiscue && (
+                  <button
+                    type="button"
+                    onClick={() => void onDeleteMiscue(miscue)}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#FFD7D7] bg-[#FFF6F6] text-[#C75A5A] transition-colors hover:bg-[#FFEAEA]"
+                    aria-label={`Delete ${config.label.toLowerCase()} miscue`}
+                    title="Delete miscue"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         ))}

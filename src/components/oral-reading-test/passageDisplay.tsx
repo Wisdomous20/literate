@@ -390,17 +390,38 @@ export function PassageDisplay({
     return set;
   }, [miscues]);
 
-  // Map passage word index → inline inserted words (REPETITION and INSERTION miscues)
-  const inlineInsertions = useMemo(() => {
-    if (!miscues || !alignedWords?.length) return null;
+  const passageWordEntries = useMemo(() => {
+    if (!content) {
+      return [] as {
+        token: string;
+        wordIndex: number;
+        normalized: string;
+      }[];
+    }
 
-    // Collect miscues that are "inserted" words (not in the passage)
+    let wordIndex = 0;
+    return content.split(/(\s+)/).filter(Boolean).flatMap((token) => {
+      if (/^\s+$/.test(token)) return [];
+
+      const entry = {
+        token,
+        wordIndex,
+        normalized: normalizeWord(token),
+      };
+      wordIndex += 1;
+      return [entry];
+    });
+  }, [content]);
+
+  // Map passage word index ? inline inserted words (REPETITION and INSERTION miscues)
+  const inlineInsertions = useMemo(() => {
+    if (!miscues?.length) return null;
+
     const insertedMiscues = miscues.filter(
       (m) =>
         (m.miscueType === "INSERTION" ||
           (m.miscueType === "REPETITION" && !m.expectedWord)) &&
         m.spokenWord &&
-        // Suppress repetitions that are actually the insertion half of a transposition
         !(
           m.miscueType === "REPETITION" &&
           !m.expectedWord &&
@@ -409,51 +430,82 @@ export function PassageDisplay({
     );
     if (insertedMiscues.length === 0) return null;
 
-    // Lookup by spokenIndex (= wordIndex for insertion-type miscues)
-    const bySpokenIdx = new Map<number, MiscueResult>();
-    for (const m of insertedMiscues) bySpokenIdx.set(m.wordIndex, m);
-
     const map = new Map<number, InlineInsertion[]>();
-    let lastExpectedIndex = -1;
 
-    for (let idx = 0; idx < alignedWords.length; idx++) {
-      const aw = alignedWords[idx];
-      if (aw.expectedIndex != null) lastExpectedIndex = aw.expectedIndex;
+    if (alignedWords?.length) {
+      const bySpokenIdx = new Map<number, MiscueResult>();
+      for (const m of insertedMiscues) bySpokenIdx.set(m.wordIndex, m);
 
-      if (aw.match === "INSERTION" && aw.spokenIndex != null) {
-        const miscue = bySpokenIdx.get(aw.spokenIndex);
-        if (miscue && lastExpectedIndex >= 0) {
-          let placement = lastExpectedIndex;
+      let lastExpectedIndex = -1;
 
-          // For repetitions that precede the word they repeat (INSERTION → EXACT),
-          // place the inline insertion after the matching passage word instead
-          if (miscue.miscueType === "REPETITION" && miscue.spokenWord) {
-            const spokenNorm = normalizeWord(miscue.spokenWord);
-            for (
-              let k = idx + 1;
-              k < alignedWords.length && k <= idx + 3;
-              k++
-            ) {
-              const next = alignedWords[k];
-              if (next.expectedIndex != null && next.expected) {
-                if (normalizeWord(next.expected) === spokenNorm) {
-                  placement = next.expectedIndex;
+      for (let idx = 0; idx < alignedWords.length; idx++) {
+        const aw = alignedWords[idx];
+        if (aw.expectedIndex != null) lastExpectedIndex = aw.expectedIndex;
+
+        if (aw.match === "INSERTION" && aw.spokenIndex != null) {
+          const miscue = bySpokenIdx.get(aw.spokenIndex);
+          if (miscue && lastExpectedIndex >= 0) {
+            let placement = lastExpectedIndex;
+
+            if (miscue.miscueType === "REPETITION" && miscue.spokenWord) {
+              const spokenNorm = normalizeWord(miscue.spokenWord);
+              for (
+                let k = idx + 1;
+                k < alignedWords.length && k <= idx + 3;
+                k++
+              ) {
+                const next = alignedWords[k];
+                if (next.expectedIndex != null && next.expected) {
+                  if (normalizeWord(next.expected) === spokenNorm) {
+                    placement = next.expectedIndex;
+                  }
+                  break;
                 }
-                break;
               }
             }
-          }
 
-          const list = map.get(placement) || [];
-          list.push({ spokenWord: miscue.spokenWord!, miscue });
-          map.set(placement, list);
-          bySpokenIdx.delete(aw.spokenIndex);
+            const list = map.get(placement) || [];
+            list.push({ spokenWord: miscue.spokenWord!, miscue });
+            map.set(placement, list);
+            bySpokenIdx.delete(aw.spokenIndex);
+          }
         }
       }
+
+      return map.size > 0 ? map : null;
+    }
+
+    if (passageWordEntries.length === 0) return null;
+
+    for (const miscue of insertedMiscues) {
+      if (!miscue.spokenWord) continue;
+
+      const spokenNorm = normalizeWord(miscue.spokenWord);
+      const matchingEntries = passageWordEntries.filter(
+        (entry) => entry.normalized === spokenNorm,
+      );
+
+      let placement = Math.min(
+        Math.max(miscue.wordIndex - 1, 0),
+        Math.max(passageWordEntries.length - 1, 0),
+      );
+
+      if (matchingEntries.length > 0) {
+        placement = matchingEntries.reduce((best, current) =>
+          Math.abs(current.wordIndex - miscue.wordIndex) <
+          Math.abs(best.wordIndex - miscue.wordIndex)
+            ? current
+            : best,
+        ).wordIndex;
+      }
+
+      const list = map.get(placement) || [];
+      list.push({ spokenWord: miscue.spokenWord!, miscue });
+      map.set(placement, list);
     }
 
     return map.size > 0 ? map : null;
-  }, [miscues, alignedWords, transpositionExpectedWords]);
+  }, [miscues, alignedWords, transpositionExpectedWords, passageWordEntries]);
 
   // Build a map from wordIndex → miscue type for O(1) lookup
   const miscueMap = useMemo(() => {
