@@ -1009,23 +1009,25 @@ export default function OralReadingTestPage() {
         />
       }
     >
-      {/* Nav row */}
-      {!passageExpanded && (
-        <OralReadingNavRow
-          onGoBack={() => router.back()}
-          onContinue={() =>
-            hasRecording &&
-            studentName.trim() &&
-            gradeLevel &&
-            selectedClassName &&
-            router.push("/dashboard/oral-reading-test/comprehension")
-          }
-          continueEnabled={
-            hasRecording &&
-            !!(studentName.trim() && gradeLevel && selectedClassName)
-          }
-        />
-      )}
+     <OralReadingNavRow
+  onGoBack={() => router.back()}
+  onContinue={() =>
+    hasRecording &&
+    studentName.trim() &&
+    gradeLevel &&
+    selectedClassName &&
+    router.push("/dashboard/oral-reading-test/comprehension")
+  }
+  continueEnabled={
+    hasRecording &&
+    !!(studentName.trim() && gradeLevel && selectedClassName)
+  }
+  onClear={handleStartNew}
+  studentName={studentName}
+  gradeLevel={gradeLevel}
+  selectedClassName={selectedClassName}
+  hasPassage={hasPassage}
+/>
 
       {/* Student info + passage filters + shareable link */}
       {!passageExpanded && (
