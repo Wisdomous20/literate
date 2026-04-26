@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import type { MiscueResult } from "@/types/oral-reading";
 import { fetchOralFluencyMiscues } from "@/app/actions/oral-fluency/getMiscues";
 import { updateMiscueAction } from "@/app/actions/oral-fluency/updateMiscue";
+import { sameMiscue } from "@/lib/miscueEditing";
 
 // ─── Local Types ───
 
@@ -52,6 +53,24 @@ function computeMetrics(
 
 function miscueKey(m: { wordIndex: number; miscueType: string; expectedWord: string }) {
   return `${m.wordIndex}::${m.miscueType}::${m.expectedWord}`;
+}
+
+function haveSameMiscues(
+  left: EditableMiscueResult[],
+  right: EditableMiscueResult[],
+) {
+  if (left.length !== right.length) return false;
+
+  return left.every((miscue, index) => {
+    const other = right[index];
+    if (!other) return false;
+
+    return (
+      sameMiscue(miscue, other) &&
+      (miscue.wordIndexB ?? null) === (other.wordIndexB ?? null) &&
+      (miscue.repetitionCount ?? null) === (other.repetitionCount ?? null)
+    );
+  });
 }
 
 // ─── Backend sync ───
@@ -185,6 +204,11 @@ export function useEditMiscues({
     [isEditing, editedMiscues, originalMiscues, totalWords],
   );
 
+  const hasUnsavedChanges = useMemo(
+    () => isEditing && !haveSameMiscues(editedMiscues, originalRef.current),
+    [isEditing, editedMiscues],
+  );
+
   const pushUndo = useCallback((miscues: EditableMiscueResult[]) => {
     setUndoStack((prev) => [...prev, { miscues }]);
     setRedoStack([]);
@@ -208,6 +232,21 @@ export function useEditMiscues({
     setRedoStack([]);
   }, []);
 
+  const closeEdit = useCallback(() => {
+    if (
+      hasUnsavedChanges &&
+      typeof window !== "undefined" &&
+      !window.confirm(
+        "Are you sure you want to close? Unsaved miscue changes, including deleted miscues, will not be reflected until you save.",
+      )
+    ) {
+      return false;
+    }
+
+    cancelEdit();
+    return true;
+  }, [cancelEdit, hasUnsavedChanges]);
+
   const resetAll = useCallback(() => {
     setEditedMiscues([...originalRef.current]);
     setUndoStack([]);
@@ -219,12 +258,18 @@ export function useEditMiscues({
   const saveEdit = useCallback(async () => {
     setIsSaving(true);
     try {
+      let persistedMetrics: EditMetrics | null = null;
+
       // Sync changes to backend if sessionId is available
       if (sessionId) {
-        await syncEditsToBackend(sessionId, originalRef.current, editedMiscues);
+        persistedMetrics = await syncEditsToBackend(
+          sessionId,
+          originalRef.current,
+          editedMiscues,
+        );
       }
 
-      const metrics = computeMetrics(editedMiscues, totalWords);
+      const metrics = persistedMetrics ?? computeMetrics(editedMiscues, totalWords);
       await onSave?.(editedMiscues, metrics);
       originalRef.current = editedMiscues;
       setIsEditing(false);
@@ -236,6 +281,18 @@ export function useEditMiscues({
       setIsSaving(false);
     }
   }, [editedMiscues, totalWords, onSave, sessionId]);
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   const undo = useCallback(() => {
     if (undoStack.length === 0) return;
@@ -418,6 +475,16 @@ export function useEditMiscues({
     [editedMiscues, pushUndo],
   );
 
+  const applyExternalMiscues = useCallback(
+    (miscues: EditableMiscueResult[]) => {
+      originalRef.current = miscues;
+      if (isEditing) {
+        setEditedMiscues(miscues);
+      }
+    },
+    [isEditing],
+  );
+
   return {
     isEditing,
     editedMiscues,
@@ -426,10 +493,12 @@ export function useEditMiscues({
     undoStack,
     redoStack,
     isSaving,
+    hasUnsavedChanges,
     currentMetrics,
     setActiveTool,
     enterEditMode,
     cancelEdit,
+    closeEdit,
     resetAll,
     saveEdit,
     undo,
@@ -439,5 +508,6 @@ export function useEditMiscues({
     confirmRepetitionMiscue,
     removeMiscue,
     updateMiscue,
+    applyExternalMiscues,
   };
 }

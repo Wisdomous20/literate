@@ -24,6 +24,12 @@ import { useAssessmentsByStudent } from "@/lib/hooks/useStudentAssessments";
 import { useClassById } from "@/lib/hooks/useClassById";
 import { useQueryClient } from "@tanstack/react-query";
 import { exportFluencyReportPdf } from "@/lib/exportFluencyReportPdf";
+import {
+  findMatchingDbMiscue,
+  removeFirstMatchingMiscue,
+  updateFirstMatchingSpokenWord,
+  updateFirstMatchingMiscueType,
+} from "@/lib/miscueEditing";
 import type {
   BehaviorItem,
   BehaviorType,
@@ -192,33 +198,25 @@ export default function ReadingFluencyReportPage() {
       if (!sessionId) return;
       const dbResult = await fetchOralFluencyMiscues(sessionId);
       if (!dbResult.success || !dbResult.data) return;
-      const match = dbResult.data.find(
-        (m) =>
-          m.wordIndex === miscue.wordIndex &&
-          m.miscueType === miscue.miscueType &&
-          m.expectedWord === miscue.expectedWord,
-      );
+      const match = findMatchingDbMiscue(dbResult.data, miscue);
       if (!match?.id) return;
       const result = await updateMiscueAction({
         miscueId: match.id,
         action: "delete",
       });
       if (!result.success || !result.updatedMetrics) return;
-      const updated = activeMiscues.filter(
-        (m) =>
-          !(
-            m.wordIndex === miscue.wordIndex &&
-            m.miscueType === miscue.miscueType &&
-            m.expectedWord === miscue.expectedWord
-          ),
-      );
+      const sourceMiscues = editMiscues.isEditing
+        ? editMiscues.editedMiscues
+        : activeMiscues;
+      const updated = removeFirstMatchingMiscue(sourceMiscues, miscue);
+      editMiscues.applyExternalMiscues(updated);
       setLocalMiscues(updated);
       setLocalTotalMiscues(result.updatedMetrics.totalMiscues);
       setLocalOralFluencyScore(result.updatedMetrics.oralFluencyScore);
       setLocalClassificationLevel(result.updatedMetrics.classificationLevel);
       invalidateAssessments();
     },
-    [sessionId, activeMiscues, invalidateAssessments],
+    [sessionId, activeMiscues, invalidateAssessments, editMiscues],
   );
 
   const handleUpdateMiscueType = useCallback(
@@ -226,12 +224,7 @@ export default function ReadingFluencyReportPage() {
       if (!sessionId) return;
       const dbResult = await fetchOralFluencyMiscues(sessionId);
       if (!dbResult.success || !dbResult.data) return;
-      const match = dbResult.data.find(
-        (m) =>
-          m.wordIndex === miscue.wordIndex &&
-          m.miscueType === miscue.miscueType &&
-          m.expectedWord === miscue.expectedWord,
-      );
+      const match = findMatchingDbMiscue(dbResult.data, miscue);
       if (!match?.id) return;
       const result = await updateMiscueAction({
         miscueId: match.id,
@@ -239,20 +232,53 @@ export default function ReadingFluencyReportPage() {
         newMiscueType: newType,
       });
       if (!result.success || !result.updatedMetrics) return;
-      const updated = activeMiscues.map((m) =>
-        m.wordIndex === miscue.wordIndex &&
-        m.miscueType === miscue.miscueType &&
-        m.expectedWord === miscue.expectedWord
-          ? { ...m, miscueType: newType }
-          : m,
+      const sourceMiscues = editMiscues.isEditing
+        ? editMiscues.editedMiscues
+        : activeMiscues;
+      const updated = updateFirstMatchingMiscueType(
+        sourceMiscues,
+        miscue,
+        newType,
       );
+      editMiscues.applyExternalMiscues(updated);
       setLocalMiscues(updated);
       setLocalTotalMiscues(result.updatedMetrics.totalMiscues);
       setLocalOralFluencyScore(result.updatedMetrics.oralFluencyScore);
       setLocalClassificationLevel(result.updatedMetrics.classificationLevel);
       invalidateAssessments();
     },
-    [sessionId, activeMiscues, invalidateAssessments],
+    [sessionId, activeMiscues, invalidateAssessments, editMiscues],
+  );
+
+  const handleUpdateSpokenWord = useCallback(
+    async (miscue: MiscueResult, newSpokenWord: string) => {
+      if (!sessionId) return;
+      const dbResult = await fetchOralFluencyMiscues(sessionId);
+      if (!dbResult.success || !dbResult.data) return;
+      const match = findMatchingDbMiscue(dbResult.data, miscue);
+      if (!match?.id) return;
+      const result = await updateMiscueAction({
+        miscueId: match.id,
+        action: "update",
+        newSpokenWord,
+      });
+      if (!result.success || !result.updatedMetrics) return;
+      const sourceMiscues = editMiscues.isEditing
+        ? editMiscues.editedMiscues
+        : activeMiscues;
+      const updated = updateFirstMatchingSpokenWord(
+        sourceMiscues,
+        miscue,
+        newSpokenWord,
+      );
+      editMiscues.applyExternalMiscues(updated);
+      setLocalMiscues(updated);
+      setLocalTotalMiscues(result.updatedMetrics.totalMiscues);
+      setLocalOralFluencyScore(result.updatedMetrics.oralFluencyScore);
+      setLocalClassificationLevel(result.updatedMetrics.classificationLevel);
+      invalidateAssessments();
+    },
+    [sessionId, activeMiscues, invalidateAssessments, editMiscues],
   );
 
   const handleSaveBehaviors = useCallback(
@@ -495,7 +521,6 @@ export default function ReadingFluencyReportPage() {
         passageLevel={
           passage?.level ? `Grade ${passage.level}` : undefined
         }
-        onDeleteMiscue={sessionId ? handleDeleteMiscue : undefined}
       />
 
       {/* Edit Miscues Modal */}
@@ -525,6 +550,9 @@ export default function ReadingFluencyReportPage() {
                 }
                 onUpdateMiscueType={
                   sessionId ? handleUpdateMiscueType : undefined
+                }
+                onUpdateSpokenWord={
+                  sessionId ? handleUpdateSpokenWord : undefined
                 }
               />
             </div>

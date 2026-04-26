@@ -9,15 +9,19 @@ const mockPrisma = vi.hoisted(() => ({
   oralFluencyMiscue: { findUnique: vi.fn() },
   $transaction: vi.fn(),
 }));
+const mockCreateOralReadingService = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));
+vi.mock("@/service/oral-reading/createOralReadingService", () => ({
+  createOralReadingService: mockCreateOralReadingService,
+}));
 
 import { updateMiscueService } from "../updateMiscueService";
 
 const baseMiscue = {
   id: "m-1",
   sessionId: "s-1",
-  session: { id: "s-1", totalWords: 10 },
+  session: { id: "s-1", totalWords: 10, assessmentId: "a-1" },
 };
 
 function setupTransactionWith(remainingMiscues: { isSelfCorrected: boolean }[], totalWords = 10) {
@@ -30,7 +34,10 @@ function setupTransactionWith(remainingMiscues: { isSelfCorrected: boolean }[], 
 }
 
 describe("updateMiscueService", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockCreateOralReadingService.mockResolvedValue({ success: true });
+  });
 
   it("returns VALIDATION_ERROR when miscueId is empty", async () => {
     const result = await updateMiscueService({ miscueId: "", action: "approve" });
@@ -56,6 +63,22 @@ describe("updateMiscueService", () => {
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("updates the spoken word when action is update with newSpokenWord", async () => {
+    mockPrisma.oralFluencyMiscue.findUnique.mockResolvedValue(baseMiscue);
+    setupTransactionWith([{ isSelfCorrected: false }], 10);
+
+    await updateMiscueService({
+      miscueId: "m-1",
+      action: "update",
+      newSpokenWord: "horse",
+    });
+
+    expect(mockTx.oralFluencyMiscue.update).toHaveBeenCalledWith({
+      where: { id: "m-1" },
+      data: { spokenWord: "horse" },
+    });
   });
 
   it("returns NOT_FOUND when miscue does not exist", async () => {
@@ -152,6 +175,15 @@ describe("updateMiscueService", () => {
         data: expect.objectContaining({ totalMiscues: 1, oralFluencyScore: 90 }),
       }),
     );
+  });
+
+  it("recomputes oral reading level after updating fluency metrics", async () => {
+    mockPrisma.oralFluencyMiscue.findUnique.mockResolvedValue(baseMiscue);
+    setupTransactionWith([{ isSelfCorrected: false }], 10);
+
+    await updateMiscueService({ miscueId: "m-1", action: "delete" });
+
+    expect(mockCreateOralReadingService).toHaveBeenCalledWith("a-1");
   });
 
   it("returns INTERNAL_ERROR when the transaction throws", async () => {

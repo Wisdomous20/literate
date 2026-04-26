@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, type CSSProperties } from "react";
-import { Minus, Plus, Trash2, Loader2 } from "lucide-react";
+import { Minus, Plus, Trash2, Loader2, Pencil } from "lucide-react";
 import type { MiscueType } from "./useEditMiscues";
 
 // ─── Position helpers ───
@@ -332,6 +332,7 @@ interface MiscueActionPopoverProps {
   isLoading: boolean;
   onDelete: () => void;
   onChangeType: (newType: MiscueType) => void;
+  onUpdateSpokenWord?: (newSpokenWord: string) => void;
   onClose: () => void;
 }
 
@@ -341,9 +342,12 @@ export function MiscueActionPopover({
   isLoading,
   onDelete,
   onChangeType,
+  onUpdateSpokenWord,
   onClose,
 }: MiscueActionPopoverProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const [isEditingWord, setIsEditingWord] = useState(false);
+  const [wordValue, setWordValue] = useState(spokenWord ?? "");
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -355,7 +359,24 @@ export function MiscueActionPopover({
     return () => document.removeEventListener("mousedown", handler);
   }, [onClose]);
 
+  useEffect(() => {
+    setWordValue(spokenWord ?? "");
+    setIsEditingWord(false);
+  }, [spokenWord, miscueType]);
+
   const color = MISCUE_TEXT_COLORS[miscueType] || "#31318A";
+  const canEditSpokenWord = spokenWord != null && spokenWord.trim().length > 0;
+
+  const handleSubmitSpokenWord = () => {
+    const trimmed = wordValue.trim();
+    if (!trimmed || trimmed === spokenWord || !onUpdateSpokenWord) {
+      setIsEditingWord(false);
+      setWordValue(spokenWord ?? "");
+      return;
+    }
+
+    onUpdateSpokenWord(trimmed);
+  };
 
   return (
     <div
@@ -376,6 +397,69 @@ export function MiscueActionPopover({
           </div>
         )}
       </div>
+
+      {canEditSpokenWord && onUpdateSpokenWord && (
+        <div className="mb-2 rounded-md border border-[#D7E6FF] bg-[#F8FBFF] p-2">
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <span className="text-[10px] font-semibold text-[#31318A]/70">
+              Spoken word
+            </span>
+            {!isEditingWord && (
+              <button
+                type="button"
+                disabled={isLoading}
+                onClick={() => setIsEditingWord(true)}
+                className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold text-[#1A5FB4] hover:bg-[#EAF3FF] disabled:opacity-50"
+              >
+                <Pencil className="h-3 w-3" />
+                Edit
+              </button>
+            )}
+          </div>
+          {isEditingWord ? (
+            <>
+              <input
+                type="text"
+                value={wordValue}
+                onChange={(e) => setWordValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSubmitSpokenWord();
+                  if (e.key === "Escape") {
+                    setIsEditingWord(false);
+                    setWordValue(spokenWord ?? "");
+                  }
+                }}
+                className="mb-2 w-full rounded border border-[#54A4FF]/50 px-2 py-1 text-xs text-[#00306E] outline-none focus:border-[#6666FF]"
+              />
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  disabled={isLoading || wordValue.trim().length === 0}
+                  onClick={handleSubmitSpokenWord}
+                  className="flex-1 rounded bg-[#1A5FB4] px-2 py-1 text-[10px] font-bold text-white hover:brightness-110 disabled:opacity-50"
+                >
+                  Save word
+                </button>
+                <button
+                  type="button"
+                  disabled={isLoading}
+                  onClick={() => {
+                    setIsEditingWord(false);
+                    setWordValue(spokenWord ?? "");
+                  }}
+                  className="flex-1 rounded bg-gray-100 px-2 py-1 text-[10px] font-bold text-gray-600 hover:bg-gray-200 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="text-xs font-medium text-[#00306E]">
+              {spokenWord}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Permanent delete */}
       <div className="mb-2">

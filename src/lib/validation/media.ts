@@ -38,13 +38,19 @@ export const updateMiscueSchema = z
     miscueId: idString("miscueId"),
     action: z.enum(["approve", "delete", "update"]),
     newMiscueType: z.nativeEnum(MiscueType).optional(),
+    newSpokenWord: z.string().trim().min(1).optional(),
   })
   .superRefine((data, ctx) => {
-    if (data.action === "update" && !data.newMiscueType) {
+    if (
+      data.action === "update" &&
+      !data.newMiscueType &&
+      !data.newSpokenWord
+    ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["newMiscueType"],
-        message: "newMiscueType is required when action is 'update'.",
+        message:
+          "Either newMiscueType or newSpokenWord is required when action is 'update'.",
       });
     }
   });
