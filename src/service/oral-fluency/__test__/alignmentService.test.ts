@@ -82,4 +82,23 @@ describe("alignWords", () => {
     expect(result.map((w) => w.expected)).toEqual(["the", "quick", "fox"]);
     expect(result.every((w) => w.match === "EXACT")).toBe(true);
   });
+
+  it("does not create a false leading omission when repeated opening words can align in multiple places", () => {
+    const result = alignWords(
+      ["the", "the", "the", "the", "the", "cat"],
+      [
+        spoken("the", 0, 0.2),
+        spoken("the", 0.2, 0.4),
+        spoken("the", 0.4, 0.6),
+        spoken("the", 0.6, 0.8),
+        spoken("cat", 0.8, 1.0),
+        spoken("dog", 1.0, 1.2),
+      ],
+    );
+
+    expect(result[0].match).toBe("EXACT");
+    expect(result.filter((w) => w.match === "OMISSION")).toHaveLength(1);
+    expect(result.find((w) => w.match === "OMISSION")?.expected).toBe("the");
+    expect(result.at(-1)?.match).toBe("INSERTION");
+  });
 });
