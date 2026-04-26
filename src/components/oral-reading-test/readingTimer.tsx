@@ -240,7 +240,10 @@ export function ReadingTimer({
       : undefined;
 
   return (
-    <div className="flex flex-col items-center gap-2 py-2">
+    <div
+      data-tour-target="recording-controls"
+      className="flex flex-col items-center gap-2 py-2"
+    >
       {hasRecording && recordedAudioURL && (
         <AudioPlayer src={recordedAudioURL} externalAudioRef={audioRef} />
       )}
@@ -253,6 +256,7 @@ export function ReadingTimer({
         {!hasRecording && (
           <button
             type="button"
+            data-tour-target="start-reading-button"
             onClick={onStartReading}
             disabled={isDisabled}
             className={`flex items-center justify-center gap-2 rounded-3xl px-6 py-2.5 text-sm font-semibold text-white ... ${

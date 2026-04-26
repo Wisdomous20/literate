@@ -331,7 +331,10 @@ export function OralReadingNavRow({
         </div>
       )}
 
-      <div className="flex items-center gap-3 rounded-2xl border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#F3F0FF] px-4 py-2.5 shadow-[0px_2px_16px_rgba(108,164,239,0.18)]">
+      <div
+        data-tour-target="assessment-student-setup"
+        className="flex items-center gap-3 rounded-2xl border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#F3F0FF] px-4 py-2.5 shadow-[0px_2px_16px_rgba(108,164,239,0.18)]"
+      >
         {/* Back button */}
         <button
           type="button"
@@ -373,6 +376,7 @@ export function OralReadingNavRow({
               {showContinue && (
                 <button
                   type="button"
+                  data-tour-target="assessment-continue-button"
                   onClick={onContinue}
                   disabled={!continueEnabled}
                   className={`flex items-center gap-2 rounded-[20px] border-t border-l border-r-[3px] border-b-[3px] px-4 py-1.5 text-sm font-semibold transition-all ${
@@ -396,6 +400,7 @@ export function OralReadingNavRow({
 
               <button
                 type="button"
+                data-tour-target="assessment-clear-button"
                 onClick={onClear}
   className="ml-2 inline-flex items-center gap-1 rounded-full border-t border-l border-r-2 border-b-2 border-t-[#ed1a1a] border-l-[#F87171] border-r-[#F87171] border-b-[#F87171] bg-white px-4 py-1 text-xs font-normal text-[#DC2626] transition-colors hover:bg-[#FEF2F2] hover:border-[#DC2626]"
               >
@@ -624,6 +629,7 @@ export function OralReadingNavRow({
               </span>
           <button
   type="button"
+  data-tour-target="assessment-clear-button"
   onClick={onClear}
   className="ml-2 inline-flex items-center gap-1 rounded-full border-t border-l border-r-2 border-b-2 border-t-[#ed1a1a] border-l-[#F87171] border-r-[#F87171] border-b-[#F87171] bg-white px-4 py-1 text-xs font-normal text-[#DC2626] transition-colors hover:bg-[#FEF2F2] hover:border-[#DC2626]"
 >

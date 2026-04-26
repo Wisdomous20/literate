@@ -339,7 +339,10 @@ export default function ClassListsPage() {
 
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 flex-1">
-              <div className="flex items-center gap-2 flex-1 border border-[#6666FF] rounded-full px-4 py-2 bg-[#F8F9FF]">
+              <div
+                data-tour-target="class-search"
+                className="flex items-center gap-2 flex-1 border border-[#6666FF] rounded-full px-4 py-2 bg-[#F8F9FF]"
+              >
                 <Search className="h-4 w-4 text-[#6666FF]/70" />
                 <input
                   type="text"
@@ -350,6 +353,7 @@ export default function ClassListsPage() {
                 />
               </div>
               <button
+                data-tour-target="class-sort-button"
                 onClick={() => {
                   const options: (
                     | "nameAsc"
@@ -383,16 +387,21 @@ export default function ClassListsPage() {
             isCompact={true}
           />
 
-          <StudentTable
-            students={sortedStudents}
-            totalStudents={students.length}
-            studentAssessments={studentAssessments}
-            onDeleteStudent={handleDeleteStudent}
-            onUpdateStudent={handleUpdateStudent}
-          />
+          <div data-tour-target="student-table">
+            <StudentTable
+              students={sortedStudents}
+              totalStudents={students.length}
+              studentAssessments={studentAssessments}
+              onDeleteStudent={handleDeleteStudent}
+              onUpdateStudent={handleUpdateStudent}
+            />
+          </div>
         </div>
 
-        <div className="w-80 flex flex-col gap-4 self-start">
+        <div
+          data-tour-target="statistics-sidebar"
+          className="w-80 flex flex-col gap-4 self-start"
+        >
           <WelcomeBox assessmentType={assessmentType} />
           <StatisticsSidebar stats={stats} assessmentType={assessmentType} />
         </div>

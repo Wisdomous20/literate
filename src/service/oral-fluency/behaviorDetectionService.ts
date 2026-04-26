@@ -1,7 +1,6 @@
 import { AlignedWord, BehaviorResult } from "@/types/oral-reading";
 import { PitchAnalysis, isMonotonousPitch } from "./pitchAnalysisService";
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+import { FUNCTION_WORDS } from "./functionWords";
 
 function getTimedWords(alignedWords: AlignedWord[]) {
   return alignedWords.filter(
@@ -60,85 +59,7 @@ function detectWordByWordReading(
   return [];
 }
 
-// ─── Monotonous reading ───────────────────────────────────────────────────────
 
-const FUNCTION_WORDS = new Set([
-  "a",
-  "an",
-  "the",
-  "is",
-  "are",
-  "was",
-  "were",
-  "be",
-  "been",
-  "being",
-  "and",
-  "but",
-  "or",
-  "nor",
-  "for",
-  "so",
-  "yet",
-  "in",
-  "on",
-  "at",
-  "to",
-  "with",
-  "by",
-  "from",
-  "of",
-  "into",
-  "onto",
-  "upon",
-  "i",
-  "he",
-  "she",
-  "it",
-  "we",
-  "they",
-  "you",
-  "me",
-  "him",
-  "her",
-  "us",
-  "them",
-  "my",
-  "his",
-  "its",
-  "our",
-  "their",
-  "your",
-  "this",
-  "that",
-  "these",
-  "those",
-  "do",
-  "does",
-  "did",
-  "have",
-  "has",
-  "had",
-  "will",
-  "would",
-  "can",
-  "could",
-  "shall",
-  "should",
-  "may",
-  "might",
-  "must",
-  "ought",
-  "not",
-  "no",
-  "than",
-  "as",
-  "if",
-  "then",
-  "else",
-  "when",
-  "while",
-]);
 
 const SENTENCE_ENDING_RE = /[.!?]["'\u2019\u201D\)\]]*$/;
 
@@ -322,7 +243,7 @@ async function detectPunctuationDismissal(
 
   const pauseDismissed_ratio = pauseTotal > 0 ? pauseDismissed / pauseTotal : 0;
 
-  // ── Part 2: Pitch-based detection for ! and ? ───────────────────────────
+  // ── Part 2: Pitch-based detection for ! and ? 
   let pitchDismissed = 0;
   let pitchTotal = 0;
 
@@ -409,7 +330,6 @@ async function detectPunctuationDismissal(
     }
   }
 
-  // ── Decision ────────────────────────────────────────────────────────────
   const pauseFired = pauseTotal >= 3 && pauseDismissed_ratio > 0.5;
   const pitchFired =
     pitchTotal >= MIN_PITCH_PUNCT_OPPORTUNITIES &&
@@ -452,7 +372,6 @@ async function detectPunctuationDismissal(
   ];
 }
 
-// ─── Entry point ──────────────────────────────────────────────────────────────
 
 export async function detectBehaviors(
   alignedWords: AlignedWord[],

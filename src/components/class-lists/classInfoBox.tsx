@@ -25,7 +25,10 @@ export function ClassInfoBox({
 
   if (isCompact) {
     return (
-      <div className="flex items-center justify-between flex-1">
+      <div
+        data-tour-target="class-header"
+        className="flex items-center justify-between flex-1"
+      >
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.back()}
@@ -46,6 +49,7 @@ export function ClassInfoBox({
         </div>
 
         <button
+          data-tour-target="create-student-button"
           onClick={onCreateStudent}
           className="flex items-center gap-2 rounded-xl border border-[#7A7AFB] bg-linear-to-r from-[#6666FF] via-[#7270FF] to-[#7A7AFB] px-5 py-2.5 text-xs font-bold text-white shadow-[0_4px_16px_rgba(102,102,255,0.3)] transition-all hover:shadow-[0_8px_24px_rgba(102,102,255,0.4)] active:scale-95 whitespace-nowrap"
         >
@@ -80,6 +84,7 @@ export function ClassInfoBox({
         </div>
 
         <button
+          data-tour-target="create-student-button"
           onClick={onCreateStudent}
           className="flex items-center gap-2 rounded-xl border border-[#7A7AFB] bg-[#5D5DFB] px-5 py-2.5 text-sm font-bold text-white shadow-[0_4px_16px_rgba(102,102,255,0.3)] transition-all hover:shadow-[0_8px_24px_rgba(102,102,255,0.4)] active:scale-95"
         >

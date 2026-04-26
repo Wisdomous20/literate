@@ -46,14 +46,7 @@ function isMorphologicalVariant(a: string, b: string): boolean {
  * sounds similar to the expected passage word. If it does, correct the
  * spoken word to the passage word (making it EXACT).
  *
- * This is the approach you asked for:
- *   1. Alignment pairs spoken "these" with passage "this" as MISMATCH
- *   2. We ask: does "these" sound like "this"? (CMU dict says yes, sim=0.8)
- *   3. If yes → change spoken word to "this", mark as EXACT
- *
  * It scales to any passage with zero maintenance because it uses the CMU
- * dictionary (134,000 words) to compare actual pronunciation, not a
- * hand-maintained list.
  *
  * Returns a new aligned words array with corrections applied.
  */

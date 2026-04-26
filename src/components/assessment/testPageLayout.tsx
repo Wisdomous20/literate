@@ -42,6 +42,7 @@ export function TestPageLayout({
       <main className="flex min-h-0 flex-1 px-4 py-4 md:px-6 lg:px-8">
         <div className="flex min-h-0 flex-1 gap-4">
           <div
+            data-tour-target="assessment-workspace"
             className={`flex min-h-0 flex-1 flex-col overflow-y-auto rounded-2xl border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-white shadow-[0_8px_32px_rgba(168,85,247,0.18)] ${
               passageExpanded ? "gap-0 p-2" : "gap-3 p-5"
             }`}
@@ -50,7 +51,10 @@ export function TestPageLayout({
           </div>
 
           {sidebar && (
-            <div className="w-60 shrink-0 md:w-67.5 lg:w-75 xl:w-[320px]">
+            <div
+              data-tour-target="assessment-sidebar"
+              className="w-60 shrink-0 md:w-67.5 lg:w-75 xl:w-[320px]"
+            >
               {sidebar}
             </div>
           )}
