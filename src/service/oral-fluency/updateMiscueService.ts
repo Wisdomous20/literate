@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { MiscueType, LevelClassification } from "@/generated/prisma/enums";
+import { createOralReadingService } from "@/service/oral-reading/createOralReadingService";
 
 
 function computeOralFluencyScore(
@@ -85,6 +86,7 @@ export async function updateMiscueService(
   }
 
   const sessionId = miscue.sessionId;
+  const assessmentId = miscue.session?.assessmentId;
 
   try {
     // 2. Perform the action + recalculate in a single transaction
@@ -144,6 +146,16 @@ export async function updateMiscueService(
         accuracy,
       };
     });
+
+    if (assessmentId) {
+      const oralReadingResult = await createOralReadingService(assessmentId);
+      if (!oralReadingResult.success) {
+        console.log(
+          "[updateMiscueService] Oral reading level not recomputed:",
+          oralReadingResult.error,
+        );
+      }
+    }
 
     return { success: true, updatedMetrics };
   } catch (err) {

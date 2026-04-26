@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect, useCallback, Fragment } from "react";
-import { X, Play, Trash2 } from "lucide-react";
+import { X, Play, Trash2, Pencil, Loader2 } from "lucide-react";
 import type { MiscueResult, AlignedWord } from "@/types/oral-reading";
 import { getPassageTextStyle } from "@/components/oral-reading-test/passageDisplay";
+import { MiscueActionPopover } from "@/components/oral-reading-test/miscueEditPopover";
 import { normalizeWord } from "@/utils/textUtils";
 
 const MISCUE_CONFIG = [
@@ -121,6 +122,10 @@ interface ViewMiscuesModalProps {
   alignedWords?: AlignedWord[];
   passageLevel?: string;
   onDeleteMiscue?: (miscue: MiscueResult) => Promise<void>;
+  onUpdateMiscueType?: (
+    miscue: MiscueResult,
+    newType: MiscueResult["miscueType"],
+  ) => Promise<void>;
 }
 
 export default function ViewMiscuesModal({
@@ -131,6 +136,7 @@ export default function ViewMiscuesModal({
   alignedWords,
   passageLevel,
   onDeleteMiscue,
+  onUpdateMiscueType,
 }: ViewMiscuesModalProps) {
   const [highlightedTypes, setHighlightedTypes] = useState<Set<string>>(
     new Set(),
@@ -138,6 +144,7 @@ export default function ViewMiscuesModal({
   const [activeTab, setActiveTab] = useState<"passage" | "list">("passage");
   const [showMiscues, setShowMiscues] = useState(true);
   const [popup, setPopup] = useState<PopupState | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -356,8 +363,40 @@ export default function ViewMiscuesModal({
       setActiveTab("passage");
       setShowMiscues(true);
       setPopup(null);
+      setActionLoading(false);
     }
   }, [open]);
+
+  const openMiscuePopup = useCallback((anchorEl: HTMLElement, miscue: MiscueResult) => {
+    const rect = anchorEl.getBoundingClientRect();
+    const container = containerRef.current;
+    if (!container) return;
+    const containerRect = container.getBoundingClientRect();
+    const xPos =
+      rect.left - containerRect.left + rect.width / 2 + container.scrollLeft;
+    const yAbove = rect.top - containerRect.top + container.scrollTop - 4;
+    const yBelow = rect.bottom - containerRect.top + container.scrollTop + 4;
+    const spaceAbove = rect.top - containerRect.top;
+    const flip = spaceAbove < 95;
+
+    const popupHalfWidth = 112;
+    const spaceLeft = rect.left - containerRect.left + rect.width / 2;
+    const spaceRight = containerRect.right - rect.left - rect.width / 2;
+    let hAlign: "center" | "left" | "right" = "center";
+    if (spaceLeft < popupHalfWidth) {
+      hAlign = "left";
+    } else if (spaceRight < popupHalfWidth) {
+      hAlign = "right";
+    }
+
+    setPopup({
+      miscue,
+      x: xPos,
+      y: flip ? yBelow : yAbove,
+      flipped: flip,
+      hAlign,
+    });
+  }, []);
 
   const getMiscueConfig = (miscueType: string) =>
     MISCUE_CONFIG.find((c) => c.key === miscueType) ?? MISCUE_CONFIG[0];
@@ -438,41 +477,7 @@ export default function ViewMiscuesModal({
             title={getMiscueTitle(miscue, hasTimestamp)}
             className={`relative inline-block rounded-sm px-0.5 font-semibold transition-all ${cfg.colorClass} ${cfg.textClass} ${cfg.borderBottomClass} cursor-pointer hover:brightness-90`}
             onClick={(e) => {
-              const rect = (e.target as HTMLElement).getBoundingClientRect();
-              const container = containerRef.current;
-              if (!container) return;
-              const containerRect = container.getBoundingClientRect();
-              const xPos =
-                rect.left -
-                containerRect.left +
-                rect.width / 2 +
-                container.scrollLeft;
-              const yAbove =
-                rect.top - containerRect.top + container.scrollTop - 4;
-              const yBelow =
-                rect.bottom - containerRect.top + container.scrollTop + 4;
-              const spaceAbove = rect.top - containerRect.top;
-              const flip = spaceAbove < 95;
-
-              const popupHalfWidth = 90;
-              const spaceLeft =
-                rect.left - containerRect.left + rect.width / 2;
-              const spaceRight =
-                containerRect.right - rect.left - rect.width / 2;
-              let hAlign: "center" | "left" | "right" = "center";
-              if (spaceLeft < popupHalfWidth) {
-                hAlign = "left";
-              } else if (spaceRight < popupHalfWidth) {
-                hAlign = "right";
-              }
-
-              setPopup({
-                miscue,
-                x: xPos,
-                y: flip ? yBelow : yAbove,
-                flipped: flip,
-                hAlign,
-              });
+              openMiscuePopup(e.currentTarget, miscue);
             }}
           >
             {token}
@@ -501,41 +506,7 @@ export default function ViewMiscuesModal({
                   title={`${label}${hasTs ? " (click for details)" : ""}`}
                   className={`relative inline-block rounded-sm px-0.5 font-semibold italic transition-all ${insCfg.colorClass} ${insCfg.textClass} border-b-2 border-dashed ${insCfg.borderBottomClass.replace("border-b-2 ", "")} cursor-pointer hover:brightness-90`}
                   onClick={(e) => {
-                    const rect = (e.target as HTMLElement).getBoundingClientRect();
-                    const container = containerRef.current;
-                    if (!container) return;
-                    const containerRect = container.getBoundingClientRect();
-                    const xPos =
-                      rect.left -
-                      containerRect.left +
-                      rect.width / 2 +
-                      container.scrollLeft;
-                    const yAbove =
-                      rect.top - containerRect.top + container.scrollTop - 4;
-                    const yBelow =
-                      rect.bottom - containerRect.top + container.scrollTop + 4;
-                    const spaceAbove = rect.top - containerRect.top;
-                    const flip = spaceAbove < 95;
-
-                    const popupHalfWidth = 90;
-                    const spaceLeft =
-                      rect.left - containerRect.left + rect.width / 2;
-                    const spaceRight =
-                      containerRect.right - rect.left - rect.width / 2;
-                    let hAlign: "center" | "left" | "right" = "center";
-                    if (spaceLeft < popupHalfWidth) {
-                      hAlign = "left";
-                    } else if (spaceRight < popupHalfWidth) {
-                      hAlign = "right";
-                    }
-
-                    setPopup({
-                      miscue: ins.miscue,
-                      x: xPos,
-                      y: flip ? yBelow : yAbove,
-                      flipped: flip,
-                      hAlign,
-                    });
+                    openMiscuePopup(e.currentTarget, ins.miscue);
                   }}
                 >
                   {ins.spokenWord}
@@ -595,15 +566,41 @@ export default function ViewMiscuesModal({
                   </div>
                 )}
                 {onDeleteMiscue && (
-                  <button
-                    type="button"
-                    onClick={() => void onDeleteMiscue(miscue)}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#FFD7D7] bg-[#FFF6F6] text-[#C75A5A] transition-colors hover:bg-[#FFEAEA]"
-                    aria-label={`Delete ${config.label.toLowerCase()} miscue`}
-                    title="Delete miscue"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {onUpdateMiscueType && (
+                      <button
+                        type="button"
+                        onClick={(e) => openMiscuePopup(e.currentTarget, miscue)}
+                        className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#D7E6FF] bg-[#F8FBFF] px-2.5 text-[#1A5FB4] transition-colors hover:bg-[#EDF5FF]"
+                        aria-label={`Edit ${config.label.toLowerCase()} miscue`}
+                        title="Edit miscue"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        <span className="text-[11px] font-semibold">Edit</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setActionLoading(true);
+                        try {
+                          await onDeleteMiscue(miscue);
+                        } finally {
+                          setActionLoading(false);
+                        }
+                      }}
+                      disabled={actionLoading}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#FFD7D7] bg-[#FFF6F6] text-[#C75A5A] transition-colors hover:bg-[#FFEAEA] disabled:opacity-50"
+                      aria-label={`Delete ${config.label.toLowerCase()} miscue`}
+                      title="Delete miscue"
+                    >
+                      {actionLoading ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -762,35 +759,68 @@ export default function ViewMiscuesModal({
                     />
                   )}
 
-                  <div
-                    className={`rounded-lg border bg-white px-3 py-2 shadow-[0_4px_16px_rgba(0,0,0,0.12)] ${cfg.popupBorderClass}`}
-                  >
-                    <div className="mb-1 text-center">
-                      <span
-                        className={`text-[10px] font-bold uppercase tracking-wide ${cfg.textClass}`}
-                      >
-                        {popup.miscue.miscueType.replace(/_/g, " ")}
-                      </span>
-                      {popup.miscue.miscueType === "REPETITION" &&
-                        getRepetitionWord(popup.miscue) && (
-                        <div className="text-[10px] text-[#31318A]/70">
-                          Repeated word: &ldquo;{getRepetitionWord(popup.miscue)}&rdquo;
-                        </div>
-                      )}
-                      {popup.miscue.miscueType !== "REPETITION" &&
-                        popup.miscue.spokenWord && (
-                        <div className="text-[10px] text-[#31318A]/70">
-                          Spoken: &ldquo;{popup.miscue.spokenWord}&rdquo;
-                        </div>
-                      )}
-                      {hasTimestamp && (
-                        <div className="mt-1 flex items-center justify-center gap-1 text-[10px] text-[#31318A]/50">
-                          <Play className="h-2.5 w-2.5" />
-                          {formatTimestamp(popup.miscue.timestamp!)}
-                        </div>
-                      )}
+                  {onDeleteMiscue || onUpdateMiscueType ? (
+                    <MiscueActionPopover
+                      miscueType={popup.miscue.miscueType}
+                      spokenWord={
+                        popup.miscue.miscueType === "REPETITION"
+                          ? getRepetitionWord(popup.miscue)
+                          : popup.miscue.spokenWord
+                      }
+                      isLoading={actionLoading}
+                      onDelete={async () => {
+                        if (!onDeleteMiscue) return;
+                        setActionLoading(true);
+                        try {
+                          await onDeleteMiscue(popup.miscue);
+                          setPopup(null);
+                        } finally {
+                          setActionLoading(false);
+                        }
+                      }}
+                      onChangeType={async (newType) => {
+                        if (!onUpdateMiscueType) return;
+                        setActionLoading(true);
+                        try {
+                          await onUpdateMiscueType(popup.miscue, newType);
+                          setPopup(null);
+                        } finally {
+                          setActionLoading(false);
+                        }
+                      }}
+                      onClose={() => setPopup(null)}
+                    />
+                  ) : (
+                    <div
+                      className={`rounded-lg border bg-white px-3 py-2 shadow-[0_4px_16px_rgba(0,0,0,0.12)] ${cfg.popupBorderClass}`}
+                    >
+                      <div className="mb-1 text-center">
+                        <span
+                          className={`text-[10px] font-bold uppercase tracking-wide ${cfg.textClass}`}
+                        >
+                          {popup.miscue.miscueType.replace(/_/g, " ")}
+                        </span>
+                        {popup.miscue.miscueType === "REPETITION" &&
+                          getRepetitionWord(popup.miscue) && (
+                          <div className="text-[10px] text-[#31318A]/70">
+                            Repeated word: &ldquo;{getRepetitionWord(popup.miscue)}&rdquo;
+                          </div>
+                        )}
+                        {popup.miscue.miscueType !== "REPETITION" &&
+                          popup.miscue.spokenWord && (
+                          <div className="text-[10px] text-[#31318A]/70">
+                            Spoken: &ldquo;{popup.miscue.spokenWord}&rdquo;
+                          </div>
+                        )}
+                        {hasTimestamp && (
+                          <div className="mt-1 flex items-center justify-center gap-1 text-[10px] text-[#31318A]/50">
+                            <Play className="h-2.5 w-2.5" />
+                            {formatTimestamp(popup.miscue.timestamp!)}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {!popup.flipped && (
                     <div

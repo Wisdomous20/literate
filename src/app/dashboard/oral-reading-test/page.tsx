@@ -28,6 +28,11 @@ import {
 import { useEditMiscues } from "@/components/oral-reading-test/useEditMiscues";
 import { fetchOralFluencyMiscues } from "@/app/actions/oral-fluency/getMiscues";
 import { updateMiscueAction } from "@/app/actions/oral-fluency/updateMiscue";
+import {
+  findMatchingDbMiscue,
+  removeFirstMatchingMiscue,
+  updateFirstMatchingMiscueType,
+} from "@/lib/miscueEditing";
 
 function getCurrentSchoolYear(): string {
   const now = new Date();
@@ -346,30 +351,23 @@ export default function OralReadingTestPage() {
       if (!sessionId) return;
       const dbResult = await fetchOralFluencyMiscues(sessionId);
       if (!dbResult.success || !dbResult.data) return;
-      const match = dbResult.data.find(
-        (m) =>
-          m.wordIndex === miscue.wordIndex &&
-          m.miscueType === miscue.miscueType &&
-          m.expectedWord === miscue.expectedWord,
-      );
+      const match = findMatchingDbMiscue(dbResult.data, miscue);
       if (!match?.id) return;
       const result = await updateMiscueAction({
         miscueId: match.id,
         action: "delete",
       });
       if (!result.success) return;
+      const sourceMiscues = editMiscues.isEditing
+        ? editMiscues.editedMiscues
+        : analysisResult?.miscues ?? [];
+      const nextMiscues = removeFirstMatchingMiscue(sourceMiscues, miscue);
+      editMiscues.applyExternalMiscues(nextMiscues);
       setAnalysisResult((prev) => {
         if (!prev) return prev;
         const updated = {
           ...prev,
-          miscues: prev.miscues.filter(
-            (m) =>
-              !(
-                m.wordIndex === miscue.wordIndex &&
-                m.miscueType === miscue.miscueType &&
-                m.expectedWord === miscue.expectedWord
-              ),
-          ),
+          miscues: removeFirstMatchingMiscue(prev.miscues, miscue),
           totalMiscues: result.updatedMetrics!.totalMiscues,
           oralFluencyScore: result.updatedMetrics!.oralFluencyScore,
           classificationLevel: result.updatedMetrics!
@@ -400,12 +398,7 @@ export default function OralReadingTestPage() {
       if (!sessionId) return;
       const dbResult = await fetchOralFluencyMiscues(sessionId);
       if (!dbResult.success || !dbResult.data) return;
-      const match = dbResult.data.find(
-        (m) =>
-          m.wordIndex === miscue.wordIndex &&
-          m.miscueType === miscue.miscueType &&
-          m.expectedWord === miscue.expectedWord,
-      );
+      const match = findMatchingDbMiscue(dbResult.data, miscue);
       if (!match?.id) return;
       const result = await updateMiscueAction({
         miscueId: match.id,
@@ -413,17 +406,20 @@ export default function OralReadingTestPage() {
         newMiscueType: newType,
       });
       if (!result.success) return;
+      const sourceMiscues = editMiscues.isEditing
+        ? editMiscues.editedMiscues
+        : analysisResult?.miscues ?? [];
+      const nextMiscues = updateFirstMatchingMiscueType(
+        sourceMiscues,
+        miscue,
+        newType,
+      );
+      editMiscues.applyExternalMiscues(nextMiscues);
       setAnalysisResult((prev) => {
         if (!prev) return prev;
         const updated = {
           ...prev,
-          miscues: prev.miscues.map((m) =>
-            m.wordIndex === miscue.wordIndex &&
-            m.miscueType === miscue.miscueType &&
-            m.expectedWord === miscue.expectedWord
-              ? { ...m, miscueType: newType }
-              : m,
-          ),
+          miscues: updateFirstMatchingMiscueType(prev.miscues, miscue, newType),
           totalMiscues: result.updatedMetrics!.totalMiscues,
           oralFluencyScore: result.updatedMetrics!.oralFluencyScore,
           classificationLevel: result.updatedMetrics!
@@ -446,7 +442,7 @@ export default function OralReadingTestPage() {
         return updated;
       });
     },
-    [sessionId],
+    [sessionId, editMiscues, analysisResult?.miscues],
   );
 
   // ── Session restore ──

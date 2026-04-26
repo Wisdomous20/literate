@@ -161,9 +161,11 @@ export interface EditModeCallbacks {
   undoStack: { miscues: EditableMiscueResult[] }[];
   redoStack: { miscues: EditableMiscueResult[] }[];
   isSaving: boolean;
+  hasUnsavedChanges: boolean;
   setActiveTool: (tool: EditTool) => void;
   enterEditMode: () => void;
   cancelEdit: () => void;
+  closeEdit: () => boolean;
   resetAll: () => void;
   saveEdit: () => Promise<void>;
   undo: () => void;
@@ -656,6 +658,10 @@ export function PassageDisplay({
       // Edit mode word click handler — tool-based word interaction
       const handleEditClick = (e: React.MouseEvent) => {
         if (!editMode || !isEditing) return;
+        if (!editMode.activeTool && miscue) {
+          openPopup(e, miscue);
+          return;
+        }
         const result = editMode.handleWordClick(currentWordIndex, token);
         if (result?.action === "needsText") {
           setTextPopover({
@@ -760,11 +766,19 @@ export function PassageDisplay({
                 <span
                   title={`${label}${hasTs ? " (click to jump)" : ""}`}
                   className={`relative inline-block rounded-sm px-0.5 font-semibold italic transition-all ${colors.bgClass} ${colors.textClass} border-b-2 border-dashed ${colors.borderBottomClass.replace("border-b-2 ", "")} ${
-                    hasTs && onJumpToTime
+                    isEditing || (hasTs && onJumpToTime)
                       ? "cursor-pointer hover:brightness-90"
                       : "cursor-help"
                   }`}
-                  onClick={(e) => openPopup(e, ins.miscue)}
+                  onClick={(e) => {
+                    if (isEditing) {
+                      if (!editMode?.activeTool) {
+                        openPopup(e, ins.miscue);
+                      }
+                      return;
+                    }
+                    openPopup(e, ins.miscue);
+                  }}
                 >
                   {ins.spokenWord}
                 </span>
@@ -783,6 +797,11 @@ export function PassageDisplay({
                       ? "cursor-pointer hover:brightness-90"
                       : "cursor-help"
                   }`}
+                  onClick={(e) => {
+                    if (isEditing && !editMode?.activeTool) {
+                      openPopup(e, ins);
+                    }
+                  }}
                   onContextMenu={
                     isEditing
                       ? (e) => {
@@ -928,9 +947,10 @@ export function PassageDisplay({
           onUndo={editMode.undo}
           onRedo={editMode.redo}
           onSave={editMode.saveEdit}
-          onCancel={editMode.cancelEdit}
+          onCancel={editMode.closeEdit}
           onResetAll={editMode.resetAll}
           isSaving={editMode.isSaving}
+          hasUnsavedChanges={editMode.hasUnsavedChanges}
           transpositionFirst={editMode.transpositionFirst}
         />
       )}
@@ -967,7 +987,8 @@ export function PassageDisplay({
             const hasTimestamp =
               popup.miscue.timestamp !== null &&
               popup.miscue.timestamp !== undefined;
-            const hasActions = !!(onDeleteMiscue || onUpdateMiscueType);
+            const hasActions =
+              isEditing && !!(onDeleteMiscue || onUpdateMiscueType);
 
             return (
               <div

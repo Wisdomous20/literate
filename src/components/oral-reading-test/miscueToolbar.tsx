@@ -109,6 +109,7 @@ interface MiscueToolbarProps {
   onCancel: () => void;
   onResetAll: () => void;
   isSaving: boolean;
+  hasUnsavedChanges: boolean;
   transpositionFirst: number | null;
 }
 
@@ -125,6 +126,7 @@ export function MiscueToolbar({
   onCancel,
   onResetAll,
   isSaving,
+  hasUnsavedChanges,
   transpositionFirst,
 }: MiscueToolbarProps) {
   const activeConfig = TOOL_CONFIG.find((t) => t.type === activeTool);
@@ -205,7 +207,11 @@ export function MiscueToolbar({
         <button
           type="button"
           onClick={onCancel}
-          title="Close editing"
+          title={
+            hasUnsavedChanges
+              ? "Close editing with unsaved changes"
+              : "Close editing"
+          }
           className="flex shrink-0 items-center gap-1 rounded-md bg-[#C41048]/10 px-2.5 py-1 text-[11px] font-bold text-[#C41048] transition-colors hover:bg-[#C41048]/20"
         >
           <X className="h-3.5 w-3.5" />
