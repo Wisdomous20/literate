@@ -181,6 +181,64 @@ const tourStepsBySurface: Record<string, TourStep[]> = {
       next: "Use these counts to plan follow-up assessment or instruction.",
     },
   ],
+  organization: [
+    {
+      selector: '[data-tour-target="org-hero"]',
+      title: "Organization overview",
+      body: "This top area summarizes the workspace, including available seats, disabled accounts, and total member records.",
+      next: "Check this before inviting members so you know whether the organization has room.",
+    },
+    {
+      selector: '[data-tour-target="org-summary"]',
+      title: "Organization details",
+      body: "This card shows the organization name, current plan, workspace ID, and seat limit.",
+      next: "Use it as the reference point for workspace identity and capacity.",
+    },
+    {
+      selector: '[data-tour-target="org-rename-button"]',
+      title: "Rename organization",
+      body: "This button lets you edit the organization name when it needs to match your school, team, or branch.",
+      next: "After saving, the updated name appears across the organization workspace.",
+    },
+    {
+      selector: '[data-tour-target="org-invite-card"]',
+      title: "Invite member",
+      body: "Use this form to add a member by first name, last name, and email.",
+      next: "When you send the invite, the member receives a link and the organization refreshes.",
+    },
+    {
+      selector: '[data-tour-target="org-members-card"]',
+      title: "Members directory",
+      body: "This list shows organization members, account status, and member metadata.",
+      next: "Review this area when you need to audit access or support a member.",
+    },
+    {
+      selector: '[data-tour-target="org-member-actions"]',
+      title: "Member actions",
+      body: "These buttons generate passwords, set custom passwords, or enable and disable member access.",
+      next: "Use them carefully because they affect how members sign in and access the workspace.",
+    },
+  ],
+  settings: [
+    {
+      selector: '[data-tour-target="settings-profile"]',
+      title: "Profile settings",
+      body: "This card lets you update the name shown in your teacher account.",
+      next: "Save changes here when your display name needs to be corrected.",
+    },
+    {
+      selector: '[data-tour-target="settings-password"]',
+      title: "Password settings",
+      body: "This card starts the password-change flow and sends an email verification code before the change is applied.",
+      next: "Use it when you need to rotate your password securely.",
+    },
+    {
+      selector: '[data-tour-target="settings-subscription"]',
+      title: "Subscription settings",
+      body: "This card shows your current plan, status, seats, billing period, and subscription actions.",
+      next: "Use it to change plans or stop renewal when those options are available.",
+    },
+  ],
 };
 
 function getTourStorageKey(userId: string, surfaceId: string) {
@@ -209,20 +267,53 @@ function getTooltipPosition(rect: TourRect | null) {
     };
   }
 
-  const preferredTop = rect.top + rect.height + 18;
-  const top =
-    preferredTop + 270 < window.innerHeight
-      ? preferredTop
-      : Math.max(18, rect.top - 288);
+  const tooltipWidth = 380;
+  const tooltipHeight = 360;
+  const gap = 24;
+  const margin = 18;
+  const spaceRight = window.innerWidth - (rect.left + rect.width);
+  const spaceLeft = rect.left;
+  const spaceBottom = window.innerHeight - (rect.top + rect.height);
 
-  const left = Math.min(
-    Math.max(18, rect.left + rect.width / 2 - 190),
-    window.innerWidth - 398,
-  );
+  if (spaceRight >= tooltipWidth + gap) {
+    return {
+      top: `${Math.min(
+        Math.max(margin, rect.top + rect.height / 2 - tooltipHeight / 2),
+        window.innerHeight - tooltipHeight - margin,
+      )}px`,
+      left: `${rect.left + rect.width + gap}px`,
+      transform: "none",
+    };
+  }
+
+  if (spaceLeft >= tooltipWidth + gap) {
+    return {
+      top: `${Math.min(
+        Math.max(margin, rect.top + rect.height / 2 - tooltipHeight / 2),
+        window.innerHeight - tooltipHeight - margin,
+      )}px`,
+      left: `${rect.left - tooltipWidth - gap}px`,
+      transform: "none",
+    };
+  }
+
+  if (spaceBottom >= tooltipHeight + gap) {
+    return {
+      top: `${rect.top + rect.height + gap}px`,
+      left: `${Math.min(
+        Math.max(margin, rect.left + rect.width / 2 - tooltipWidth / 2),
+        window.innerWidth - tooltipWidth - margin,
+      )}px`,
+      transform: "none",
+    };
+  }
 
   return {
-    top: `${top}px`,
-    left: `${left}px`,
+    top: `${Math.max(margin, rect.top - tooltipHeight - gap)}px`,
+    left: `${Math.min(
+      Math.max(margin, rect.left + rect.width / 2 - tooltipWidth / 2),
+      window.innerWidth - tooltipWidth - margin,
+    )}px`,
     transform: "none",
   };
 }
@@ -376,7 +467,7 @@ export function OnboardingTour() {
                 style={{ top: targetRect.top + targetRect.height, right: 0, bottom: 0 }}
               />
               <div
-                className="absolute rounded-3xl border-2 border-[#FFE174] shadow-[0_0_0_6px_rgba(255,225,116,0.22),0_20px_50px_rgba(0,0,0,0.28)]"
+                className="absolute rounded-3xl border-2 border-[#9B8CFF] shadow-[0_0_0_6px_rgba(102,102,255,0.24),0_20px_50px_rgba(0,0,0,0.28)]"
                 style={targetRect}
               />
             </>
@@ -413,17 +504,20 @@ export function OnboardingTour() {
               </button>
             </div>
 
-            <div className="mt-4 rounded-2xl bg-[#F8F9FF] p-4">
-              <p className="text-sm leading-6 text-[#00306E]/78">
+            <div className="mt-4 rounded-2xl border border-[#D7F3E3] bg-[#F3FFF8] p-4 shadow-[inset_4px_0_0_#1E9E59]">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1E9E59]">
+                What this button does
+              </p>
+              <p className="mt-2 text-[15px] font-semibold leading-6 text-[#0F5132]">
                 {activeStep.body}
               </p>
             </div>
 
-            <div className="mt-3 rounded-2xl border border-[#D7F3E3] bg-[#F3FFF8] p-4">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1E9E59]">
+            <div className="mt-3 px-1">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#6B7DB3]">
                 What happens next
               </p>
-              <p className="mt-2 text-sm leading-5 text-[#00306E]/75">
+              <p className="mt-1 text-xs font-medium leading-5 text-[#00306E]/58">
                 {activeStep.next}
               </p>
             </div>

@@ -40,7 +40,10 @@ export function OrgSummaryCard({ onRenamed, org }: OrgSummaryCardProps) {
   }
 
   return (
-    <section className="overflow-hidden rounded-[32px] border border-[rgba(102,102,255,0.18)] bg-white shadow-[0_24px_64px_rgba(15,23,88,0.09)]">
+    <section
+      data-tour-target="org-summary"
+      className="overflow-hidden rounded-[32px] border border-[rgba(102,102,255,0.18)] bg-white shadow-[0_24px_64px_rgba(15,23,88,0.09)]"
+    >
       <div className="border-b border-[rgba(102,102,255,0.12)] bg-white px-6 py-6 sm:px-7 sm:py-7">
         <div className="flex items-start gap-4">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] bg-[#5D5DFB] shadow-[0_16px_32px_rgba(93,93,251,0.22)]">
@@ -93,6 +96,7 @@ export function OrgSummaryCard({ onRenamed, org }: OrgSummaryCardProps) {
                 </h2>
                 <button
                   type="button"
+                  data-tour-target="org-rename-button"
                   onClick={() => setEditing(true)}
                   aria-label="Rename organization"
                   title="Rename"

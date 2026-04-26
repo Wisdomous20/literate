@@ -15,7 +15,10 @@ export function OrganizationHero({
   seatsRemaining,
 }: OrganizationHeroProps) {
   return (
-    <section className="overflow-hidden rounded-[32px] border border-[rgba(102,102,255,0.12)] bg-[linear-gradient(135deg,#FFFFFF_0%,#F6F8FF_52%,#EEF2FF_100%)] shadow-[0_22px_60px_rgba(15,23,88,0.08)]">
+    <section
+      data-tour-target="org-hero"
+      className="overflow-hidden rounded-[32px] border border-[rgba(102,102,255,0.12)] bg-[linear-gradient(135deg,#FFFFFF_0%,#F6F8FF_52%,#EEF2FF_100%)] shadow-[0_22px_60px_rgba(15,23,88,0.08)]"
+    >
       <div className="grid gap-8 px-6 py-6 sm:px-7 sm:py-7 xl:grid-cols-[minmax(0,1.28fr)_360px] xl:items-end">
         <div className="flex items-start gap-5">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[24px] bg-[#5D5DFB] shadow-[0_18px_32px_rgba(93,93,251,0.24)]">

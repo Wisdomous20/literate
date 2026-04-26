@@ -38,6 +38,7 @@ export function CreateOrgPanel({ onCreated }: { onCreated: () => void }) {
   return (
     <main className="flex flex-1 items-center justify-center bg-[radial-gradient(circle_at_top_left,rgba(102,102,255,0.14),transparent_25%),linear-gradient(180deg,#F8F9FF_0%,#EEF3FF_100%)] px-6 py-12">
       <form
+        data-tour-target="org-create-panel"
         onSubmit={handleSubmit}
         className="w-full max-w-xl rounded-[32px] border border-[rgba(102,102,255,0.14)] bg-[linear-gradient(180deg,#FFFFFF_0%,#F8FAFF_100%)] p-8 shadow-[0_24px_64px_rgba(12,26,109,0.1)]"
       >
@@ -77,6 +78,7 @@ export function CreateOrgPanel({ onCreated }: { onCreated: () => void }) {
 
         <button
           type="submit"
+          data-tour-target="org-create-button"
           disabled={!name.trim() || submitting}
           className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#5D5DFB] px-4 text-sm font-bold text-white transition hover:bg-[#4D4DEA] disabled:cursor-not-allowed disabled:opacity-50"
         >

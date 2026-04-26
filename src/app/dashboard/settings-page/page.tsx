@@ -11,11 +11,8 @@ import {
   Loader2,
   AlertCircle,
   X,
-  FileText,
-  BookOpen,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
-import { useSettings } from "@/context/settingsContext";
 import { updateProfileAction } from "@/app/actions/auth/updateProfile";
 import {
   requestPasswordChangeAction,
@@ -49,15 +46,18 @@ function SectionCard({
   icon,
   children,
   className = "",
+  dataTourTarget,
 }: {
   title: string;
   description?: string;
   icon: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  dataTourTarget?: string;
 }) {
   return (
     <section
+      data-tour-target={dataTourTarget}
       className={`rounded-3xl border border-[rgba(0,48,110,0.08)] bg-white px-5 py-5 shadow-[0_10px_30px_rgba(12,26,109,0.05)] sm:px-6 sm:py-6 ${className}`}
     >
       <div className="mb-5 flex items-start gap-3">
@@ -158,6 +158,7 @@ function ProfileSection() {
       description="Update your display name"
       icon={<UserIcon className="h-4 w-4 text-white" />}
       className="h-full"
+      dataTourTarget="settings-profile"
     >
       {error && <Banner kind="error" message={error} onClose={() => setError(null)} />}
       {success && (
@@ -290,6 +291,7 @@ function PasswordSection() {
       description="We'll email a 6-digit code to confirm the change"
       icon={<Lock className="h-4 w-4 text-white" />}
       className="h-full"
+      dataTourTarget="settings-password"
     >
       {error && <Banner kind="error" message={error} onClose={() => setError(null)} />}
       {success && (
@@ -487,6 +489,7 @@ function SubscriptionSection() {
       description="View and manage your plan"
       icon={<CreditCard className="h-4 w-4 text-white" />}
       className="h-full"
+      dataTourTarget="settings-subscription"
     >
       {error && <Banner kind="error" message={error} onClose={() => setError(null)} />}
       {success && (
@@ -574,116 +577,7 @@ function SubscriptionSection() {
   );
 }
 
-interface ToggleRowProps {
-  icon: React.ReactNode;
-  label: string;
-  description: string;
-  enabled: boolean;
-  onToggle: () => void;
-  statusLabel?: string;
-}
-
-function ToggleRow({
-  icon,
-  label,
-  description,
-  enabled,
-  onToggle,
-  statusLabel,
-}: ToggleRowProps) {
-  return (
-    <div
-      className={`flex flex-col gap-4 rounded-2xl border px-5 py-4 transition-all duration-200 sm:flex-row sm:items-center sm:justify-between ${
-        enabled
-          ? "border-[rgba(102,102,255,0.24)] bg-[rgba(102,102,255,0.06)]"
-          : "border-[rgba(0,48,110,0.08)] bg-[#FCFCFF]"
-      }`}
-    >
-      <div className="flex items-start gap-4">
-        <div
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition-colors duration-200 ${
-            enabled
-              ? "bg-[rgba(102,102,255,0.14)]"
-              : "bg-[rgba(0,48,110,0.05)]"
-          }`}
-        >
-          {icon}
-        </div>
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-semibold text-[#00306E]">{label}</p>
-            <span
-              className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.12em] ${
-                enabled
-                  ? "bg-[#6666FF] text-white"
-                  : "bg-[#E8EBFF] text-[#5E6EA8]"
-              }`}
-            >
-              {statusLabel ?? (enabled ? "Enabled" : "Disabled")}
-            </span>
-          </div>
-          <p className="mt-1 text-xs leading-relaxed text-[#6B7DB3]">
-            {description}
-          </p>
-        </div>
-      </div>
-      <div className="flex items-center justify-between sm:min-w-[140px] sm:justify-end sm:gap-3">
-        <span className="text-xs font-semibold text-[#6B7DB3]">
-          {enabled ? "On" : "Off"}
-        </span>
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-label={enabled ? `Disable ${label}` : `Enable ${label}`}
-          className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 ${
-            enabled ? "bg-[#6666FF]" : "bg-[#C4C4FF]"
-          }`}
-        >
-          <span
-            className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
-              enabled ? "translate-x-6" : "translate-x-1"
-            }`}
-          />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function TestSettingsCard({
-  title,
-  description,
-  icon,
-  children,
-}: {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="rounded-3xl border border-[rgba(0,48,110,0.08)] bg-white px-5 py-5 shadow-[0_10px_30px_rgba(12,26,109,0.04)] sm:px-6 sm:py-6">
-      <div className="mb-4 flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#6666FF] shadow-[0_10px_20px_rgba(102,102,255,0.18)]">
-          {icon}
-        </div>
-        <div>
-          <h3 className="text-sm font-bold tracking-[0.12em] text-[#31318A]">
-            {title}
-          </h3>
-          <p className="mt-1 text-sm leading-relaxed text-[#6B7DB3]">
-            {description}
-          </p>
-        </div>
-      </div>
-      {children}
-    </section>
-  );
-}
-
 export default function SettingsPage() {
-  const { autoFinishEnabled, setAutoFinishEnabled } = useSettings();
-
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <DashboardHeader title="Settings" />
@@ -707,75 +601,6 @@ export default function SettingsPage() {
 
             <div className="mt-6">
               <SubscriptionSection />
-            </div>
-          </section>
-
-          <section>
-            <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#6666FF]">
-                  Testing
-                </p>
-                <h2 className="mt-2 text-2xl font-bold text-[#0C1A6D]">
-                  Reading controls
-                </h2>
-              </div>
-              <div className="rounded-2xl border border-[rgba(102,102,255,0.16)] bg-white px-4 py-3 shadow-[0_10px_24px_rgba(12,26,109,0.04)]">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#6B7DB3]">
-                  Auto-finish
-                </p>
-                <p className="mt-1 text-sm font-bold text-[#0C1A6D]">
-                  {autoFinishEnabled ? "Enabled" : "Disabled"}
-                </p>
-              </div>
-            </div>
-
-            <div className="grid gap-6 2xl:grid-cols-2">
-              <TestSettingsCard
-                title="ORAL READING TEST"
-                description="Controls that affect recording behavior during oral reading sessions."
-                icon={<FileText className="h-4 w-4 text-white" />}
-              >
-                <ToggleRow
-                  icon={
-                    <CheckCircle
-                      className={`h-5 w-5 ${
-                        autoFinishEnabled ? "text-[#6666FF]" : "text-[#6B7DB3]"
-                      }`}
-                    />
-                  }
-                  label="Auto-Finish Reading"
-                  description="Automatically stop recording and finish the test when the student reads the last word of the passage."
-                  enabled={autoFinishEnabled}
-                  onToggle={() => setAutoFinishEnabled(!autoFinishEnabled)}
-                  statusLabel={
-                    autoFinishEnabled ? "Auto-finish on" : "Auto-finish off"
-                  }
-                />
-              </TestSettingsCard>
-
-              <TestSettingsCard
-                title="READING FLUENCY TEST"
-                description="Controls that keep fluency assessments consistent across student sessions."
-                icon={<BookOpen className="h-4 w-4 text-white" />}
-              >
-                <ToggleRow
-                  icon={
-                    <CheckCircle
-                      className={`h-5 w-5 ${
-                        autoFinishEnabled ? "text-[#6666FF]" : "text-[#6B7DB3]"
-                      }`}
-                    />
-                  }
-                  label="Auto-Finish Reading"
-                  description="Automatically stop the fluency test recording when the last word is detected."
-                  enabled={autoFinishEnabled}
-                  onToggle={() => setAutoFinishEnabled(!autoFinishEnabled)}
-                  statusLabel={
-                    autoFinishEnabled ? "Auto-finish on" : "Auto-finish off"
-                  }
-                />
-              </TestSettingsCard>
             </div>
           </section>
         </div>

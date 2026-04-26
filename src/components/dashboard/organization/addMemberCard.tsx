@@ -61,7 +61,10 @@ export function AddMemberCard({
   }
 
   return (
-    <section className="rounded-[32px] border border-[rgba(102,102,255,0.14)] bg-[linear-gradient(180deg,#FFFFFF_0%,#F8FAFF_100%)] p-6 shadow-[0_22px_56px_rgba(15,23,88,0.06)] xl:sticky xl:top-6">
+    <section
+      data-tour-target="org-invite-card"
+      className="rounded-[32px] border border-[rgba(102,102,255,0.14)] bg-[linear-gradient(180deg,#FFFFFF_0%,#F8FAFF_100%)] p-6 shadow-[0_22px_56px_rgba(15,23,88,0.06)] xl:sticky xl:top-6"
+    >
       <div className="mb-5 flex items-start gap-3">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#5D5DFB] shadow-[0_16px_28px_rgba(93,93,251,0.2)]">
           <UserPlus className="h-5 w-5 text-white" />
@@ -108,6 +111,7 @@ export function AddMemberCard({
         />
         <button
           type="submit"
+          data-tour-target="org-send-invite-button"
           disabled={
             seatsExhausted ||
             submitting ||

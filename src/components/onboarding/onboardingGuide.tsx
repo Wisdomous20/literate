@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   ListChecks,
   MousePointerClick,
+  Settings,
   Sparkles,
   Users,
   X,
@@ -317,6 +318,86 @@ export const onboardingSurfaces: OnboardingSurface[] = [
     ],
     tip: "Keep one class per school year and grade group so the dashboard summaries stay meaningful.",
     matches: (pathname) => pathname.startsWith("/dashboard/class"),
+  },
+  {
+    id: "organization",
+    eyebrow: "Organization guide",
+    title: "Welcome to Organization",
+    description:
+      "This is where organization admins manage the shared workspace. You can review seats, rename the organization, invite members, and manage member access from one place.",
+    icon: Users,
+    flow: [
+      {
+        label: "Review workspace status",
+        control: "Organization summary",
+        description:
+          "Start with the top summary to understand available seats, disabled accounts, and total member records.",
+        outcome:
+          "You know whether the team has room for new members before sending invites.",
+      },
+      {
+        label: "Update organization details",
+        control: "Rename organization",
+        description:
+          "Use the Rename button if the workspace name needs to match your school or team name.",
+        outcome:
+          "The organization label stays clear across invitations, member screens, and admin references.",
+      },
+      {
+        label: "Invite a team member",
+        control: "Invite member form",
+        description:
+          "Fill in the member name and email, then send an invitation when seats are available.",
+        outcome:
+          "The member receives an invite and appears in the team workflow after accepting.",
+      },
+      {
+        label: "Manage member access",
+        control: "Members directory",
+        description:
+          "Use member row actions to generate passwords, set custom passwords, disable, or re-enable accounts.",
+        outcome:
+          "You can keep account access current without leaving the organization page.",
+      },
+    ],
+    tip: "Check available seats before inviting members so you can avoid failed invitations or seat-limit confusion.",
+    matches: (pathname) => pathname === "/dashboard/organization",
+  },
+  {
+    id: "settings",
+    eyebrow: "Settings guide",
+    title: "Welcome to Settings",
+    description:
+      "This page is focused on account-level controls. You can update your profile name, change your password through email verification, and review or manage your subscription.",
+    icon: Settings,
+    flow: [
+      {
+        label: "Update your profile",
+        control: "Profile card",
+        description:
+          "Edit your first and last name, then save changes when the profile needs updating.",
+        outcome:
+          "Your display name updates across the teacher workspace.",
+      },
+      {
+        label: "Change your password",
+        control: "Password card",
+        description:
+          "Enter your current password and new password, then request the verification code.",
+        outcome:
+          "LiteRate sends a code to your email before applying the password change.",
+      },
+      {
+        label: "Review your subscription",
+        control: "Subscription card",
+        description:
+          "Check plan status, seats, billing period, and available plan actions.",
+        outcome:
+          "You can change plan or stop renewal from the subscription area when those actions are available.",
+      },
+    ],
+    tip: "Keep profile and subscription details current so billing, invitations, and account recovery stay easier to manage.",
+    matches: (pathname) => pathname === "/dashboard/settings-page",
   },
 ];
 

@@ -23,7 +23,10 @@ export function MembersCard({
   onToggle,
 }: MembersCardProps) {
   return (
-    <section className="rounded-[32px] border border-[rgba(102,102,255,0.14)] bg-white shadow-[0_22px_56px_rgba(15,23,88,0.06)]">
+    <section
+      data-tour-target="org-members-card"
+      className="rounded-[32px] border border-[rgba(102,102,255,0.14)] bg-white shadow-[0_22px_56px_rgba(15,23,88,0.06)]"
+    >
       <header className="flex flex-col gap-4 border-b border-[rgba(102,102,255,0.08)] px-6 py-5 sm:flex-row sm:items-end sm:justify-between sm:px-7">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#5D5DFB]">
@@ -138,7 +141,10 @@ function MemberRow({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div
+          data-tour-target="org-member-actions"
+          className="flex flex-wrap items-center gap-2"
+        >
           {!member.isOwner && (
             <>
               <button
