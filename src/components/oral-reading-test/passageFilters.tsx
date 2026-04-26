@@ -81,6 +81,7 @@ export function PassageFilters({
         )}
         <button
           type="button"
+          data-tour-target="add-passage-button"
           onClick={onOpenPassageModal}
           className={`flex items-center justify-center gap-2 rounded-[10px] border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#3B21CC] border-b-[#3B21CC] px-4 py-1.5 text-xs font-medium min-w-[120px] shadow transition-colors
     ${

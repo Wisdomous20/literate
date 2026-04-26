@@ -78,7 +78,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="w-full xl:w-95 2xl:w-[420px]2xl:w-105 space-y-6 shrink-0">
-            <div className="min-h-80">
+            <div className="min-h-80" data-tour-target="classification-chart">
               <ClassificationChart schoolYear={selectedYear} />
             </div>
 

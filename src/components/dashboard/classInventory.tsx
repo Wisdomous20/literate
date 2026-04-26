@@ -132,7 +132,7 @@ export function ClassInventory({
   };
 
   return (
-    <div className="w-full font-poppins">
+    <div className="w-full font-poppins" data-tour-target="class-inventory">
       {/* Header */}
       <div className="flex flex-col gap-2 sm:gap-3 mb-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -143,6 +143,7 @@ export function ClassInventory({
               </h2>
               <button
                 type="button"
+                data-tour-target="view-all-classes-button"
                 onClick={() => router.push("/dashboard/class/all")}
                 className="rounded-full bg-[#5D5DFB] px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-[#4a4ae8] shadow-sm"
               >
@@ -160,6 +161,7 @@ export function ClassInventory({
             <div className="relative">
               <button
                 type="button"
+                data-tour-target="school-year-button"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="flex items-center gap-2 rounded-full border border-[#5D5DFB]/30 bg-[#5D5DFB]/5 px-4 py-1.5 text-xs sm:text-sm font-medium text-[#5D5DFB] whitespace-nowrap hover:bg-[#5D5DFB]/10 transition-colors"
               >
@@ -203,6 +205,7 @@ export function ClassInventory({
             {/* Create Class Button */}
             <button
               type="button"
+              data-tour-target="create-class-button"
               onClick={() => setIsModalOpen(true)}
               className="rounded-full bg-[#5D5DFB] px-4 py-1.5 text-xs sm:text-sm font-medium text-white shadow-[0px_1px_20px_rgba(93,93,251,0.4)] transition-colors hover:bg-[#4a4ae8] whitespace-nowrap"
             >
@@ -233,7 +236,10 @@ export function ClassInventory({
       ) : (
         <div className="relative w-full min-h-[320px] flex flex-col">
           {/* Class cards grid - 2 columns x 2 rows */}
-          <div className="grid grid-cols-2 gap-3 md:gap-4 w-full">
+          <div
+            data-tour-target="class-cards"
+            className="grid grid-cols-2 gap-3 md:gap-4 w-full"
+          >
             {visibleClasses.map((classItem) => (
               <div
                 key={classItem.id}

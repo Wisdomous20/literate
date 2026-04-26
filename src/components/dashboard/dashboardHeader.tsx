@@ -19,7 +19,10 @@ export function DashboardHeader({
 
   return (
     <>
-      <header className="flex h-16 md:h-17.5 items-center justify-between border-b-[3px] border-[#5D5DFB] bg-white px-4 md:px-6">
+      <header
+        data-tour-target="dashboard-header"
+        className="flex h-16 md:h-17.5 items-center justify-between border-b-[3px] border-[#5D5DFB] bg-white px-4 md:px-6"
+      >
         <div className="flex items-center gap-2 md:gap-3">
           <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg bg-[#5D5DFB]/10">
             <LayoutDashboard className="h-4 w-4 md:h-5 md:w-5 text-[#5D5DFB]" />
@@ -33,6 +36,7 @@ export function DashboardHeader({
           {action && <div>{action}</div>}
           <button
             type="button"
+            data-tour-target="recent-assessments-button"
             className="flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-full border border-[#5D5DFB]/30 text-[#5D5DFB] transition-colors hover:bg-[#5D5DFB]/10"
             aria-label="History"
             onClick={() => setShowDrawer(true)}

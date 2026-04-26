@@ -26,7 +26,10 @@ export function AssessmentFilterTabs({
 }: AssessmentFilterTabsProps) {
   if (isCompact) {
     return (
-      <div className="flex items-center gap-4 overflow-x-auto pb-1">
+      <div
+        data-tour-target="assessment-tabs"
+        className="flex items-center gap-4 overflow-x-auto pb-1"
+      >
         {filterOptions.map((option) => (
           <button
             key={option.value}
@@ -56,7 +59,10 @@ export function AssessmentFilterTabs({
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-[#9999FF]/25 p-4 shadow-[0_4px_16px_rgba(102,102,255,0.08)]">
+    <div
+      data-tour-target="assessment-tabs"
+      className="bg-white rounded-2xl border border-[#9999FF]/25 p-4 shadow-[0_4px_16px_rgba(102,102,255,0.08)]"
+    >
       <div className="flex items-center gap-6 overflow-x-auto pb-2">
         {filterOptions.map((option) => (
           <button

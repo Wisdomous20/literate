@@ -220,7 +220,7 @@ export function Sidebar() {
 
         <div className={cn("flex-1", collapsed ? "px-3" : "px-6")}>
           {!collapsed && <p className="mb-3 px-2 text-[11px] font-semibold tracking-[0.25em] text-white/90">MENU</p>}
-          <nav className="space-y-1">
+          <nav className="space-y-1" data-tour-target="sidebar-assessments">
             {menuItems.map((item) => {
               const isActive = pathname === item.href;
               return (

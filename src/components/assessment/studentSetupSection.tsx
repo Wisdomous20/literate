@@ -90,15 +90,17 @@ export function StudentSetupSection({
         />
       )}
 
-      <PassageFilters
-        language={hasPassage ? selectedLanguage : undefined}
-        passageLevel={hasPassage ? selectedLevel : undefined}
-        testType={hasPassage ? selectedTestType : undefined}
-        hasPassage={hasPassage}
-        onOpenPassageModal={onOpenPassageModal}
-        showShareLink={!!shareableLink}
-        onShareLink={shareableLink ? handleToggleShare : undefined}
-      />
+      <div data-tour-target="passage-controls">
+        <PassageFilters
+          language={hasPassage ? selectedLanguage : undefined}
+          passageLevel={hasPassage ? selectedLevel : undefined}
+          testType={hasPassage ? selectedTestType : undefined}
+          hasPassage={hasPassage}
+          onOpenPassageModal={onOpenPassageModal}
+          showShareLink={!!shareableLink}
+          onShareLink={shareableLink ? handleToggleShare : undefined}
+        />
+      </div>
 
       {/* Shareable Link Modal */}
       {showShareModal && shareableLink && (
