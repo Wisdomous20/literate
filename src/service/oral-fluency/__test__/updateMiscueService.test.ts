@@ -65,6 +65,22 @@ describe("updateMiscueService", () => {
     expect(result.code).toBe("VALIDATION_ERROR");
   });
 
+  it("updates the spoken word when action is update with newSpokenWord", async () => {
+    mockPrisma.oralFluencyMiscue.findUnique.mockResolvedValue(baseMiscue);
+    setupTransactionWith([{ isSelfCorrected: false }], 10);
+
+    await updateMiscueService({
+      miscueId: "m-1",
+      action: "update",
+      newSpokenWord: "horse",
+    });
+
+    expect(mockTx.oralFluencyMiscue.update).toHaveBeenCalledWith({
+      where: { id: "m-1" },
+      data: { spokenWord: "horse" },
+    });
+  });
+
   it("returns NOT_FOUND when miscue does not exist", async () => {
     mockPrisma.oralFluencyMiscue.findUnique.mockResolvedValue(null);
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import type { EditTool, MiscueType } from "./useEditMiscues";
 import {
   Undo2,
@@ -7,9 +8,8 @@ import {
   Check,
   X,
   RotateCcw,
+  Plus,
 } from "lucide-react";
-
-// ─── Tool config ───
 
 interface ToolConfig {
   type: MiscueType;
@@ -38,7 +38,8 @@ const TOOL_CONFIG: ToolConfig[] = [
     color: "#1E7A35",
     bg: "rgba(140,220,160,0.18)",
     bgActive: "rgba(140,220,160,0.5)",
-    instruction: "Click the word where an extra word was inserted, then type the spoken word.",
+    instruction:
+      "Click the word where an extra word was inserted, then type the spoken word.",
   },
   {
     type: "MISPRONUNCIATION",
@@ -47,7 +48,8 @@ const TOOL_CONFIG: ToolConfig[] = [
     color: "#C41048",
     bg: "rgba(253,182,210,0.2)",
     bgActive: "rgba(253,182,210,0.55)",
-    instruction: "Click the mispronounced word, then type what was actually said.",
+    instruction:
+      "Click the mispronounced word, then type what was actually said.",
   },
   {
     type: "SUBSTITUTION",
@@ -56,7 +58,8 @@ const TOOL_CONFIG: ToolConfig[] = [
     color: "#1A5FB4",
     bg: "rgba(160,200,255,0.18)",
     bgActive: "rgba(160,200,255,0.5)",
-    instruction: "Click the substituted word, then type the replacement word.",
+    instruction:
+      "Click the substituted word, then type the replacement word.",
   },
   {
     type: "REVERSAL",
@@ -65,7 +68,8 @@ const TOOL_CONFIG: ToolConfig[] = [
     color: "#6E4023",
     bg: "rgba(200,165,130,0.15)",
     bgActive: "rgba(200,165,130,0.45)",
-    instruction: "Click the word that was read in reverse (e.g. 'was' → 'saw').",
+    instruction:
+      "Click the word that was read in reverse (e.g. 'was' to 'saw').",
   },
   {
     type: "TRANSPOSITION",
@@ -74,7 +78,8 @@ const TOOL_CONFIG: ToolConfig[] = [
     color: "#8B008B",
     bg: "rgba(220,120,220,0.18)",
     bgActive: "rgba(220,120,220,0.5)",
-    instruction: "Click the first word, then click the second word to mark the swap.",
+    instruction:
+      "Click the first word, then click the second word to mark the swap.",
   },
   {
     type: "REPETITION",
@@ -83,7 +88,8 @@ const TOOL_CONFIG: ToolConfig[] = [
     color: "#B85C00",
     bg: "rgba(255,200,140,0.2)",
     bgActive: "rgba(255,200,140,0.55)",
-    instruction: "Click the repeated word, then enter how many times it was repeated.",
+    instruction:
+      "Click the repeated word, then enter how many times it was repeated.",
   },
   {
     type: "SELF_CORRECTION",
@@ -95,8 +101,6 @@ const TOOL_CONFIG: ToolConfig[] = [
     instruction: "Click the word where the student self-corrected.",
   },
 ];
-
-// ─── Props ───
 
 interface MiscueToolbarProps {
   activeTool: EditTool;
@@ -113,8 +117,6 @@ interface MiscueToolbarProps {
   transpositionFirst: number | null;
 }
 
-// ─── Component ───
-
 export function MiscueToolbar({
   activeTool,
   onSelectTool,
@@ -129,44 +131,45 @@ export function MiscueToolbar({
   hasUnsavedChanges,
   transpositionFirst,
 }: MiscueToolbarProps) {
-  const activeConfig = TOOL_CONFIG.find((t) => t.type === activeTool);
+  const activeConfig = TOOL_CONFIG.find((tool) => tool.type === activeTool);
+  const [showAddTools, setShowAddTools] = useState(false);
+
+  useEffect(() => {
+    if (activeTool) {
+      setShowAddTools(true);
+    }
+  }, [activeTool]);
 
   return (
     <div className="mb-2 rounded-lg border border-[#54A4FF]/40 bg-white/80 px-3 py-2 shadow-sm">
       <div className="flex flex-wrap items-center gap-1.5">
-        {/* Tool buttons */}
-        {TOOL_CONFIG.map((tool) => {
-          const isActive = activeTool === tool.type;
-          return (
-            <button
-              key={tool.type}
-              type="button"
-              onClick={() => onSelectTool(isActive ? null : tool.type)}
-              title={tool.label}
-              className="flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-bold transition-all"
-              style={{
-                color: tool.color,
-                backgroundColor: isActive ? tool.bgActive : tool.bg,
-                boxShadow: isActive
-                  ? `0 0 0 1.5px ${tool.color}`
-                  : "none",
-              }}
-            >
-              {tool.shortLabel}
-            </button>
-          );
-        })}
+        <button
+          type="button"
+          onClick={() => {
+            if (showAddTools) {
+              setShowAddTools(false);
+              onSelectTool(null);
+              return;
+            }
+            setShowAddTools(true);
+          }}
+          className={`flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-bold transition-colors ${
+            showAddTools
+              ? "bg-[#1A5FB4] text-white hover:bg-[#174F97]"
+              : "bg-[#1A5FB4]/10 text-[#1A5FB4] hover:bg-[#1A5FB4]/20"
+          }`}
+          title={showAddTools ? "Hide add miscue tools" : "Add a new miscue"}
+        >
+          <Plus className="h-3.5 w-3.5" />
+          <span>{showAddTools ? "Hide Add Miscue" : "Add Miscue"}</span>
+        </button>
 
-        {/* Divider */}
-        <div className="mx-1 h-5 w-px bg-[#54A4FF]/30" />
-
-        {/* Undo / Redo */}
         <button
           type="button"
           onClick={onUndo}
           disabled={!canUndo}
           title="Undo (Ctrl+Z)"
-          className="flex h-7 w-7 items-center justify-center rounded-md text-[#31318A] transition-colors hover:bg-[#31318A]/10 disabled:opacity-30 disabled:pointer-events-none"
+          className="flex h-7 w-7 items-center justify-center rounded-md text-[#31318A] transition-colors hover:bg-[#31318A]/10 disabled:pointer-events-none disabled:opacity-30"
         >
           <Undo2 className="h-3.5 w-3.5" />
         </button>
@@ -175,15 +178,11 @@ export function MiscueToolbar({
           onClick={onRedo}
           disabled={!canRedo}
           title="Redo (Ctrl+Y)"
-          className="flex h-7 w-7 items-center justify-center rounded-md text-[#31318A] transition-colors hover:bg-[#31318A]/10 disabled:opacity-30 disabled:pointer-events-none"
+          className="flex h-7 w-7 items-center justify-center rounded-md text-[#31318A] transition-colors hover:bg-[#31318A]/10 disabled:pointer-events-none disabled:opacity-30"
         >
           <Redo2 className="h-3.5 w-3.5" />
         </button>
 
-        {/* Divider */}
-        <div className="mx-1 h-5 w-px bg-[#54A4FF]/30" />
-
-        {/* Save/Close */}
         <button
           type="button"
           onClick={onSave}
@@ -199,7 +198,7 @@ export function MiscueToolbar({
           onClick={onResetAll}
           disabled={!canUndo}
           title="Undo all changes"
-          className="flex shrink-0 items-center gap-1 rounded-md bg-[#31318A]/10 px-2.5 py-1 text-[11px] font-bold text-[#31318A] transition-colors hover:bg-[#31318A]/20 disabled:opacity-30 disabled:pointer-events-none"
+          className="flex shrink-0 items-center gap-1 rounded-md bg-[#31318A]/10 px-2.5 py-1 text-[11px] font-bold text-[#31318A] transition-colors hover:bg-[#31318A]/20 disabled:pointer-events-none disabled:opacity-30"
         >
           <RotateCcw className="h-3.5 w-3.5" />
           <span>Undo All</span>
@@ -219,16 +218,44 @@ export function MiscueToolbar({
         </button>
       </div>
 
-      {/* Instruction line */}
-      <div className="min-h-[18px] text-center text-[10px] font-medium text-[#31318A]/70">
+      {showAddTools && (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-[#54A4FF]/20 pt-2">
+          {TOOL_CONFIG.map((tool) => {
+            const isActive = activeTool === tool.type;
+            return (
+              <button
+                key={tool.type}
+                type="button"
+                onClick={() => onSelectTool(isActive ? null : tool.type)}
+                title={tool.label}
+                className="flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-bold transition-all"
+                style={{
+                  color: tool.color,
+                  backgroundColor: isActive ? tool.bgActive : tool.bg,
+                  boxShadow: isActive
+                    ? `0 0 0 1.5px ${tool.color}`
+                    : "none",
+                }}
+              >
+                {tool.shortLabel}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="min-h-[18px] pt-2 text-center text-[10px] font-medium text-[#31318A]/70">
         {activeTool === "TRANSPOSITION" && transpositionFirst !== null ? (
-          <span className="text-[#8B008B] font-semibold">
-            First word selected — now click the second word to complete transposition
+          <span className="font-semibold text-[#8B008B]">
+            First word selected. Now click the second word to complete the transposition.
           </span>
         ) : activeConfig ? (
           <span>{activeConfig.instruction}</span>
         ) : (
-          <span>Select a tool above, then click words in the passage to add miscues.</span>
+          <span>
+            Click an existing highlighted miscue to edit or delete it. Use Add
+            Miscue only when you need to mark a new one.
+          </span>
         )}
       </div>
     </div>

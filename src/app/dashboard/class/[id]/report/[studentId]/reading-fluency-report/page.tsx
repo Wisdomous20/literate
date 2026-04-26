@@ -27,6 +27,7 @@ import { exportFluencyReportPdf } from "@/lib/exportFluencyReportPdf";
 import {
   findMatchingDbMiscue,
   removeFirstMatchingMiscue,
+  updateFirstMatchingSpokenWord,
   updateFirstMatchingMiscueType,
 } from "@/lib/miscueEditing";
 import type {
@@ -238,6 +239,37 @@ export default function ReadingFluencyReportPage() {
         sourceMiscues,
         miscue,
         newType,
+      );
+      editMiscues.applyExternalMiscues(updated);
+      setLocalMiscues(updated);
+      setLocalTotalMiscues(result.updatedMetrics.totalMiscues);
+      setLocalOralFluencyScore(result.updatedMetrics.oralFluencyScore);
+      setLocalClassificationLevel(result.updatedMetrics.classificationLevel);
+      invalidateAssessments();
+    },
+    [sessionId, activeMiscues, invalidateAssessments, editMiscues],
+  );
+
+  const handleUpdateSpokenWord = useCallback(
+    async (miscue: MiscueResult, newSpokenWord: string) => {
+      if (!sessionId) return;
+      const dbResult = await fetchOralFluencyMiscues(sessionId);
+      if (!dbResult.success || !dbResult.data) return;
+      const match = findMatchingDbMiscue(dbResult.data, miscue);
+      if (!match?.id) return;
+      const result = await updateMiscueAction({
+        miscueId: match.id,
+        action: "update",
+        newSpokenWord,
+      });
+      if (!result.success || !result.updatedMetrics) return;
+      const sourceMiscues = editMiscues.isEditing
+        ? editMiscues.editedMiscues
+        : activeMiscues;
+      const updated = updateFirstMatchingSpokenWord(
+        sourceMiscues,
+        miscue,
+        newSpokenWord,
       );
       editMiscues.applyExternalMiscues(updated);
       setLocalMiscues(updated);
@@ -518,6 +550,9 @@ export default function ReadingFluencyReportPage() {
                 }
                 onUpdateMiscueType={
                   sessionId ? handleUpdateMiscueType : undefined
+                }
+                onUpdateSpokenWord={
+                  sessionId ? handleUpdateSpokenWord : undefined
                 }
               />
             </div>

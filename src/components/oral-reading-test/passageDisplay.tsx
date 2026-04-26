@@ -204,6 +204,10 @@ interface PassageDisplayProps {
     miscue: MiscueResult,
     newType: MiscueResult["miscueType"],
   ) => Promise<void>;
+  onUpdateSpokenWord?: (
+    miscue: MiscueResult,
+    newSpokenWord: string,
+  ) => Promise<void>;
 }
 
 export function getPassageTextStyle(passageLevel?: string): CSSProperties {
@@ -251,6 +255,7 @@ export function PassageDisplay({
   editMode,
   onDeleteMiscue,
   onUpdateMiscueType,
+  onUpdateSpokenWord,
 }: PassageDisplayProps) {
   // const passageTextStyle = getPassageTextStyle(passageLevel);
   const [popup, setPopup] = useState<PopupState | null>(null);
@@ -1021,6 +1026,16 @@ export function PassageDisplay({
                       setActionLoading(true);
                       try {
                         await onUpdateMiscueType(popup.miscue, newType);
+                        setPopup(null);
+                      } finally {
+                        setActionLoading(false);
+                      }
+                    }}
+                    onUpdateSpokenWord={async (newSpokenWord) => {
+                      if (!onUpdateSpokenWord) return;
+                      setActionLoading(true);
+                      try {
+                        await onUpdateSpokenWord(popup.miscue, newSpokenWord);
                         setPopup(null);
                       } finally {
                         setActionLoading(false);

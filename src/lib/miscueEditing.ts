@@ -55,3 +55,18 @@ export function updateFirstMatchingMiscueType(
     currentIndex === index ? { ...miscue, miscueType: newType } : miscue,
   );
 }
+
+export function updateFirstMatchingSpokenWord(
+  miscues: MiscueResult[],
+  target: MiscueResult,
+  newSpokenWord: string,
+) {
+  const index = miscues.findIndex((miscue) => sameMiscue(miscue, target));
+  if (index === -1) {
+    return miscues;
+  }
+
+  return miscues.map((miscue, currentIndex) =>
+    currentIndex === index ? { ...miscue, spokenWord: newSpokenWord } : miscue,
+  );
+}

@@ -29,6 +29,8 @@ export interface UpdateMiscueInput {
   action: "approve" | "delete" | "update";
   /** Required when action is "update" — the new miscue type */
   newMiscueType?: MiscueType;
+  /** Optional when action is "update" — update the captured spoken word */
+  newSpokenWord?: string;
 }
 
 export interface UpdateMiscueResult {
@@ -49,7 +51,7 @@ export interface UpdateMiscueResult {
 export async function updateMiscueService(
   input: UpdateMiscueInput,
 ): Promise<UpdateMiscueResult> {
-  const { miscueId, action, newMiscueType } = input;
+  const { miscueId, action, newMiscueType, newSpokenWord } = input;
 
   if (!miscueId) {
     return {
@@ -67,10 +69,11 @@ export async function updateMiscueService(
     };
   }
 
-  if (action === "update" && !newMiscueType) {
+  if (action === "update" && !newMiscueType && !newSpokenWord) {
     return {
       success: false,
-      error: "newMiscueType is required when action is 'update'.",
+      error:
+        "Either newMiscueType or newSpokenWord is required when action is 'update'.",
       code: "VALIDATION_ERROR",
     };
   }
@@ -100,7 +103,10 @@ export async function updateMiscueService(
         // User wants to change the miscue type
         await tx.oralFluencyMiscue.update({
           where: { id: miscueId },
-          data: { miscueType: newMiscueType! },
+          data: {
+            ...(newMiscueType ? { miscueType: newMiscueType } : {}),
+            ...(newSpokenWord ? { spokenWord: newSpokenWord } : {}),
+          },
         });
       }
 
