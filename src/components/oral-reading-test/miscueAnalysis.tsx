@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useEffect } from "react";
+import { useMemo, useRef, useEffect, useState } from "react";
 import { Loader2, Download } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { MiscueResult } from "@/types/oral-reading";
@@ -107,6 +107,7 @@ export function MiscueAnalysis({
 }: MiscueAnalysisProps) {
   const router = useRouter();
   const cardRef = useRef<HTMLDivElement>(null);
+  const [activeView, setActiveView] = useState<"summary" | "words">("summary");
 
   useEffect(() => {
     if (highlightedTypes.size === 0 || !onResetHighlight) return;
@@ -126,6 +127,34 @@ export function MiscueAnalysis({
     }
     return counts;
   }, [miscues]);
+
+  const miscuedWords = useMemo(
+    () =>
+      miscues.map((miscue, index) => {
+        const config =
+          MISCUE_CONFIG.find((item) => item.key === miscue.miscueType) ??
+          MISCUE_CONFIG[0];
+        const primaryWord =
+          miscue.miscueType === "REPETITION"
+            ? miscue.expectedWord || miscue.spokenWord || "-"
+            : miscue.expectedWord || miscue.spokenWord || "-";
+        const spokenLabel =
+          miscue.miscueType === "OMISSION"
+            ? "Omitted"
+            : miscue.spokenWord
+              ? `Spoken: ${miscue.spokenWord}`
+              : "No spoken word";
+
+        return {
+          id: `${miscue.miscueType}-${miscue.wordIndex}-${miscue.expectedWord}-${miscue.spokenWord ?? "none"}-${index}`,
+          config,
+          miscue,
+          primaryWord,
+          spokenLabel,
+        };
+      }),
+    [miscues],
+  );
 
   const hasResults =
     miscues.length > 0 || (totalMiscue !== undefined && totalMiscue > 0);
@@ -202,38 +231,107 @@ export function MiscueAnalysis({
         </div>
       ) : (
         <>
-          <div className="flex flex-1 flex-col">
-            {MISCUE_CONFIG.map((item, index) => {
-              const isActive = highlightedTypes.has(item.key);
-              const count = miscueCounts[item.key] || 0;
+          <div className="mb-2 grid grid-cols-2 rounded-lg bg-[#F3F7FF] p-1">
+            <button
+              type="button"
+              onClick={() => setActiveView("summary")}
+              className={`rounded-md px-2 py-1.5 text-xs font-semibold transition-colors ${
+                activeView === "summary"
+                  ? "bg-white text-[#00306E] shadow-sm"
+                  : "text-[#31318A]/70 hover:text-[#00306E]"
+              }`}
+            >
+              Summary
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveView("words")}
+              className={`rounded-md px-2 py-1.5 text-xs font-semibold transition-colors ${
+                activeView === "words"
+                  ? "bg-white text-[#00306E] shadow-sm"
+                  : "text-[#31318A]/70 hover:text-[#00306E]"
+              }`}
+            >
+              Words
+            </button>
+          </div>
 
-              return (
-                <div key={item.key}>
-                  <button
-                    type="button"
-                    className={`flex w-full items-center justify-between rounded-md px-1.5 py-1.5 transition-colors ${
-                      isActive
-                        ? item.activeClass
-                        : "bg-transparent hover:bg-[rgba(102,102,255,0.07)]"
-                    }`}
-                    onClick={() => onToggleHighlight?.(item.key)}
-                  >
-                    <div
-                      className={`flex h-6 w-7 shrink-0 items-center justify-center rounded-[5px] border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] text-sm font-bold ${item.colorClass} ${item.textClass}`}
-                    >
-                      {count}
+          <div className="min-h-0 flex-1">
+            {activeView === "summary" ? (
+              <div className="flex h-full flex-col">
+                {MISCUE_CONFIG.map((item, index) => {
+                  const isActive = highlightedTypes.has(item.key);
+                  const count = miscueCounts[item.key] || 0;
+
+                  return (
+                    <div key={item.key}>
+                      <button
+                        type="button"
+                        className={`flex w-full items-center justify-between rounded-md px-1.5 py-1.5 transition-colors ${
+                          isActive
+                            ? item.activeClass
+                            : "bg-transparent hover:bg-[rgba(102,102,255,0.07)]"
+                        }`}
+                        onClick={() => onToggleHighlight?.(item.key)}
+                      >
+                        <div
+                          className={`flex h-6 w-7 shrink-0 items-center justify-center rounded-[5px] border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] text-sm font-bold ${item.colorClass} ${item.textClass}`}
+                        >
+                          {count}
+                        </div>
+                        <span className={`text-sm font-bold ${item.textClass}`}>
+                          {item.label}
+                        </span>
+                      </button>
+
+                      {index < MISCUE_CONFIG.length - 1 && (
+                        <div className="h-px bg-[rgba(18,48,220,0.25)]" />
+                      )}
                     </div>
-                    <span className={`text-sm font-bold ${item.textClass}`}>
-                      {item.label}
-                    </span>
-                  </button>
-
-                  {index < MISCUE_CONFIG.length - 1 && (
-                    <div className="h-px bg-[rgba(18,48,220,0.25)]" />
-                  )}
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="oral-reading-scroll flex max-h-[318px] flex-col gap-2 overflow-y-auto pr-1">
+                {miscuedWords.length > 0 ? (
+                  miscuedWords.map(({ id, config, miscue, primaryWord, spokenLabel }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => onToggleHighlight?.(miscue.miscueType)}
+                      className={`w-full rounded-lg border border-[#DAE6FF] bg-white px-3 py-2 text-left transition-colors hover:bg-[#F8FBFF] ${
+                        highlightedTypes.has(miscue.miscueType)
+                          ? "ring-1 ring-[#6666FF]"
+                          : ""
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-[#00306E]">
+                            {primaryWord}
+                          </p>
+                          <p className="mt-0.5 truncate text-[11px] font-medium text-[#31318A]/65">
+                            {spokenLabel}
+                          </p>
+                        </div>
+                        <span
+                          className={`shrink-0 rounded px-2 py-1 text-[10px] font-bold ${config.colorClass} ${config.textClass}`}
+                        >
+                          {config.label}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-[10px] font-medium text-[#31318A]/50">
+                        Word #{miscue.wordIndex + 1}
+                      </div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="rounded-lg border border-dashed border-[#BFD7FF] bg-[#F8FBFF] px-3 py-6 text-center text-xs font-semibold text-[#00306E]">
+                    No miscued words yet.
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="mt-auto pt-2">
