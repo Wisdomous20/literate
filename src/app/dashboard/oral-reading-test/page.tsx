@@ -1080,7 +1080,7 @@ export default function OralReadingTestPage() {
         studentName={studentName}
         gradeLevel={gradeLevel}
         selectedClassName={selectedClassName}
-        hasPassage={hasPassage}
+        hasPassage={false}
         classes={classNames}
         onStudentNameChange={setStudentName}
         onGradeLevelChange={setGradeLevel}
