@@ -649,7 +649,7 @@ export default function ReadingComprehensionTestPage() {
         studentName={studentName}
         gradeLevel={gradeLevel}
         selectedClassName={selectedClassName}
-        hasPassage={hasPassage}
+        hasPassage={false}
         classes={classNames}
         onStudentNameChange={setStudentName}
         onGradeLevelChange={setGradeLevel}
