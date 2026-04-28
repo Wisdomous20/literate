@@ -26,25 +26,29 @@ const variantStyles: Record<
     iconColor: string;
     badgeBg: string;
     badgeText: string;
+    border: string;
   }
 > = {
   blue: {
-    iconBg: "bg-[rgba(0,109,252,0.18)]",
-    iconColor: "text-[#0066EC]",
-    badgeBg: "bg-[rgba(0,109,252,0.18)]",
-    badgeText: "text-[#00306E]",
+    iconBg: "bg-[#EEF1FF]",
+    iconColor: "text-[#5D5DFB]",
+    badgeBg: "bg-[#EEF1FF]",
+    badgeText: "text-[#24356E]",
+    border: "hover:border-[#8B93FF]",
   },
   yellow: {
-    iconBg: "bg-[#F1F0BE]",
-    iconColor: "text-[#C9AC00]",
-    badgeBg: "bg-[#F1F0BE]",
-    badgeText: "text-[#7A6300]",
+    iconBg: "bg-[#FFF4D9]",
+    iconColor: "text-[#C08A00]",
+    badgeBg: "bg-[#FFF4D9]",
+    badgeText: "text-[#7B5900]",
+    border: "hover:border-[#E4C562]",
   },
   cyan: {
-    iconBg: "bg-[#C0EEF8]",
-    iconColor: "text-[#2B9DB5]",
-    badgeBg: "bg-[#C0EEF8]",
-    badgeText: "text-[#0D4F5D]",
+    iconBg: "bg-[#DEF7FF]",
+    iconColor: "text-[#1582A6]",
+    badgeBg: "bg-[#DEF7FF]",
+    badgeText: "text-[#155A73]",
+    border: "hover:border-[#79CBE2]",
   },
 };
 
@@ -121,28 +125,38 @@ export function ClassCard({
           onKeyDown={handleCardKeyDown}
           tabIndex={0}
           className={cn(
-            "group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-[#E0E7FF] bg-white p-4 min-h-35 shadow-[0px_0px_16px_1px_rgba(84,164,255,0.25)] transition-all hover:shadow-[0px_0px_20px_2px_rgba(84,164,255,0.4)] hover:border-[#5D5DFB]/40 cursor-pointer",
+            "surface-panel-interactive group relative flex min-h-35 flex-col justify-between overflow-hidden rounded-[26px] p-5 cursor-pointer",
+            styles.border,
           )}
         >
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-[linear-gradient(180deg,rgba(255,255,255,0.72),transparent)]" />
           {/* Top section with folder icon and label */}
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[#e0e7ff]">
-              <Folder className="h-4 w-4 text-[#7c3aed]" />
+            <div className={cn("flex h-10 w-10 items-center justify-center rounded-[16px]", styles.iconBg)}>
+              <Folder className={cn("h-4 w-4", styles.iconColor)} />
             </div>
-            <span className="text-xs font-semibold text-[#0C1A6D]">Class</span>
+            <span
+              className={cn(
+                "inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em]",
+                styles.badgeBg,
+                styles.badgeText,
+              )}
+            >
+              Class
+            </span>
           </div>
           {/* Bottom section with class name and student count */}
-          <div className="mt-4">
-            <h3 className="text-lg font-bold text-[#00306E] truncate mb-1">
+          <div className="mt-6">
+            <h3 className="mb-1 truncate text-xl font-bold tracking-[-0.03em] text-[#16215C]">
               {name}
             </h3>
-            <p className="text-sm text-[#00306E]">
+            <p className="text-sm text-[#6072A6]">
               {studentCount} student{studentCount === 1 ? "" : "s"}
             </p>
           </div>
 
           {/* Arrow indicator */}
-          <ChevronRight className="absolute bottom-4 right-4 h-4 w-4 text-[#00306E]/40 transition-transform group-hover:translate-x-0.5" />
+          <ChevronRight className="absolute bottom-5 right-5 h-4 w-4 text-[#6072A6] transition-transform group-hover:translate-x-0.5" />
         </div>
 
         {/* Menu button */}

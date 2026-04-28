@@ -1,7 +1,10 @@
 "use client";
 
-import { useRef, Children, type ReactNode } from "react";
-import { motion, useInView } from "framer-motion";
+import { useEffect, useRef, Children, type ReactNode } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 interface AnimatedSectionProps {
   children: ReactNode;
@@ -16,37 +19,49 @@ export function AnimatedSection({
   delay = 0,
   direction = "up",
 }: AnimatedSectionProps) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-80px" });
+  const ref = useRef<HTMLDivElement | null>(null);
 
-  const variants = {
-    hidden: {
-      opacity: 0,
-      y: direction === "up" ? 40 : 0,
-      x: direction === "left" ? -40 : direction === "right" ? 40 : 0,
-    },
-    visible: {
-      opacity: 1,
-      y: 0,
-      x: 0,
-      transition: {
-        duration: 0.65,
-        ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
-        delay,
-      },
-    },
-  };
+  useEffect(() => {
+    const element = ref.current;
+
+    if (!element) {
+      return;
+    }
+
+    const x = direction === "left" ? -40 : direction === "right" ? 40 : 0;
+    const y = direction === "up" ? 40 : 0;
+
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        element,
+        { opacity: 0, x, y },
+        {
+          opacity: 1,
+          x: 0,
+          y: 0,
+          duration: 0.7,
+          delay,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: element,
+            start: "top 82%",
+            toggleActions: "play none none none",
+            once: true,
+          },
+        }
+      );
+    }, element);
+
+    return () => ctx.revert();
+  }, [delay, direction]);
 
   return (
-    <motion.div
+    <div
       ref={ref}
       className={className}
-      initial="hidden"
-      animate={isInView ? "visible" : "hidden"}
-      variants={variants}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -63,25 +78,48 @@ export function AnimatedList({
   staggerDelay = 0.1,
   baseDelay = 0,
 }: AnimatedListProps) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-80px" });
+  const ref = useRef<HTMLDivElement | null>(null);
   const childArray = Children.toArray(children);
+
+  useEffect(() => {
+    const element = ref.current;
+
+    if (!element) {
+      return;
+    }
+
+    const items = Array.from(element.children);
+
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        items,
+        { opacity: 0, y: 30 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.6,
+          ease: "power3.out",
+          delay: baseDelay,
+          stagger: staggerDelay,
+          scrollTrigger: {
+            trigger: element,
+            start: "top 82%",
+            toggleActions: "play none none none",
+            once: true,
+          },
+        }
+      );
+    }, element);
+
+    return () => ctx.revert();
+  }, [baseDelay, staggerDelay]);
 
   return (
     <div ref={ref} className={className}>
       {childArray.map((child, i) => (
-        <motion.div
-          key={i}
-          initial={{ opacity: 0, y: 30 }}
-          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-          transition={{
-            duration: 0.55,
-            ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
-            delay: baseDelay + i * staggerDelay,
-          }}
-        >
+        <div key={i}>
           {child}
-        </motion.div>
+        </div>
       ))}
     </div>
   );

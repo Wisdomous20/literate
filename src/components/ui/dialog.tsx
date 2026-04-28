@@ -1,28 +1,27 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+
+import { cn } from "@/lib/utils";
 
 interface DialogProps {
-  open?: boolean
-  onOpenChange?: (open: boolean) => void
-  children: React.ReactNode
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  children: React.ReactNode;
 }
 
 function Dialog({ open, onOpenChange, children }: DialogProps) {
-  if (!open) return null
+  if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50">
-      {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50"
+        className="fixed inset-0 bg-[rgba(14,18,50,0.52)] backdrop-blur-sm"
         onClick={() => onOpenChange?.(false)}
       />
-      {/* Content wrapper */}
       {children}
     </div>
-  )
+  );
 }
 
 function DialogContent({
@@ -31,18 +30,18 @@ function DialogContent({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
         className={cn(
-          "relative w-full max-w-lg rounded-lg border bg-background p-6 shadow-lg",
-          className
+          "surface-panel relative w-full max-w-lg rounded-[30px] p-6 text-foreground",
+          className,
         )}
         {...props}
       >
         {children}
       </div>
     </div>
-  )
+  );
 }
 
 function DialogHeader({
@@ -51,10 +50,10 @@ function DialogHeader({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("flex flex-col space-y-1.5 text-center sm:text-left mb-4", className)}
+      className={cn("mb-5 flex flex-col gap-2 text-center sm:text-left", className)}
       {...props}
     />
-  )
+  );
 }
 
 function DialogTitle({
@@ -63,10 +62,10 @@ function DialogTitle({
 }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h2
-      className={cn("text-lg font-semibold leading-none tracking-tight", className)}
+      className={cn("text-xl font-bold tracking-[-0.03em] text-foreground", className)}
       {...props}
     />
-  )
+  );
 }
 
 function DialogFooter({
@@ -75,10 +74,10 @@ function DialogFooter({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 mt-4", className)}
+      className={cn("mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)}
       {...props}
     />
-  )
+  );
 }
 
-export { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter }
+export { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle };

@@ -14,12 +14,12 @@ export default function LandingPage() {
   return (
     <div className="relative min-h-screen font-sans text-[#323743]">
       {/* Full-page background */}
-      <div className="fixed inset-0 -z-10 opacity-[0.17] pointer-events-none">
+      <div className="fixed inset-0 -z-10 opacity-[0.24] pointer-events-none">
         <Image
-          src="/assets/IMG_2.svg"
+          src="/assets/literate-landing-bg-v1.png"
           alt=""
           fill
-          className="object-cover"
+          className="object-cover object-center"
           priority
         />
       </div>
