@@ -323,11 +323,11 @@ export function PassageDisplay({
   useEffect(() => {
     const outer = outerRef.current;
     if (!outer) return;
-    if (expanded) {
-      outer.style.height = "100%";
+    if (expanded || !dragHeight) {
+      outer.style.height = "";
       return;
     }
-    outer.style.height = dragHeight ? `${dragHeight}px` : "100%";
+    outer.style.height = `${dragHeight}px`;
   }, [dragHeight, expanded]);
 
   // Position popup without JSX inline styles
@@ -896,7 +896,7 @@ export function PassageDisplay({
   return (
     <div
       ref={outerRef}
-      className={`relative flex min-h-30 flex-col ${dragHeight && !expanded ? "flex-none" : "flex-1"}`}
+      className={`relative flex flex-col ${expanded ? "min-h-0" : "min-h-30"} ${dragHeight && !expanded ? "flex-none" : "flex-1"}`}
     >
       {/* Collapsible header inside the passage — clicking collapses back */}
       {collapsible && !expanded && onToggleCollapsed && passageTitle && (

@@ -26,7 +26,7 @@ export function TestPageLayout({
   modal,
 }: TestPageLayoutProps) {
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-white">
       <DashboardHeader title={title} />
 
       {toast && (
@@ -39,7 +39,7 @@ export function TestPageLayout({
 
       {overlay}
 
-      <main className="flex min-h-0 flex-1 px-4 py-4 md:px-6 lg:px-8">
+      <main className="flex min-h-0 flex-1 overflow-hidden bg-white px-4 py-4 md:px-6 lg:px-8">
         <div className="flex min-h-0 flex-1 gap-4">
           <div
             data-tour-target="assessment-workspace"

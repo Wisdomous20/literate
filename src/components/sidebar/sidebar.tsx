@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
@@ -18,6 +24,7 @@ import {
   Zap,
   Users,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 function getCurrentSchoolYear(): string {
   const now = new Date();
@@ -64,16 +71,195 @@ const orgAdminItems = [
   },
 ];
 
+type SidebarNavItemProps = {
+  collapsed: boolean;
+  href: string;
+  icon: LucideIcon;
+  isActive: boolean;
+  itemRef?: (node: HTMLAnchorElement | null) => void;
+  label: string;
+  onActivate?: () => void;
+};
+
+function SidebarNavItem({
+  collapsed,
+  href,
+  icon: Icon,
+  isActive,
+  itemRef,
+  label,
+  onActivate,
+}: SidebarNavItemProps) {
+  return (
+    <Link
+      ref={itemRef}
+      href={href}
+      onClick={(event) => {
+        if (
+          event.defaultPrevented ||
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.altKey ||
+          event.button !== 0
+        ) {
+          return;
+        }
+
+        onActivate?.();
+      }}
+      title={collapsed ? label : undefined}
+      className={cn(
+        "group relative z-10 isolate flex items-center overflow-visible text-sm font-medium transition-all duration-200 ease-out",
+        collapsed
+          ? "justify-center rounded-lg px-0 py-2"
+          : "gap-3 px-2 py-2",
+        isActive
+          ? collapsed
+            ? "rounded-[20px] bg-white text-[#6666FF] shadow-[0_12px_28px_rgba(55,44,183,0.2)]"
+            : "z-30 text-[#6666FF]"
+          : "rounded-lg text-white/90 hover:bg-[#6652fb] hover:text-white",
+      )}
+    >
+      <div
+        className={cn(
+          "relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-200",
+          isActive ? "bg-[#5D5DFB]" : "bg-white",
+        )}
+      >
+        <Icon
+          className={cn(
+            "h-4 w-4",
+            "transition-colors duration-200",
+            isActive ? "text-white" : "text-[#6666FF]",
+          )}
+        />
+      </div>
+      {!collapsed && (
+        <span
+          className={cn(
+            "relative z-10 max-w-[140px] text-[13px]",
+            isActive ? "font-semibold text-[#6666FF]" : "text-white",
+          )}
+        >
+          {label}
+        </span>
+      )}
+    </Link>
+  );
+}
+
+function renderMenuItems(
+  activeHref: string | undefined,
+  collapsed: boolean,
+  onActivate: (href: string) => void,
+  setItemRef: (href: string, node: HTMLAnchorElement | null) => void,
+) {
+  return (
+    <nav
+      className="relative z-10 space-y-1"
+      data-tour-target="sidebar-assessments"
+    >
+      {menuItems.map((item) => (
+        <SidebarNavItem
+          key={item.href}
+          href={item.href}
+          icon={item.icon}
+          isActive={activeHref === item.href}
+          collapsed={collapsed}
+          itemRef={(node) => setItemRef(item.href, node)}
+          label={item.label}
+          onActivate={() => onActivate(item.href)}
+        />
+      ))}
+    </nav>
+  );
+}
+
 export function Sidebar() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const [collapsed, setCollapsed] = useState(false);
   const [hasActiveSubscription, setHasActiveSubscription] = useState<boolean | null>(null);
+  const [optimisticHref, setOptimisticHref] = useState<string | null>(null);
   const hasActiveSubscriptionRef = useRef<boolean | null>(null);
+  const navContainerRef = useRef<HTMLDivElement | null>(null);
+  const navItemRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
+  const [activeHighlight, setActiveHighlight] = useState({
+    height: 0,
+    top: 0,
+    visible: false,
+  });
 
   const firstName = session?.user?.name?.split(" ")[0] || "User";
   const schoolYear = getCurrentSchoolYear();
   const isOrgAdmin = session?.user?.role === "ORG_ADMIN";
+  const routeActiveHref = [
+    ...menuItems,
+    ...generalItems,
+    ...(isOrgAdmin ? orgAdminItems : []),
+  ].find((item) => pathname === item.href)?.href;
+  const activeHref = optimisticHref ?? routeActiveHref;
+
+  useEffect(() => {
+    setOptimisticHref(null);
+  }, [pathname]);
+
+  const setNavItemRef = useCallback(
+    (href: string, node: HTMLAnchorElement | null) => {
+      navItemRefs.current[href] = node;
+    },
+    [],
+  );
+
+  const updateActiveHighlight = useCallback(() => {
+    const container = navContainerRef.current;
+    const activeItem = activeHref ? navItemRefs.current[activeHref] : null;
+
+    if (!container || !activeItem || collapsed) {
+      setActiveHighlight((current) =>
+        current.visible ? { ...current, visible: false } : current,
+      );
+      return;
+    }
+
+    const containerRect = container.getBoundingClientRect();
+    const itemRect = activeItem.getBoundingClientRect();
+    const next = {
+      height: itemRect.height,
+      top: itemRect.top - containerRect.top,
+      visible: true,
+    };
+
+    setActiveHighlight((current) =>
+      current.height === next.height &&
+      current.top === next.top &&
+      current.visible === next.visible
+        ? current
+        : next,
+    );
+  }, [activeHref, collapsed]);
+
+  useLayoutEffect(() => {
+    updateActiveHighlight();
+
+    const container = navContainerRef.current;
+    const activeItem = activeHref ? navItemRefs.current[activeHref] : null;
+    if (!container || !activeItem || typeof ResizeObserver === "undefined") {
+      return;
+    }
+
+    const observer = new ResizeObserver(updateActiveHighlight);
+    observer.observe(container);
+    observer.observe(activeItem);
+
+    return () => observer.disconnect();
+  }, [activeHref, isOrgAdmin, updateActiveHighlight]);
+
+  useEffect(() => {
+    window.addEventListener("resize", updateActiveHighlight);
+    return () => window.removeEventListener("resize", updateActiveHighlight);
+  }, [updateActiveHighlight]);
 
   useEffect(() => {
     hasActiveSubscriptionRef.current = hasActiveSubscription;
@@ -137,12 +323,11 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "relative flex h-screen flex-col bg-[#6e55fd] shadow-[4px_0_20px_rgba(102,102,255,0.3)] transition-all duration-300 overflow-hidden",
+        "relative z-30 flex h-screen flex-col overflow-hidden bg-[#6e55fd] shadow-[-4px_0_20px_rgba(102,102,255,0.22)] transition-all duration-300",
         collapsed ? "w-20 min-w-20" : "w-65 min-w-65",
       )}
     >
-      {/* SVG background */}
-      <div className="absolute inset-0 pointer-events-none z-0">
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <svg
           viewBox="0 0 320 800"
           preserveAspectRatio="none"
@@ -167,9 +352,7 @@ export function Sidebar() {
         </svg>
       </div>
 
-      {/* Content */}
-      <div className="relative z-0 flex h-full flex-col">
-        {/* Top Header with Button */}
+      <div className="relative z-10 flex h-full flex-col">
         <div
           className={cn(
             "flex items-center gap-2 pb-4 pt-4 px-4",
@@ -197,13 +380,15 @@ export function Sidebar() {
             </div>
           )}
 
-          {/* Toggle Button - Now Purple */}
           <button
             type="button"
             onClick={() => setCollapsed(!collapsed)}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className="z-50 flex h-9 w-9 items-center justify-center rounded-full bg-[#5D5DFB] text-white shadow-lg ring-2 ring-[#5D5DFB] hover:bg-[#6652fb] transition-all"
+            className={cn(
+              "z-50 flex h-9 w-9 items-center justify-center rounded-full bg-[#5D5DFB] text-white shadow-lg ring-2 ring-[#5D5DFB] transition-all hover:bg-[#6652fb]",
+              collapsed ? "" : "",
+            )}
           >
             {collapsed ? <ChevronsRight className="h-6 w-6" /> : <ChevronsLeft className="h-6 w-6" />}
           </button>
@@ -218,82 +403,80 @@ export function Sidebar() {
           <div className="pb-4 pt-2" />
         )}
 
-        <div className={cn("flex-1", collapsed ? "px-3" : "px-6")}>
+        <div
+          ref={navContainerRef}
+          className={cn("relative flex-1", collapsed ? "px-3" : "px-6")}
+        >
+          {!collapsed && (
+            <span
+              aria-hidden="true"
+              className={cn(
+                "pointer-events-none absolute -left-6 right-0 z-0 bg-white transition-[height,opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+                activeHighlight.visible ? "opacity-100" : "opacity-0",
+              )}
+              style={{
+                height: activeHighlight.height,
+                transform: `translateY(${activeHighlight.top}px)`,
+              }}
+            >
+              <span
+                className="absolute -top-6 right-0 h-6 w-6 bg-white"
+                style={{
+                  WebkitMaskImage:
+                    "radial-gradient(circle at 0 0, transparent 23px, #000 24px)",
+                  maskImage:
+                    "radial-gradient(circle at 0 0, transparent 23px, #000 24px)",
+                }}
+              />
+              <span
+                className="absolute -bottom-6 right-0 h-6 w-6 bg-white"
+                style={{
+                  WebkitMaskImage:
+                    "radial-gradient(circle at 0 100%, transparent 23px, #000 24px)",
+                  maskImage:
+                    "radial-gradient(circle at 0 100%, transparent 23px, #000 24px)",
+                }}
+              />
+            </span>
+          )}
           {!collapsed && <p className="mb-3 px-2 text-[11px] font-semibold tracking-[0.25em] text-white/90">MENU</p>}
-          <nav className="space-y-1" data-tour-target="sidebar-assessments">
-            {menuItems.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  title={collapsed ? item.label : undefined}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-all duration-200",
-                    collapsed ? "justify-center px-0" : "px-2",
-                    isActive
-                      ? "bg-[rgba(93,93,251,0.6)] text-white"
-                      : "text-white/90 hover:bg-[#6652fb] hover:text-white",
-                  )}
-                >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#5D5DFB]">
-                    <item.icon className="h-4 w-4 text-white" />
-                  </div>
-                  {!collapsed && <span className="text-[13px]">{item.label}</span>}
-                </Link>
-              );
-            })}
-          </nav>
+          {renderMenuItems(activeHref, collapsed, setOptimisticHref, setNavItemRef)}
 
           <div className={cn("my-5 h-px bg-white/30", collapsed ? "mx-1" : "mx-2")} />
 
           {!collapsed && (
             <p className="mb-3 px-2 text-[11px] font-semibold tracking-[0.25em] text-white/90">GENERAL</p>
           )}
-          <nav className="space-y-1">
+          <nav className="relative z-10 space-y-1">
             {generalItems.map((item) => {
-              const isActive = pathname === item.href;
+              const isActive = activeHref === item.href;
               return (
-                <Link
+                <SidebarNavItem
                   key={item.href}
                   href={item.href}
-                  title={collapsed ? item.label : undefined}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-all duration-200",
-                    collapsed ? "justify-center px-0" : "px-2",
-                    isActive
-                      ? "bg-[rgba(93,93,251,0.6)] text-white"
-                      : "text-white/90 hover:bg-[#6652fb] hover:text-white",
-                  )}
-                >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#5D5DFB]">
-                    <item.icon className="h-4 w-4 text-white" />
-                  </div>
-                  {!collapsed && <span className="text-[13px]">{item.label}</span>}
-                </Link>
+                  icon={item.icon}
+                  isActive={isActive}
+                  collapsed={collapsed}
+                  itemRef={(node) => setNavItemRef(item.href, node)}
+                  label={item.label}
+                  onActivate={() => setOptimisticHref(item.href)}
+                />
               );
             })}
             {isOrgAdmin &&
               orgAdminItems.map((item) => {
-                const isActive = pathname === item.href;
+                const isActive = activeHref === item.href;
                 return (
-                  <Link
+                  <SidebarNavItem
                     key={item.href}
                     href={item.href}
-                    title={collapsed ? item.label : undefined}
-                    className={cn(
-                      "flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-all duration-200",
-                      collapsed ? "justify-center px-0" : "px-2",
-                      isActive
-                        ? "bg-[rgba(93,93,251,0.6)] text-white"
-                        : "text-white/90 hover:bg-[#6652fb] hover:text-white",
-                    )}
-                  >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#5D5DFB]">
-                      <item.icon className="h-4 w-4 text-white" />
-                    </div>
-                    {!collapsed && <span className="text-[13px]">{item.label}</span>}
-                  </Link>
+                    icon={item.icon}
+                    isActive={isActive}
+                    collapsed={collapsed}
+                    itemRef={(node) => setNavItemRef(item.href, node)}
+                    label={item.label}
+                    onActivate={() => setOptimisticHref(item.href)}
+                  />
                 );
               })}
           </nav>
@@ -301,11 +484,11 @@ export function Sidebar() {
           {/* Upgrade Premium Box */}
           {!collapsed && hasActiveSubscription === false && (
             <div className="mt-8 rounded-2xl bg-white p-4 shadow-lg">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="mb-2 flex items-center gap-2">
                 <Zap className="h-5 w-5 text-[#6666FF]" />
                 <h3 className="text-sm font-bold text-[#6666FF]">Upgrade to Premium</h3>
               </div>
-              <p className="text-xs text-gray-600 mb-4">Unlock all assessments</p>
+              <p className="mb-4 text-xs text-gray-600">Unlock all assessments</p>
               <Link
                 href="/dashboard/subscription"
                 className="block w-full rounded-lg bg-[#6666FF] px-4 py-2 text-center text-xs font-semibold text-white transition-all hover:bg-[#5555ee]"
@@ -324,8 +507,10 @@ export function Sidebar() {
             onClick={handleLogout}
             title={collapsed ? "Logout Account" : undefined}
             className={cn(
-              "flex items-center gap-3 rounded-lg px-2 py-2 text-sm font-medium text-white/90 transition-all duration-200 hover:bg-[#6652fb] hover:text-white",
-              collapsed ? "w-auto justify-center" : "w-full"
+              "group relative z-10 flex items-center gap-3 rounded-lg px-2 py-2 text-sm font-medium text-white/90 transition-all duration-200 hover:bg-[#6652fb] hover:text-white",
+              collapsed
+                ? "w-auto justify-center"
+                : "w-full"
             )}
           >
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#5D5DFB]">

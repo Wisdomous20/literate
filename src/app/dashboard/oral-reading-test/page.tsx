@@ -1149,7 +1149,7 @@ export default function OralReadingTestPage() {
         <div
           className={
             passageExpanded
-              ? "flex flex-1 min-h-0 flex-col p-2"
+              ? "flex flex-1 min-h-0 flex-col overflow-hidden p-2"
               : "flex flex-1 min-h-0 flex-col px-5 pt-3 pb-0"
           }
         >
@@ -1225,7 +1225,7 @@ export default function OralReadingTestPage() {
 
         {/* Audio player when expanded */}
         {passageExpanded && hasRecording && recordedAudioURL && (
-          <div className="shrink-0 px-2 pb-2">
+          <div className="mt-2 shrink-0 px-2 pb-2">
             <AudioPlayer src={recordedAudioURL} externalAudioRef={audioRef} />
           </div>
         )}
