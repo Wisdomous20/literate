@@ -8,6 +8,7 @@ import {
   Download,
   ChevronDown,
   RotateCcw,
+  ArrowRight,
 } from "lucide-react";
 
 import { convertToWav } from "@/utils/convertToWav";
@@ -20,7 +21,8 @@ interface ReadingTimerProps {
   recordedSeconds: number;
   recordedAudioURL: string | null;
   onTryAgain: () => void;
-  onStartOver?: () => void;
+  onGoToComprehension?: () => void;
+  canGoToComprehension?: boolean;
   audioRef?: React.RefObject<HTMLAudioElement | null>;
   isAnalyzing?: boolean;
 }
@@ -129,7 +131,7 @@ export function AudioPlayer({
   };
 
   return (
-    <div className="flex w-full items-center gap-2.5 rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#8D8DEC] border-l-[#8D8DEC] border-r-[#8D8DEC] border-b-[#8D8DEC] bg-[rgba(102,102,255,0.08)] px-3 py-2">
+    <div className="flex w-full items-center gap-2.5 rounded-2xl border border-[#C4B5FD] bg-[rgba(102,102,255,0.05)] px-3 py-2">
       <audio ref={audioRef} src={src} preload="metadata" />
 
       <button
@@ -181,13 +183,13 @@ export function AudioPlayer({
               className="fixed inset-0 z-10"
               onClick={() => setShowSpeedMenu(false)}
             />
-            <div className="absolute bottom-full right-0 z-20 mb-1 rounded-lg border border-[#8D8DEC] bg-white py-1 shadow-lg">
+            <div className="absolute bottom-full right-0 z-20 mb-1 rounded-lg border border-[#C4B5FD] bg-white py-1 shadow-lg">
               {SPEED_OPTIONS.map((speed) => (
                 <button
                   key={speed}
                   type="button"
                   onClick={() => handleSpeedChange(speed)}
-                  className={`flex w-full items-center px-4 py-1.5 text-xs transition-colors hover:bg-[#E4F4FF] ${
+                  className={`flex w-full items-center px-4 py-1.5 text-xs transition-colors hover:bg-[#F3F0FF] ${
                     playbackRate === speed
                       ? "font-bold text-[#6666FF]"
                       : "font-medium text-[#31318A]"
@@ -221,7 +223,8 @@ export function ReadingTimer({
   recordedSeconds,
   recordedAudioURL,
   onTryAgain,
-  onStartOver,
+  onGoToComprehension,
+  canGoToComprehension = false,
   audioRef,
   isAnalyzing = false,
 }: ReadingTimerProps) {
@@ -248,48 +251,74 @@ export function ReadingTimer({
         <AudioPlayer src={recordedAudioURL} externalAudioRef={audioRef} />
       )}
 
-      <span className="text-lg font-medium tabular-nums text-[#00306E]">
+      <span className="text-base font-semibold tabular-nums text-[#6B6BAF]">
         {formatTime(hasRecording ? recordedSeconds : 0)}
       </span>
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        {/* Start Reading — explore raised style */}
         {!hasRecording && (
-          <button
-            type="button"
-            data-tour-target="start-reading-button"
-            onClick={onStartReading}
-            disabled={isDisabled}
-            className={`flex items-center justify-center gap-2 rounded-3xl px-6 py-2.5 text-sm font-semibold text-white ... ${
-              isDisabled
-                ? "border-t border-l border-r-4 border-b-4 border-t-[#A855F7]/40 border-l-[#A855F7]/40 border-r-[#6653F9]/40 border-b-[#6653F9]/40 bg-[rgba(102,102,255,0.3)] opacity-60"
-                : "border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#3B21CC] border-b-[#3B21CC] bg-[#6666FF] shadow-[0px_1px_20px_rgba(102,102,255,0.4)] hover:bg-[#5555EE]"
-            }`}
-            title={disabledReason}
-          >
-            <Mic className="h-4 w-4" />
-            Start Reading
-          </button>
+          <div className={`relative ${isDisabled ? "opacity-50" : ""}`}>
+            <div
+              className={`absolute inset-0 rounded-full translate-y-1 ${
+                isDisabled ? "bg-[#C4C4FF]" : "bg-[#B3A4F1]"
+              }`}
+            />
+            <button
+              type="button"
+              data-tour-target="start-reading-button"
+              onClick={onStartReading}
+              disabled={isDisabled}
+              title={disabledReason}
+              className={`relative flex items-center gap-2 rounded-full px-7 py-2.5 text-sm font-semibold text-white transition-transform ${
+                isDisabled
+                  ? "cursor-not-allowed bg-[#9999CC]"
+                  : "bg-[#6666FF] hover:-translate-y-0.5 active:translate-y-0"
+              }`}
+            >
+              <Mic className="h-4 w-4" />
+              Start Reading
+            </button>
+          </div>
         )}
 
+        {/* Try Again — explore raised style, smaller */}
         {hasRecording && !isAnalyzing && (
-          <button
-            type="button"
-            onClick={onTryAgain}
-            className="rounded-[10px] border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#3B21CC] border-b-[#3B21CC] bg-[#6666FF] px-6 py-2.5 text-sm font-semibold text-white shadow-[0px_1px_20px_rgba(102,102,255,0.4)] transition-colors hover:bg-[#5555EE] md:px-8 lg:px-10"
-          >
-            Try Again
-          </button>
+          <div className="relative">
+            <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+            <button
+              type="button"
+              onClick={onTryAgain}
+              className="relative flex items-center gap-1.5 rounded-full bg-[#6666FF] px-5 py-2 text-xs font-semibold text-white transition-transform hover:-translate-y-0.5 active:translate-y-0"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Try Again
+            </button>
+          </div>
         )}
 
-        {hasRecording && !isAnalyzing && onStartOver && (
-          <button
-            type="button"
-            onClick={onStartOver}
-            className="flex items-center gap-1.5 rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9]/80 border-b-[#6653F9]/80 bg-[rgba(102,102,255,0.06)] px-6 py-2.5 text-sm font-semibold text-[#6666FF] transition-all duration-300 hover:bg-[rgba(102,102,255,0.12)] md:px-8 lg:px-10"
-          >
-            <RotateCcw className="h-4 w-4" />
-            Start Over
-          </button>
+        {/* Comprehension — explore raised style, smaller */}
+        {hasRecording && !isAnalyzing && onGoToComprehension && (
+          <div className="relative">
+            <div
+              className={`absolute inset-0 rounded-full translate-y-1 ${
+                canGoToComprehension ? "bg-[#B3A4F1]" : "bg-[#D4D4F0]"
+              }`}
+            />
+            <button
+              type="button"
+              onClick={onGoToComprehension}
+              disabled={!canGoToComprehension}
+              className={`relative flex items-center gap-1.5 rounded-full px-5 py-2 text-xs font-semibold text-white transition-transform ${
+                canGoToComprehension
+                  ? "bg-[#6666FF] hover:-translate-y-0.5 active:translate-y-0"
+                  : "cursor-not-allowed bg-[#C4C4FF]"
+              }`}
+            >
+              Comprehension
+              <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
         )}
       </div>
     </div>

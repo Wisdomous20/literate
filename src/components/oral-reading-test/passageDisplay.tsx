@@ -962,8 +962,7 @@ export function PassageDisplay({
 
       <div
         ref={containerRef}
-        className={`oral-reading-scroll relative flex-1 overflow-auto rounded-[10px] border-t border-l border-r-4 border-b-4 border-t-[#8315e9] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-white p-4 shadow-lg md:p-5 ${collapsible && !collapsed && !expanded ? "rounded-t-none border-t-0" : ""}`}
-      >
+        className={`oral-reading-scroll relative flex-1 overflow-auto rounded-[10px] border-2 border-[#A78BFA] bg-white p-4 md:p-5 ${collapsible && !collapsed && !expanded ? "rounded-t-none border-t-0" : ""}`}    >
         {content ? (
           <p
             className={`whitespace-pre-wrap text-center leading-relaxed text-[#00306E] px-8 md:px-10 ${getPassageTextClasses(passageLevel)}`}

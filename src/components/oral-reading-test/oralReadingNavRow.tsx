@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import {
-  ChevronLeft,
   ChevronDown,
+  ChevronRight,
   Plus,
   Search,
   X,
@@ -24,7 +24,7 @@ import { useAllStudentsByClasses } from "@/lib/hooks/useAllStudentByClass";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface OralReadingNavRowProps {
-  onGoBack: () => void;
+  onGoBack?: () => void;
   onContinue: () => void;
   continueEnabled: boolean;
   onClear: () => void;
@@ -34,7 +34,6 @@ interface OralReadingNavRowProps {
   hasPassage: boolean;
   continueLabel?: string;
   showContinue?: boolean;
-  // Field props — used when !hasPassage
   classes: string[];
   onStudentNameChange: (name: string) => void;
   onGradeLevelChange: (grade: string) => void;
@@ -321,9 +320,7 @@ export function OralReadingNavRow({
             aria-label="Close notification"
             title="Close notification"
             className={`ml-1 rounded-full p-0.5 transition-colors ${
-              toast.type === "success"
-                ? "hover:bg-green-200"
-                : "hover:bg-red-200"
+              toast.type === "success" ? "hover:bg-green-200" : "hover:bg-red-200"
             }`}
           >
             <X className="h-3.5 w-3.5" />
@@ -333,37 +330,48 @@ export function OralReadingNavRow({
 
       <div
         data-tour-target="assessment-student-setup"
-        className="flex items-center gap-3 rounded-2xl border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#F3F0FF] px-4 py-2.5 shadow-[0px_2px_16px_rgba(108,164,239,0.18)]"
+        className="flex items-center gap-3 rounded-2xl border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#F5F2FF] px-4 py-2.5 shadow-[0_4px_16px_rgba(102,102,255,0.12)]"
       >
-        {/* Back button */}
-        <button
-          type="button"
-          onClick={onGoBack}
-          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-3xl border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#3B21CC] border-b-[#3B21CC] bg-[#6666FF] text-white transition-colors hover:bg-[#5555EE]"
-          aria-label="Go back"
-          title="Go back"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
-
         {hasPassage ? (
-          /* ── PASSAGE SELECTED: compact info + action buttons ── */
           <>
+            {/* Back button — only if provided */}
+            {onGoBack && (
+              <button
+                type="button"
+                onClick={onGoBack}
+                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-[#A855F7] bg-white text-[#6666FF] transition-colors hover:bg-[#F3F0FF]"
+                aria-label="Go back"
+                title="Go back"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="m15 18-6-6 6-6" />
+                </svg>
+              </button>
+            )}
+
             {/* Compact student info */}
-            <div className="flex flex-1 items-center min-w-0">
-              <div className="flex flex-col min-w-0">
-                <span className="text-xs font-semibold text-[#6666FF] truncate flex items-center gap-1">
+            <div className="flex min-w-0 flex-1 items-center">
+              <div className="flex min-w-0 flex-col">
+                <span className="flex items-center gap-1 truncate text-xs font-semibold text-[#7C3AED]">
                   {selectedClassName || "—"}
-                  <span className="ml-1">
-                    {selectedClassName ? "Class" : ""}
-                  </span>
+                  {selectedClassName && <span className="ml-1 opacity-60">Class</span>}
                 </span>
-                <div className="flex items-center gap-2 mt-0.5 min-w-0">
-                  <span className="text-sm font-bold text-[#00306E] truncate">
+                <div className="mt-0.5 flex min-w-0 items-center gap-2">
+                  <span className="truncate text-sm font-bold text-[#00306E]">
                     {studentName || "—"}
                   </span>
                   {gradeLevel && (
-                    <span className="ml-2 rounded-full bg-[#e8e4fe] px-2 py-0.5 text-xs font-semibold text-[#7C3AED]">
+                    <span className="ml-2 rounded-full bg-[#EDE9FF] px-2 py-0.5 text-xs font-semibold text-[#6B21D8]">
                       Grade {gradeLevel}
                     </span>
                   )}
@@ -372,49 +380,52 @@ export function OralReadingNavRow({
             </div>
 
             {/* Action buttons */}
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex flex-shrink-0 items-center gap-2">
               {showContinue && (
-                <button
-                  type="button"
-                  data-tour-target="assessment-continue-button"
-                  onClick={onContinue}
-                  disabled={!continueEnabled}
-                  className={`flex items-center gap-2 rounded-[20px] border-t border-l border-r-[3px] border-b-[3px] px-4 py-1.5 text-sm font-semibold transition-all ${
-                    continueEnabled
-                      ? "border-t-[#A855F7] border-l-[#A855F7] border-r-[#3B21CC] border-b-[#3B21CC] bg-[#6666FF] text-white shadow-[0_2px_12px_rgba(102,102,255,0.35)] hover:bg-[#5555EE]"
-                      : "cursor-not-allowed border-t-[#A855F7]/30 border-l-[#A855F7]/30 border-r-[#C4C4FF] border-b-[#C4C4FF] bg-white text-[#A5A5D6]"
-                  }`}
-                >
-                  <span>{continueLabel}</span>
-                  <span
-                    className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border-2 ${
-                      continueEnabled ? "border-white" : "border-[#C4C4FF]"
+                <div className="relative">
+                  <div
+                    className={`absolute inset-0 rounded-full translate-y-1 ${
+                      continueEnabled ? "bg-[#B3A4F1]" : "bg-[#D4D4F0]"
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    data-tour-target="assessment-continue-button"
+                    onClick={onContinue}
+                    disabled={!continueEnabled}
+                    className={`relative flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition-transform ${
+                      continueEnabled
+                        ? "bg-[#6666FF] text-white hover:-translate-y-0.5 active:translate-y-0"
+                        : "cursor-not-allowed bg-[#C4C4FF] text-white"
                     }`}
                   >
-                    {continueEnabled && (
-                      <span className="h-1.5 w-1.5 rounded-full bg-white" />
-                    )}
-                  </span>
-                </button>
+                    <span>{continueLabel}</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
               )}
 
-              <button
-                type="button"
-                data-tour-target="assessment-clear-button"
-                onClick={onClear}
-  className="ml-2 inline-flex items-center gap-1 rounded-full border-t border-l border-r-2 border-b-2 border-t-[#ed1a1a] border-l-[#F87171] border-r-[#F87171] border-b-[#F87171] bg-white px-4 py-1 text-xs font-normal text-[#DC2626] transition-colors hover:bg-[#FEF2F2] hover:border-[#DC2626]"
-              >
-                <X className="h-3 w-3" />
-                Clear
-              </button>
+              {/* Clear — signup raised style */}
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full translate-y-1 bg-[#FECACA]" />
+                <button
+                  type="button"
+                  data-tour-target="assessment-clear-button"
+                  onClick={onClear}
+                  className="relative ml-1 inline-flex items-center gap-1.5 rounded-full border border-[#DC2626] bg-white px-4 py-1.5 text-xs font-medium text-[#DC2626] transition-transform hover:-translate-y-0.5 active:translate-y-0"
+                >
+                  <X className="h-3 w-3" />
+                  Clear
+                </button>
+              </div>
             </div>
           </>
         ) : (
-          /* ── NO PASSAGE: inline input fields with field labels ── */
-          <div className="flex flex-1 min-w-0 gap-3">
+          /* ── NO PASSAGE: inline input fields ── */
+          <div className="flex min-w-0 flex-1 gap-3">
             {/* Student Name */}
-            <div className="flex flex-col flex-1 min-w-0">
-              <label className="mb-0.5 block text-[10px] font-bold uppercase tracking-widest text-[#0C1A6D]">
+            <div className="flex min-w-0 flex-1 flex-col">
+              <label className="mb-0.5 block text-[10px] font-bold uppercase tracking-widest text-[#0C1A6D]/60">
                 Student Name
               </label>
               <div className="relative">
@@ -426,21 +437,21 @@ export function OralReadingNavRow({
                   onChange={(e) => handleStudentNameInput(e.target.value)}
                   onFocus={() => setIsStudentInputFocused(true)}
                   placeholder="Student name"
-                  className="w-full rounded-xl border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-white pl-9 pr-3 py-1.5 text-xs text-[#00306E] outline-none placeholder:text-[#00306E]/40 transition-all focus:ring-2 focus:ring-[#A855F7]/20"
+                  className="w-full rounded-xl border border-[#C4B5FD] bg-white py-1.5 pl-9 pr-3 text-xs text-[#00306E] outline-none transition-all placeholder:text-[#00306E]/35 focus:border-[#7C3AED] focus:ring-2 focus:ring-[#A855F7]/15"
                 />
                 {showSuggestions && (
                   <div
                     ref={studentDropdownRef}
-                    className="absolute left-0 right-0 top-full z-20 mt-1 max-h-48 overflow-y-auto rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-white py-1 shadow-[0px_4px_12px_rgba(84,164,255,0.2)]"
+                    className="absolute left-0 right-0 top-full z-20 mt-1 max-h-48 overflow-y-auto rounded-xl border border-[#C4B5FD] bg-white py-1 shadow-[0_4px_16px_rgba(102,102,255,0.15)]"
                   >
                     {showCreateStudent && (
-                      <div className="border-b border-[#EEEEFF]">
+                      <div className="border-b border-[#F0EEFF]">
                         <button
                           type="button"
                           onMouseDown={(e) => e.preventDefault()}
                           onClick={handleCreateStudent}
                           disabled={isCreatingStudent}
-                          className="flex w-full items-center gap-1.5 px-3 py-1.5 text-left text-sm font-semibold text-[#6666FF] transition-colors hover:bg-[#E4F4FF] disabled:opacity-50"
+                          className="flex w-full items-center gap-1.5 px-3 py-1.5 text-left text-sm font-semibold text-[#6666FF] transition-colors hover:bg-[#F3F0FF] disabled:opacity-50"
                         >
                           <Plus className="h-3.5 w-3.5" />
                           {isCreatingStudent
@@ -460,10 +471,10 @@ export function OralReadingNavRow({
                         type="button"
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => handleStudentSelect(s)}
-                        className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm text-[#00306E] transition-colors hover:bg-[#E4F4FF]"
+                        className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm text-[#00306E] transition-colors hover:bg-[#F3F0FF]"
                       >
                         <span className="truncate font-medium">{s.name}</span>
-                        <span className="shrink-0 text-xs text-[#54A4FF]">
+                        <span className="shrink-0 text-xs text-[#9090B4]">
                           Grade {s.level} · {s.className}
                         </span>
                       </button>
@@ -473,9 +484,9 @@ export function OralReadingNavRow({
               </div>
             </div>
 
-            {/* Grade Level */}
-            <div className="flex flex-col w-32 flex-shrink-0">
-              <span className="mb-0.5 block text-[10px] font-bold uppercase tracking-widest text-[#6666FF]">
+            {/* Grade Level — always pastel fill */}
+            <div className="flex w-32 flex-shrink-0 flex-col">
+              <span className="mb-0.5 block text-[10px] font-bold uppercase tracking-widest text-[#7C3AED]/70">
                 Grade Level
               </span>
               <div className="relative" ref={gradeDropdownRef}>
@@ -486,10 +497,10 @@ export function OralReadingNavRow({
                     setIsGradeDropdownOpen(!isGradeDropdownOpen);
                     setIsClassDropdownOpen(false);
                   }}
-                  className={`flex w-full items-center justify-between gap-1.5 rounded-xl border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] px-3 py-1.5 text-xs font-medium transition-all ${
+                  className={`flex w-full items-center justify-between gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition-all ${
                     gradeLevel
-                      ? "bg-purple-50 text-purple-700"
-                      : "bg-white text-purple-700 hover:bg-purple-50"
+                      ? "border-[#A78BFA] bg-[#EDE9FF] text-[#6B21D8]"
+                      : "border-[#C4B5FD] bg-[#F5F2FF] text-[#7C3AED] hover:bg-[#EDE9FF]"
                   }`}
                 >
                   <span className="truncate">
@@ -505,11 +516,11 @@ export function OralReadingNavRow({
                       }}
                     />
                   ) : (
-                    <ChevronDown className="h-3 w-3 shrink-0" />
+                    <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
                   )}
                 </button>
                 {isGradeDropdownOpen && (
-                  <div className="absolute left-0 top-full z-20 mt-1.5 max-h-48 w-32 overflow-y-auto rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-white py-1 shadow-[0px_4px_12px_rgba(102,102,255,0.2)]">
+                  <div className="absolute left-0 top-full z-20 mt-1.5 max-h-48 w-32 overflow-y-auto rounded-xl border border-[#C4B5FD] bg-white py-1 shadow-[0_4px_16px_rgba(102,102,255,0.15)]">
                     {Array.from({ length: 10 }, (_, i) => {
                       const grade = String(i + 1);
                       const isActive = gradeLevel === grade;
@@ -526,9 +537,9 @@ export function OralReadingNavRow({
                             clearAutoFill();
                             setIsGradeDropdownOpen(false);
                           }}
-                          className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm transition-colors hover:bg-[#EEEEFF] ${
+                          className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm transition-colors hover:bg-[#F3F0FF] ${
                             isActive
-                              ? "bg-[#EEEEFF] font-semibold text-[#6666FF]"
+                              ? "bg-[#EDE9FF] font-semibold text-[#6666FF]"
                               : "text-[#00306E]"
                           }`}
                         >
@@ -544,10 +555,10 @@ export function OralReadingNavRow({
               </div>
             </div>
 
-            {/* Class */}
-            <div className="flex flex-col w-40 flex-shrink-0">
-              <span className="mb-0.5 block text-[10px] font-bold uppercase tracking-widest text-[#6666FF]">
-                Class
+            {/* Class Name — always pastel fill */}
+            <div className="flex w-40 flex-shrink-0 flex-col">
+              <span className="mb-0.5 block text-[10px] font-bold uppercase tracking-widest text-[#7C3AED]/70">
+                Class Name
               </span>
               <div className="relative" ref={classDropdownRef}>
                 <button
@@ -557,10 +568,10 @@ export function OralReadingNavRow({
                     setIsClassDropdownOpen(!isClassDropdownOpen);
                     setIsGradeDropdownOpen(false);
                   }}
-                  className={`flex w-full items-center justify-between gap-1.5 rounded-xl border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] px-3 py-1.5 text-xs font-medium transition-all ${
+                  className={`flex w-full items-center justify-between gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition-all ${
                     selectedClass
-                      ? "bg-purple-50 text-purple-700"
-                      : "bg-white text-purple-700 hover:bg-purple-50"
+                      ? "border-[#A78BFA] bg-[#EDE9FF] text-[#6B21D8]"
+                      : "border-[#C4B5FD] bg-[#F5F2FF] text-[#7C3AED] hover:bg-[#EDE9FF]"
                   }`}
                 >
                   <span className="truncate">{selectedClass || "Class"}</span>
@@ -575,15 +586,15 @@ export function OralReadingNavRow({
                       }}
                     />
                   ) : (
-                    <ChevronDown className="h-3 w-3 shrink-0" />
+                    <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
                   )}
                 </button>
                 {isClassDropdownOpen && (
-                  <div className="absolute right-0 top-full z-20 mt-1.5 max-h-48 w-44 overflow-y-auto rounded-lg border border-[#6666FF] bg-white py-1 shadow-[0px_4px_12px_rgba(102,102,255,0.2)]">
+                  <div className="absolute right-0 top-full z-20 mt-1.5 max-h-48 w-44 overflow-y-auto rounded-xl border border-[#C4B5FD] bg-white py-1 shadow-[0_4px_16px_rgba(102,102,255,0.15)]">
                     <button
                       type="button"
                       onClick={() => handleClassChange("create-new")}
-                      className="flex w-full items-center gap-1.5 border-b border-[#EEEEFF] px-3 py-1.5 text-left text-sm font-semibold text-[#6666FF] transition-colors hover:bg-[#EEEEFF]"
+                      className="flex w-full items-center gap-1.5 border-b border-[#F0EEFF] px-3 py-1.5 text-left text-sm font-semibold text-[#6666FF] transition-colors hover:bg-[#F3F0FF]"
                     >
                       <Plus className="h-3.5 w-3.5" />
                       Create New Class
@@ -604,9 +615,9 @@ export function OralReadingNavRow({
                               handleClassChange(cls);
                             }
                           }}
-                          className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm transition-colors hover:bg-[#EEEEFF] ${
+                          className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm transition-colors hover:bg-[#F3F0FF] ${
                             isActive
-                              ? "bg-[#EEEEFF] font-semibold text-[#6666FF]"
+                              ? "bg-[#EDE9FF] font-semibold text-[#6666FF]"
                               : "text-[#00306E]"
                           }`}
                         >
@@ -622,20 +633,23 @@ export function OralReadingNavRow({
               </div>
             </div>
 
-            {/* Clear button */}
+            {/* Clear — signup raised style */}
             <div className="flex flex-col justify-end">
               <span className="select-none text-[10px] font-bold uppercase tracking-widest text-transparent">
                 &nbsp;
               </span>
-          <button
-  type="button"
-  data-tour-target="assessment-clear-button"
-  onClick={onClear}
-  className="ml-2 inline-flex items-center gap-1 rounded-full border-t border-l border-r-2 border-b-2 border-t-[#ed1a1a] border-l-[#F87171] border-r-[#F87171] border-b-[#F87171] bg-white px-4 py-1 text-xs font-normal text-[#DC2626] transition-colors hover:bg-[#FEF2F2] hover:border-[#DC2626]"
->
-  <X className="h-3 w-3" />
-  Clear
-</button>
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full translate-y-1 bg-[#FECACA]" />
+                <button
+                  type="button"
+                  data-tour-target="assessment-clear-button"
+                  onClick={onClear}
+                  className="relative ml-1 inline-flex items-center gap-1.5 rounded-full border border-[#DC2626] bg-white px-4 py-1.5 text-xs font-medium text-[#DC2626] transition-transform hover:-translate-y-0.5 active:translate-y-0"
+                >
+                  <X className="h-3 w-3" />
+                  Clear
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -655,7 +669,7 @@ export function OralReadingNavRow({
               if (e.key === "Enter") handleCreateClass();
             }}
             autoFocus
-            className="w-full rounded-lg border border-[#54A4FF] bg-[#EFFDFF] px-3 py-2 text-sm text-[#00306E] shadow-[0px_1px_10px_rgba(108,164,239,0.25)] outline-none placeholder:text-[#00306E]/40"
+            className="w-full rounded-lg border border-[#C4B5FD] bg-[#F5F2FF] px-3 py-2 text-sm text-[#00306E] outline-none placeholder:text-[#00306E]/40"
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>

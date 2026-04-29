@@ -198,3 +198,25 @@ body {
     transform: scale(1);
   }
 }
+
+/* ── Purple scrollbars for oral reading passage ── */
+.oral-reading-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.oral-reading-scroll::-webkit-scrollbar-track {
+  background: #F3F0FF;
+  border-radius: 3px;
+}
+.oral-reading-scroll::-webkit-scrollbar-thumb {
+  background: #A78BFA;
+  border-radius: 3px;
+}
+.oral-reading-scroll::-webkit-scrollbar-thumb:hover {
+  background: #7C3AED;
+}
+/* Firefox */
+.oral-reading-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #A78BFA #F3F0FF;
+}
