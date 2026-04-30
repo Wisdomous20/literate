@@ -41,14 +41,16 @@ export default function Navbar() {
         <div className="absolute inset-0 bg-[#6C4EEB] rounded-[10px] translate-y-1" />
         <div className="relative flex items-center justify-between bg-white border-2 border-[#6C4EEB] rounded-[10px] px-6 py-3">
         {/* Logo */}
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 bg-[#6C4EEB] rounded-full flex items-center justify-center">
-            <div className="w-4 h-4 bg-white rounded-sm rotate-45" />
-          </div>
-          <span className="font-[Outfit] text-[23px] font-bold text-[#6C4EEB]">
-            LiteRate
-          </span>
-        </div>
+        <Link href="/" className="flex shrink-0 items-center">
+          <Image
+            src="/assets/LiteRate-logo-lockup.png"
+            alt="LiteRate"
+            width={190}
+            height={44}
+            className="h-9 w-auto sm:h-10"
+            priority
+          />
+        </Link>
 
         {/* Nav Links - absolutely centered */}
         <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-12">
