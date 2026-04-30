@@ -48,6 +48,10 @@ async function processTranscription(job: Job<TranscriptionJobData>) {
   );
 
   await prisma.$transaction(async (tx) => {
+    await tx.wordTimestamp.deleteMany({ where: { sessionId: session.id } });
+    await tx.oralFluencyMiscue.deleteMany({ where: { sessionId: session.id } });
+    await tx.oralFluencyBehavior.deleteMany({ where: { sessionId: session.id } });
+
     await tx.oralFluencySession.update({
       where: { id: session.id },
       data: {

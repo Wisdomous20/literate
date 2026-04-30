@@ -12,7 +12,7 @@ export function useTranscriptionStatus(
   assessmentId: string | null,
   options?: { interval?: number; enabled?: boolean }
 ) {
-  const interval = options?.interval ?? 3000;
+  const interval = options?.interval ?? 1500;
 
   return useQuery<TranscriptionStatus>({
     queryKey: ["transcription-status", assessmentId],

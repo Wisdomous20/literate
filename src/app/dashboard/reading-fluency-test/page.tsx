@@ -542,15 +542,15 @@ export default function ReadingFluencyTestPage() {
         return;
       }
 
-      const formData = new FormData();
-      formData.append("studentId", studentId);
-      formData.append("passageId", selectedPassage);
-      formData.append("audioUrl", AudioUrl);
-      formData.append("audio", wavBlob, "recording.wav");
-
       const response = await fetch(`/api/fluency-reading/${selectedPassage}`, {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId,
+          passageId: selectedPassage,
+          audioUrl: AudioUrl,
+          fileName: "recording.wav",
+        }),
       });
 
       const responseText = await response.text();

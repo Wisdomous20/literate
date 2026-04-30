@@ -2,27 +2,62 @@ import { z } from "zod";
 import {
   fileSchema,
   idString,
-  optionalUrlString,
   requiredString,
 } from "@/lib/validation/common";
 import { MiscueType, OralFluencyBehaviorType } from "@/generated/prisma/enums";
 
+const MAX_AUDIO_UPLOAD_BYTES = 50 * 1024 * 1024;
+const AUDIO_FILE_EXTENSIONS = /\.(wav|webm|m4a|mp3|ogg)$/i;
+
+const audioUrlString = requiredString("audioUrl").pipe(
+  z.string().url("audioUrl must be a valid URL"),
+);
+
+const audioFileNameSchema = z.preprocess(
+  (value) => (typeof value === "string" ? value.trim() : undefined),
+  z.string().min(1, "fileName is required").max(255).optional(),
+);
+
+const audioFileSchema = fileSchema("Audio file")
+  .refine(
+    (file) => file.size <= MAX_AUDIO_UPLOAD_BYTES,
+    "Audio file must be 50MB or smaller",
+  )
+  .refine(
+    (file) => file.type.startsWith("audio/"),
+    "Audio file must be an audio MIME type",
+  );
+
 export const uploadAudioSchema = z.object({
-  file: fileSchema("File"),
-  filePath: requiredString("filePath"),
+  file: audioFileSchema,
+  filePath: requiredString("filePath")
+    .refine(
+      (path) => path.startsWith("oral-fluency/"),
+      "filePath must be within oral-fluency/",
+    )
+    .refine(
+      (path) => !path.includes("..") && !path.includes("\\"),
+      "filePath contains invalid path segments",
+    )
+    .refine(
+      (path) => AUDIO_FILE_EXTENSIONS.test(path),
+      "filePath must end with a supported audio extension",
+    ),
 });
 
 export const createAudioAssessmentSchema = z.object({
   studentId: idString("studentId"),
   passageId: idString("passageId"),
-  audio: fileSchema("Audio file"),
-  audioUrl: optionalUrlString("audioUrl").optional(),
+  audio: audioFileSchema.optional(),
+  audioUrl: audioUrlString,
+  fileName: audioFileNameSchema,
 });
 
 export const transcriptionRequestSchema = z.object({
   assessmentId: idString("assessmentId"),
-  audio: fileSchema("Audio file"),
-  audioUrl: optionalUrlString("audioUrl").optional(),
+  audio: audioFileSchema.optional(),
+  audioUrl: audioUrlString,
+  fileName: audioFileNameSchema,
 });
 
 export const sessionIdQuerySchema = z.object({

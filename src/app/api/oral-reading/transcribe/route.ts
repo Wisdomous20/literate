@@ -1,23 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { transcriptionQueue } from "@/lib/queues";
-import type { TranscriptionJobData } from "@/lib/queues";
 import {
   assessmentIdQuerySchema,
   transcriptionRequestSchema,
 } from "@/lib/validation/media";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
+import { enqueueTranscriptionService } from "@/service/oral-fluency/enqueueTranscriptionService";
+import { getTranscriptionStatusService } from "@/service/oral-fluency/getTranscriptionStatusService";
+import {
+  InvalidRequestBodyError,
+  readTranscriptionPayload,
+} from "@/app/api/_utils/audioRequestPayload";
+import { serviceErrorResponse } from "@/app/api/_utils/serviceErrorResponse";
 
-export const maxDuration = 10; 
+export const maxDuration = 10;
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const validationResult = transcriptionRequestSchema.safeParse({
-      assessmentId: formData.get("assessmentId"),
-      audio: formData.get("audio"),
-      audioUrl: formData.get("audioUrl") ?? undefined,
-    });
+    const payload = await readTranscriptionPayload(request);
+    const validationResult = transcriptionRequestSchema.safeParse(payload);
 
     if (!validationResult.success) {
       return NextResponse.json(
@@ -26,61 +26,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { assessmentId, audio: audioFile, audioUrl = "" } =
+    const { assessmentId, audioUrl, fileName = "recording.wav" } =
       validationResult.data;
 
-    // Validate assessment exists
-    const assessment = await prisma.assessment.findUnique({
-      where: { id: assessmentId },
-      include: { passage: { select: { content: true, language: true } } },
-    });
-
-    if (!assessment) {
-      return NextResponse.json({ error: "Assessment not found" }, { status: 404 });
-    }
-
-    // Create session as PENDING (or update existing)
-    const existingSession = await prisma.oralFluencySession.findUnique({
-      where: { assessmentId },
-    });
-
-    let sessionId: string;
-    if (existingSession) {
-      await prisma.oralFluencySession.update({
-        where: { id: existingSession.id },
-        data: { status: "PENDING", audioUrl },
-      });
-      sessionId = existingSession.id;
-    } else {
-      const session = await prisma.oralFluencySession.create({
-        data: { assessmentId, audioUrl, status: "PENDING" },
-      });
-      sessionId = session.id;
-    }
-
-    // Enqueue the heavy work to BullMQ
-    const jobData: TranscriptionJobData = {
+    const result = await enqueueTranscriptionService({
       assessmentId,
       audioUrl,
-      fileName: audioFile.name || "recording.wav",
-    };
+      fileName,
+    });
 
-    const job = await transcriptionQueue.add(
-      `transcribe-${assessmentId}`,
-      jobData,
-      { jobId: `transcription-${assessmentId}` },
+    if (!result.success) {
+      return serviceErrorResponse(result, "Failed to enqueue transcription");
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        assessmentId: result.assessmentId,
+        sessionId: result.sessionId,
+        status: result.status,
+        jobId: result.jobId,
+      },
+      { status: 202 },
     );
-
-    console.log(`[API] Enqueued transcription job ${job.id} for assessment ${assessmentId}`);
-
-    return NextResponse.json({
-      success: true,
-      assessmentId,
-      sessionId,
-      status: "PENDING",
-      jobId: job.id,
-    }, { status: 202 });
   } catch (error) {
+    if (error instanceof InvalidRequestBodyError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
     console.error("Transcription enqueue error:", error);
     return NextResponse.json(
       { error: "Failed to enqueue transcription" },
@@ -88,7 +61,6 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
 
 export async function GET(request: NextRequest) {
   const validationResult = assessmentIdQuerySchema.safeParse({
@@ -98,80 +70,17 @@ export async function GET(request: NextRequest) {
   if (!validationResult.success) {
     return NextResponse.json(
       { error: getFirstZodErrorMessage(validationResult.error) },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  const { assessmentId } = validationResult.data;
+  const result = await getTranscriptionStatusService(
+    validationResult.data.assessmentId,
+  );
 
-  const session = await prisma.oralFluencySession.findUnique({
-    where: { assessmentId },
-    include: {
-      miscues: true,
-      behaviors: true,
-      wordTimestamps: { orderBy: { index: "asc" } },
-    },
-  });
-
-  if (!session) {
-    return NextResponse.json({ error: "Session not found" }, { status: 404 });
+  if (!result.success || !result.data) {
+    return serviceErrorResponse(result, "Failed to fetch transcription status");
   }
 
-  // Still processing
-  if (session.status === "PENDING" || session.status === "PROCESSING") {
-    return NextResponse.json({
-      status: session.status,
-      assessmentId,
-      sessionId: session.id,
-    });
-  }
-
-  // Failed
-  if (session.status === "FAILED") {
-    return NextResponse.json({
-      status: "FAILED",
-      assessmentId,
-      sessionId: session.id,
-      error: "Transcription failed",
-    });
-  }
-
-  // Completed — return full analysis
-  return NextResponse.json({
-    status: "COMPLETED",
-    assessmentId,
-    sessionId: session.id,
-    analysis: {
-      transcript: session.transcript,
-      wordsPerMinute: session.wordsPerMinute,
-      accuracy: session.accuracy,
-      totalWords: session.totalWords,
-      totalMiscues: session.totalMiscues,
-      duration: session.duration,
-      classificationLevel: session.classificationLevel,
-      oralFluencyScore: session.oralFluencyScore,
-      miscues: session.miscues.map((m) => ({
-        miscueType: m.miscueType,
-        expectedWord: m.expectedWord,
-        spokenWord: m.spokenWord,
-        wordIndex: m.wordIndex,
-        timestamp: m.timestamp,
-        isSelfCorrected: m.isSelfCorrected,
-      })),
-      behaviors: session.behaviors.map((b) => ({
-        behaviorType: b.behaviorType,
-        startIndex: b.startIndex,
-        endIndex: b.endIndex,
-        startTime: b.startTime,
-        endTime: b.endTime,
-        notes: b.notes,
-      })),
-      alignedWords: session.wordTimestamps.map((w) => ({
-        spoken: w.word,
-        timestamp: w.startTime,
-        endTimestamp: w.endTime,
-        confidence: w.confidence,
-      })),
-    },
-  });
+  return NextResponse.json(result.data);
 }

@@ -191,14 +191,14 @@ export default function OralReadingTestPage() {
         return;
       }
 
-      const formData = new FormData();
-      formData.append("assessmentId", assessmentId);
-      formData.append("audioUrl", audioUrl);
-      formData.append("audio", wavBlob, "recording.wav");
-
       const response = await fetch("/api/oral-reading/transcribe", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assessmentId,
+          audioUrl,
+          fileName: "recording.wav",
+        }),
       });
 
       const result = await response.json();
@@ -260,7 +260,7 @@ export default function OralReadingTestPage() {
             } catch (err) {
               console.error("Polling error:", err);
             }
-          }, 3000);
+          }, 1500);
 
           setTimeout(() => {
             clearInterval(interval);
@@ -879,11 +879,6 @@ export default function OralReadingTestPage() {
 
       console.log("Audio uploaded to:", AudioUrl);
 
-      const formData = new FormData();
-      formData.append("assessmentId", existingAssessmentId);
-      formData.append("audioUrl", AudioUrl);
-      formData.append("audio", wavBlob, "recording.wav");
-
       console.log(
         "Sending to transcription API with assessment ID:",
         existingAssessmentId,
@@ -891,7 +886,12 @@ export default function OralReadingTestPage() {
 
       const response = await fetch(`/api/oral-reading/transcribe`, {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assessmentId: existingAssessmentId,
+          audioUrl: AudioUrl,
+          fileName: "recording.wav",
+        }),
       });
 
       const responseText = await response.text();

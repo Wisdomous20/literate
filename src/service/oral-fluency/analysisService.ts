@@ -36,9 +36,10 @@ export async function analyzeOralFluency(
     dictLoaded = true
   }
 
-  // 1. Run STT and pitch analysis in parallel.
+  // 1. Start network-bound STT before CPU-bound pitch analysis.
+  const sttPromise    = transcribeAudio(audioBuffer, fileName, language, passageText)
   const pitchAnalysis = analyzePitch(audioBuffer)
-  const sttResult     = await transcribeAudio(audioBuffer, fileName, language, passageText)
+  const sttResult     = await sttPromise
 
   console.log(
     `[Pitch] coV:${pitchAnalysis.pitchCoV.toFixed(4)}`,
