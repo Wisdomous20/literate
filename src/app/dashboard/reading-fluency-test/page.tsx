@@ -687,39 +687,18 @@ export default function ReadingFluencyTestPage() {
         />
       }
     >
-      {/* Nav row — inline student fields when no passage, compact info when passage selected */}
-      <OralReadingNavRow
-        onGoBack={() => router.back()}
-        onContinue={() => {}}
-        continueEnabled={false}
-        showContinue={false}
-        onClear={handleStartNew}
-        studentName={studentName}
-        gradeLevel={gradeLevel}
-        selectedClassName={selectedClassName}
-        hasPassage={false}
-        classes={classNames}
-        onStudentNameChange={setStudentName}
-        onGradeLevelChange={setGradeLevel}
-        onClassCreated={() =>
-          queryClient.invalidateQueries({
-            queryKey: ["classes", schoolYear],
-          })
-        }
-        onStudentSelected={(studentId: string) =>
-          setSelectedStudentId(studentId)
-        }
-        onClassChange={setSelectedClassName}
-      />
-
-      {/* Passage filters + share link (student info lives in nav row) */}
       {!passageExpanded && (
-        <StudentSetupSection
-          isLoading={isLoadingClasses}
+        <OralReadingNavRow
+          onGoBack={() => router.back()}
+          onContinue={() => {}}
+          continueEnabled={false}
+          showContinue={false}
+          onClear={handleStartNew}
           studentName={studentName}
           gradeLevel={gradeLevel}
-          classes={classNames}
           selectedClassName={selectedClassName}
+          hasPassage={false}
+          classes={classNames}
           onStudentNameChange={setStudentName}
           onGradeLevelChange={setGradeLevel}
           onClassCreated={() =>
@@ -731,135 +710,162 @@ export default function ReadingFluencyTestPage() {
             setSelectedStudentId(studentId)
           }
           onClassChange={setSelectedClassName}
-          onClear={handleStartNew}
-          hasPassage={hasPassage}
-          selectedLanguage={selectedLanguage}
-          selectedLevel={selectedLevel}
-          selectedTestType={selectedTestType}
-          onOpenPassageModal={() => setIsPassageModalOpen(true)}
-          shareableLink={
-            selectedStudentId && selectedPassage
-              ? {
-                  studentId: selectedStudentId,
-                  passageId: selectedPassage,
-                  assessmentType: "READING_FLUENCY",
-                }
-              : undefined
-          }
-          hideStudentInfo
         />
       )}
 
-      {/* Passage display */}
-      <PassageDisplay
-        content={passageContent}
-        miscues={showMiscues ? filteredMiscues : undefined}
-        alignedWords={showMiscues ? analysisResult?.alignedWords : undefined}
-        onJumpToTime={handleJumpToTime}
-        expanded={passageExpanded}
-        onToggleExpand={() => setPassageExpanded((prev) => !prev)}
-        passageLevel={selectedLevel}
-      />
+      <div className="flex flex-1 min-h-0 flex-col overflow-hidden rounded-2xl border border-[#C4B5FD] bg-white shadow-[0_12px_48px_rgba(102,102,255,0.18),0_3px_12px_rgba(102,102,255,0.10)]">
+        {!passageExpanded && (
+          <div className="shrink-0 px-5 pt-4 pb-3">
+            <StudentSetupSection
+              isLoading={isLoadingClasses}
+              studentName={studentName}
+              gradeLevel={gradeLevel}
+              classes={classNames}
+              selectedClassName={selectedClassName}
+              onStudentNameChange={setStudentName}
+              onGradeLevelChange={setGradeLevel}
+              onClassCreated={() =>
+                queryClient.invalidateQueries({
+                  queryKey: ["classes", schoolYear],
+                })
+              }
+              onStudentSelected={(studentId: string) =>
+                setSelectedStudentId(studentId)
+              }
+              onClassChange={setSelectedClassName}
+              onClear={handleStartNew}
+              hasPassage={hasPassage}
+              selectedLanguage={selectedLanguage}
+              selectedLevel={selectedLevel}
+              selectedTestType={selectedTestType}
+              passageTitle={selectedTitle}
+              onOpenPassageModal={() => setIsPassageModalOpen(true)}
+              shareableLink={
+                selectedStudentId && selectedPassage
+                  ? {
+                      studentId: selectedStudentId,
+                      passageId: selectedPassage,
+                      assessmentType: "READING_FLUENCY",
+                    }
+                  : undefined
+              }
+              hideStudentInfo
+            />
+          </div>
+        )}
 
-      {/* Audio player when passage is expanded */}
-      {passageExpanded && hasRecording && recordedAudioURL && (
-        <div className="mt-2">
-          <AudioPlayer src={recordedAudioURL} externalAudioRef={audioRef} />
-        </div>
-      )}
+        {!passageExpanded && (
+          <div className="shrink-0 mx-5 h-px bg-[#E5DEFF]" />
+        )}
 
-      {/* Word count + miscue toggle */}
-      {!passageExpanded && hasPassage && (
-        <div className="mt-2 flex items-center justify-between">
-          <span className="text-xs font-semibold text-[#00306E]">
-            {passageContent.split(/\s+/).length} words
-          </span>
-          {analysisResult && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-[#31318A]">
-                {showMiscues ? "Miscues" : "Original"}
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowMiscues((prev) => !prev)}
-                aria-label={
-                  showMiscues
-                    ? "Show original passage"
-                    : "Show miscue highlights"
-                }
-                title={
-                  showMiscues
-                    ? "Show original passage"
-                    : "Show miscue highlights"
-                }
-                className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
-                  showMiscues ? "bg-[#6666FF]" : "bg-[#C4C4FF]"
-                }`}
-              >
-                <span
-                  className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-                    showMiscues ? "translate-x-4.25" : "translate-x-0.75"
-                  }`}
-                />
-              </button>
-            </div>
-          )}
-          {!analysisResult && (
-            <div className="flex items-center gap-2 opacity-40 pointer-events-none">
-              <span className="text-xs font-medium text-[#31318A]">
-                Miscues
-              </span>
-              <div className="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full bg-[#C4C4FF]">
-                <span className="inline-block h-3.5 w-3.5 translate-x-0.75 rounded-full bg-white shadow" />
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Passage title */}
-      {!passageExpanded && hasPassage && (
-        <div className="mb-2 flex items-center justify-center">
-          <span className="text-lg font-bold text-[#31318A] md:text-xl">
-            {selectedTitle}
-          </span>
-        </div>
-      )}
-
-      {/* Reading timer + audio player */}
-      {!passageExpanded && (
-        <ReadingTimer
-          hasPassage={hasPassage}
-          hasStudentInfo={
-            !!(studentName.trim() && gradeLevel && selectedClassName)
+        <div
+          className={
+            passageExpanded
+              ? "flex flex-1 min-h-0 flex-col overflow-hidden p-2"
+              : "flex flex-1 min-h-0 flex-col px-5 pt-3 pb-0"
           }
-          onStartReading={handleStartReading}
-          hasRecording={hasRecording}
-          recordedSeconds={recordedSeconds}
-          recordedAudioURL={recordedAudioURL}
-          onTryAgain={handleTryAgain}
-          audioRef={audioRef}
-        />
-      )}
-
-      {/* Countdown toggle + readiness check */}
-      {!passageExpanded && (
-        <div className="flex items-center justify-between">
-          <CountdownToggle
-            countdownEnabled={countdownEnabled}
-            countdownSeconds={countdownSeconds}
-            onToggle={() => setCountdownEnabled(!countdownEnabled)}
-            onDecrease={() =>
-              setCountdownSeconds(Math.max(1, countdownSeconds - 1))
+        >
+          <PassageDisplay
+            content={passageContent}
+            miscues={showMiscues ? filteredMiscues : undefined}
+            alignedWords={
+              showMiscues ? analysisResult?.alignedWords : undefined
             }
-            onIncrease={() =>
-              setCountdownSeconds(Math.min(10, countdownSeconds + 1))
-            }
+            onJumpToTime={handleJumpToTime}
+            expanded={passageExpanded}
+            onToggleExpand={() => setPassageExpanded((prev) => !prev)}
+            passageLevel={selectedLevel}
           />
 
-          <ReadinessCheckButton />
+          {!passageExpanded && hasPassage && (
+            <div className="mt-1.5 flex items-center justify-between px-0.5">
+              <span className="text-[10px] font-semibold text-[#A0A0C0]">
+                {passageContent.split(/\s+/).filter(Boolean).length} words
+              </span>
+              {analysisResult && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-medium text-[#9090B4]">
+                    {showMiscues ? "Miscues" : "Original"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowMiscues((prev) => !prev)}
+                    aria-label={
+                      showMiscues
+                        ? "Show original passage"
+                        : "Show miscue highlights"
+                    }
+                    title={
+                      showMiscues
+                        ? "Show original passage"
+                        : "Show miscue highlights"
+                    }
+                    className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+                      showMiscues ? "bg-[#6666FF]" : "bg-[#C4C4FF]"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+                        showMiscues ? "translate-x-4.25" : "translate-x-0.75"
+                      }`}
+                    />
+                  </button>
+                </div>
+              )}
+              {!analysisResult && (
+                <div className="pointer-events-none flex items-center gap-2 opacity-30">
+                  <span className="text-[10px] font-medium text-[#9090B4]">
+                    Miscues
+                  </span>
+                  <div className="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full bg-[#C4C4FF]">
+                    <span className="inline-block h-3.5 w-3.5 translate-x-0.75 rounded-full bg-white shadow" />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      )}
+
+        {passageExpanded && hasRecording && recordedAudioURL && (
+          <div className="mt-2 shrink-0 px-2 pb-2">
+            <AudioPlayer src={recordedAudioURL} externalAudioRef={audioRef} />
+          </div>
+        )}
+
+        {!passageExpanded && (
+          <div className="shrink-0 px-5 pb-3 pt-1">
+            <ReadingTimer
+              hasPassage={hasPassage}
+              hasStudentInfo={
+                !!(studentName.trim() && gradeLevel && selectedClassName)
+              }
+              onStartReading={handleStartReading}
+              hasRecording={hasRecording}
+              recordedSeconds={recordedSeconds}
+              recordedAudioURL={recordedAudioURL}
+              onTryAgain={handleTryAgain}
+              audioRef={audioRef}
+            />
+          </div>
+        )}
+
+        {!passageExpanded && (
+          <div className="shrink-0 flex items-center justify-between px-5 pb-4">
+            <CountdownToggle
+              countdownEnabled={countdownEnabled}
+              countdownSeconds={countdownSeconds}
+              onToggle={() => setCountdownEnabled(!countdownEnabled)}
+              onDecrease={() =>
+                setCountdownSeconds(Math.max(1, countdownSeconds - 1))
+              }
+              onIncrease={() =>
+                setCountdownSeconds(Math.min(10, countdownSeconds + 1))
+              }
+            />
+            <ReadinessCheckButton />
+          </div>
+        )}
+      </div>
     </TestPageLayout>
   );
 }

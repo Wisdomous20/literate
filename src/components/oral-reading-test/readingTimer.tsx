@@ -251,11 +251,9 @@ export function ReadingTimer({
         <AudioPlayer src={recordedAudioURL} externalAudioRef={audioRef} />
       )}
 
-      <span className="text-base font-semibold tabular-nums text-[#6B6BAF]">
-        {formatTime(hasRecording ? recordedSeconds : 0)}
-      </span>
-
-      <div className="flex flex-wrap items-center justify-center gap-3">
+      <div
+        className={`flex flex-wrap items-center justify-center gap-3 ${hasRecording ? "mt-2" : ""}`}
+      >
         {/* Start Reading — explore raised style */}
         {!hasRecording && (
           <div className={`relative ${isDisabled ? "opacity-50" : ""}`}>

@@ -77,13 +77,15 @@ export default function DashboardPage() {
             />
           </div>
 
-          <div className="w-full xl:w-95 2xl:w-[420px]2xl:w-105 space-y-6 shrink-0">
+          <div className="w-full xl:w-95 2xl:w-105 space-y-6 shrink-0 xl:flex xl:h-full xl:flex-col">
             <div className="min-h-80" data-tour-target="classification-chart">
               <ClassificationChart schoolYear={selectedYear} />
             </div>
 
             {/* Word of the Day */}
-            <WordOfTheDay />
+            <div className="xl:flex-1">
+              <WordOfTheDay />
+            </div>
           </div>
         </div>
       </main>

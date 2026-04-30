@@ -13,7 +13,6 @@ import {
   Maximize2,
   Minimize2,
   Play,
-  GripHorizontal,
   ChevronDown,
   Pencil,
 } from "lucide-react";
@@ -246,7 +245,6 @@ export function PassageDisplay({
   expanded,
   onToggleExpand,
   passageLevel,
-  resizable = true,
   collapsible = false,
   collapsed = false,
   onToggleCollapsed,
@@ -263,11 +261,7 @@ export function PassageDisplay({
   const containerRef = useRef<HTMLDivElement>(null);
   const outerRef = useRef<HTMLDivElement>(null);
 
-  // Drag-to-resize state
   const [dragHeight, setDragHeight] = useState<number | null>(null);
-  const isDragging = useRef(false);
-  const dragStartY = useRef(0);
-  const dragStartH = useRef(0);
 
   // ─── Edit mode state ───
   const isEditing = editMode?.isEditing ?? false;
@@ -297,27 +291,6 @@ export function PassageDisplay({
 
   // ─── Delete/update action state ───
   const [actionLoading, setActionLoading] = useState(false);
-
-  const handleDragStart = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    isDragging.current = true;
-    dragStartY.current = e.clientY;
-    dragStartH.current =
-      outerRef.current?.getBoundingClientRect().height ?? 300;
-
-    const onMove = (ev: MouseEvent) => {
-      if (!isDragging.current) return;
-      const delta = Math.max(0, ev.clientY - dragStartY.current);
-      setDragHeight(Math.max(120, dragStartH.current + delta));
-    };
-    const onUp = () => {
-      isDragging.current = false;
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
-    };
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
-  }, []);
 
   // Keep dynamic height without using JSX inline styles
   useEffect(() => {
@@ -1121,15 +1094,6 @@ export function PassageDisplay({
         )}
       </div>
 
-      {!expanded && resizable && (
-        <div
-          onMouseDown={handleDragStart}
-          className="flex h-4 cursor-row-resize items-center justify-center opacity-40 transition-opacity hover:opacity-80"
-          title="Drag to resize"
-        >
-          <GripHorizontal className="h-4 w-4 text-[#54A4FF]" />
-        </div>
-      )}
     </div>
   );
 }

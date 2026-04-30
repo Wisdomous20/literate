@@ -111,27 +111,25 @@ function SidebarNavItem({
       title={collapsed ? label : undefined}
       className={cn(
         "group relative z-10 isolate flex items-center overflow-visible text-sm font-medium transition-all duration-200 ease-out",
-        collapsed
-          ? "justify-center rounded-lg px-0 py-2"
-          : "gap-3 px-2 py-2",
+        collapsed ? "justify-center rounded-lg px-0 py-2" : "gap-3 px-2 py-2",
         isActive
           ? collapsed
             ? "rounded-[20px] bg-white text-[#6666FF] shadow-[0_12px_28px_rgba(55,44,183,0.2)]"
             : "z-30 text-[#6666FF]"
-          : "rounded-lg text-white/90 hover:bg-[#6652fb] hover:text-white",
+          : "rounded-lg text-white/90 hover:bg-white hover:text-[#6666FF]",
       )}
     >
       <div
         className={cn(
           "relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-200",
-          isActive ? "bg-[#5D5DFB]" : "bg-white",
+          isActive ? "bg-[#5D5DFB]" : "bg-white group-hover:bg-[#5D5DFB]",
         )}
       >
         <Icon
           className={cn(
             "h-4 w-4",
             "transition-colors duration-200",
-            isActive ? "text-white" : "text-[#6666FF]",
+            isActive ? "text-white" : "text-[#6666FF] group-hover:text-white",
           )}
         />
       </div>
@@ -139,7 +137,9 @@ function SidebarNavItem({
         <span
           className={cn(
             "relative z-10 max-w-[140px] text-[13px]",
-            isActive ? "font-semibold text-[#6666FF]" : "text-white",
+            isActive
+              ? "font-semibold text-[#6666FF]"
+              : "text-white group-hover:text-[#6666FF]",
           )}
         >
           {label}
@@ -180,7 +180,9 @@ export function Sidebar() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const [collapsed, setCollapsed] = useState(false);
-  const [hasActiveSubscription, setHasActiveSubscription] = useState<boolean | null>(null);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState<
+    boolean | null
+  >(null);
   const [optimisticHref, setOptimisticHref] = useState<string | null>(null);
   const hasActiveSubscriptionRef = useRef<boolean | null>(null);
   const navContainerRef = useRef<HTMLDivElement | null>(null);
@@ -323,7 +325,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "relative z-30 flex h-screen flex-col overflow-hidden bg-[#6e55fd] shadow-[-4px_0_20px_rgba(102,102,255,0.22)] transition-all duration-300",
+        "relative z-30 flex h-screen flex-col overflow-hidden bg-[#6e55fd] transition-all duration-300",
         collapsed ? "w-20 min-w-20" : "w-65 min-w-65",
       )}
     >
@@ -376,7 +378,9 @@ export function Sidebar() {
                   />
                 </svg>
               </div>
-              <span className="text-xl font-bold tracking-[0.02em] text-white">LiteRate</span>
+              <span className="text-xl font-bold tracking-[0.02em] text-white">
+                LiteRate
+              </span>
             </div>
           )}
 
@@ -390,13 +394,19 @@ export function Sidebar() {
               collapsed ? "" : "",
             )}
           >
-            {collapsed ? <ChevronsRight className="h-6 w-6" /> : <ChevronsLeft className="h-6 w-6" />}
+            {collapsed ? (
+              <ChevronsRight className="h-6 w-6" />
+            ) : (
+              <ChevronsLeft className="h-6 w-6" />
+            )}
           </button>
         </div>
 
         {!collapsed ? (
           <div className="px-8 pb-4 pt-2">
-            <h2 className="text-lg font-semibold text-white">Hi, Teacher {firstName}!</h2>
+            <h2 className="text-lg font-semibold text-white">
+              Hi, Teacher {firstName}!
+            </h2>
             <p className="text-sm text-white/70">S.Y {schoolYear}</p>
           </div>
         ) : (
@@ -439,13 +449,26 @@ export function Sidebar() {
               />
             </span>
           )}
-          {!collapsed && <p className="mb-3 px-2 text-[11px] font-semibold tracking-[0.25em] text-white/90">MENU</p>}
-          {renderMenuItems(activeHref, collapsed, setOptimisticHref, setNavItemRef)}
+          {!collapsed && (
+            <p className="mb-3 px-2 text-[11px] font-semibold tracking-[0.25em] text-white/90">
+              MENU
+            </p>
+          )}
+          {renderMenuItems(
+            activeHref,
+            collapsed,
+            setOptimisticHref,
+            setNavItemRef,
+          )}
 
-          <div className={cn("my-5 h-px bg-white/30", collapsed ? "mx-1" : "mx-2")} />
+          <div
+            className={cn("my-5 h-px bg-white/30", collapsed ? "mx-1" : "mx-2")}
+          />
 
           {!collapsed && (
-            <p className="mb-3 px-2 text-[11px] font-semibold tracking-[0.25em] text-white/90">GENERAL</p>
+            <p className="mb-3 px-2 text-[11px] font-semibold tracking-[0.25em] text-white/90">
+              GENERAL
+            </p>
           )}
           <nav className="relative z-10 space-y-1">
             {generalItems.map((item) => {
@@ -486,9 +509,13 @@ export function Sidebar() {
             <div className="mt-8 rounded-2xl bg-white p-4 shadow-lg">
               <div className="mb-2 flex items-center gap-2">
                 <Zap className="h-5 w-5 text-[#6666FF]" />
-                <h3 className="text-sm font-bold text-[#6666FF]">Upgrade to Premium</h3>
+                <h3 className="text-sm font-bold text-[#6666FF]">
+                  Upgrade to Premium
+                </h3>
               </div>
-              <p className="mb-4 text-xs text-gray-600">Unlock all assessments</p>
+              <p className="mb-4 text-xs text-gray-600">
+                Unlock all assessments
+              </p>
               <Link
                 href="/dashboard/subscription"
                 className="block w-full rounded-lg bg-[#6666FF] px-4 py-2 text-center text-xs font-semibold text-white transition-all hover:bg-[#5555ee]"
@@ -507,10 +534,8 @@ export function Sidebar() {
             onClick={handleLogout}
             title={collapsed ? "Logout Account" : undefined}
             className={cn(
-              "group relative z-10 flex items-center gap-3 rounded-lg px-2 py-2 text-sm font-medium text-white/90 transition-all duration-200 hover:bg-[#6652fb] hover:text-white",
-              collapsed
-                ? "w-auto justify-center"
-                : "w-full"
+              "relative z-10 flex items-center gap-3 rounded-lg px-2 py-2 text-sm font-medium text-white/90",
+              collapsed ? "w-auto justify-center" : "w-full",
             )}
           >
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#5D5DFB]">

@@ -639,39 +639,18 @@ export default function ReadingComprehensionTestPage() {
         />
       }
     >
-      {/* Nav row — inline student fields when no passage, compact info when passage selected */}
-      <OralReadingNavRow
-        onGoBack={() => router.back()}
-        onContinue={() => {}}
-        continueEnabled={false}
-        showContinue={false}
-        onClear={handleStartNew}
-        studentName={studentName}
-        gradeLevel={gradeLevel}
-        selectedClassName={selectedClassName}
-        hasPassage={false}
-        classes={classNames}
-        onStudentNameChange={setStudentName}
-        onGradeLevelChange={setGradeLevel}
-        onClassCreated={() =>
-          queryClient.invalidateQueries({
-            queryKey: ["classes", schoolYear],
-          })
-        }
-        onStudentSelected={(studentId: string) =>
-          setSelectedStudentId(studentId)
-        }
-        onClassChange={setSelectedClassName}
-      />
-
-      {/* Passage filters + share link (student info lives in nav row) */}
       {!passageExpanded && (
-        <StudentSetupSection
-          isLoading={isLoadingClasses}
+        <OralReadingNavRow
+          onGoBack={() => router.back()}
+          onContinue={() => {}}
+          continueEnabled={false}
+          showContinue={false}
+          onClear={handleStartNew}
           studentName={studentName}
           gradeLevel={gradeLevel}
-          classes={classNames}
           selectedClassName={selectedClassName}
+          hasPassage={false}
+          classes={classNames}
           onStudentNameChange={setStudentName}
           onGradeLevelChange={setGradeLevel}
           onClassCreated={() =>
@@ -683,173 +662,200 @@ export default function ReadingComprehensionTestPage() {
             setSelectedStudentId(studentId)
           }
           onClassChange={setSelectedClassName}
-          onClear={handleStartNew}
-          hasPassage={hasPassage}
-          selectedLanguage={selectedLanguage}
-          selectedLevel={selectedLevel}
-          selectedTestType={selectedTestType}
-          onOpenPassageModal={() => setIsPassageModalOpen(true)}
-          shareableLink={
-            !showQuestions && selectedStudentId && selectedPassage
-              ? {
-                  studentId: selectedStudentId,
-                  passageId: selectedPassage,
-                  assessmentType: "COMPREHENSION",
-                }
-              : undefined
-          }
-          hideStudentInfo
         />
       )}
 
-      {/* Passage display — quiz mode (collapsible) */}
-      {showQuestions && (
-        <PassageDisplay
-          content={passageContent}
-          expanded={passageExpanded}
-          onToggleExpand={() => setPassageExpanded((prev) => !prev)}
-          passageLevel={selectedLevel}
-          resizable={true}
-          collapsible={true}
-          collapsed={!showPassage}
-          onToggleCollapsed={() => setShowPassage((p) => !p)}
-          passageTitle={selectedTitle}
-          initialHeight={passageInitialHeight ?? undefined}
-        />
-      )}
-
-      {/* Passage display — pre-quiz mode */}
-      {!showQuestions && (
-        <div ref={passageRef} className="flex min-h-0 flex-1 flex-col">
-          <PassageDisplay
-            content={passageContent}
-            expanded={passageExpanded}
-            onToggleExpand={() => setPassageExpanded((prev) => !prev)}
-            passageLevel={selectedLevel}
-            resizable={true}
-          />
-        </div>
-      )}
-
-      {/* Word count + reading time */}
-      {(!showQuestions || showPassage) && !passageExpanded && hasPassage && (
-        <div className="mt-2 flex items-center justify-between">
-          <span className="text-xs font-semibold text-[#00306E]">
-            {wordCount} words
-          </span>
-          {estimatedReadingTime && (
-            <span
-              className="flex items-center gap-1 text-xs font-medium text-[#6666FF]"
-              title={`Est. reading time: ${estimatedReadingTime}`}
-            >
-              <Clock className="h-3.5 w-3.5" />
-              {estimatedReadingTime}
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Passage title */}
-      {(!showQuestions || showPassage) && !passageExpanded && hasPassage && (
-        <div className="mb-4 flex items-center justify-center">
-          <span className="text-lg font-bold text-[#31318A] md:text-xl">
-            {selectedTitle}
-          </span>
-        </div>
-      )}
-
-      {/* Continue to Comprehension button */}
-      {!passageExpanded && !showQuestions && (
-        <div className="flex justify-center">
-          <button
-            type="button"
-            onClick={handleContinueToComprehension}
-            disabled={
-              !hasPassage ||
-              !studentName.trim() ||
-              !gradeLevel ||
-              !selectedClassName
-            }
-            className={`rounded-full px-10 py-2.5 text-sm font-semibold text-white transition-all duration-200 md:px-12 md:py-3 md:text-[15px] ${
-              !hasPassage ||
-              !studentName.trim() ||
-              !gradeLevel ||
-              !selectedClassName
-                ? "cursor-not-allowed bg-[#6666FF]/30 opacity-60 shadow-none"
-                : "bg-[#6666FF] shadow-[0_2px_8px_rgba(102,102,255,0.4)] hover:bg-[#5555EE]"
-            }`}
-            title={
-              !studentName.trim() || !gradeLevel || !selectedClassName
-                ? "Enter student information first"
-                : !hasPassage
-                  ? "Add a passage first"
+      <div className="flex flex-1 min-h-0 flex-col overflow-hidden rounded-2xl border border-[#C4B5FD] bg-white shadow-[0_12px_48px_rgba(102,102,255,0.18),0_3px_12px_rgba(102,102,255,0.10)]">
+        {!passageExpanded && (
+          <div className="shrink-0 px-5 pt-4 pb-3">
+            <StudentSetupSection
+              isLoading={isLoadingClasses}
+              studentName={studentName}
+              gradeLevel={gradeLevel}
+              classes={classNames}
+              selectedClassName={selectedClassName}
+              onStudentNameChange={setStudentName}
+              onGradeLevelChange={setGradeLevel}
+              onClassCreated={() =>
+                queryClient.invalidateQueries({
+                  queryKey: ["classes", schoolYear],
+                })
+              }
+              onStudentSelected={(studentId: string) =>
+                setSelectedStudentId(studentId)
+              }
+              onClassChange={setSelectedClassName}
+              onClear={handleStartNew}
+              hasPassage={hasPassage}
+              selectedLanguage={selectedLanguage}
+              selectedLevel={selectedLevel}
+              selectedTestType={selectedTestType}
+              passageTitle={selectedTitle}
+              onOpenPassageModal={() => setIsPassageModalOpen(true)}
+              shareableLink={
+                !showQuestions && selectedStudentId && selectedPassage
+                  ? {
+                      studentId: selectedStudentId,
+                      passageId: selectedPassage,
+                      assessmentType: "COMPREHENSION",
+                    }
                   : undefined
-            }
-          >
-            Continue to Comprehension
-          </button>
-        </div>
-      )}
+              }
+              hideStudentInfo
+            />
+          </div>
+        )}
 
-      {/* ── Comprehension Questions Section ── */}
-      {!passageExpanded && showQuestions && (
-        <div ref={questionsRef} className="flex flex-col gap-4 pt-6">
-          <ComprehensionInfoBar
-            totalQuestions={questions.length}
-            formattedTime={formattedTime}
-            isPaused={isPaused}
-            isSubmitted={isSubmitted}
-            onTogglePause={() => {
-              if (!isSubmitted) setIsPaused((prev) => !prev);
-            }}
-          />
+        {!passageExpanded && (
+          <div className="shrink-0 mx-5 h-px bg-[#E5DEFF]" />
+        )}
 
-          {isLoadingQuestions && (
-            <div className="flex items-center justify-center py-12">
-              <div className="flex flex-col items-center gap-3">
-                <Loader2 className="h-8 w-8 animate-spin text-[#6666FF]" />
-                <span className="text-sm font-medium text-[#00306E]">
-                  Loading questions...
-                </span>
-              </div>
-            </div>
-          )}
-
-          {questionsLoadError && (
-            <div className="flex items-center justify-center py-12">
-              <p className="text-sm font-medium text-red-600">
-                {questionsLoadError}
-              </p>
-            </div>
-          )}
-
-          {!isLoadingQuestions && !questionsLoadError && (
-            <>
-              <div className="space-y-6">
-                {questions.map((question) => (
-                  <QuestionCard
-                    key={question.id}
-                    question={question}
-                    answer={answers[question.id]}
-                    isSubmitted={isSubmitted}
-                    highlightedTag={highlightedTag}
-                    onSelectOption={handleSelectOption}
-                    onEssayChange={handleEssayChange}
-                  />
-                ))}
-              </div>
-
-              <ComprehensionSubmitArea
-                isSubmitting={isSubmitting}
-                isSubmitted={isSubmitted}
-                submitError={submitError}
-                onSubmit={handleSubmit}
-                onTryAgain={handleTryAgain}
+        <div
+          className={
+            passageExpanded
+              ? "flex flex-1 min-h-0 flex-col overflow-hidden p-2"
+              : "flex flex-1 min-h-0 flex-col px-5 pt-3 pb-0"
+          }
+        >
+          {showQuestions ? (
+            <PassageDisplay
+              content={passageContent}
+              expanded={passageExpanded}
+              onToggleExpand={() => setPassageExpanded((prev) => !prev)}
+              passageLevel={selectedLevel}
+              resizable={true}
+              collapsible={true}
+              collapsed={!showPassage}
+              onToggleCollapsed={() => setShowPassage((p) => !p)}
+              passageTitle={selectedTitle}
+              initialHeight={passageInitialHeight ?? undefined}
+            />
+          ) : (
+            <div ref={passageRef} className="flex min-h-0 flex-1 flex-col">
+              <PassageDisplay
+                content={passageContent}
+                expanded={passageExpanded}
+                onToggleExpand={() => setPassageExpanded((prev) => !prev)}
+                passageLevel={selectedLevel}
+                resizable={true}
               />
-            </>
+            </div>
           )}
+
+          {(!showQuestions || showPassage) &&
+            !passageExpanded &&
+            hasPassage && (
+              <div className="mt-1.5 flex items-center justify-between px-0.5">
+                <span className="text-[10px] font-semibold text-[#A0A0C0]">
+                  {wordCount} words
+                </span>
+                {estimatedReadingTime && (
+                  <span
+                    className="flex items-center gap-1 text-[10px] font-medium text-[#9090B4]"
+                    title={`Est. reading time: ${estimatedReadingTime}`}
+                  >
+                    <Clock className="h-3.5 w-3.5" />
+                    {estimatedReadingTime}
+                  </span>
+                )}
+              </div>
+            )}
         </div>
-      )}
+
+        {!passageExpanded && !showQuestions && (
+          <div className="shrink-0 flex items-center justify-center px-5 pb-4 pt-2">
+            <button
+              type="button"
+              onClick={handleContinueToComprehension}
+              disabled={
+                !hasPassage ||
+                !studentName.trim() ||
+                !gradeLevel ||
+                !selectedClassName
+              }
+              className={`rounded-full px-10 py-2.5 text-sm font-semibold text-white transition-all duration-200 md:px-12 md:py-3 md:text-[15px] ${
+                !hasPassage ||
+                !studentName.trim() ||
+                !gradeLevel ||
+                !selectedClassName
+                  ? "cursor-not-allowed bg-[#6666FF]/30 opacity-60 shadow-none"
+                  : "bg-[#6666FF] shadow-[0_2px_8px_rgba(102,102,255,0.4)] hover:bg-[#5555EE]"
+              }`}
+              title={
+                !studentName.trim() || !gradeLevel || !selectedClassName
+                  ? "Enter student information first"
+                  : !hasPassage
+                    ? "Add a passage first"
+                    : undefined
+              }
+            >
+              Continue to Comprehension
+            </button>
+          </div>
+        )}
+
+        {!passageExpanded && showQuestions && (
+          <div
+            ref={questionsRef}
+            className="shrink-0 flex flex-col gap-4 px-5 pb-4 pt-2"
+          >
+            <ComprehensionInfoBar
+              totalQuestions={questions.length}
+              formattedTime={formattedTime}
+              isPaused={isPaused}
+              isSubmitted={isSubmitted}
+              onTogglePause={() => {
+                if (!isSubmitted) setIsPaused((prev) => !prev);
+              }}
+            />
+
+            {isLoadingQuestions && (
+              <div className="flex items-center justify-center py-12">
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-[#6666FF]" />
+                  <span className="text-sm font-medium text-[#00306E]">
+                    Loading questions...
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {questionsLoadError && (
+              <div className="flex items-center justify-center py-12">
+                <p className="text-sm font-medium text-red-600">
+                  {questionsLoadError}
+                </p>
+              </div>
+            )}
+
+            {!isLoadingQuestions && !questionsLoadError && (
+              <>
+                <div className="space-y-6">
+                  {questions.map((question) => (
+                    <QuestionCard
+                      key={question.id}
+                      question={question}
+                      answer={answers[question.id]}
+                      isSubmitted={isSubmitted}
+                      highlightedTag={highlightedTag}
+                      onSelectOption={handleSelectOption}
+                      onEssayChange={handleEssayChange}
+                    />
+                  ))}
+                </div>
+
+                <ComprehensionSubmitArea
+                  isSubmitting={isSubmitting}
+                  isSubmitted={isSubmitted}
+                  submitError={submitError}
+                  onSubmit={handleSubmit}
+                  onTryAgain={handleTryAgain}
+                />
+              </>
+            )}
+          </div>
+        )}
+      </div>
     </TestPageLayout>
   );
 }
