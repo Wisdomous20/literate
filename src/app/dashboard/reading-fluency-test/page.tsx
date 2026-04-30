@@ -17,6 +17,7 @@ import { CountdownToggle } from "@/components/oral-reading-test/countdownToggle"
 import { OralReadingNavRow } from "@/components/oral-reading-test/oralReadingNavRow";
 import { ReadinessCheckButton } from "@/components/oral-reading-test/readinessCheck";
 import { useClassList } from "@/lib/hooks/useClassList";
+import { useTranscriptionStatus } from "@/lib/hooks/useTranscriptionStatus";
 import { useQueryClient } from "@tanstack/react-query";
 import { createStudent } from "@/app/actions/student/createStudent";
 import { convertToWav } from "@/utils/convertToWav";
@@ -102,6 +103,9 @@ export default function ReadingFluencyTestPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const isRestoredRef = useRef(true);
+  const lastHandledTranscriptionStatusRef = useRef<
+    "COMPLETED" | "FAILED" | null
+  >(null);
 
   const [passageContent, setPassageContent] = useState("");
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -142,6 +146,9 @@ export default function ReadingFluencyTestPage() {
   const [showMiscues, setShowMiscues] = useState(true);
   const [showClassificationPopup, setShowClassificationPopup] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const transcriptionStatus = useTranscriptionStatus(assessmentId || null, {
+    enabled: hasRecording && !!assessmentId && !analysisResult,
+  });
 
   const schoolYear = getCurrentSchoolYear();
   const { data: classListData = [], isLoading: isLoadingClasses } =
@@ -151,6 +158,17 @@ export default function ReadingFluencyTestPage() {
     () => classListData.map((c) => ({ id: c.id, name: c.name })),
     [classListData],
   );
+  const polledAnalysis =
+    transcriptionStatus.data?.status === "COMPLETED"
+      ? transcriptionStatus.data.analysis ?? null
+      : null;
+  const activeAnalysisResult = analysisResult ?? polledAnalysis;
+  const isAnalyzingFluency =
+    isSubmitting ||
+    (hasRecording &&
+      !!assessmentId &&
+      !activeAnalysisResult &&
+      transcriptionStatus.data?.status !== "FAILED");
 
   const handleJumpToTime = useCallback((timestamp: number) => {
     const audio = audioRef.current;
@@ -176,12 +194,12 @@ export default function ReadingFluencyTestPage() {
   }, []);
 
   const filteredMiscues = useMemo(() => {
-    if (!analysisResult?.miscues) return undefined;
-    if (highlightedTypes.size === 0) return analysisResult.miscues;
-    return analysisResult.miscues.filter((m) =>
+    if (!activeAnalysisResult?.miscues) return undefined;
+    if (highlightedTypes.size === 0) return activeAnalysisResult.miscues;
+    return activeAnalysisResult.miscues.filter((m) =>
       highlightedTypes.has(m.miscueType),
     );
-  }, [analysisResult?.miscues, highlightedTypes]);
+  }, [activeAnalysisResult?.miscues, highlightedTypes]);
 
   useEffect(() => {
     const loaded = loadSession();
@@ -299,6 +317,55 @@ export default function ReadingFluencyTestPage() {
     }
   }, [analysisResult?.classificationLevel]);
 
+  useEffect(() => {
+    if (!assessmentId) {
+      lastHandledTranscriptionStatusRef.current = null;
+    }
+  }, [assessmentId]);
+
+  useEffect(() => {
+    if (!polledAnalysis || analysisResult) return;
+
+    setAnalysisResult(polledAnalysis);
+
+    if (transcriptionStatus.data?.sessionId) {
+      setSessionId(transcriptionStatus.data.sessionId);
+    }
+
+    try {
+      const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
+      if (!sessionRaw) return;
+
+      const session = JSON.parse(sessionRaw);
+      session.analysisResult = polledAnalysis;
+      session.sessionId =
+        transcriptionStatus.data?.sessionId ?? session.sessionId;
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+    } catch {}
+  }, [analysisResult, polledAnalysis, transcriptionStatus.data?.sessionId]);
+
+  useEffect(() => {
+    const status = transcriptionStatus.data?.status;
+    if (!status || status === lastHandledTranscriptionStatusRef.current) return;
+
+    if (status === "FAILED") {
+      lastHandledTranscriptionStatusRef.current = status;
+      setToast({
+        message: "Analysis failed. Please try again.",
+        type: "error",
+      });
+      return;
+    }
+
+    if (status === "COMPLETED" && polledAnalysis) {
+      lastHandledTranscriptionStatusRef.current = status;
+      setToast({
+        message: "Reading Fluency Session Successful!",
+        type: "success",
+      });
+    }
+  }, [polledAnalysis, transcriptionStatus.data?.status]);
+
   const hasPassage = passageContent.length > 0;
 
   const handleSelectPassage = useCallback(
@@ -325,6 +392,7 @@ export default function ReadingFluencyTestPage() {
       setAnalysisResult(null);
       setSessionId("");
       setAssessmentId("");
+      lastHandledTranscriptionStatusRef.current = null;
       if (recordedAudioURL) {
         URL.revokeObjectURL(recordedAudioURL);
         setRecordedAudioURL(null);
@@ -376,6 +444,7 @@ export default function ReadingFluencyTestPage() {
     setAnalysisResult(null);
     setSessionId("");
     setAssessmentId("");
+    lastHandledTranscriptionStatusRef.current = null;
     if (recordedAudioURL) {
       URL.revokeObjectURL(recordedAudioURL);
       setRecordedAudioURL(null);
@@ -405,6 +474,7 @@ export default function ReadingFluencyTestPage() {
     setAnalysisResult(null);
     setSessionId("");
     setAssessmentId("");
+    lastHandledTranscriptionStatusRef.current = null;
     sessionStorage.removeItem(STORAGE_KEY);
     sessionStorage.removeItem(AUDIO_STORAGE_KEY);
   }, [recordedAudioURL]);
@@ -506,8 +576,6 @@ export default function ReadingFluencyTestPage() {
       if (result.sessionId) setSessionId(result.sessionId);
       if (result.assessmentId) setAssessmentId(result.assessmentId);
 
-      const targetAssessmentId = result.assessmentId;
-
       if (result.analysis) {
         setAnalysisResult(result.analysis as OralFluencyAnalysis);
         setToast({
@@ -519,72 +587,7 @@ export default function ReadingFluencyTestPage() {
           message: "Analyzing recording... This may take a moment.",
           type: "success",
         });
-
-        const pollInterval = setInterval(async () => {
-          try {
-            const statusRes = await fetch(
-              `/api/oral-reading/transcribe?assessmentId=${targetAssessmentId}`,
-            );
-            const statusData = await statusRes.json();
-
-            if (statusData.status === "COMPLETED" && statusData.analysis) {
-              clearInterval(pollInterval);
-              setAnalysisResult(statusData.analysis as OralFluencyAnalysis);
-              if (statusData.sessionId) setSessionId(statusData.sessionId);
-
-              try {
-                const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
-                if (sessionRaw) {
-                  const session = JSON.parse(sessionRaw);
-                  session.analysisResult = statusData.analysis;
-                  session.sessionId = statusData.sessionId;
-                  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-                }
-              } catch {}
-
-              setToast({
-                message: "Reading Fluency Session Successful!",
-                type: "success",
-              });
-            } else if (statusData.status === "FAILED") {
-              clearInterval(pollInterval);
-              setToast({
-                message: "Analysis failed. Please try again.",
-                type: "error",
-              });
-            }
-          } catch (err) {
-            console.error("Polling error:", err);
-          }
-        }, 3000);
-
-        setTimeout(() => clearInterval(pollInterval), 120000);
       }
-
-      try {
-        result = JSON.parse(responseText);
-      } catch {
-        return;
-      }
-
-      if (!response.ok) {
-        return;
-      }
-
-      if (result.analysis) {
-        setAnalysisResult(result.analysis as OralFluencyAnalysis);
-      }
-      if (result.sessionId) {
-        setSessionId(result.sessionId);
-      }
-      if (result.assessmentId) {
-        setAssessmentId(result.assessmentId);
-      }
-
-      setToast({
-        message: "Reading Fluency Session Successful!",
-        type: "success",
-      });
     } catch {
       setToast({
         message: "Failed to analyze reading fluency.",
@@ -611,10 +614,10 @@ export default function ReadingFluencyTestPage() {
 
   useEffect(() => {
     if (isRestoredRef.current) return;
-    if (canSubmit) {
+    if (canSubmit && !assessmentId && !activeAnalysisResult) {
       handleSubmitRecording();
     }
-  }, [canSubmit, handleSubmitRecording]);
+  }, [canSubmit, assessmentId, activeAnalysisResult, handleSubmitRecording]);
 
   if (isFullScreen) {
     return (
@@ -639,9 +642,9 @@ export default function ReadingFluencyTestPage() {
       onCloseToast={() => setToast(null)}
       passageExpanded={passageExpanded}
       overlay={
-        showClassificationPopup && analysisResult?.classificationLevel ? (
+        showClassificationPopup && activeAnalysisResult?.classificationLevel ? (
           <ClassificationPopup
-            classificationLevel={analysisResult.classificationLevel}
+            classificationLevel={activeAnalysisResult.classificationLevel}
             studentName={studentName}
             onClose={() => setShowClassificationPopup(false)}
           />
@@ -650,16 +653,16 @@ export default function ReadingFluencyTestPage() {
       sidebar={
         <MiscueAnalysis
           disabled={!hasRecording}
-          isAnalyzing={isSubmitting}
-          miscues={analysisResult?.miscues}
-          totalMiscue={analysisResult?.totalMiscues}
-          oralFluencyScore={analysisResult?.oralFluencyScore}
-          classificationLevel={analysisResult?.classificationLevel}
+          isAnalyzing={isAnalyzingFluency}
+          miscues={activeAnalysisResult?.miscues}
+          totalMiscue={activeAnalysisResult?.totalMiscues}
+          oralFluencyScore={activeAnalysisResult?.oralFluencyScore}
+          classificationLevel={activeAnalysisResult?.classificationLevel}
           highlightedTypes={highlightedTypes}
           onToggleHighlight={toggleHighlightType}
           onResetHighlight={resetHighlightTypes}
           onExportPdf={() => {
-            if (!analysisResult) return;
+            if (!activeAnalysisResult) return;
             const data = buildFluencyReportData({
               studentName,
               gradeLevel,
@@ -670,7 +673,7 @@ export default function ReadingFluencyTestPage() {
               assessmentType: "Oral Reading",
               passageContent,
               recordedSeconds,
-              analysisResult,
+              analysisResult: activeAnalysisResult,
             });
             exportFluencyReportPdf(
               data,
@@ -769,7 +772,7 @@ export default function ReadingFluencyTestPage() {
             content={passageContent}
             miscues={showMiscues ? filteredMiscues : undefined}
             alignedWords={
-              showMiscues ? analysisResult?.alignedWords : undefined
+              showMiscues ? activeAnalysisResult?.alignedWords : undefined
             }
             onJumpToTime={handleJumpToTime}
             expanded={passageExpanded}
@@ -782,7 +785,7 @@ export default function ReadingFluencyTestPage() {
               <span className="text-[10px] font-semibold text-[#A0A0C0]">
                 {passageContent.split(/\s+/).filter(Boolean).length} words
               </span>
-              {analysisResult && (
+              {activeAnalysisResult && (
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-medium text-[#9090B4]">
                     {showMiscues ? "Miscues" : "Original"}
@@ -812,7 +815,7 @@ export default function ReadingFluencyTestPage() {
                   </button>
                 </div>
               )}
-              {!analysisResult && (
+              {!activeAnalysisResult && (
                 <div className="pointer-events-none flex items-center gap-2 opacity-30">
                   <span className="text-[10px] font-medium text-[#9090B4]">
                     Miscues
@@ -845,6 +848,7 @@ export default function ReadingFluencyTestPage() {
               recordedAudioURL={recordedAudioURL}
               onTryAgain={handleTryAgain}
               audioRef={audioRef}
+              isAnalyzing={isAnalyzingFluency}
             />
           </div>
         )}
