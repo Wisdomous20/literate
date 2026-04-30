@@ -10,6 +10,11 @@ import {
   drawClockIcon,
   drawClipboardCheckIcon,
 } from "./pdfHelpers";
+import {
+  calculateWordsCorrectPerMinute,
+  getDisplayReadingTimeSeconds,
+  resolveReadingDurationSeconds,
+} from "./readingDuration";
 
 /* ------------------------------------------------------------------ */
 /*  Public data interface – callers build this from session state      */
@@ -71,10 +76,13 @@ export interface FluencyExportInput {
 export function buildFluencyReportData(input: FluencyExportInput): FluencyReportData {
   const { analysisResult } = input;
   const totalWords = input.passageContent.split(/\s+/).filter(Boolean).length;
-  const duration = analysisResult.duration ?? input.recordedSeconds;
+  const duration = resolveReadingDurationSeconds(
+    analysisResult.duration,
+    input.recordedSeconds,
+  );
   const totalMiscues = analysisResult.totalMiscues ?? 0;
   const wordsCorrect = Math.max(0, totalWords - totalMiscues);
-  const wcpm = duration > 0 ? Math.round((wordsCorrect / duration) * 60) : 0;
+  const wcpm = calculateWordsCorrectPerMinute(wordsCorrect, duration);
 
   const counts: Record<string, number> = {};
   for (const m of analysisResult.miscues) {
@@ -93,7 +101,7 @@ export function buildFluencyReportData(input: FluencyExportInput): FluencyReport
     testType: input.selectedTestType || "\u2014",
     assessmentType: input.assessmentType,
     wcpm,
-    readingTimeSeconds: Math.round(duration),
+    readingTimeSeconds: getDisplayReadingTimeSeconds(duration),
     classificationLevel: analysisResult.classificationLevel,
     miscueData: {
       mispronunciation: counts["MISPRONUNCIATION"] || 0,

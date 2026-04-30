@@ -17,6 +17,11 @@ import { updateMiscueAction } from "@/app/actions/oral-fluency/updateMiscue";
 import { updateBehaviorsAction } from "@/app/actions/oral-fluency/updateBehaviors";
 import { exportFluencyReportPdf } from "@/lib/exportFluencyReportPdf";
 import {
+  calculateWordsCorrectPerMinute,
+  getDisplayReadingTimeSeconds,
+  resolveReadingDurationSeconds,
+} from "@/lib/readingDuration";
+import {
   findMatchingDbMiscue,
   removeFirstMatchingMiscue,
   updateFirstMatchingSpokenWord,
@@ -202,19 +207,19 @@ export default function OralReadingReportPage() {
     [session.passageContent],
   );
 
-  const readingTimeSeconds = useMemo(
-    () => Math.round(analysis?.duration ?? session.recordedSeconds ?? 0),
-    [analysis?.duration, session.recordedSeconds],
-  );
-
   const totalMiscues = analysis?.totalMiscues ?? 0;
   const wordsCorrect = Math.max(0, totalWords - totalMiscues);
+  const readingDurationSeconds = useMemo(
+    () => resolveReadingDurationSeconds(analysis?.duration, session.recordedSeconds),
+    [analysis?.duration, session.recordedSeconds],
+  );
+  const readingTimeSeconds = useMemo(
+    () => getDisplayReadingTimeSeconds(readingDurationSeconds),
+    [readingDurationSeconds],
+  );
   const wcpm = useMemo(
-    () =>
-      readingTimeSeconds > 0
-        ? Math.round((wordsCorrect / readingTimeSeconds) * 60)
-        : 0,
-    [wordsCorrect, readingTimeSeconds],
+    () => calculateWordsCorrectPerMinute(wordsCorrect, readingDurationSeconds),
+    [wordsCorrect, readingDurationSeconds],
   );
 
   const classification = analysis?.classificationLevel || "—";

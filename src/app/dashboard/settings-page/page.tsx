@@ -29,6 +29,8 @@ type Subscription = {
   cancelAtPeriodEnd: boolean;
 };
 
+type SubscriptionSource = "DIRECT" | "ORGANIZATION" | null;
+
 const inputClassName =
   "w-full rounded-xl border-2 border-[#BDBDFF] bg-white px-3.5 py-2.5 text-sm font-medium text-[#31318A] outline-none transition-colors placeholder:text-[#98A5D6] focus:border-[#6666FF]";
 
@@ -415,6 +417,9 @@ function PasswordSection() {
 
 function SubscriptionSection() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [subscriptionSource, setSubscriptionSource] =
+    useState<SubscriptionSource>(null);
+  const [canManageSubscription, setCanManageSubscription] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -424,6 +429,12 @@ function SubscriptionSection() {
     const res = await getSubscriptionAction();
     if ("subscription" in res) {
       setSubscription((res.subscription as Subscription | null) ?? null);
+      setSubscriptionSource(
+        ("source" in res ? (res.source as SubscriptionSource) : null) ?? null,
+      );
+      setCanManageSubscription(
+        ("canManage" in res ? Boolean(res.canManage) : false) ?? false,
+      );
     }
     setLoading(false);
   }
@@ -437,6 +448,12 @@ function SubscriptionSection() {
 
       if ("subscription" in res) {
         setSubscription((res.subscription as Subscription | null) ?? null);
+        setSubscriptionSource(
+          ("source" in res ? (res.source as SubscriptionSource) : null) ?? null,
+        );
+        setCanManageSubscription(
+          ("canManage" in res ? Boolean(res.canManage) : false) ?? false,
+        );
       }
       setLoading(false);
     }
@@ -476,6 +493,8 @@ function SubscriptionSection() {
   const hasActive =
     subscription &&
     (subscription.status === "ACTIVE" || subscription.status === "PAST_DUE");
+  const isOrganizationManaged =
+    subscriptionSource === "ORGANIZATION" && !canManageSubscription;
   const statusTone =
     subscription?.status === "ACTIVE"
       ? "bg-emerald-50 text-emerald-700 border-emerald-200"
@@ -518,6 +537,11 @@ function SubscriptionSection() {
               <p className="text-sm font-bold text-[#31318A]">
                 {subscription.planType}
               </p>
+              {subscriptionSource === "ORGANIZATION" && (
+                <p className="mt-1 text-xs font-semibold text-[#6B7DB3]">
+                  Provided by your organization
+                </p>
+              )}
             </div>
             <div>
               <p className="text-xs font-semibold text-[#6B7DB3]">Status</p>
@@ -552,14 +576,28 @@ function SubscriptionSection() {
             </div>
           </div>
 
+          {isOrganizationManaged && (
+            <div className="rounded-2xl border border-[rgba(102,102,255,0.18)] bg-[rgba(102,102,255,0.05)] px-4 py-3">
+              <p className="text-sm font-semibold text-[#31318A]">
+                Managed by your organization
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-[#6B7DB3]">
+                Your access is coming from an organization subscription. Billing
+                changes need to be handled by the organization owner.
+              </p>
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center justify-end gap-3">
-            <Link
-              href="/dashboard/subscription"
-              className="rounded-xl border-2 border-[#6666FF] px-4 py-2 text-sm font-bold text-[#31318A] hover:bg-[#6666FF]/10"
-            >
-              Change plan
-            </Link>
-            {hasActive && !subscription.cancelAtPeriodEnd && (
+            {canManageSubscription && (
+              <Link
+                href="/dashboard/subscription"
+                className="rounded-xl border-2 border-[#6666FF] px-4 py-2 text-sm font-bold text-[#31318A] hover:bg-[#6666FF]/10"
+              >
+                Change plan
+              </Link>
+            )}
+            {canManageSubscription && hasActive && !subscription.cancelAtPeriodEnd && (
               <button
                 type="button"
                 disabled={isPending}

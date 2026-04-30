@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import { AddMemberCard } from "@/components/dashboard/organization/addMemberCard";
 import {
@@ -26,81 +27,126 @@ import { getMembersAction } from "@/app/actions/org/getMembers";
 import { toggleMemberAction } from "@/app/actions/org/toggleMember";
 import { generateMemberPasswordAction } from "@/app/actions/org/generateMemberPassword";
 
+const organizationQueryKey = ["organization", "members"];
+
 export default function OrganizationPage() {
-  const [loading, setLoading] = useState(true);
-  const [pageError, setPageError] = useState<string | null>(null);
-  const [needsOrgCreation, setNeedsOrgCreation] = useState(false);
-
-  const [org, setOrg] = useState<OrgSummary | null>(null);
-  const [members, setMembers] = useState<Member[]>([]);
-
   const [tempPassword, setTempPassword] = useState<TempPasswordInfo | null>(null);
   const [invitationSent, setInvitationSent] = useState<InvitationSentInfo | null>(
     null
   );
   const [passwordTarget, setPasswordTarget] = useState<Member | null>(null);
+  const queryClient = useQueryClient();
 
-  const refresh = useCallback(async () => {
-    const res = await getMembersAction();
-    if (!res.success) {
-      if (res.error === "No organization found") {
-        setNeedsOrgCreation(true);
-        setOrg(null);
-        setMembers([]);
-      } else {
-        setPageError(res.error ?? "Failed to load organization");
+  const organizationQuery = useQuery({
+    queryKey: organizationQueryKey,
+    queryFn: async () => {
+      const res = await getMembersAction();
+
+      if (!res.success) {
+        if (res.error === "No organization found") {
+          return {
+            needsOrgCreation: true,
+            organization: null,
+            members: [],
+          };
+        }
+
+        throw new Error(res.error ?? "Failed to load organization");
       }
-      setLoading(false);
+
+      return {
+        needsOrgCreation: false,
+        organization: ("organization" in res ? res.organization : null) as OrgSummary | null,
+        members: (("members" in res ? res.members : []) as Member[]) ?? [],
+      };
+    },
+  });
+
+  const toggleMemberMutation = useMutation({
+    mutationFn: async ({
+      memberId,
+      disable,
+    }: {
+      memberId: string;
+      disable: boolean;
+    }) => {
+      const res = await toggleMemberAction(memberId, disable);
+      if (!res.success) {
+        throw new Error(res.error ?? "Failed to update member");
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: organizationQueryKey });
+    },
+  });
+
+  const refresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: organizationQueryKey });
+  };
+
+  const generatePassword = async (member: Member) => {
+    const res = await generateMemberPasswordAction(member.id);
+    if (!res.success) {
+      alert(res.error);
       return;
     }
 
-    setNeedsOrgCreation(false);
-    setPageError(null);
-
-    if ("organization" in res) {
-      setOrg(res.organization ?? null);
+    if (
+      "password" in res &&
+      res.password &&
+      "email" in res &&
+      res.email
+    ) {
+      setTempPassword({
+        email: res.email,
+        password: res.password,
+      });
     }
-    if ("members" in res) {
-      setMembers((res.members as Member[]) ?? []);
-    }
+  };
 
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void refresh();
-    }, 0);
-
-    return () => window.clearTimeout(timer);
-  }, [refresh]);
-
-  if (loading) {
+  if (organizationQuery.isLoading) {
     return (
-      <div className="flex min-h-full flex-col">
+      <div className="flex h-full min-h-0 flex-col">
         <DashboardHeader title="Organization" />
-        <main className="flex flex-1 items-center justify-center">
+        <main className="flex min-h-0 flex-1 items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-[#6666FF]" />
         </main>
       </div>
     );
   }
 
+  if (organizationQuery.isError) {
+    return (
+      <div className="flex h-full min-h-0 flex-col">
+        <DashboardHeader title="Organization" />
+        <main className="flex min-h-0 flex-1 items-center justify-center px-6">
+          <ErrorBanner
+            message={organizationQuery.error.message ?? "Organization not available"}
+          />
+        </main>
+      </div>
+    );
+  }
+
+  const needsOrgCreation = organizationQuery.data?.needsOrgCreation ?? false;
+  const org = organizationQuery.data?.organization ?? null;
+  const members = organizationQuery.data?.members ?? [];
+
   if (needsOrgCreation) {
     return (
-      <div className="flex min-h-full flex-col">
+      <div className="flex h-full min-h-0 flex-col">
         <DashboardHeader title="Organization" />
         <CreateOrgPanel onCreated={refresh} />
       </div>
     );
   }
 
-  if (pageError || !org) {
+  if (!org) {
     return (
-      <div className="flex min-h-full flex-col">
+      <div className="flex h-full min-h-0 flex-col">
         <DashboardHeader title="Organization" />
-        <main className="flex flex-1 items-center justify-center px-6">
-          <ErrorBanner message={pageError ?? "Organization not available"} />
+        <main className="flex min-h-0 flex-1 items-center justify-center px-6">
+          <ErrorBanner message="Organization not available" />
         </main>
       </div>
     );
@@ -110,10 +156,10 @@ export default function OrganizationPage() {
   const disabledMembers = Math.max(org.totalMembers - org.currentMembers, 0);
 
   return (
-    <div className="flex min-h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       <DashboardHeader title="Organization" />
 
-      <main className="flex-1 overflow-auto bg-[radial-gradient(circle_at_top_left,rgba(102,102,255,0.14),transparent_28%),linear-gradient(180deg,#F8F9FF_0%,#EFF3FF_100%)] px-4 py-5 sm:px-6 sm:py-6 xl:px-8">
+      <main className="min-h-0 flex-1 overflow-y-auto bg-[radial-gradient(circle_at_top_left,rgba(102,102,255,0.14),transparent_28%),linear-gradient(180deg,#F8F9FF_0%,#EFF3FF_100%)] px-4 py-5 sm:px-6 sm:py-6 xl:px-8">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
           <OrganizationHero
             disabledMembers={disabledMembers}
@@ -136,33 +182,19 @@ export default function OrganizationPage() {
           <MembersCard
             members={members}
             onToggle={async (member, disable) => {
-              const res = await toggleMemberAction(member.id, disable);
-              if (!res.success) {
-                alert(res.error);
-                return;
+              try {
+                await toggleMemberMutation.mutateAsync({
+                  memberId: member.id,
+                  disable,
+                });
+              } catch (error) {
+                alert(
+                  error instanceof Error ? error.message : "Failed to update member"
+                );
               }
-              await refresh();
             }}
             onResetPassword={(member) => setPasswordTarget(member)}
-            onGeneratePassword={async (member) => {
-              const res = await generateMemberPasswordAction(member.id);
-              if (!res.success) {
-                alert(res.error);
-                return;
-              }
-
-              if (
-                "password" in res &&
-                res.password &&
-                "email" in res &&
-                res.email
-              ) {
-                setTempPassword({
-                  email: res.email,
-                  password: res.password,
-                });
-              }
-            }}
+            onGeneratePassword={generatePassword}
           />
         </div>
       </main>

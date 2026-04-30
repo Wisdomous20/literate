@@ -11,6 +11,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 
+import { formatAudioClock } from "@/lib/readingDuration";
 import { convertToWav } from "@/utils/convertToWav";
 
 interface ReadingTimerProps {
@@ -123,13 +124,6 @@ export function AudioPlayer({
     }
   };
 
-  const formatAudioTime = (secs: number) => {
-    if (!isFinite(secs)) return "00:00";
-    const m = Math.floor(secs / 60);
-    const s = Math.floor(secs % 60);
-    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-  };
-
   return (
     <div className="flex w-full items-center gap-2.5 rounded-2xl border border-[#C4B5FD] bg-[rgba(102,102,255,0.05)] px-3 py-2">
       <audio ref={audioRef} src={src} preload="metadata" />
@@ -147,7 +141,7 @@ export function AudioPlayer({
       </button>
 
       <span className="shrink-0 text-xs tabular-nums text-[#31318A]">
-        {formatAudioTime(currentTime)}
+        {formatAudioClock(currentTime, "floor", true)}
       </span>
 
       <input
@@ -164,7 +158,7 @@ export function AudioPlayer({
       />
 
       <span className="shrink-0 text-xs tabular-nums text-[#31318A]">
-        {formatAudioTime(duration)}
+        {formatAudioClock(duration, "nearest", true)}
       </span>
 
       <div className="relative">
@@ -220,7 +214,6 @@ export function ReadingTimer({
   hasStudentInfo,
   onStartReading,
   hasRecording,
-  recordedSeconds,
   recordedAudioURL,
   onTryAgain,
   onGoToComprehension,
@@ -228,13 +221,6 @@ export function ReadingTimer({
   audioRef,
   isAnalyzing = false,
 }: ReadingTimerProps) {
-  const formatTime = (totalSeconds: number) => {
-    const hrs = Math.floor(totalSeconds / 3600);
-    const mins = Math.floor((totalSeconds % 3600) / 60);
-    const secs = totalSeconds % 60;
-    return `${hrs.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
-
   const isDisabled = !hasPassage || !hasStudentInfo;
   const disabledReason = !hasStudentInfo
     ? "Enter student information first"

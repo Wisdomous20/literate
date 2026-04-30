@@ -12,7 +12,7 @@ export default function DashboardLayout({
       <div className="relative z-30 shrink-0">
         <Sidebar />
       </div>
-      <main className="relative flex-1 overflow-hidden rounded-[50px_0_0_50px] bg-white">
+      <main className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[50px_0_0_50px] bg-white">
         {children}
       </main>
       <OnboardingTour />

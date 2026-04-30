@@ -25,6 +25,10 @@ import { useClassById } from "@/lib/hooks/useClassById";
 import { useQueryClient } from "@tanstack/react-query";
 import { exportFluencyReportPdf } from "@/lib/exportFluencyReportPdf";
 import {
+  getDisplayReadingTimeSeconds,
+  resolveReadingDurationSeconds,
+} from "@/lib/readingDuration";
+import {
   findMatchingDbMiscue,
   removeFirstMatchingMiscue,
   updateFirstMatchingSpokenWord,
@@ -367,7 +371,8 @@ export default function ReadingFluencyReportPage() {
   const currentClassificationLevel =
     localClassificationLevel ??
     (assessment.oralFluency?.classificationLevel ?? "");
-  const duration = assessment.oralFluency?.duration ?? 0;
+  const duration = resolveReadingDurationSeconds(assessment.oralFluency?.duration);
+  const readingTimeSeconds = getDisplayReadingTimeSeconds(duration);
   const wordsCorrect = Math.max(0, totalWords - currentTotalMiscues);
   const wcpm =
     duration > 0 ? Math.round((wordsCorrect / duration) * 60) : 0;
@@ -406,7 +411,7 @@ export default function ReadingFluencyReportPage() {
         testType: formatTestType(passage?.testType),
         assessmentType: assessmentTypeLabel,
         wcpm,
-        readingTimeSeconds: Math.round(duration),
+        readingTimeSeconds,
         classificationLevel: currentClassificationLevel,
         miscueData,
         behaviors: behaviorItems.map((b) => ({
@@ -476,7 +481,7 @@ export default function ReadingFluencyReportPage() {
           />
           <MetricCards
             wcpm={wcpm}
-            readingTimeSeconds={Math.round(duration)}
+            readingTimeSeconds={readingTimeSeconds}
             classificationLevel={currentClassificationLevel}
           />
         </div>

@@ -2,16 +2,10 @@
 
 import { Mic, SkipBack, Play, Pause, SkipForward } from "lucide-react";
 import { useRef, useState, useEffect, useCallback } from "react";
+import { formatAudioClock } from "@/lib/readingDuration";
 
 interface AudioPlaybackCardProps {
   audioSrc?: string | null;
-}
-
-function formatTime(seconds: number): string {
-  if (!isFinite(seconds) || seconds < 0) return "0:00";
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 export default function AudioPlaybackCard({ audioSrc }: AudioPlaybackCardProps) {
@@ -205,7 +199,7 @@ export default function AudioPlaybackCard({ audioSrc }: AudioPlaybackCardProps) 
 
       {/* Time */}
       <p className="text-center text-xs font-medium text-[#00306E] mt-2">
-        {formatTime(currentTime)} / {formatTime(duration)}
+        {formatAudioClock(currentTime)} / {formatAudioClock(duration, "nearest")}
       </p>
 
       {!audioSrc && (
