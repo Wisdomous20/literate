@@ -20,6 +20,7 @@ import { useClassList } from "@/lib/hooks/useClassList";
 import { useTranscriptionStatus } from "@/lib/hooks/useTranscriptionStatus";
 import { useQueryClient } from "@tanstack/react-query";
 import { createStudent } from "@/app/actions/student/createStudent";
+import { recheckAllMiscuesAction } from "@/app/actions/oral-fluency/recheckAllMiscues";
 import { convertToWav } from "@/utils/convertToWav";
 import type { OralFluencyAnalysis } from "@/types/oral-reading";
 import {
@@ -60,6 +61,24 @@ interface SessionState {
   analysisResult?: OralFluencyAnalysis | null;
   sessionId?: string;
   assessmentId?: string;
+}
+
+interface RecheckSummary {
+  checked: number;
+  removed: number;
+  changed: number;
+  kept: number;
+  added?: number;
+  reranTranscription?: boolean;
+}
+
+function formatRecheckSummary(summary: RecheckSummary | undefined): string {
+  if (!summary) return "Recheck complete.";
+  const core = `${summary.checked} checked, ${summary.removed} removed, ${summary.changed} changed, ${summary.kept} kept`;
+  const added =
+    summary.added && summary.added > 0 ? `, ${summary.added} added` : "";
+  const source = summary.reranTranscription ? " after audio retranscription" : "";
+  return `${core}${added}${source}`;
 }
 
 function loadSession(): Partial<SessionState> {
@@ -139,6 +158,10 @@ export default function ReadingFluencyTestPage() {
     useState<OralFluencyAnalysis | null>(null);
   const [sessionId, setSessionId] = useState<string>("");
   const [assessmentId, setAssessmentId] = useState<string>("");
+  const [isRecheckingMiscues, setIsRecheckingMiscues] = useState(false);
+  const [recheckSummaryText, setRecheckSummaryText] = useState<string | null>(
+    null,
+  );
   const [highlightedTypes, setHighlightedTypes] = useState<Set<string>>(
     new Set(),
   );
@@ -192,6 +215,43 @@ export default function ReadingFluencyTestPage() {
   const resetHighlightTypes = useCallback(() => {
     setHighlightedTypes(new Set());
   }, []);
+
+  const handleRecheckMiscues = useCallback(async () => {
+    if (!sessionId || !activeAnalysisResult) return;
+
+    setIsRecheckingMiscues(true);
+    setRecheckSummaryText(null);
+
+    try {
+      const result = await recheckAllMiscuesAction(sessionId);
+
+      if (!result.success || !result.analysis) {
+        const message = result.error || "Failed to recheck miscues.";
+        setRecheckSummaryText(message);
+        setToast({ message, type: "error" });
+        return;
+      }
+
+      const updatedAnalysis = result.analysis as OralFluencyAnalysis;
+      setAnalysisResult(updatedAnalysis);
+      setHighlightedTypes(new Set());
+
+      try {
+        const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
+        if (sessionRaw) {
+          const session = JSON.parse(sessionRaw);
+          session.analysisResult = updatedAnalysis;
+          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+        }
+      } catch {}
+
+      const summaryText = formatRecheckSummary(result.summary);
+      setRecheckSummaryText(summaryText);
+      setToast({ message: summaryText, type: "success" });
+    } finally {
+      setIsRecheckingMiscues(false);
+    }
+  }, [activeAnalysisResult, sessionId]);
 
   const filteredMiscues = useMemo(() => {
     if (!activeAnalysisResult?.miscues) return undefined;
@@ -327,6 +387,7 @@ export default function ReadingFluencyTestPage() {
     if (!polledAnalysis || analysisResult) return;
 
     setAnalysisResult(polledAnalysis);
+    setRecheckSummaryText(null);
 
     if (transcriptionStatus.data?.sessionId) {
       setSessionId(transcriptionStatus.data.sessionId);
@@ -390,6 +451,7 @@ export default function ReadingFluencyTestPage() {
       setRecordedSeconds(0);
       setRecordedAudioBlob(null);
       setAnalysisResult(null);
+      setRecheckSummaryText(null);
       setSessionId("");
       setAssessmentId("");
       lastHandledTranscriptionStatusRef.current = null;
@@ -442,6 +504,7 @@ export default function ReadingFluencyTestPage() {
     setHasRecording(false);
     setRecordedSeconds(0);
     setAnalysisResult(null);
+    setRecheckSummaryText(null);
     setSessionId("");
     setAssessmentId("");
     lastHandledTranscriptionStatusRef.current = null;
@@ -472,6 +535,7 @@ export default function ReadingFluencyTestPage() {
     setCountdownEnabled(true);
     setCountdownSeconds(3);
     setAnalysisResult(null);
+    setRecheckSummaryText(null);
     setSessionId("");
     setAssessmentId("");
     lastHandledTranscriptionStatusRef.current = null;
@@ -578,6 +642,7 @@ export default function ReadingFluencyTestPage() {
 
       if (result.analysis) {
         setAnalysisResult(result.analysis as OralFluencyAnalysis);
+        setRecheckSummaryText(null);
         setToast({
           message: "Reading Fluency Session Successful!",
           type: "success",
@@ -661,6 +726,11 @@ export default function ReadingFluencyTestPage() {
           highlightedTypes={highlightedTypes}
           onToggleHighlight={toggleHighlightType}
           onResetHighlight={resetHighlightTypes}
+          onRecheckMiscues={
+            sessionId && activeAnalysisResult ? handleRecheckMiscues : undefined
+          }
+          isRechecking={isRecheckingMiscues}
+          recheckSummary={recheckSummaryText}
           onExportPdf={() => {
             if (!activeAnalysisResult) return;
             const data = buildFluencyReportData({

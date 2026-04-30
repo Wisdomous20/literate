@@ -13,6 +13,7 @@ import ViewMiscuesModal from "@/components/reports/oral-reading-test/reading-flu
 import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay";
 import { useEditMiscues } from "@/components/oral-reading-test/useEditMiscues";
 import { fetchOralFluencyMiscues } from "@/app/actions/oral-fluency/getMiscues";
+import { recheckAllMiscuesAction } from "@/app/actions/oral-fluency/recheckAllMiscues";
 import { updateMiscueAction } from "@/app/actions/oral-fluency/updateMiscue";
 import { updateBehaviorsAction } from "@/app/actions/oral-fluency/updateBehaviors";
 import { exportFluencyReportPdf } from "@/lib/exportFluencyReportPdf";
@@ -65,6 +66,15 @@ interface SessionState {
   recordedSeconds: number;
   analysisResult?: OralFluencyAnalysis | null;
   sessionId?: string;
+}
+
+interface RecheckSummary {
+  checked: number;
+  removed: number;
+  changed: number;
+  kept: number;
+  added?: number;
+  reranTranscription?: boolean;
 }
 
 function loadSession(): Partial<SessionState> {
@@ -155,11 +165,24 @@ function buildBehaviorItems(
   ];
 }
 
+function formatRecheckSummary(summary: RecheckSummary | undefined): string {
+  if (!summary) return "Recheck complete.";
+  const core = `${summary.checked} checked, ${summary.removed} removed, ${summary.changed} changed, ${summary.kept} kept`;
+  const added =
+    summary.added && summary.added > 0 ? `, ${summary.added} added` : "";
+  const source = summary.reranTranscription ? " after audio retranscription" : "";
+  return `${core}${added}${source}`;
+}
+
 export default function OralReadingReportPage() {
   const router = useRouter();
   const [showMiscuesModal, setShowMiscuesModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [localAnalysis, setLocalAnalysis] = useState<OralFluencyAnalysis | null>(null);
+  const [isRecheckingMiscues, setIsRecheckingMiscues] = useState(false);
+  const [recheckSummaryText, setRecheckSummaryText] = useState<string | null>(
+    null,
+  );
 
   // Fix hydration mismatch: useSyncExternalStore ensures server and client render consistently
   const isClient = useSyncExternalStore(
@@ -297,6 +320,52 @@ export default function OralReadingReportPage() {
   });
 
   const reportSessionId = session.sessionId;
+
+  const handleRecheckMiscues = useCallback(async () => {
+    if (!reportSessionId || !analysis) return;
+
+    if (
+      editMiscues.hasUnsavedChanges &&
+      typeof window !== "undefined" &&
+      !window.confirm(
+        "Rechecking will replace your unsaved miscue edits. Continue?",
+      )
+    ) {
+      return;
+    }
+
+    setIsRecheckingMiscues(true);
+    setRecheckSummaryText(null);
+
+    try {
+      const result = await recheckAllMiscuesAction(reportSessionId);
+
+      if (!result.success || !result.analysis) {
+        setRecheckSummaryText(result.error || "Recheck failed.");
+        return;
+      }
+
+      const updatedAnalysis = result.analysis as OralFluencyAnalysis;
+      setLocalAnalysis(updatedAnalysis);
+      editMiscues.applyExternalMiscues(updatedAnalysis.miscues);
+      if (editMiscues.isEditing) {
+        editMiscues.cancelEdit();
+      }
+
+      try {
+        const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
+        if (sessionRaw) {
+          const s = JSON.parse(sessionRaw);
+          s.analysisResult = updatedAnalysis;
+          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+        }
+      } catch {}
+
+      setRecheckSummaryText(formatRecheckSummary(result.summary));
+    } finally {
+      setIsRecheckingMiscues(false);
+    }
+  }, [analysis, editMiscues, reportSessionId]);
 
   const handleDeleteMiscue = useCallback(
     async (miscue: MiscueResult) => {
@@ -642,6 +711,9 @@ export default function OralReadingReportPage() {
             miscueData={miscueData}
             onViewMiscues={() => setShowMiscuesModal(true)}
             onEditMiscues={() => setShowEditModal(true)}
+            onRecheckMiscues={reportSessionId ? handleRecheckMiscues : undefined}
+            isRechecking={isRecheckingMiscues}
+            recheckSummary={recheckSummaryText}
           />
         </div>
       </main>
