@@ -332,7 +332,7 @@ export default function StudentInfoBar({
 
       <div className="grid grid-cols-[1fr_160px_180px_auto] items-start gap-3">
         <div className="relative rounded-lg  px-3 py-2">
-          <label className="mb-0.5 block text-[10px] font-bold uppercase tracking-widest text-[#0C1A6D]">
+          <label className="mb-0.5 block text-[10px] font-extrabold uppercase tracking-widest text-[#000654]">
             STUDENT NAME
           </label>
           <div className="relative">
@@ -344,7 +344,7 @@ export default function StudentInfoBar({
               onChange={(e) => handleStudentNameInput(e.target.value)}
               onFocus={() => setIsStudentInputFocused(true)}
               placeholder="Search or type student name"
-              className="w-full rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-white pl-10 pr-4 py-1.5 text-xs text-[#00306E] outline-none placeholder:text-xs placeholder:text-[#00306E]/40 transition-all duration-200 focus:border-[#7C3AED] focus:ring-2 focus:ring-[#A855F7]/20"
+              className="w-full rounded-xl border border-[#7C3AED] bg-white pl-10 pr-4 py-1.5 text-xs text-[#00306E] outline-none placeholder:text-xs placeholder:text-[#00306E]/40 transition-all duration-200 focus:border-[#7C3AED] focus:ring-2 focus:ring-[#A855F7]/20 shadow-[0_4px_16px_rgba(124,58,237,0.18)]"
             />
           </div>
 
@@ -404,7 +404,7 @@ export default function StudentInfoBar({
                 setIsGradeDropdownOpen(!isGradeDropdownOpen);
                 setIsClassDropdownOpen(false);
               }}
-              className={`flex w-full items-center justify-between gap-2 rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] px-4 py-1.5 text-xs font-medium transition-all ${
+              className={`flex w-full items-center justify-between gap-2 rounded-xl border border-[#7C3AED] px-4 py-1.5 text-xs font-medium transition-all shadow-[0_4px_16px_rgba(124,58,237,0.18)] ${
                 gradeLevel
                   ? "bg-purple-50 text-purple-700"
                   : "bg-white text-purple-700 hover:bg-purple-50"
@@ -473,7 +473,7 @@ export default function StudentInfoBar({
                 setIsClassDropdownOpen(!isClassDropdownOpen);
                 setIsGradeDropdownOpen(false);
               }}
-              className={`flex w-full items-center justify-between gap-2 rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] px-4 py-1.5 text-xs font-medium transition-all ${
+              className={`flex w-full items-center justify-between gap-2 rounded-xl border border-[#7C3AED] px-4 py-1.5 text-xs font-medium transition-all shadow-[0_4px_16px_rgba(124,58,237,0.18)] ${
                 selectedClass
                   ? "bg-purple-50 text-purple-700"
                   : "bg-white text-purple-700 hover:bg-purple-50"

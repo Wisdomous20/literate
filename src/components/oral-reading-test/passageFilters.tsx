@@ -1,6 +1,13 @@
 "use client";
 
-import { Globe, BarChart3, ClipboardList, Link2, BookOpen, Plus } from "lucide-react";
+import {
+  Globe,
+  BarChart3,
+  ClipboardList,
+  Link2,
+  BookOpen,
+  Plus,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 interface PassageFiltersProps {
@@ -71,17 +78,17 @@ export function PassageFilters({
         <div className="flex flex-wrap items-center gap-2">
           <FilterChip
             icon={Globe}
-            label={language ? `${language} Passage` : "English Passage"}
+            label={language ? `${language} Passage` : "Passage Language"}
             active={!!language}
           />
           <FilterChip
             icon={ClipboardList}
-            label={testType || "Pre-Test"}
+            label={testType || "Passage Type"}
             active={!!testType}
           />
           <FilterChip
             icon={BarChart3}
-            label={passageLevel || "Level 3"}
+            label={passageLevel || "Passage Level"}
             active={!!passageLevel}
           />
         </div>
@@ -101,19 +108,25 @@ export function PassageFilters({
             <span>Share Link</span>
           </button>
         )}
-        <button
-          type="button"
-          data-tour-target="add-passage-button"
-          onClick={onOpenPassageModal}
-          className={`flex items-center justify-center gap-1.5 rounded-[10px] border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#3B21CC] border-b-[#3B21CC] px-3.5 py-1.5 text-xs font-medium shadow transition-colors ${
-            hasPassage
-              ? "bg-white text-[#6666FF] hover:bg-[#6666FF] hover:text-white"
-              : "bg-[#6666FF] text-white hover:bg-[#4F46E5]"
-          }`}
-        >
-          <Plus className="h-3.5 w-3.5 shrink-0" />
-          {hasPassage ? "Change Passage" : "Add Passage"}
-        </button>
+        <div className="relative">
+          <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+          <button
+            type="button"
+            data-tour-target="add-passage-button"
+            onClick={onOpenPassageModal}
+            className={`relative flex items-center justify-center gap-1.5 rounded-full px-5 py-2 text-xs font-semibold shadow transition-transform
+      ${
+        hasPassage
+          ? "bg-[#6666FF] text-white hover:bg-[#4F46E5]"
+          : "bg-[#4F46E5] text-white hover:bg-[#6666FF]"
+      }
+      hover:-translate-y-0.5 active:translate-y-0
+    `}
+          >
+            <Plus className="h-3.5 w-3.5 shrink-0" />
+            {hasPassage ? "Change Passage" : "Add Passage"}
+          </button>
+        </div>
       </div>
     </div>
   );

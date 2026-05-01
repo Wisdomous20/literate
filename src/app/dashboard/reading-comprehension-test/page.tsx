@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Clock, Loader2 } from "lucide-react";
+import { Clock, Loader2, Maximize2, Minimize2, ArrowRight } from "lucide-react";
+
 import { TestPageLayout } from "@/components/assessment/testPageLayout";
 import { StudentSetupSection } from "@/components/assessment/studentSetupSection";
 import { ClassificationPopup } from "@/components/oral-reading-test/classificationPopup";
@@ -141,7 +142,6 @@ export default function ReadingComprehensionTestPage() {
   const [selectedTitle, setSelectedTitle] = useState<string | undefined>();
   const [selectedPassage, setSelectedPassage] = useState<string | undefined>();
   const [passageExpanded, setPassageExpanded] = useState(false);
-  const [showPassage, setShowPassage] = useState(true);
 
   // ── Comprehension quiz state ──
   const [showQuestions, setShowQuestions] = useState(false);
@@ -389,7 +389,6 @@ export default function ReadingComprehensionTestPage() {
       setComprehensionResult(null);
       setQuestionsLoadError(null);
       sessionStorage.removeItem(COMP_STATE_KEY);
-      setShowPassage(true);
     },
     [],
   );
@@ -418,7 +417,6 @@ export default function ReadingComprehensionTestPage() {
     sessionStorage.removeItem(COMP_STATE_KEY);
     sessionStorage.removeItem("reading-comprehension-assessmentId");
     sessionStorage.removeItem("reading-comprehension-state");
-    setShowPassage(true);
   }, []);
 
   const handleContinueToComprehension = useCallback(() => {
@@ -430,7 +428,6 @@ export default function ReadingComprehensionTestPage() {
       );
     }
     setShowQuestions(true);
-    setShowPassage(false);
     setTimeout(() => {
       questionsRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 100);
@@ -459,7 +456,6 @@ export default function ReadingComprehensionTestPage() {
     setSubmitError(null);
     setComprehensionResult(null);
     setHighlightedTag(null);
-    setShowPassage(true);
     sessionStorage.removeItem(COMP_STATE_KEY);
     sessionStorage.removeItem("reading-comprehension-assessmentId");
   }, []);
@@ -667,7 +663,7 @@ export default function ReadingComprehensionTestPage() {
 
       <div className="flex flex-1 min-h-0 flex-col overflow-hidden rounded-2xl border border-[#C4B5FD] bg-white shadow-[0_12px_48px_rgba(102,102,255,0.18),0_3px_12px_rgba(102,102,255,0.10)]">
         {!passageExpanded && (
-          <div className="shrink-0 px-5 pt-4 pb-3">
+          <div className="relative shrink-0 px-5 pt-4 pb-3">
             <StudentSetupSection
               isLoading={isLoadingClasses}
               studentName={studentName}
@@ -703,6 +699,42 @@ export default function ReadingComprehensionTestPage() {
               }
               hideStudentInfo
             />
+
+            {showQuestions && hasPassage && (
+              <div className="pointer-events-none absolute top-4.5 right-50 z-20">
+                <div className="relative">
+                  <div className="absolute inset-0 translate-y-1 rounded-full bg-[#B3A4F1]" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPassageExpanded((prev) => {
+                        return !prev;
+                      });
+                    }}
+                    className="pointer-events-auto relative inline-flex items-center justify-center gap-1.5 rounded-full border border-[#6666FF] bg-white px-5 py-2 text-xs font-semibold text-[#6666FF] shadow transition-transform hover:bg-[#6666FF] hover:text-white hover:-translate-y-0.5 active:translate-y-0"
+                    title={
+                      passageExpanded
+                        ? "Exit full passage view"
+                        : "View full passage"
+                    }
+                    aria-label={
+                      passageExpanded
+                        ? "Exit full passage view"
+                        : "View full passage"
+                    }
+                  >
+                    {passageExpanded ? (
+                      <Minimize2 className="h-3.5 w-3.5 shrink-0" />
+                    ) : (
+                      <Maximize2 className="h-3.5 w-3.5 shrink-0" />
+                    )}
+                    {passageExpanded
+                      ? "Exit Full Passage"
+                      : "View Full Passage"}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -710,94 +742,136 @@ export default function ReadingComprehensionTestPage() {
           <div className="shrink-0 mx-5 h-px bg-[#E5DEFF]" />
         )}
 
-        <div
-          className={
-            passageExpanded
-              ? "flex flex-1 min-h-0 flex-col overflow-hidden p-2"
-              : "flex flex-1 min-h-0 flex-col px-5 pt-3 pb-0"
-          }
-        >
-          {showQuestions ? (
-            <PassageDisplay
-              content={passageContent}
-              expanded={passageExpanded}
-              onToggleExpand={() => setPassageExpanded((prev) => !prev)}
-              passageLevel={selectedLevel}
-              resizable={true}
-              collapsible={true}
-              collapsed={!showPassage}
-              onToggleCollapsed={() => setShowPassage((p) => !p)}
-              passageTitle={selectedTitle}
-              initialHeight={passageInitialHeight ?? undefined}
-            />
-          ) : (
-            <div ref={passageRef} className="flex min-h-0 flex-1 flex-col">
-              <PassageDisplay
-                content={passageContent}
-                expanded={passageExpanded}
-                onToggleExpand={() => setPassageExpanded((prev) => !prev)}
-                passageLevel={selectedLevel}
-                resizable={true}
-              />
-            </div>
-          )}
+        {(!showQuestions || passageExpanded) && (
+          <>
+            <div
+              className={
+                passageExpanded
+                  ? "oral-reading-scroll flex flex-1 min-h-0 flex-col overflow-y-auto p-2 custom-purple-scrollbar"
+                  : "flex min-h-0 flex-1 flex-col px-5 pt-3 pb-2"
+              }
+            >
+              {!showQuestions && (
+                <div
+                  ref={passageRef}
+                  className="flex min-h-0 flex-1 flex-col relative"
+                >
+                  {passageExpanded && (
+                    <button
+                      type="button"
+                      onClick={() => setPassageExpanded(false)}
+                      className="absolute top-2 right-2 z-10 inline-flex items-center gap-1 rounded-full border border-[#6666FF] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#6666FF] shadow transition-transform hover:bg-[#6666FF] hover:text-white hover:-translate-y-0.5 active:translate-y-0"
+                      title="Exit full passage view"
+                      aria-label="Exit full passage view"
+                    >
+                      <Minimize2 className="h-3 w-3 shrink-0" />
+                      Exit Full Passage
+                    </button>
+                  )}
+                  <PassageDisplay
+                    content={passageContent}
+                    expanded={passageExpanded}
+                    passageLevel={selectedLevel}
+                    resizable={true}
+                  />
+                </div>
+              )}
 
-          {(!showQuestions || showPassage) &&
-            !passageExpanded &&
-            hasPassage && (
-              <div className="mt-1.5 flex items-center justify-between px-0.5">
-                <span className="text-[10px] font-semibold text-[#A0A0C0]">
-                  {wordCount} words
-                </span>
-                {estimatedReadingTime && (
-                  <span
-                    className="flex items-center gap-1 text-[10px] font-medium text-[#9090B4]"
-                    title={`Est. reading time: ${estimatedReadingTime}`}
+              {showQuestions && passageExpanded && (
+                <div className="flex min-h-0 flex-1 flex-col relative">
+                  <button
+                    type="button"
+                    onClick={() => setPassageExpanded(false)}
+                    className="absolute top-2 right-2 z-10 inline-flex items-center gap-1 rounded-full border border-[#6666FF] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#6666FF] shadow transition-transform hover:bg-[#6666FF] hover:text-white hover:-translate-y-0.5 active:translate-y-0"
+                    title="Exit full passage view"
+                    aria-label="Exit full passage view"
                   >
-                    <Clock className="h-3.5 w-3.5" />
-                    {estimatedReadingTime}
+                    <Minimize2 className="h-3 w-3 shrink-0" />
+                    Exit Full Passage
+                  </button>
+                  <PassageDisplay
+                    content={passageContent}
+                    expanded={passageExpanded}
+                    passageLevel={selectedLevel}
+                    resizable={true}
+                    collapsible={false}
+                    passageTitle={selectedTitle}
+                    initialHeight={passageInitialHeight ?? undefined}
+                  />
+                </div>
+              )}
+
+              {!showQuestions && !passageExpanded && hasPassage && (
+                <div className="mt-2 shrink-0 flex items-center justify-between border-t border-[#E5DEFF] px-0.5 pt-1.5">
+                  <span className="text-[10px] font-semibold text-[#A0A0C0]">
+                    {wordCount} words
                   </span>
-                )}
-              </div>
-            )}
-        </div>
+                  {estimatedReadingTime && (
+                    <span
+                      className="flex items-center gap-1 text-[10px] font-medium text-[#9090B4]"
+                      title={"Est. reading time: " + estimatedReadingTime}
+                    >
+                      <Clock className="h-3.5 w-3.5" />
+                      {estimatedReadingTime}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          </>
+        )}
 
         {!passageExpanded && !showQuestions && (
           <div className="shrink-0 flex items-center justify-center px-5 pb-4 pt-2">
-            <button
-              type="button"
-              onClick={handleContinueToComprehension}
-              disabled={
-                !hasPassage ||
-                !studentName.trim() ||
-                !gradeLevel ||
-                !selectedClassName
-              }
-              className={`rounded-full px-10 py-2.5 text-sm font-semibold text-white transition-all duration-200 md:px-12 md:py-3 md:text-[15px] ${
-                !hasPassage ||
-                !studentName.trim() ||
-                !gradeLevel ||
-                !selectedClassName
-                  ? "cursor-not-allowed bg-[#6666FF]/30 opacity-60 shadow-none"
-                  : "bg-[#6666FF] shadow-[0_2px_8px_rgba(102,102,255,0.4)] hover:bg-[#5555EE]"
-              }`}
-              title={
-                !studentName.trim() || !gradeLevel || !selectedClassName
-                  ? "Enter student information first"
-                  : !hasPassage
-                    ? "Add a passage first"
-                    : undefined
-              }
-            >
-              Continue to Comprehension
-            </button>
+            <div className="relative">
+              <div
+                className={
+                  "absolute inset-0 rounded-full translate-y-1 " +
+                  (!hasPassage ||
+                  !studentName.trim() ||
+                  !gradeLevel ||
+                  !selectedClassName
+                    ? "bg-[#C4C4FF]"
+                    : "bg-[#B3A4F1]")
+                }
+              />
+              <button
+                type="button"
+                onClick={handleContinueToComprehension}
+                disabled={
+                  !hasPassage ||
+                  !studentName.trim() ||
+                  !gradeLevel ||
+                  !selectedClassName
+                }
+                className={
+                  "relative rounded-full px-7 py-2 text-xs font-semibold text-white transition-transform duration-200 md:px-9 md:py-2.5 md:text-sm flex items-center gap-2 " +
+                  (!hasPassage ||
+                  !studentName.trim() ||
+                  !gradeLevel ||
+                  !selectedClassName
+                    ? "cursor-not-allowed bg-[#6666FF]/30 opacity-60 shadow-none"
+                    : "bg-[#6666FF] shadow-[0_2px_8px_rgba(102,102,255,0.4)] hover:bg-[#5555EE] hover:-translate-y-0.5 active:translate-y-0")
+                }
+                title={
+                  !studentName.trim() || !gradeLevel || !selectedClassName
+                    ? "Enter student information first"
+                    : !hasPassage
+                      ? "Add a passage first"
+                      : undefined
+                }
+              >
+                Continue to Comprehension
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         )}
 
         {!passageExpanded && showQuestions && (
           <div
             ref={questionsRef}
-            className="shrink-0 flex flex-col gap-4 px-5 pb-4 pt-2"
+            className="flex-1 min-h-0 flex flex-col gap-4 px-5 pb-4 pt-2 overflow-hidden"
           >
             <ComprehensionInfoBar
               totalQuestions={questions.length}
@@ -829,7 +903,7 @@ export default function ReadingComprehensionTestPage() {
             )}
 
             {!isLoadingQuestions && !questionsLoadError && (
-              <>
+              <div className="oral-reading-scroll flex-1 min-h-0 overflow-y-auto pr-2">
                 <div className="space-y-6">
                   {questions.map((question) => (
                     <QuestionCard
@@ -851,7 +925,7 @@ export default function ReadingComprehensionTestPage() {
                   onSubmit={handleSubmit}
                   onTryAgain={handleTryAgain}
                 />
-              </>
+              </div>
             )}
           </div>
         )}

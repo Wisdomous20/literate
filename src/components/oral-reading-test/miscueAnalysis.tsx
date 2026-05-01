@@ -281,7 +281,7 @@ export function MiscueAnalysis({
                         onClick={() => onToggleHighlight?.(item.key)}
                       >
                         <div
-                          className={`flex h-6 w-7 shrink-0 items-center justify-center rounded-[5px] border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] text-sm font-bold ${item.colorClass} ${item.textClass}`}
+                          className={`flex h-6 w-7 shrink-0 items-center justify-center rounded-[5px] border border-[#C4B5FD] text-sm font-bold shadow-[0_2px_6px_rgba(102,83,249,0.15)] ${item.colorClass} ${item.textClass}`}
                         >
                           {count}
                         </div>
@@ -300,37 +300,39 @@ export function MiscueAnalysis({
             ) : (
               <div className="oral-reading-scroll flex max-h-[318px] flex-col gap-2 overflow-y-auto pr-1">
                 {miscuedWords.length > 0 ? (
-                  miscuedWords.map(({ id, config, miscue, primaryWord, spokenLabel }) => (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => onToggleHighlight?.(miscue.miscueType)}
-                      className={`w-full rounded-lg border border-[#DAE6FF] bg-white px-3 py-2 text-left transition-colors hover:bg-[#F8FBFF] ${
-                        highlightedTypes.has(miscue.miscueType)
-                          ? "ring-1 ring-[#6666FF]"
-                          : ""
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-bold text-[#00306E]">
-                            {primaryWord}
-                          </p>
-                          <p className="mt-0.5 truncate text-[11px] font-medium text-[#31318A]/65">
-                            {spokenLabel}
-                          </p>
+                  miscuedWords.map(
+                    ({ id, config, miscue, primaryWord, spokenLabel }) => (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => onToggleHighlight?.(miscue.miscueType)}
+                        className={`w-full rounded-lg border border-[#DAE6FF] bg-white px-3 py-2 text-left transition-colors hover:bg-[#F8FBFF] ${
+                          highlightedTypes.has(miscue.miscueType)
+                            ? "ring-1 ring-[#6666FF]"
+                            : ""
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-bold text-[#00306E]">
+                              {primaryWord}
+                            </p>
+                            <p className="mt-0.5 truncate text-[11px] font-medium text-[#31318A]/65">
+                              {spokenLabel}
+                            </p>
+                          </div>
+                          <span
+                            className={`shrink-0 rounded px-2 py-1 text-[10px] font-bold ${config.colorClass} ${config.textClass}`}
+                          >
+                            {config.label}
+                          </span>
                         </div>
-                        <span
-                          className={`shrink-0 rounded px-2 py-1 text-[10px] font-bold ${config.colorClass} ${config.textClass}`}
-                        >
-                          {config.label}
-                        </span>
-                      </div>
-                      <div className="mt-1 text-[10px] font-medium text-[#31318A]/50">
-                        Word #{miscue.wordIndex + 1}
-                      </div>
-                    </button>
-                  ))
+                        <div className="mt-1 text-[10px] font-medium text-[#31318A]/50">
+                          Word #{miscue.wordIndex + 1}
+                        </div>
+                      </button>
+                    ),
+                  )
                 ) : (
                   <div className="rounded-lg border border-dashed border-[#BFD7FF] bg-[#F8FBFF] px-3 py-6 text-center text-xs font-semibold text-[#00306E]">
                     No miscued words yet.
@@ -342,7 +344,7 @@ export function MiscueAnalysis({
 
           <div className="mt-auto pt-2">
             <div className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between rounded-[10px] border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[rgba(230,230,250,0.5)] px-3 py-1.5">
+              <div className="flex items-center justify-between rounded-[10px] border border-[#C4B5FD] bg-[rgba(230,230,250,0.5)] px-3 py-1.5 shadow-[0_2px_8px_rgba(102,83,249,0.12)]">
                 <span className="text-xs font-bold text-[#31318A]">
                   Total Miscue:
                 </span>
@@ -351,7 +353,7 @@ export function MiscueAnalysis({
                 </span>
               </div>
 
-              <div className="flex items-center justify-between rounded-[10px] border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[rgba(230,230,250,0.35)] px-3 py-1.5">
+              <div className="flex items-center justify-between rounded-[10px] border border-[#C4B5FD] bg-[rgba(230,230,250,0.35)] px-3 py-1.5 shadow-[0_2px_8px_rgba(102,83,249,0.12)]">
                 <span className="text-xs font-bold text-[#31318A]">
                   Oral Fluency Score:
                 </span>
@@ -361,7 +363,7 @@ export function MiscueAnalysis({
               </div>
 
               <div
-                className={`flex items-center justify-between rounded-[10px] border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] px-3 py-1.5 ${classificationColor.bgClass}`}
+                className={`flex items-center justify-between rounded-[10px] border border-[#C4B5FD] px-3 py-1.5 shadow-[0_2px_8px_rgba(102,83,249,0.12)] ${classificationColor.bgClass}`}
               >
                 <span className="text-xs font-bold text-[#31318A]">
                   Classification Level:

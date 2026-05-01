@@ -293,11 +293,14 @@ export function ReadingTimer({
               type="button"
               onClick={onGoToComprehension}
               disabled={!canGoToComprehension}
-              className={`relative flex items-center gap-1.5 rounded-full px-5 py-2 text-xs font-semibold text-white transition-transform ${
-                canGoToComprehension
-                  ? "bg-[#6666FF] hover:-translate-y-0.5 active:translate-y-0"
-                  : "cursor-not-allowed bg-[#C4C4FF]"
-              }`}
+              className={`relative flex items-center gap-1.5 rounded-full px-5 py-2 text-xs font-semibold transition-transform border-2
+    ${
+      canGoToComprehension
+        ? "bg-white text-[#6666FF] border-[#6666FF] hover:bg-[#6666FF] hover:text-white"
+        : "cursor-not-allowed bg-[#C4C4FF] text-white border-[#C4C4FF]"
+    }
+    ${canGoToComprehension ? "hover:-translate-y-0.5 active:translate-y-0" : ""}
+  `}
             >
               Comprehension
               <ArrowRight className="h-3.5 w-3.5" />
