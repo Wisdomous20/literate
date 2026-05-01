@@ -267,13 +267,25 @@ export function ReadingTimer({
         )}
 
         {/* Try Again — explore raised style, smaller */}
-        {hasRecording && !isAnalyzing && (
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+        {hasRecording && (
+          <div className={`relative ${isAnalyzing ? "opacity-50" : ""}`}>
+            <div
+              className={`absolute inset-0 rounded-full translate-y-1 ${isAnalyzing ? "bg-[#C4C4FF]" : "bg-[#B3A4F1]"}`}
+            />
             <button
               type="button"
               onClick={onTryAgain}
-              className="relative flex items-center gap-1.5 rounded-full bg-[#6666FF] px-5 py-2 text-xs font-semibold text-white transition-transform hover:-translate-y-0.5 active:translate-y-0"
+              disabled={isAnalyzing}
+              title={
+                isAnalyzing
+                  ? "Waiting for miscue analysis to complete"
+                  : undefined
+              }
+              className={`relative flex items-center gap-1.5 rounded-full px-5 py-2 text-xs font-semibold text-white transition-transform ${
+                isAnalyzing
+                  ? "cursor-not-allowed bg-[#9999CC]"
+                  : "bg-[#6666FF] hover:-translate-y-0.5 active:translate-y-0"
+              }`}
             >
               <RotateCcw className="h-3.5 w-3.5" />
               Try Again
@@ -282,7 +294,7 @@ export function ReadingTimer({
         )}
 
         {/* Comprehension — explore raised style, smaller */}
-        {hasRecording && !isAnalyzing && onGoToComprehension && (
+        {hasRecording && onGoToComprehension && (
           <div className="relative">
             <div
               className={`absolute inset-0 rounded-full translate-y-1 ${
