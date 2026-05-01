@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { protos } from "@google-cloud/speech";
 
 const mockCorrectWithPassage = vi.hoisted(() => vi.fn((words: unknown) => words));
 
@@ -9,17 +10,47 @@ import convertToTranscriptResponse from "../convertToTranscriptResponse";
 // A minimal WAV buffer: 44-byte header + 48000 bytes of audio = 1 second at 24kHz/16-bit
 const ONE_SECOND_WAV = Buffer.alloc(44 + 48000);
 
-function makeWordInfo(word: string, startSec: number, endSec: number) {
+type TestWordInfo = {
+  word: string;
+  startOffset: protos.google.protobuf.IDuration | string;
+  endOffset: protos.google.protobuf.IDuration | string;
+};
+
+function makeDuration(seconds: number) {
+  const wholeSeconds = Math.floor(seconds);
   return {
-    word,
-    startOffset: { seconds: Math.floor(startSec), nanos: 0 },
-    endOffset:   { seconds: Math.floor(endSec),   nanos: 0 },
+    seconds: wholeSeconds,
+    nanos: Math.round((seconds - wholeSeconds) * 1e9),
   };
 }
 
-function makeResult(words: ReturnType<typeof makeWordInfo>[], transcript = "") {
+function makeWordInfo(word: string, startSec: number, endSec: number): TestWordInfo {
   return {
-    alternatives: [{ words, transcript }],
+    word,
+    startOffset: makeDuration(startSec),
+    endOffset: makeDuration(endSec),
+  };
+}
+
+function makeRestWordInfo(word: string, startSec: string, endSec: string): TestWordInfo {
+  return {
+    word,
+    startOffset: startSec,
+    endOffset: endSec,
+  };
+}
+
+function makeResult(
+  words: TestWordInfo[],
+  transcript = "",
+): protos.google.cloud.speech.v2.ISpeechRecognitionResult {
+  return {
+    alternatives: [
+      {
+        words: words as unknown as protos.google.cloud.speech.v2.IWordInfo[],
+        transcript,
+      },
+    ],
   };
 }
 
@@ -60,6 +91,21 @@ describe("convertToTranscriptResponse", () => {
     const response = convertToTranscriptResponse(results, ONE_SECOND_WAV, true, undefined);
 
     expect(response.duration).toBe(4.0);
+  });
+
+  it("parses protobuf JSON duration strings from REST word offsets", () => {
+    const results = [
+      makeResult([makeRestWordInfo("later", "1.2s", "1.8s")]),
+    ];
+
+    const response = convertToTranscriptResponse(results, ONE_SECOND_WAV, true, undefined);
+
+    expect(response.words[0]).toEqual({
+      word: "later",
+      start: 1.2,
+      end: 1.8,
+    });
+    expect(response.duration).toBe(1.8);
   });
 
   it("calls correctWithPassage when passage text is provided", () => {

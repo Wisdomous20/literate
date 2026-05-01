@@ -163,13 +163,23 @@ function pickBestAlternative(
   return bestAlt;
 }
 
-
-/**
- * Convert Google's protobuf Duration to seconds.
- */
 function durationToSeconds(
-  duration?: protos.google.protobuf.IDuration | null
+  duration?: protos.google.protobuf.IDuration | string | null
 ): number {
   if (!duration) return 0;
-  return Number(duration.seconds ?? 0) + (duration.nanos ?? 0) / 1e9;
+
+  if (typeof duration === "string") {
+    const match = duration.trim().match(/^(-?(?:\d+(?:\.\d+)?|\.\d+))s$/);
+    if (!match) return 0;
+
+    const seconds = Number(match[1]);
+    return Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
+  }
+
+  const seconds = Number(duration.seconds ?? 0);
+  const nanos = Number(duration.nanos ?? 0);
+  const totalSeconds = seconds + nanos / 1e9;
+
+  return Number.isFinite(totalSeconds) ? Math.max(0, totalSeconds) : 0;
 }
+

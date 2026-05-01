@@ -1,15 +1,20 @@
 "use client";
 
 import { Mic, SkipBack, Play, Pause, SkipForward } from "lucide-react";
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect, type RefObject } from "react";
 import { formatAudioClock } from "@/lib/readingDuration";
 
 interface AudioPlaybackCardProps {
   audioSrc?: string | null;
+  audioRef?: RefObject<HTMLAudioElement | null>;
 }
 
-export default function AudioPlaybackCard({ audioSrc }: AudioPlaybackCardProps) {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+export default function AudioPlaybackCard({
+  audioSrc,
+  audioRef: externalAudioRef,
+}: AudioPlaybackCardProps) {
+  const internalAudioRef = useRef<HTMLAudioElement | null>(null);
+  const audioRef = externalAudioRef ?? internalAudioRef;
   const progressRef = useRef<HTMLDivElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -42,7 +47,7 @@ export default function AudioPlaybackCard({ audioSrc }: AudioPlaybackCardProps) 
       audio.removeEventListener("loadedmetadata", onLoadedMetadata);
       audio.removeEventListener("ended", onEnded);
     };
-  }, [audioSrc]);
+  }, [audioSrc, audioRef]);
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
@@ -104,7 +109,7 @@ export default function AudioPlaybackCard({ audioSrc }: AudioPlaybackCardProps) 
     return map[bucket] ?? "left-[-10px]";
   })();
 
-  const togglePlay = useCallback(() => {
+  const togglePlay = () => {
     const audio = audioRef.current;
     if (!audio) return;
     if (audio.paused) {
@@ -112,31 +117,28 @@ export default function AudioPlaybackCard({ audioSrc }: AudioPlaybackCardProps) 
     } else {
       audio.pause();
     }
-  }, []);
+  };
 
-  const skipBack = useCallback(() => {
+  const skipBack = () => {
     const audio = audioRef.current;
     if (!audio) return;
     audio.currentTime = Math.max(0, audio.currentTime - 5);
-  }, []);
+  };
 
-  const skipForward = useCallback(() => {
+  const skipForward = () => {
     const audio = audioRef.current;
     if (!audio) return;
     audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 5);
-  }, []);
+  };
 
-  const handleProgressClick = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      const audio = audioRef.current;
-      const bar = progressRef.current;
-      if (!audio || !bar || !duration) return;
-      const rect = bar.getBoundingClientRect();
-      const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-      audio.currentTime = ratio * duration;
-    },
-    [duration]
-  );
+  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const audio = audioRef.current;
+    const bar = progressRef.current;
+    if (!audio || !bar || !duration) return;
+    const rect = bar.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    audio.currentTime = ratio * duration;
+  };
 
   return (
     <div className="bg-white border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] shadow-[0_1px_20px_rgba(108,164,239,0.37)] rounded-[10px] px-5 py-3">

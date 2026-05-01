@@ -5,6 +5,8 @@ import { X, Play, Trash2, Pencil, Loader2 } from "lucide-react";
 import type { MiscueResult, AlignedWord } from "@/types/oral-reading";
 import { getPassageTextStyle } from "@/components/oral-reading-test/passageDisplay";
 import { MiscueActionPopover } from "@/components/oral-reading-test/miscueEditPopover";
+import { formatMiscueTimestamp } from "@/lib/audioPlayback";
+import { hydrateMiscueTimestamps } from "@/lib/miscueTimestamps";
 import { normalizeWord } from "@/utils/textUtils";
 
 const MISCUE_CONFIG = [
@@ -126,6 +128,7 @@ interface ViewMiscuesModalProps {
     miscue: MiscueResult,
     newType: MiscueResult["miscueType"],
   ) => Promise<void>;
+  onJumpToTime?: (timestamp: number) => void;
 }
 
 export default function ViewMiscuesModal({
@@ -137,6 +140,7 @@ export default function ViewMiscuesModal({
   passageLevel,
   onDeleteMiscue,
   onUpdateMiscueType,
+  onJumpToTime,
 }: ViewMiscuesModalProps) {
   const [highlightedTypes, setHighlightedTypes] = useState<Set<string>>(
     new Set(),
@@ -147,6 +151,11 @@ export default function ViewMiscuesModal({
   const [actionLoading, setActionLoading] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const resolvedMiscues = useMemo(
+    () => hydrateMiscueTimestamps(miscues, alignedWords),
+    [miscues, alignedWords],
+  );
 
   const toggleHighlightType = useCallback((miscueType: string) => {
     setHighlightedTypes((prev) => {
@@ -161,17 +170,17 @@ export default function ViewMiscuesModal({
   }, []);
 
   const filteredMiscues = useMemo(() => {
-    if (highlightedTypes.size === 0) return miscues;
-    return miscues.filter((m) => highlightedTypes.has(m.miscueType));
-  }, [miscues, highlightedTypes]);
+    if (highlightedTypes.size === 0) return resolvedMiscues;
+    return resolvedMiscues.filter((m) => highlightedTypes.has(m.miscueType));
+  }, [resolvedMiscues, highlightedTypes]);
 
   const miscueCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const m of miscues) {
+    for (const m of resolvedMiscues) {
       counts[m.miscueType] = (counts[m.miscueType] || 0) + 1;
     }
     return counts;
-  }, [miscues]);
+  }, [resolvedMiscues]);
 
   const passageWordEntries = useMemo(() => {
     if (!passageContent) return [] as {
@@ -407,16 +416,10 @@ export default function ViewMiscuesModal({
   const getMiscueTitle = (miscue: MiscueResult, hasTimestamp: boolean) => {
     if (miscue.miscueType === "REPETITION") {
       const repeatedWord = getRepetitionWord(miscue);
-      return `REPETITION${repeatedWord ? ` - repeated word: "${repeatedWord}"` : ""}${hasTimestamp ? " (click for details)" : ""}`;
+      return `REPETITION${repeatedWord ? ` - repeated word: "${repeatedWord}"` : ""}${hasTimestamp ? " (click for timestamp)" : ""}`;
     }
 
-    return `${miscue.miscueType.replace(/_/g, " ")}${miscue.spokenWord ? ` - spoken: "${miscue.spokenWord}"` : ""}${hasTimestamp ? " (click for details)" : ""}`;
-  };
-
-  const formatTimestamp = (secs: number) => {
-    const m = Math.floor(secs / 60);
-    const s = Math.floor(secs % 60);
-    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+    return `${miscue.miscueType.replace(/_/g, " ")}${miscue.spokenWord ? ` - spoken: "${miscue.spokenWord}"` : ""}${hasTimestamp ? " (click for timestamp)" : ""}`;
   };
 
   const getMiscuePrimaryWord = (miscue: MiscueResult) => {
@@ -439,17 +442,13 @@ export default function ViewMiscuesModal({
     }
   };
 
-  const listMiscues = useMemo(
-    () =>
-      filteredMiscues.map((miscue, index) => ({
-        id: `${miscue.miscueType}-${miscue.wordIndex}-${miscue.expectedWord}-${miscue.spokenWord ?? "none"}-${index}`,
-        miscue,
-        config: getMiscueConfig(miscue.miscueType),
-        primaryWord: getMiscuePrimaryWord(miscue),
-        secondaryLabel: getMiscueSecondaryLabel(miscue),
-      })),
-    [filteredMiscues],
-  );
+  const listMiscues = filteredMiscues.map((miscue, index) => ({
+    id: `${miscue.miscueType}-${miscue.wordIndex}-${miscue.expectedWord}-${miscue.spokenWord ?? "none"}-${index}`,
+    miscue,
+    config: getMiscueConfig(miscue.miscueType),
+    primaryWord: getMiscuePrimaryWord(miscue),
+    secondaryLabel: getMiscueSecondaryLabel(miscue),
+  }));
 
   if (!open) return null;
 
@@ -561,9 +560,22 @@ export default function ViewMiscuesModal({
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 {miscue.timestamp != null && (
-                  <div className="rounded-full bg-[#F3F7FF] px-2.5 py-1 text-[11px] font-medium text-[#31318A]/70">
-                    {formatTimestamp(miscue.timestamp)}
-                  </div>
+                  onJumpToTime ? (
+                    <button
+                      type="button"
+                      onClick={() => onJumpToTime(miscue.timestamp!)}
+                      className="inline-flex items-center gap-1 rounded-full bg-[#F3F7FF] px-2.5 py-1 text-[11px] font-semibold text-[#31318A]/70 transition-colors hover:bg-[#E8F1FF] hover:text-[#1A5FB4]"
+                      aria-label={`Jump to ${primaryWord} at ${formatMiscueTimestamp(miscue.timestamp)}`}
+                      title="Jump to timestamp"
+                    >
+                      <Play className="h-2.5 w-2.5" />
+                      {formatMiscueTimestamp(miscue.timestamp)}
+                    </button>
+                  ) : (
+                    <div className="rounded-full bg-[#F3F7FF] px-2.5 py-1 text-[11px] font-medium text-[#31318A]/70">
+                      {formatMiscueTimestamp(miscue.timestamp)}
+                    </div>
+                  )
                 )}
                 {onDeleteMiscue && (
                   <div className="flex items-center gap-2">
@@ -812,13 +824,26 @@ export default function ViewMiscuesModal({
                             Spoken: &ldquo;{popup.miscue.spokenWord}&rdquo;
                           </div>
                         )}
-                        {hasTimestamp && (
+                        {hasTimestamp && !onJumpToTime && (
                           <div className="mt-1 flex items-center justify-center gap-1 text-[10px] text-[#31318A]/50">
                             <Play className="h-2.5 w-2.5" />
-                            {formatTimestamp(popup.miscue.timestamp!)}
+                            {formatMiscueTimestamp(popup.miscue.timestamp!)}
                           </div>
                         )}
                       </div>
+                      {hasTimestamp && onJumpToTime && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onJumpToTime(popup.miscue.timestamp!);
+                            setPopup(null);
+                          }}
+                          className="flex w-full items-center justify-center gap-1.5 rounded-md bg-[#6666FF] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:brightness-110"
+                        >
+                          <Play className="h-3 w-3" />
+                          Jump to Word ({formatMiscueTimestamp(popup.miscue.timestamp!)})
+                        </button>
+                      )}
                     </div>
                   )}
 

@@ -46,7 +46,9 @@ const fakeTranscriptResponse = {
   duration: 1.0,
 };
 
-function mockSuccessfulFetch(results = [{ alternatives: [{ transcript: "the cat sat", words: [] }] }]) {
+function mockSuccessfulFetch(
+  results: unknown = [{ alternatives: [{ transcript: "the cat sat", words: [] }] }],
+) {
   mockFetch.mockResolvedValue({
     ok: true,
     json: vi.fn().mockResolvedValue({ results }),
@@ -89,6 +91,34 @@ describe("transcribeAudio", () => {
 
     // Should be more than 1 fetch call
     expect(mockFetch.mock.calls.length).toBeGreaterThan(1);
+  });
+
+  it("preserves REST word offsets when shifting chunk timestamps", async () => {
+    mockSuccessfulFetch([
+      {
+        alternatives: [
+          {
+            transcript: "cat",
+            words: [
+              { word: "cat", startOffset: "1.2s", endOffset: "1.6s" },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    await transcribeAudio(makeWavBuffer(60), "audio.wav", "english");
+
+    const [results] = mockConvertToTranscriptResponse.mock.calls[0];
+    expect(results[0].alternatives[0].words[0].startOffset).toBe("1.2s");
+    expect(results[1].alternatives[0].words[0].startOffset).toEqual({
+      seconds: 51,
+      nanos: 200000000,
+    });
+    expect(results[1].alternatives[0].words[0].endOffset).toEqual({
+      seconds: 51,
+      nanos: 600000000,
+    });
   });
 
   it("maps 'english' language to en-US in the config", async () => {
