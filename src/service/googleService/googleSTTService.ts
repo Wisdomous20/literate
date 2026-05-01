@@ -1,8 +1,8 @@
 import { TranscriptResponse } from "@/types/oral-reading";
 import convertToTranscriptResponse from "./convertToTranscriptResponse";
 import { protos } from "@google-cloud/speech";
-import fs from "fs";
 import { GoogleAuth } from "google-auth-library";
+import { getGoogleCloudAuthOptions } from "@/lib/googleCloudAuth";
 
 const LOCATION = "asia-southeast1";
 const WAV_HEADER_BYTES = 44;
@@ -23,24 +23,10 @@ let authClient: GoogleAuth;
 function getAuth(): GoogleAuth {
   if (authClient) return authClient;
 
-  const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-  if (keyFile && fs.existsSync(keyFile)) {
-    const keyData = JSON.parse(fs.readFileSync(keyFile, "utf8"));
-    authClient = new GoogleAuth({
-      credentials: {
-        client_email: keyData.client_email,
-        private_key: keyData.private_key,
-      },
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
-  } else {
-    const client_email = process.env.GOOGLE_CLOUD_CLIENT_EMAIL ?? "";
-    const private_key = (process.env.GOOGLE_CLOUD_PRIVATE_KEY ?? "").replace(/\\n/g, "\n");
-    authClient = new GoogleAuth({
-      credentials: { client_email, private_key },
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
-  }
+  authClient = new GoogleAuth({
+    ...getGoogleCloudAuthOptions(),
+    scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+  });
 
   return authClient;
 }
