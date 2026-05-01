@@ -91,10 +91,12 @@ export default function AllClassesPage({
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.push("/dashboard")}
-              className="flex items-center gap-2 rounded-full p-2 hover:bg-gray-100 transition-colors"
+              className="flex items-center gap-2.5 group"
               aria-label="Back to Dashboard"
             >
-              <ArrowLeft className="h-5 w-5 text-[#00306E]" />
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_4px_12px_rgba(102,102,255,0.35)] transition-all group-hover:bg-[#5555EE] group-hover:shadow-[0_6px_16px_rgba(102,102,255,0.45)]">
+                <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
+              </span>
               <span className="text-[#00306E] font-medium text-sm">
                 Back to Dashboard
               </span>

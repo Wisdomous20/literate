@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
+  ArrowLeft,
   ChevronDown,
-  ChevronLeft,
   ChevronRight,
   Clock,
   Loader2,
@@ -650,9 +650,9 @@ export default function OralReadingComprehensionPage() {
                   onClick={handleGoBack}
                   aria-label="Go back"
                   title="Go back"
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_2px_8px_rgba(102,102,255,0.4)] transition-colors hover:bg-[#5555EE]"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_4px_12px_rgba(102,102,255,0.35)] transition-all hover:bg-[#5555EE] hover:shadow-[0_6px_16px_rgba(102,102,255,0.45)] active:scale-95"
                 >
-                  <ChevronLeft className="h-5 w-5" />
+                  <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
                 </button>
                 <div>
                   <h2 className="text-sm font-bold text-[#00306E] md:text-base">

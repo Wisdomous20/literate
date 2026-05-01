@@ -10,7 +10,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ChevronLeft,
+  ArrowLeft,
   FileText,
   Loader2,
 } from "lucide-react";
@@ -334,10 +334,11 @@ export default function ReadingLevelReportPage() {
                 <button
                   type="button"
                   onClick={() => router.back()}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white hover:bg-[#9333EA] transition-all shadow-sm active:scale-95"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_4px_12px_rgba(102,102,255,0.35)] transition-all hover:bg-[#5555EE] hover:shadow-[0_6px_16px_rgba(102,102,255,0.45)] active:scale-95"
                   aria-label="Go back"
+                  title="Go back"
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
                 </button>
                 <div className="flex flex-col gap-0.5">
                   <div className="flex items-center gap-2">

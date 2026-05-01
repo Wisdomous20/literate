@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, ChevronLeft, RotateCcw, Download } from "lucide-react";
+import { Loader2, ArrowLeft, RotateCcw, Download } from "lucide-react";
 import StudentInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/studentInfoCard";
 import PassageInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/passageInfoCard";
 import ComprehensionMetricCards from "@/components/reports/oral-reading-test/comprehension-report/comprehensionMetricCards";
@@ -210,10 +210,11 @@ export default function ReadingComprehensionReportPage() {
         <button
           type="button"
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)] transition-all hover:bg-[#5555EE]"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_4px_12px_rgba(102,102,255,0.35)] transition-all hover:bg-[#5555EE] hover:shadow-[0_6px_16px_rgba(102,102,255,0.45)] active:scale-95"
+          aria-label="Go back"
+          title="Go back"
         >
-          <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
-          <span>Previous</span>
+          <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
         </button>
         <div className="flex items-center gap-3">
           <button

@@ -3,7 +3,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { CreateQuestionForm } from "@/components/admin-dash/questions/createQuestionForm";
-import { ChevronLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { usePassageById } from "@/lib/hooks/usePassageById";
 
 export default function CreateQuestionForPassagePage() {
@@ -21,10 +21,11 @@ export default function CreateQuestionForPassagePage() {
             <button
               type="button"
               onClick={() => router.back()}
-              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[#F0F4FF] hover:bg-[#E4F4FF] text-[#162DB0] font-bold text-lg shadow transition-all ml-0"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_4px_12px_rgba(102,102,255,0.35)] transition-all hover:bg-[#5555EE] hover:shadow-[0_6px_16px_rgba(102,102,255,0.45)] active:scale-95 ml-0"
+              aria-label="Go back"
+              title="Go back"
             >
-              <ChevronLeft className="h-6 w-6" />
-              Back
+              <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
             </button>
           </div>
           <div className="mb-8 w-full max-w-2xl">
