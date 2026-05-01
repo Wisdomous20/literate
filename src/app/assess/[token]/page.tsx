@@ -257,7 +257,17 @@ export default function StudentAssessmentPage() {
       setIsFullScreen(false);
       if (!data || !audioBlob) return;
 
-      setIsTranscribing(true);
+      const isOralReadingWithQuestions =
+        data.type === "ORAL_READING" && questions.length > 0;
+
+      // For ORAL_READING with comprehension, show questions immediately
+      // while upload and analysis run in the background.
+      if (isOralReadingWithQuestions) {
+        setStep("questions");
+      } else {
+        setIsTranscribing(true);
+      }
+
       setSubmitError(null);
 
       try {
@@ -301,10 +311,12 @@ export default function StudentAssessmentPage() {
         await new Promise<void>((resolve) => {
           const timeoutId = setTimeout(() => {
             clearInterval(interval);
-            setSubmitError(
-              "Analysis is taking longer than expected. Please try again.",
-            );
-            setIsTranscribing(false);
+            if (!isOralReadingWithQuestions) {
+              setSubmitError(
+                "Analysis is taking longer than expected. Please try again.",
+              );
+              setIsTranscribing(false);
+            }
             resolve();
           }, 120000);
 
@@ -353,14 +365,12 @@ export default function StudentAssessmentPage() {
                   ),
                 });
 
-                if (data.type === "ORAL_READING" && questions.length > 0) {
-                  setStep("questions");
-                } else {
+                if (!isOralReadingWithQuestions) {
                   await markLinkAsUsed();
                   setStep("done");
+                  setIsTranscribing(false);
                 }
 
-                setIsTranscribing(false);
                 resolve();
                 return;
               }
@@ -368,8 +378,10 @@ export default function StudentAssessmentPage() {
               if (status.status === "FAILED") {
                 clearInterval(interval);
                 clearTimeout(timeoutId);
-                setSubmitError("Analysis failed. Please try recording again.");
-                setIsTranscribing(false);
+                if (!isOralReadingWithQuestions) {
+                  setSubmitError("Analysis failed. Please try recording again.");
+                  setIsTranscribing(false);
+                }
                 resolve();
               }
             } catch {
