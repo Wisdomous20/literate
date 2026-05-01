@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect, useSyncExternalStore } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { LayoutDashboard, ArrowLeft, RotateCcw, Download, Loader2 } from "lucide-react";
 import StudentInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/studentInfoCard";
@@ -22,6 +22,7 @@ import {
   getDisplayReadingTimeSeconds,
   resolveReadingDurationSeconds,
 } from "@/lib/readingDuration";
+import { seekAudioToTimestamp } from "@/lib/audioPlayback";
 import {
   findMatchingDbMiscue,
   removeFirstMatchingMiscue,
@@ -183,6 +184,7 @@ export default function OralReadingReportPage() {
   const [recheckSummaryText, setRecheckSummaryText] = useState<string | null>(
     null,
   );
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Fix hydration mismatch: useSyncExternalStore ensures server and client render consistently
   const isClient = useSyncExternalStore(
@@ -320,6 +322,10 @@ export default function OralReadingReportPage() {
   });
 
   const reportSessionId = session.sessionId;
+
+  const handleJumpToMiscueTime = useCallback((timestamp: number) => {
+    seekAudioToTimestamp(audioRef.current, timestamp);
+  }, []);
 
   const handleRecheckMiscues = useCallback(async () => {
     if (!reportSessionId || !analysis) return;
@@ -700,7 +706,7 @@ export default function OralReadingReportPage() {
               testType={testType}
               assessmentType="Oral Reading"
             />
-            <AudioPlaybackCard audioSrc={audioSrc} />
+            <AudioPlaybackCard audioSrc={audioSrc} audioRef={audioRef} />
           </div>
 
           <BehaviorChecklist
@@ -727,6 +733,7 @@ export default function OralReadingReportPage() {
         miscues={analysis?.miscues || []}
         alignedWords={analysis?.alignedWords}
         passageLevel={session.selectedLevel}
+        onJumpToTime={handleJumpToMiscueTime}
       />
 
       {/* Edit Miscues Modal */}
@@ -749,6 +756,7 @@ export default function OralReadingReportPage() {
                 expanded
                 resizable={false}
                 editMode={editMiscues}
+                onJumpToTime={handleJumpToMiscueTime}
                 onDeleteMiscue={
                   reportSessionId ? handleDeleteMiscue : undefined
                 }

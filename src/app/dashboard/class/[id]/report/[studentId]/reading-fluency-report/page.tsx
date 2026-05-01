@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useRef } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
@@ -28,6 +28,7 @@ import {
   getDisplayReadingTimeSeconds,
   resolveReadingDurationSeconds,
 } from "@/lib/readingDuration";
+import { seekAudioToTimestamp } from "@/lib/audioPlayback";
 import {
   findMatchingDbMiscue,
   removeFirstMatchingMiscue,
@@ -128,6 +129,7 @@ export default function ReadingFluencyReportPage() {
 
   const [showMiscuesModal, setShowMiscuesModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Local overrides after editing miscues
   const [localMiscues, setLocalMiscues] = useState<MiscueResult[] | null>(
@@ -168,7 +170,7 @@ export default function ReadingFluencyReportPage() {
       expectedWord: m.expectedWord,
       spokenWord: m.spokenWord ?? null,
       wordIndex: m.wordIndex,
-      timestamp: null,
+      timestamp: m.timestamp ?? null,
       isSelfCorrected: m.isSelfCorrected,
     }));
   }, [assessment]);
@@ -304,6 +306,10 @@ export default function ReadingFluencyReportPage() {
     },
     [sessionId, invalidateAssessments],
   );
+
+  const handleJumpToMiscueTime = useCallback((timestamp: number) => {
+    seekAudioToTimestamp(audioRef.current, timestamp);
+  }, []);
 
   if (isLoading) {
     return (
@@ -501,6 +507,7 @@ export default function ReadingFluencyReportPage() {
             />
             <AudioPlaybackCard
               audioSrc={assessment.oralFluency?.audioUrl}
+              audioRef={audioRef}
             />
           </div>
 
@@ -527,6 +534,7 @@ export default function ReadingFluencyReportPage() {
         passageLevel={
           passage?.level ? `Grade ${passage.level}` : undefined
         }
+        onJumpToTime={handleJumpToMiscueTime}
       />
 
       {/* Edit Miscues Modal */}
@@ -551,6 +559,7 @@ export default function ReadingFluencyReportPage() {
                 expanded
                 resizable={false}
                 editMode={editMiscues}
+                onJumpToTime={handleJumpToMiscueTime}
                 onDeleteMiscue={
                   sessionId ? handleDeleteMiscue : undefined
                 }

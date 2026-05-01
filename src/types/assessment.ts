@@ -43,6 +43,7 @@ export interface OralFluencyMiscue {
   expectedWord: string;
   spokenWord?: string | null;
   wordIndex: number;
+  timestamp?: number | null;
   isSelfCorrected: boolean;
 }
 

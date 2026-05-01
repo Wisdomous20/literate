@@ -160,20 +160,57 @@ async function transcribeChunk(
       words: alt.words?.map((word) => ({
         ...word,
         startOffset: word.startOffset
-          ? {
-              seconds: Number(word.startOffset.seconds ?? 0) + timeOffsetSec,
-              nanos: word.startOffset.nanos ?? 0,
-            }
+          ? addSecondsToDuration(word.startOffset, timeOffsetSec)
           : word.startOffset,
         endOffset: word.endOffset
-          ? {
-              seconds: Number(word.endOffset.seconds ?? 0) + timeOffsetSec,
-              nanos: word.endOffset.nanos ?? 0,
-            }
+          ? addSecondsToDuration(word.endOffset, timeOffsetSec)
           : word.endOffset,
       })),
     })),
   }));
+}
+
+function secondsToDuration(
+  totalSeconds: number,
+): protos.google.protobuf.IDuration {
+  const safeSeconds = Number.isFinite(totalSeconds)
+    ? Math.max(0, totalSeconds)
+    : 0;
+  const wholeSeconds = Math.floor(safeSeconds);
+  const nanos = Math.round((safeSeconds - wholeSeconds) * 1e9);
+
+  if (nanos === 1e9) {
+    return { seconds: wholeSeconds + 1, nanos: 0 };
+  }
+
+  return { seconds: wholeSeconds, nanos };
+}
+
+function durationToSeconds(
+  duration: protos.google.protobuf.IDuration | string | null | undefined,
+): number {
+  if (!duration) return 0;
+
+  if (typeof duration === "string") {
+    const match = duration.trim().match(/^(-?(?:\d+(?:\.\d+)?|\.\d+))s$/);
+    if (!match) return 0;
+
+    const seconds = Number(match[1]);
+    return Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
+  }
+
+  const seconds = Number(duration.seconds ?? 0);
+  const nanos = Number(duration.nanos ?? 0);
+  const totalSeconds = seconds + nanos / 1e9;
+
+  return Number.isFinite(totalSeconds) ? Math.max(0, totalSeconds) : 0;
+}
+
+function addSecondsToDuration(
+  duration: protos.google.protobuf.IDuration | string | null | undefined,
+  offsetSeconds: number,
+): protos.google.protobuf.IDuration {
+  return secondsToDuration(durationToSeconds(duration) + offsetSeconds);
 }
 
 // ── Public API ────────────────────────────────────────────

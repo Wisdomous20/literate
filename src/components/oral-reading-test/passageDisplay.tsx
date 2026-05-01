@@ -17,6 +17,8 @@ import {
   Pencil,
 } from "lucide-react";
 import type { MiscueResult, AlignedWord } from "@/types/oral-reading";
+import { formatMiscueTimestamp } from "@/lib/audioPlayback";
+import { hydrateMiscueTimestamps } from "@/lib/miscueTimestamps";
 import { normalizeWord } from "@/utils/textUtils";
 import type {
   EditableMiscueResult,
@@ -291,6 +293,10 @@ export function PassageDisplay({
 
   // ─── Delete/update action state ───
   const [actionLoading, setActionLoading] = useState(false);
+  const resolvedMiscues = useMemo(
+    () => hydrateMiscueTimestamps(miscues, alignedWords),
+    [miscues, alignedWords],
+  );
 
   // Keep dynamic height without using JSX inline styles
   useEffect(() => {
@@ -360,15 +366,15 @@ export function PassageDisplay({
   // Collect expectedWords from TRANSPOSITION miscues so we can suppress
   // insertion-based repetitions that are actually the other half of a transposition.
   const transpositionExpectedWords = useMemo(() => {
-    if (!miscues) return new Set<string>();
+    if (!resolvedMiscues) return new Set<string>();
     const set = new Set<string>();
-    for (const m of miscues) {
+    for (const m of resolvedMiscues) {
       if (m.miscueType === "TRANSPOSITION" && m.expectedWord) {
         set.add(normalizeWord(m.expectedWord));
       }
     }
     return set;
-  }, [miscues]);
+  }, [resolvedMiscues]);
 
   const passageWordEntries = useMemo(() => {
     if (!content) {
@@ -395,9 +401,9 @@ export function PassageDisplay({
 
   // Map passage word index ? inline inserted words (REPETITION and INSERTION miscues)
   const inlineInsertions = useMemo(() => {
-    if (!miscues?.length) return null;
+    if (!resolvedMiscues?.length) return null;
 
-    const insertedMiscues = miscues.filter(
+    const insertedMiscues = resolvedMiscues.filter(
       (m) =>
         (m.miscueType === "INSERTION" ||
           (m.miscueType === "REPETITION" && !m.expectedWord)) &&
@@ -485,13 +491,13 @@ export function PassageDisplay({
     }
 
     return map.size > 0 ? map : null;
-  }, [miscues, alignedWords, transpositionExpectedWords, passageWordEntries]);
+  }, [resolvedMiscues, alignedWords, transpositionExpectedWords, passageWordEntries]);
 
   // Build a map from wordIndex → miscue type for O(1) lookup
   const miscueMap = useMemo(() => {
-    if (!miscues || miscues.length === 0) return null;
+    if (!resolvedMiscues || resolvedMiscues.length === 0) return null;
     const map = new Map<number, MiscueResult>();
-    for (const m of miscues) {
+    for (const m of resolvedMiscues) {
       // Skip insertion-type miscues — they are rendered as inline inserts
       if (m.miscueType === "INSERTION") continue;
       if (m.miscueType === "REPETITION" && !m.expectedWord) continue;
@@ -506,7 +512,7 @@ export function PassageDisplay({
     }
 
     if (alignedWords) {
-      for (const m of miscues) {
+      for (const m of resolvedMiscues) {
         if (m.miscueType !== "TRANSPOSITION") continue;
         const idx = m.wordIndex;
         const hasPartnerNext = map.get(idx + 1)?.miscueType === "TRANSPOSITION";
@@ -534,12 +540,12 @@ export function PassageDisplay({
     }
 
     return map;
-  }, [miscues, alignedWords]);
+  }, [resolvedMiscues, alignedWords]);
 
   const userAddedInsertions = useMemo(() => {
-    if (!miscues?.length) return null;
+    if (!resolvedMiscues?.length) return null;
     const map = new Map<number, MiscueResult[]>();
-    for (const m of miscues) {
+    for (const m of resolvedMiscues) {
       if (
         m.miscueType === "INSERTION" &&
         m.expectedWord === "" &&
@@ -551,7 +557,7 @@ export function PassageDisplay({
       }
     }
     return map.size > 0 ? map : null;
-  }, [miscues]);
+  }, [resolvedMiscues]);
 
   const hasMiscues =
     (miscueMap !== null && miscueMap.size > 0) ||
@@ -817,12 +823,6 @@ export function PassageDisplay({
     });
   };
 
-  const formatTimestamp = (secs: number) => {
-    const m = Math.floor(secs / 60);
-    const s = Math.floor(secs % 60);
-    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-  };
-
   // Reset drag height when toggling expand
   useEffect(() => {
     if (expanded) setDragHeight(null);
@@ -1041,7 +1041,7 @@ export function PassageDisplay({
                         className="flex w-full items-center justify-center gap-1.5 rounded-md bg-[#6666FF] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:brightness-110"
                       >
                         <Play className="h-3 w-3" />
-                        Jump to Word ({formatTimestamp(popup.miscue.timestamp!)}
+                        Jump to Word ({formatMiscueTimestamp(popup.miscue.timestamp!)}
                         )
                       </button>
                     )}
