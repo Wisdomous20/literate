@@ -117,18 +117,18 @@ function SidebarNavItem({
           ? collapsed
             ? "rounded-[20px] bg-white text-[#6666FF] shadow-[0_12px_28px_rgba(55,44,183,0.2)]"
             : "z-30 text-[#6666FF]"
-          : "rounded-lg text-white/90 hover:bg-white hover:text-[#6666FF]",
+          : "rounded-lg text-white/90 hover:text-white group hover:[&_.sidebar-label]:text-white hover:[&_.sidebar-icon]:text-white",
       )}
     >
       <div
         className={cn(
-          "relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-200",
+          "sidebar-icon relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-200",
           isActive ? "bg-[#5D5DFB]" : "bg-white group-hover:bg-[#5D5DFB]",
         )}
       >
         <Icon
           className={cn(
-            "h-4 w-4",
+            "sidebar-icon h-4 w-4",
             "transition-colors duration-200",
             isActive ? "text-white" : "text-[#6666FF] group-hover:text-white",
           )}
@@ -137,10 +137,10 @@ function SidebarNavItem({
       {!collapsed && (
         <span
           className={cn(
-            "relative z-10 max-w-[140px] text-[13px]",
+            "sidebar-label relative z-10 max-w-[140px] text-[13px]",
             isActive
               ? "font-semibold text-[#6666FF]"
-              : "text-white group-hover:text-[#6666FF]",
+              : "text-white group-hover:text-white",
           )}
         >
           {label}
@@ -535,12 +535,12 @@ export function Sidebar() {
             onClick={handleLogout}
             title={collapsed ? "Logout Account" : undefined}
             className={cn(
-              "relative z-10 flex items-center gap-3 rounded-lg px-2 py-2 text-sm font-medium text-white/90",
+              "relative z-10 flex items-center gap-3 rounded-lg px-2 py-2 text-sm font-medium text-white/90 group",
               collapsed ? "w-auto justify-center" : "w-full",
             )}
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#5D5DFB]">
-              <LogOut className="h-4 w-4 text-white" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white group-hover:bg-[#5D5DFB] transition-colors duration-200">
+              <LogOut className="h-4 w-4 text-[#6666FF] group-hover:text-white transition-colors duration-200" />
             </div>
             {!collapsed && <span className="text-[13px]">Logout Account</span>}
           </button>
