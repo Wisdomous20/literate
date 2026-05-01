@@ -36,6 +36,7 @@ interface StudentSetupSectionProps {
   selectedLanguage?: string;
   selectedLevel?: string;
   selectedTestType?: string;
+  passageTitle?: string;
   onOpenPassageModal: () => void;
   shareableLink?: {
     studentId: string;
@@ -61,6 +62,7 @@ export function StudentSetupSection({
   selectedLanguage,
   selectedLevel,
   selectedTestType,
+  passageTitle,
   onOpenPassageModal,
   shareableLink,
   hideStudentInfo = false,
@@ -96,6 +98,7 @@ export function StudentSetupSection({
           passageLevel={hasPassage ? selectedLevel : undefined}
           testType={hasPassage ? selectedTestType : undefined}
           hasPassage={hasPassage}
+          passageTitle={passageTitle}
           onOpenPassageModal={onOpenPassageModal}
           showShareLink={!!shareableLink}
           onShareLink={shareableLink ? handleToggleShare : undefined}

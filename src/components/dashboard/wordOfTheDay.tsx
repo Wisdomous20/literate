@@ -47,7 +47,7 @@ export function WordOfTheDay() {
 
   return (
     <div
-      className="flex flex-col rounded-3xl p-4 md:p-6 min-h-[200px]"
+      className="flex h-56 min-h-56 flex-col overflow-hidden rounded-3xl p-4 md:h-72 md:min-h-72 md:p-5 xl:h-full xl:min-h-0"
       style={{
         background:
           "linear-gradient(135deg, #5D5DFB 0%, #7A5DFB 50%, #54A4FF 100%)",
@@ -72,17 +72,17 @@ export function WordOfTheDay() {
         </p>
       ) : (
         <>
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-3">
+          <h2 className="mb-2 text-xl font-bold leading-tight text-white md:text-2xl">
             {data.word}
           </h2>
-          <p className="text-sm md:text-base text-white/90 italic flex-1">
+          <p className="flex-1 overflow-hidden text-sm italic leading-snug text-white/90 md:text-[15px]">
             <span className="font-medium not-italic">{data.partOfSpeech}:</span>{" "}
             {data.definition}
           </p>
         </>
       )}
 
-      <div className="flex items-center gap-3 mt-4 pt-4 border-t border-white/20">
+      <div className="mt-3 flex items-center gap-3 border-t border-white/20 pt-3">
         <button
           type="button"
           onClick={handleSpeak}

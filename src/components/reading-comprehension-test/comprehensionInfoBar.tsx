@@ -7,8 +7,7 @@ interface ComprehensionInfoBarProps {
   formattedTime: string;
   isPaused: boolean;
   onTogglePause: () => void;
-  isSubmitted: boolean; 
-
+  isSubmitted: boolean;
 }
 
 export function ComprehensionInfoBar({
@@ -16,38 +15,46 @@ export function ComprehensionInfoBar({
   formattedTime,
   isPaused,
   onTogglePause,
+  isSubmitted,
 }: ComprehensionInfoBarProps) {
   return (
-    <div className="flex gap-4 shrink-0">
-      <div className="flex-1 bg-[#EFFDFF] border-t border-l border-r-4 border-b-4 border-t-[#5534fa] border-l-[#5534fa] border-r-[#6653F9] border-b-[#6653F9] rounded-4xl shadow-[0px_1px_20px_rgba(65,155,180,0.47)] px-8 py-5">
-        <h2 className="text-[#00306E] font-bold text-lg">
-          Questions 1-{totalQuestions}
-        </h2>
-        <p className="text-[#00306E] font-medium text-[15px]">
-          Choose the correct answer
-        </p>
-      </div>
-      <button
-        onClick={onTogglePause}
-        className={`w-58.5 bg-white rounded-4xl flex items-center justify-center gap-3 shrink-0 transition-all cursor-pointer select-none disabled:cursor-default ${
-          isPaused
-            ? "border-t border-l border-r-4 border-b-4 border-t-[#E53E3E]/60 border-l-[#E53E3E]/60 border-r-[#E53E3E] border-b-[#E53E3E] shadow-[0px_1px_20px_rgba(229,62,62,0.07)]"
-            : "border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9]"
-        }`}
-        title={isPaused ? "Click to resume timer" : "Click to pause timer"}
-      >
-        <Clock
-          className={`w-6 h-6 ${isPaused ? "text-[#E53E3E]" : "text-[#00306E]"}`}
-        />
-        <span
-          className={`font-bold text-2xl tabular-nums ${isPaused ? "text-[#E53E3E]" : "text-[#00306E]"}`}
+    <div className="shrink-0 rounded-xl border border-[#C9C8FF] bg-white px-4 py-2">
+      <div className="flex items-center justify-between gap-3">
+        <div className="leading-tight">
+          <h2 className="text-[18px] font-bold text-[#00306E]">
+            Questions 1-{totalQuestions}
+          </h2>
+          <p className="mt-0.5 text-[13px] font-medium text-[#88A0C4]">
+            Choose the correct answer
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={onTogglePause}
+          disabled={isSubmitted}
+          className={
+            "flex h-8 items-center gap-2 rounded-full border border-[#C9C8FF] bg-[#F5F8FF] px-4 text-[#0F3B79] " +
+            "shadow-[0_1px_4px_rgba(15,59,121,0.12)] transition " +
+            (isSubmitted ? "cursor-default opacity-70" : "hover:bg-[#EEF3FF]")
+          }
+          title={isPaused ? "Click to resume timer" : "Click to pause timer"}
         >
-          {formattedTime}
-        </span>
-        {isPaused && (
-          <span className="text-[#E53E3E] text-xs font-semibold">PAUSED</span>
-        )}
-      </button>
+          <Clock
+            className={
+              "h-4 w-4 " + (isPaused ? "text-[#E53E3E]" : "text-[#6666FF]")
+            }
+          />
+          <span
+            className={
+              "text-[18px] font-bold tabular-nums leading-none " +
+              (isPaused ? "text-[#E53E3E]" : "text-[#0F3B79]")
+            }
+          >
+            {formattedTime}
+          </span>
+        </button>
+      </div>
     </div>
   );
 }

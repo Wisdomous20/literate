@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface ClassData {
@@ -34,9 +34,9 @@ export function ClassInfoBox({
             onClick={() => router.back()}
             title="Go back"
             aria-label="Go back"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white transition-all hover:bg-[#5555DD] hover:shadow-[0_4px_12px_rgba(102,102,255,0.3)] active:scale-95"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_4px_12px_rgba(102,102,255,0.35)] transition-all hover:bg-[#5555EE] hover:shadow-[0_6px_16px_rgba(102,102,255,0.45)] active:scale-95"
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
           </button>
           <div className="flex flex-col gap-0">
             <h1 className="text-base font-bold text-[#00306E] leading-tight">
@@ -68,9 +68,9 @@ export function ClassInfoBox({
             onClick={() => router.back()}
             title="Go back"
             aria-label="Go back"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white transition-all hover:bg-[#5555DD] hover:shadow-[0_4px_12px_rgba(102,102,255,0.3)] active:scale-95"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_4px_12px_rgba(102,102,255,0.35)] transition-all hover:bg-[#5555EE] hover:shadow-[0_6px_16px_rgba(102,102,255,0.45)] active:scale-95"
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
           </button>
 
           <div className="flex flex-col gap-0.5">

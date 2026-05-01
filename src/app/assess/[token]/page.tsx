@@ -11,6 +11,11 @@ import {
   CenteredPageState,
   PageStateCard,
 } from "@/components/assess-token/ui";
+import {
+  calculateWordsCorrectPerMinute,
+  getDisplayReadingTimeSeconds,
+  resolveReadingDurationSeconds,
+} from "@/lib/readingDuration";
 import type {
   AssessmentLinkData,
   ComprehensionResult,
@@ -319,10 +324,15 @@ export default function StudentAssessmentPage() {
                   .split(/\s+/)
                   .filter(Boolean).length;
                 const totalMiscues = analysis.totalMiscues ?? 0;
-                const duration = analysis.duration ?? elapsedSecs;
+                const duration = resolveReadingDurationSeconds(
+                  analysis.duration,
+                  elapsedSecs,
+                );
                 const wordsCorrect = Math.max(0, passageWords - totalMiscues);
-                const wcpm =
-                  duration > 0 ? Math.round((wordsCorrect / duration) * 60) : 0;
+                const wcpm = calculateWordsCorrectPerMinute(
+                  wordsCorrect,
+                  duration,
+                );
 
                 const miscueBreakdown: Record<string, number> = {};
                 for (const miscue of analysis.miscues ?? []) {
@@ -332,7 +342,7 @@ export default function StudentAssessmentPage() {
 
                 setFluencyResult({
                   wcpm,
-                  readingTimeSeconds: Math.round(duration),
+                  readingTimeSeconds: getDisplayReadingTimeSeconds(duration),
                   classificationLevel: analysis.classificationLevel ?? "--",
                   totalWords: passageWords,
                   totalMiscues,

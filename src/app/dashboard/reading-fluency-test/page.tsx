@@ -17,8 +17,10 @@ import { CountdownToggle } from "@/components/oral-reading-test/countdownToggle"
 import { OralReadingNavRow } from "@/components/oral-reading-test/oralReadingNavRow";
 import { ReadinessCheckButton } from "@/components/oral-reading-test/readinessCheck";
 import { useClassList } from "@/lib/hooks/useClassList";
+import { useTranscriptionStatus } from "@/lib/hooks/useTranscriptionStatus";
 import { useQueryClient } from "@tanstack/react-query";
 import { createStudent } from "@/app/actions/student/createStudent";
+import { recheckAllMiscuesAction } from "@/app/actions/oral-fluency/recheckAllMiscues";
 import { convertToWav } from "@/utils/convertToWav";
 import type { OralFluencyAnalysis } from "@/types/oral-reading";
 import {
@@ -59,6 +61,24 @@ interface SessionState {
   analysisResult?: OralFluencyAnalysis | null;
   sessionId?: string;
   assessmentId?: string;
+}
+
+interface RecheckSummary {
+  checked: number;
+  removed: number;
+  changed: number;
+  kept: number;
+  added?: number;
+  reranTranscription?: boolean;
+}
+
+function formatRecheckSummary(summary: RecheckSummary | undefined): string {
+  if (!summary) return "Recheck complete.";
+  const core = `${summary.checked} checked, ${summary.removed} removed, ${summary.changed} changed, ${summary.kept} kept`;
+  const added =
+    summary.added && summary.added > 0 ? `, ${summary.added} added` : "";
+  const source = summary.reranTranscription ? " after audio retranscription" : "";
+  return `${core}${added}${source}`;
 }
 
 function loadSession(): Partial<SessionState> {
@@ -102,6 +122,9 @@ export default function ReadingFluencyTestPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const isRestoredRef = useRef(true);
+  const lastHandledTranscriptionStatusRef = useRef<
+    "COMPLETED" | "FAILED" | null
+  >(null);
 
   const [passageContent, setPassageContent] = useState("");
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -135,6 +158,10 @@ export default function ReadingFluencyTestPage() {
     useState<OralFluencyAnalysis | null>(null);
   const [sessionId, setSessionId] = useState<string>("");
   const [assessmentId, setAssessmentId] = useState<string>("");
+  const [isRecheckingMiscues, setIsRecheckingMiscues] = useState(false);
+  const [recheckSummaryText, setRecheckSummaryText] = useState<string | null>(
+    null,
+  );
   const [highlightedTypes, setHighlightedTypes] = useState<Set<string>>(
     new Set(),
   );
@@ -142,6 +169,9 @@ export default function ReadingFluencyTestPage() {
   const [showMiscues, setShowMiscues] = useState(true);
   const [showClassificationPopup, setShowClassificationPopup] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const transcriptionStatus = useTranscriptionStatus(assessmentId || null, {
+    enabled: hasRecording && !!assessmentId && !analysisResult,
+  });
 
   const schoolYear = getCurrentSchoolYear();
   const { data: classListData = [], isLoading: isLoadingClasses } =
@@ -151,6 +181,17 @@ export default function ReadingFluencyTestPage() {
     () => classListData.map((c) => ({ id: c.id, name: c.name })),
     [classListData],
   );
+  const polledAnalysis =
+    transcriptionStatus.data?.status === "COMPLETED"
+      ? transcriptionStatus.data.analysis ?? null
+      : null;
+  const activeAnalysisResult = analysisResult ?? polledAnalysis;
+  const isAnalyzingFluency =
+    isSubmitting ||
+    (hasRecording &&
+      !!assessmentId &&
+      !activeAnalysisResult &&
+      transcriptionStatus.data?.status !== "FAILED");
 
   const handleJumpToTime = useCallback((timestamp: number) => {
     const audio = audioRef.current;
@@ -175,13 +216,50 @@ export default function ReadingFluencyTestPage() {
     setHighlightedTypes(new Set());
   }, []);
 
+  const handleRecheckMiscues = useCallback(async () => {
+    if (!sessionId || !activeAnalysisResult) return;
+
+    setIsRecheckingMiscues(true);
+    setRecheckSummaryText(null);
+
+    try {
+      const result = await recheckAllMiscuesAction(sessionId);
+
+      if (!result.success || !result.analysis) {
+        const message = result.error || "Failed to recheck miscues.";
+        setRecheckSummaryText(message);
+        setToast({ message, type: "error" });
+        return;
+      }
+
+      const updatedAnalysis = result.analysis as OralFluencyAnalysis;
+      setAnalysisResult(updatedAnalysis);
+      setHighlightedTypes(new Set());
+
+      try {
+        const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
+        if (sessionRaw) {
+          const session = JSON.parse(sessionRaw);
+          session.analysisResult = updatedAnalysis;
+          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+        }
+      } catch {}
+
+      const summaryText = formatRecheckSummary(result.summary);
+      setRecheckSummaryText(summaryText);
+      setToast({ message: summaryText, type: "success" });
+    } finally {
+      setIsRecheckingMiscues(false);
+    }
+  }, [activeAnalysisResult, sessionId]);
+
   const filteredMiscues = useMemo(() => {
-    if (!analysisResult?.miscues) return undefined;
-    if (highlightedTypes.size === 0) return analysisResult.miscues;
-    return analysisResult.miscues.filter((m) =>
+    if (!activeAnalysisResult?.miscues) return undefined;
+    if (highlightedTypes.size === 0) return activeAnalysisResult.miscues;
+    return activeAnalysisResult.miscues.filter((m) =>
       highlightedTypes.has(m.miscueType),
     );
-  }, [analysisResult?.miscues, highlightedTypes]);
+  }, [activeAnalysisResult?.miscues, highlightedTypes]);
 
   useEffect(() => {
     const loaded = loadSession();
@@ -299,6 +377,56 @@ export default function ReadingFluencyTestPage() {
     }
   }, [analysisResult?.classificationLevel]);
 
+  useEffect(() => {
+    if (!assessmentId) {
+      lastHandledTranscriptionStatusRef.current = null;
+    }
+  }, [assessmentId]);
+
+  useEffect(() => {
+    if (!polledAnalysis || analysisResult) return;
+
+    setAnalysisResult(polledAnalysis);
+    setRecheckSummaryText(null);
+
+    if (transcriptionStatus.data?.sessionId) {
+      setSessionId(transcriptionStatus.data.sessionId);
+    }
+
+    try {
+      const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
+      if (!sessionRaw) return;
+
+      const session = JSON.parse(sessionRaw);
+      session.analysisResult = polledAnalysis;
+      session.sessionId =
+        transcriptionStatus.data?.sessionId ?? session.sessionId;
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+    } catch {}
+  }, [analysisResult, polledAnalysis, transcriptionStatus.data?.sessionId]);
+
+  useEffect(() => {
+    const status = transcriptionStatus.data?.status;
+    if (!status || status === lastHandledTranscriptionStatusRef.current) return;
+
+    if (status === "FAILED") {
+      lastHandledTranscriptionStatusRef.current = status;
+      setToast({
+        message: "Analysis failed. Please try again.",
+        type: "error",
+      });
+      return;
+    }
+
+    if (status === "COMPLETED" && polledAnalysis) {
+      lastHandledTranscriptionStatusRef.current = status;
+      setToast({
+        message: "Reading Fluency Session Successful!",
+        type: "success",
+      });
+    }
+  }, [polledAnalysis, transcriptionStatus.data?.status]);
+
   const hasPassage = passageContent.length > 0;
 
   const handleSelectPassage = useCallback(
@@ -323,8 +451,10 @@ export default function ReadingFluencyTestPage() {
       setRecordedSeconds(0);
       setRecordedAudioBlob(null);
       setAnalysisResult(null);
+      setRecheckSummaryText(null);
       setSessionId("");
       setAssessmentId("");
+      lastHandledTranscriptionStatusRef.current = null;
       if (recordedAudioURL) {
         URL.revokeObjectURL(recordedAudioURL);
         setRecordedAudioURL(null);
@@ -374,8 +504,10 @@ export default function ReadingFluencyTestPage() {
     setHasRecording(false);
     setRecordedSeconds(0);
     setAnalysisResult(null);
+    setRecheckSummaryText(null);
     setSessionId("");
     setAssessmentId("");
+    lastHandledTranscriptionStatusRef.current = null;
     if (recordedAudioURL) {
       URL.revokeObjectURL(recordedAudioURL);
       setRecordedAudioURL(null);
@@ -403,8 +535,10 @@ export default function ReadingFluencyTestPage() {
     setCountdownEnabled(true);
     setCountdownSeconds(3);
     setAnalysisResult(null);
+    setRecheckSummaryText(null);
     setSessionId("");
     setAssessmentId("");
+    lastHandledTranscriptionStatusRef.current = null;
     sessionStorage.removeItem(STORAGE_KEY);
     sessionStorage.removeItem(AUDIO_STORAGE_KEY);
   }, [recordedAudioURL]);
@@ -472,15 +606,15 @@ export default function ReadingFluencyTestPage() {
         return;
       }
 
-      const formData = new FormData();
-      formData.append("studentId", studentId);
-      formData.append("passageId", selectedPassage);
-      formData.append("audioUrl", AudioUrl);
-      formData.append("audio", wavBlob, "recording.wav");
-
       const response = await fetch(`/api/fluency-reading/${selectedPassage}`, {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId,
+          passageId: selectedPassage,
+          audioUrl: AudioUrl,
+          fileName: "recording.wav",
+        }),
       });
 
       const responseText = await response.text();
@@ -506,10 +640,9 @@ export default function ReadingFluencyTestPage() {
       if (result.sessionId) setSessionId(result.sessionId);
       if (result.assessmentId) setAssessmentId(result.assessmentId);
 
-      const targetAssessmentId = result.assessmentId;
-
       if (result.analysis) {
         setAnalysisResult(result.analysis as OralFluencyAnalysis);
+        setRecheckSummaryText(null);
         setToast({
           message: "Reading Fluency Session Successful!",
           type: "success",
@@ -519,72 +652,7 @@ export default function ReadingFluencyTestPage() {
           message: "Analyzing recording... This may take a moment.",
           type: "success",
         });
-
-        const pollInterval = setInterval(async () => {
-          try {
-            const statusRes = await fetch(
-              `/api/oral-reading/transcribe?assessmentId=${targetAssessmentId}`,
-            );
-            const statusData = await statusRes.json();
-
-            if (statusData.status === "COMPLETED" && statusData.analysis) {
-              clearInterval(pollInterval);
-              setAnalysisResult(statusData.analysis as OralFluencyAnalysis);
-              if (statusData.sessionId) setSessionId(statusData.sessionId);
-
-              try {
-                const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
-                if (sessionRaw) {
-                  const session = JSON.parse(sessionRaw);
-                  session.analysisResult = statusData.analysis;
-                  session.sessionId = statusData.sessionId;
-                  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-                }
-              } catch {}
-
-              setToast({
-                message: "Reading Fluency Session Successful!",
-                type: "success",
-              });
-            } else if (statusData.status === "FAILED") {
-              clearInterval(pollInterval);
-              setToast({
-                message: "Analysis failed. Please try again.",
-                type: "error",
-              });
-            }
-          } catch (err) {
-            console.error("Polling error:", err);
-          }
-        }, 3000);
-
-        setTimeout(() => clearInterval(pollInterval), 120000);
       }
-
-      try {
-        result = JSON.parse(responseText);
-      } catch {
-        return;
-      }
-
-      if (!response.ok) {
-        return;
-      }
-
-      if (result.analysis) {
-        setAnalysisResult(result.analysis as OralFluencyAnalysis);
-      }
-      if (result.sessionId) {
-        setSessionId(result.sessionId);
-      }
-      if (result.assessmentId) {
-        setAssessmentId(result.assessmentId);
-      }
-
-      setToast({
-        message: "Reading Fluency Session Successful!",
-        type: "success",
-      });
     } catch {
       setToast({
         message: "Failed to analyze reading fluency.",
@@ -611,10 +679,10 @@ export default function ReadingFluencyTestPage() {
 
   useEffect(() => {
     if (isRestoredRef.current) return;
-    if (canSubmit) {
+    if (canSubmit && !assessmentId && !activeAnalysisResult) {
       handleSubmitRecording();
     }
-  }, [canSubmit, handleSubmitRecording]);
+  }, [canSubmit, assessmentId, activeAnalysisResult, handleSubmitRecording]);
 
   if (isFullScreen) {
     return (
@@ -639,9 +707,9 @@ export default function ReadingFluencyTestPage() {
       onCloseToast={() => setToast(null)}
       passageExpanded={passageExpanded}
       overlay={
-        showClassificationPopup && analysisResult?.classificationLevel ? (
+        showClassificationPopup && activeAnalysisResult?.classificationLevel ? (
           <ClassificationPopup
-            classificationLevel={analysisResult.classificationLevel}
+            classificationLevel={activeAnalysisResult.classificationLevel}
             studentName={studentName}
             onClose={() => setShowClassificationPopup(false)}
           />
@@ -650,16 +718,21 @@ export default function ReadingFluencyTestPage() {
       sidebar={
         <MiscueAnalysis
           disabled={!hasRecording}
-          isAnalyzing={isSubmitting}
-          miscues={analysisResult?.miscues}
-          totalMiscue={analysisResult?.totalMiscues}
-          oralFluencyScore={analysisResult?.oralFluencyScore}
-          classificationLevel={analysisResult?.classificationLevel}
+          isAnalyzing={isAnalyzingFluency}
+          miscues={activeAnalysisResult?.miscues}
+          totalMiscue={activeAnalysisResult?.totalMiscues}
+          oralFluencyScore={activeAnalysisResult?.oralFluencyScore}
+          classificationLevel={activeAnalysisResult?.classificationLevel}
           highlightedTypes={highlightedTypes}
           onToggleHighlight={toggleHighlightType}
           onResetHighlight={resetHighlightTypes}
+          onRecheckMiscues={
+            sessionId && activeAnalysisResult ? handleRecheckMiscues : undefined
+          }
+          isRechecking={isRecheckingMiscues}
+          recheckSummary={recheckSummaryText}
           onExportPdf={() => {
-            if (!analysisResult) return;
+            if (!activeAnalysisResult) return;
             const data = buildFluencyReportData({
               studentName,
               gradeLevel,
@@ -670,7 +743,7 @@ export default function ReadingFluencyTestPage() {
               assessmentType: "Oral Reading",
               passageContent,
               recordedSeconds,
-              analysisResult,
+              analysisResult: activeAnalysisResult,
             });
             exportFluencyReportPdf(
               data,
@@ -687,39 +760,18 @@ export default function ReadingFluencyTestPage() {
         />
       }
     >
-      {/* Nav row — inline student fields when no passage, compact info when passage selected */}
-      <OralReadingNavRow
-        onGoBack={() => router.back()}
-        onContinue={() => {}}
-        continueEnabled={false}
-        showContinue={false}
-        onClear={handleStartNew}
-        studentName={studentName}
-        gradeLevel={gradeLevel}
-        selectedClassName={selectedClassName}
-        hasPassage={false}
-        classes={classNames}
-        onStudentNameChange={setStudentName}
-        onGradeLevelChange={setGradeLevel}
-        onClassCreated={() =>
-          queryClient.invalidateQueries({
-            queryKey: ["classes", schoolYear],
-          })
-        }
-        onStudentSelected={(studentId: string) =>
-          setSelectedStudentId(studentId)
-        }
-        onClassChange={setSelectedClassName}
-      />
-
-      {/* Passage filters + share link (student info lives in nav row) */}
       {!passageExpanded && (
-        <StudentSetupSection
-          isLoading={isLoadingClasses}
+        <OralReadingNavRow
+          onGoBack={() => router.back()}
+          onContinue={() => {}}
+          continueEnabled={false}
+          showContinue={false}
+          onClear={handleStartNew}
           studentName={studentName}
           gradeLevel={gradeLevel}
-          classes={classNames}
           selectedClassName={selectedClassName}
+          hasPassage={false}
+          classes={classNames}
           onStudentNameChange={setStudentName}
           onGradeLevelChange={setGradeLevel}
           onClassCreated={() =>
@@ -731,135 +783,163 @@ export default function ReadingFluencyTestPage() {
             setSelectedStudentId(studentId)
           }
           onClassChange={setSelectedClassName}
-          onClear={handleStartNew}
-          hasPassage={hasPassage}
-          selectedLanguage={selectedLanguage}
-          selectedLevel={selectedLevel}
-          selectedTestType={selectedTestType}
-          onOpenPassageModal={() => setIsPassageModalOpen(true)}
-          shareableLink={
-            selectedStudentId && selectedPassage
-              ? {
-                  studentId: selectedStudentId,
-                  passageId: selectedPassage,
-                  assessmentType: "READING_FLUENCY",
-                }
-              : undefined
-          }
-          hideStudentInfo
         />
       )}
 
-      {/* Passage display */}
-      <PassageDisplay
-        content={passageContent}
-        miscues={showMiscues ? filteredMiscues : undefined}
-        alignedWords={showMiscues ? analysisResult?.alignedWords : undefined}
-        onJumpToTime={handleJumpToTime}
-        expanded={passageExpanded}
-        onToggleExpand={() => setPassageExpanded((prev) => !prev)}
-        passageLevel={selectedLevel}
-      />
+      <div className="flex flex-1 min-h-0 flex-col overflow-hidden rounded-2xl border border-[#C4B5FD] bg-white shadow-[0_12px_48px_rgba(102,102,255,0.18),0_3px_12px_rgba(102,102,255,0.10)]">
+        {!passageExpanded && (
+          <div className="shrink-0 px-5 pt-4 pb-3">
+            <StudentSetupSection
+              isLoading={isLoadingClasses}
+              studentName={studentName}
+              gradeLevel={gradeLevel}
+              classes={classNames}
+              selectedClassName={selectedClassName}
+              onStudentNameChange={setStudentName}
+              onGradeLevelChange={setGradeLevel}
+              onClassCreated={() =>
+                queryClient.invalidateQueries({
+                  queryKey: ["classes", schoolYear],
+                })
+              }
+              onStudentSelected={(studentId: string) =>
+                setSelectedStudentId(studentId)
+              }
+              onClassChange={setSelectedClassName}
+              onClear={handleStartNew}
+              hasPassage={hasPassage}
+              selectedLanguage={selectedLanguage}
+              selectedLevel={selectedLevel}
+              selectedTestType={selectedTestType}
+              passageTitle={selectedTitle}
+              onOpenPassageModal={() => setIsPassageModalOpen(true)}
+              shareableLink={
+                selectedStudentId && selectedPassage
+                  ? {
+                      studentId: selectedStudentId,
+                      passageId: selectedPassage,
+                      assessmentType: "READING_FLUENCY",
+                    }
+                  : undefined
+              }
+              hideStudentInfo
+            />
+          </div>
+        )}
 
-      {/* Audio player when passage is expanded */}
-      {passageExpanded && hasRecording && recordedAudioURL && (
-        <div className="mt-2">
-          <AudioPlayer src={recordedAudioURL} externalAudioRef={audioRef} />
-        </div>
-      )}
+        {!passageExpanded && (
+          <div className="shrink-0 mx-5 h-px bg-[#E5DEFF]" />
+        )}
 
-      {/* Word count + miscue toggle */}
-      {!passageExpanded && hasPassage && (
-        <div className="mt-2 flex items-center justify-between">
-          <span className="text-xs font-semibold text-[#00306E]">
-            {passageContent.split(/\s+/).length} words
-          </span>
-          {analysisResult && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-[#31318A]">
-                {showMiscues ? "Miscues" : "Original"}
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowMiscues((prev) => !prev)}
-                aria-label={
-                  showMiscues
-                    ? "Show original passage"
-                    : "Show miscue highlights"
-                }
-                title={
-                  showMiscues
-                    ? "Show original passage"
-                    : "Show miscue highlights"
-                }
-                className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
-                  showMiscues ? "bg-[#6666FF]" : "bg-[#C4C4FF]"
-                }`}
-              >
-                <span
-                  className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-                    showMiscues ? "translate-x-4.25" : "translate-x-0.75"
-                  }`}
-                />
-              </button>
-            </div>
-          )}
-          {!analysisResult && (
-            <div className="flex items-center gap-2 opacity-40 pointer-events-none">
-              <span className="text-xs font-medium text-[#31318A]">
-                Miscues
-              </span>
-              <div className="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full bg-[#C4C4FF]">
-                <span className="inline-block h-3.5 w-3.5 translate-x-0.75 rounded-full bg-white shadow" />
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Passage title */}
-      {!passageExpanded && hasPassage && (
-        <div className="mb-2 flex items-center justify-center">
-          <span className="text-lg font-bold text-[#31318A] md:text-xl">
-            {selectedTitle}
-          </span>
-        </div>
-      )}
-
-      {/* Reading timer + audio player */}
-      {!passageExpanded && (
-        <ReadingTimer
-          hasPassage={hasPassage}
-          hasStudentInfo={
-            !!(studentName.trim() && gradeLevel && selectedClassName)
+        <div
+          className={
+            passageExpanded
+              ? "flex flex-1 min-h-0 flex-col overflow-hidden p-2"
+              : "flex flex-1 min-h-0 flex-col px-5 pt-3 pb-0"
           }
-          onStartReading={handleStartReading}
-          hasRecording={hasRecording}
-          recordedSeconds={recordedSeconds}
-          recordedAudioURL={recordedAudioURL}
-          onTryAgain={handleTryAgain}
-          audioRef={audioRef}
-        />
-      )}
-
-      {/* Countdown toggle + readiness check */}
-      {!passageExpanded && (
-        <div className="flex items-center justify-between">
-          <CountdownToggle
-            countdownEnabled={countdownEnabled}
-            countdownSeconds={countdownSeconds}
-            onToggle={() => setCountdownEnabled(!countdownEnabled)}
-            onDecrease={() =>
-              setCountdownSeconds(Math.max(1, countdownSeconds - 1))
+        >
+          <PassageDisplay
+            content={passageContent}
+            miscues={showMiscues ? filteredMiscues : undefined}
+            alignedWords={
+              showMiscues ? activeAnalysisResult?.alignedWords : undefined
             }
-            onIncrease={() =>
-              setCountdownSeconds(Math.min(10, countdownSeconds + 1))
-            }
+            onJumpToTime={handleJumpToTime}
+            expanded={passageExpanded}
+            onToggleExpand={() => setPassageExpanded((prev) => !prev)}
+            passageLevel={selectedLevel}
           />
 
-          <ReadinessCheckButton />
+          {!passageExpanded && hasPassage && (
+            <div className="mt-1.5 flex items-center justify-between px-0.5">
+              <span className="text-[10px] font-semibold text-[#A0A0C0]">
+                {passageContent.split(/\s+/).filter(Boolean).length} words
+              </span>
+              {activeAnalysisResult && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-medium text-[#9090B4]">
+                    {showMiscues ? "Miscues" : "Original"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowMiscues((prev) => !prev)}
+                    aria-label={
+                      showMiscues
+                        ? "Show original passage"
+                        : "Show miscue highlights"
+                    }
+                    title={
+                      showMiscues
+                        ? "Show original passage"
+                        : "Show miscue highlights"
+                    }
+                    className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+                      showMiscues ? "bg-[#6666FF]" : "bg-[#C4C4FF]"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+                        showMiscues ? "translate-x-4.25" : "translate-x-0.75"
+                      }`}
+                    />
+                  </button>
+                </div>
+              )}
+              {!activeAnalysisResult && (
+                <div className="pointer-events-none flex items-center gap-2 opacity-30">
+                  <span className="text-[10px] font-medium text-[#9090B4]">
+                    Miscues
+                  </span>
+                  <div className="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full bg-[#C4C4FF]">
+                    <span className="inline-block h-3.5 w-3.5 translate-x-0.75 rounded-full bg-white shadow" />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      )}
+
+        {passageExpanded && hasRecording && recordedAudioURL && (
+          <div className="mt-2 shrink-0 px-2 pb-2">
+            <AudioPlayer src={recordedAudioURL} externalAudioRef={audioRef} />
+          </div>
+        )}
+
+        {!passageExpanded && (
+          <div className="shrink-0 px-5 pb-3 pt-1">
+            <ReadingTimer
+              hasPassage={hasPassage}
+              hasStudentInfo={
+                !!(studentName.trim() && gradeLevel && selectedClassName)
+              }
+              onStartReading={handleStartReading}
+              hasRecording={hasRecording}
+              recordedSeconds={recordedSeconds}
+              recordedAudioURL={recordedAudioURL}
+              onTryAgain={handleTryAgain}
+              audioRef={audioRef}
+              isAnalyzing={isAnalyzingFluency}
+            />
+          </div>
+        )}
+
+        {!passageExpanded && (
+          <div className="shrink-0 flex items-center justify-between px-5 pb-4">
+            <CountdownToggle
+              countdownEnabled={countdownEnabled}
+              countdownSeconds={countdownSeconds}
+              onToggle={() => setCountdownEnabled(!countdownEnabled)}
+              onDecrease={() =>
+                setCountdownSeconds(Math.max(1, countdownSeconds - 1))
+              }
+              onIncrease={() =>
+                setCountdownSeconds(Math.min(10, countdownSeconds + 1))
+              }
+            />
+            <ReadinessCheckButton />
+          </div>
+        )}
+      </div>
     </TestPageLayout>
   );
 }

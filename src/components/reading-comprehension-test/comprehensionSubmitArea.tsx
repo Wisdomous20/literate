@@ -1,5 +1,7 @@
 "use client";
 
+import { ArrowRight, RotateCcw } from "lucide-react";
+
 interface ComprehensionSubmitAreaProps {
   submitError: string | null;
   isSubmitting: boolean;
@@ -22,28 +24,44 @@ export function ComprehensionSubmitArea({
       )}
       {isSubmitted ? (
         onTryAgain ? (
-          <button
-            onClick={onTryAgain}
-            className="w-56.25 h-15.75 bg-[#6666FF] border border-[#7A7AFB] rounded-lg shadow-[0_0_20px_rgba(102,102,255,0.35)] text-white font-semibold text-xl hover:bg-[#5555EE] transition-colors"
-          >
-            Try Again
-          </button>
+          <div className="relative">
+            <div className="absolute inset-0 translate-y-1 rounded-full bg-[#B3A4F1] shadow-[0_4px_24px_rgba(102,102,255,0.18)]" />
+            <button
+              type="button"
+              onClick={onTryAgain}
+              className="relative flex items-center justify-center gap-2 rounded-full bg-[#6666FF] px-10 py-3 min-w-[180px] text-base font-bold text-white transition-transform hover:-translate-y-0.5 active:translate-y-0 shadow"
+            >
+              <RotateCcw size={20} />
+              Try Again
+            </button>
+          </div>
         ) : (
           <button
             disabled
-            className="w-56.25 h-15.75 bg-[#6666FF] border border-[#7A7AFB] rounded-lg shadow-[0_0_20px_rgba(102,102,255,0.35)] text-white font-semibold text-xl transition-colors disabled:opacity-60"
+            className="relative flex items-center justify-center gap-2 rounded-full bg-[#6666FF] px-10 py-3 min-w-[180px] text-base font-bold text-white opacity-60 shadow"
           >
             Submitted
           </button>
         )
       ) : (
-        <button
-          onClick={onSubmit}
-          disabled={isSubmitting}
-          className="w-56.25 h-15.75 bg-[#6666FF] rounded-lg border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#3B21CC] border-b-[#3B21CC] shadow-[0_0_20px_rgba(102,102,255,0.35)] text-white font-semibold text-xl hover:bg-[#5555EE] transition-colors"
-        >
-          {isSubmitting ? "Submitting..." : "Submit"}
-        </button>
+        <div className="relative">
+          <div className="absolute inset-0 translate-y-1 rounded-full bg-[#B3A4F1] shadow-[0_4px_24px_rgba(102,102,255,0.18)]" />
+          <button
+            type="button"
+            onClick={onSubmit}
+            disabled={isSubmitting}
+            className="relative flex items-center justify-center gap-2 rounded-full bg-[#6666FF] px-10 py-3 min-w-[180px] text-base font-bold text-white transition-transform hover:-translate-y-0.5 active:translate-y-0 shadow disabled:opacity-60"
+          >
+            {isSubmitting ? (
+              "Submitting..."
+            ) : (
+              <>
+                Submit
+                <ArrowRight size={20} />
+              </>
+            )}
+          </button>
+        </div>
       )}
     </div>
   );

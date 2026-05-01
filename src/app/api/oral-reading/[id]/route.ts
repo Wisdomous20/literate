@@ -1,22 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAssessmentService } from "@/service/assessment/createAssessmentService";
-import { prisma } from "@/lib/prisma";
-import { transcriptionQueue } from "@/lib/queues";
-import type { TranscriptionJobData } from "@/lib/queues";
 import { createAudioAssessmentSchema } from "@/lib/validation/media";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
+import { createAudioAssessmentSessionService } from "@/service/oral-fluency/createAudioAssessmentSessionService";
+import {
+  InvalidRequestBodyError,
+  readCreateAudioAssessmentPayload,
+} from "@/app/api/_utils/audioRequestPayload";
+import { serviceErrorResponse } from "@/app/api/_utils/serviceErrorResponse";
 
 export const maxDuration = 10;
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const validationResult = createAudioAssessmentSchema.safeParse({
-      studentId: formData.get("studentId"),
-      passageId: formData.get("passageId"),
-      audio: formData.get("audio"),
-      audioUrl: formData.get("audioUrl") ?? undefined,
-    });
+    const payload = await readCreateAudioAssessmentPayload(request);
+    const validationResult = createAudioAssessmentSchema.safeParse(payload);
 
     if (!validationResult.success) {
       return NextResponse.json(
@@ -25,59 +22,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { studentId, passageId, audio: audioFile, audioUrl = "" } =
+    const { studentId, passageId, audioUrl, fileName = "recording.wav" } =
       validationResult.data;
 
-    // 1. Create assessment
-    const assessmentResult = await createAssessmentService({
+    const result = await createAudioAssessmentSessionService({
       studentId,
       passageId,
       type: "ORAL_READING",
+      audioUrl,
+      fileName,
     });
 
-    if (!assessmentResult.success || !assessmentResult.assessment) {
-      return NextResponse.json(
-        { error: assessmentResult.error || "Failed to create assessment" },
-        { status: 400 },
-      );
+    if (!result.success) {
+      return serviceErrorResponse(result, "Failed to create oral reading session");
     }
 
-    const assessmentId = assessmentResult.assessment.id;
-
-    // 2. Create PENDING session
-    const session = await prisma.oralFluencySession.create({
-      data: {
-        assessmentId,
-        audioUrl,
-        status: "PENDING",
-      },
-    });
-
-    // 3. Enqueue transcription
-    const jobData: TranscriptionJobData = {
-      assessmentId,
-      audioUrl,
-      fileName: audioFile.name || "recording.wav",
-    };
-
-    await transcriptionQueue.add(
-      `transcribe-${assessmentId}`,
-      jobData,
-      { jobId: `transcription-${assessmentId}` },
-    );
-
-    console.log(`[API:oral-reading] Enqueued transcription for ${assessmentId}`);
-
-    // 4. Return immediately
     return NextResponse.json(
       {
-        assessmentId,
-        sessionId: session.id,
-        status: "PENDING",
+        assessmentId: result.assessmentId,
+        sessionId: result.sessionId,
+        status: result.status,
       },
       { status: 202 },
     );
   } catch (error) {
+    if (error instanceof InvalidRequestBodyError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
     console.error("Error creating oral reading session:", error);
     return NextResponse.json(
       { error: "Failed to create oral reading session" },

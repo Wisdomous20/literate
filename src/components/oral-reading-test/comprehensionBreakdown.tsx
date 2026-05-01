@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Download } from "lucide-react";
+import { Download, FileText } from "lucide-react";
 
 interface BreakdownItem {
   label: string;
@@ -199,13 +199,17 @@ export function ComprehensionBreakdown({
 
         {showReportButton && (
           <div className="mt-2.5 flex justify-center">
-            <button
-              type="button"
-              onClick={() => router.push(reportHref)}
-              className="mt-3 w-full rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90"
-            >
-              View Full Report
-            </button>
+            <div className="relative w-full mt-3">
+              <div className="absolute inset-0 translate-y-1 rounded-[10px] bg-[#B3A4F1] shadow-[0_4px_24px_rgba(102,102,255,0.18)]" />
+              <button
+                type="button"
+                onClick={() => router.push(reportHref)}
+                className="relative flex w-full items-center justify-center gap-2 rounded-[10px] bg-[#6666FF] px-4 py-2 text-sm font-bold text-white transition-transform hover:-translate-y-0.5 active:translate-y-0 shadow"
+              >
+                <FileText className="h-4 w-4" />
+                View Comprehension Report
+              </button>
+            </div>
           </div>
         )}
       </div>

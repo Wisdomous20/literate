@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
-import { LayoutDashboard, ChevronLeft, RotateCcw, Download, Loader2 } from "lucide-react";
+import { LayoutDashboard, ArrowLeft, RotateCcw, Download, Loader2 } from "lucide-react";
 import StudentInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/studentInfoCard";
 import PassageInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/passageInfoCard";
 import MetricCards from "@/components/reports/oral-reading-test/reading-fluency-report/metricCards";
@@ -13,9 +13,15 @@ import ViewMiscuesModal from "@/components/reports/oral-reading-test/reading-flu
 import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay";
 import { useEditMiscues } from "@/components/oral-reading-test/useEditMiscues";
 import { fetchOralFluencyMiscues } from "@/app/actions/oral-fluency/getMiscues";
+import { recheckAllMiscuesAction } from "@/app/actions/oral-fluency/recheckAllMiscues";
 import { updateMiscueAction } from "@/app/actions/oral-fluency/updateMiscue";
 import { updateBehaviorsAction } from "@/app/actions/oral-fluency/updateBehaviors";
 import { exportFluencyReportPdf } from "@/lib/exportFluencyReportPdf";
+import {
+  calculateWordsCorrectPerMinute,
+  getDisplayReadingTimeSeconds,
+  resolveReadingDurationSeconds,
+} from "@/lib/readingDuration";
 import {
   findMatchingDbMiscue,
   removeFirstMatchingMiscue,
@@ -60,6 +66,15 @@ interface SessionState {
   recordedSeconds: number;
   analysisResult?: OralFluencyAnalysis | null;
   sessionId?: string;
+}
+
+interface RecheckSummary {
+  checked: number;
+  removed: number;
+  changed: number;
+  kept: number;
+  added?: number;
+  reranTranscription?: boolean;
 }
 
 function loadSession(): Partial<SessionState> {
@@ -150,11 +165,24 @@ function buildBehaviorItems(
   ];
 }
 
+function formatRecheckSummary(summary: RecheckSummary | undefined): string {
+  if (!summary) return "Recheck complete.";
+  const core = `${summary.checked} checked, ${summary.removed} removed, ${summary.changed} changed, ${summary.kept} kept`;
+  const added =
+    summary.added && summary.added > 0 ? `, ${summary.added} added` : "";
+  const source = summary.reranTranscription ? " after audio retranscription" : "";
+  return `${core}${added}${source}`;
+}
+
 export default function OralReadingReportPage() {
   const router = useRouter();
   const [showMiscuesModal, setShowMiscuesModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [localAnalysis, setLocalAnalysis] = useState<OralFluencyAnalysis | null>(null);
+  const [isRecheckingMiscues, setIsRecheckingMiscues] = useState(false);
+  const [recheckSummaryText, setRecheckSummaryText] = useState<string | null>(
+    null,
+  );
 
   // Fix hydration mismatch: useSyncExternalStore ensures server and client render consistently
   const isClient = useSyncExternalStore(
@@ -202,19 +230,19 @@ export default function OralReadingReportPage() {
     [session.passageContent],
   );
 
-  const readingTimeSeconds = useMemo(
-    () => Math.round(analysis?.duration ?? session.recordedSeconds ?? 0),
-    [analysis?.duration, session.recordedSeconds],
-  );
-
   const totalMiscues = analysis?.totalMiscues ?? 0;
   const wordsCorrect = Math.max(0, totalWords - totalMiscues);
+  const readingDurationSeconds = useMemo(
+    () => resolveReadingDurationSeconds(analysis?.duration, session.recordedSeconds),
+    [analysis?.duration, session.recordedSeconds],
+  );
+  const readingTimeSeconds = useMemo(
+    () => getDisplayReadingTimeSeconds(readingDurationSeconds),
+    [readingDurationSeconds],
+  );
   const wcpm = useMemo(
-    () =>
-      readingTimeSeconds > 0
-        ? Math.round((wordsCorrect / readingTimeSeconds) * 60)
-        : 0,
-    [wordsCorrect, readingTimeSeconds],
+    () => calculateWordsCorrectPerMinute(wordsCorrect, readingDurationSeconds),
+    [wordsCorrect, readingDurationSeconds],
   );
 
   const classification = analysis?.classificationLevel || "—";
@@ -292,6 +320,52 @@ export default function OralReadingReportPage() {
   });
 
   const reportSessionId = session.sessionId;
+
+  const handleRecheckMiscues = useCallback(async () => {
+    if (!reportSessionId || !analysis) return;
+
+    if (
+      editMiscues.hasUnsavedChanges &&
+      typeof window !== "undefined" &&
+      !window.confirm(
+        "Rechecking will replace your unsaved miscue edits. Continue?",
+      )
+    ) {
+      return;
+    }
+
+    setIsRecheckingMiscues(true);
+    setRecheckSummaryText(null);
+
+    try {
+      const result = await recheckAllMiscuesAction(reportSessionId);
+
+      if (!result.success || !result.analysis) {
+        setRecheckSummaryText(result.error || "Recheck failed.");
+        return;
+      }
+
+      const updatedAnalysis = result.analysis as OralFluencyAnalysis;
+      setLocalAnalysis(updatedAnalysis);
+      editMiscues.applyExternalMiscues(updatedAnalysis.miscues);
+      if (editMiscues.isEditing) {
+        editMiscues.cancelEdit();
+      }
+
+      try {
+        const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
+        if (sessionRaw) {
+          const s = JSON.parse(sessionRaw);
+          s.analysisResult = updatedAnalysis;
+          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+        }
+      } catch {}
+
+      setRecheckSummaryText(formatRecheckSummary(result.summary));
+    } finally {
+      setIsRecheckingMiscues(false);
+    }
+  }, [analysis, editMiscues, reportSessionId]);
 
   const handleDeleteMiscue = useCallback(
     async (miscue: MiscueResult) => {
@@ -573,10 +647,11 @@ export default function OralReadingReportPage() {
         <button
           type="button"
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)] transition-all hover:bg-[#5555EE]"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_4px_12px_rgba(102,102,255,0.35)] transition-all hover:bg-[#5555EE] hover:shadow-[0_6px_16px_rgba(102,102,255,0.45)] active:scale-95"
+          aria-label="Go back"
+          title="Go back"
         >
-          <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
-          <span>Previous</span>
+          <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
         </button>
 
         <div className="flex items-center gap-3">
@@ -637,6 +712,9 @@ export default function OralReadingReportPage() {
             miscueData={miscueData}
             onViewMiscues={() => setShowMiscuesModal(true)}
             onEditMiscues={() => setShowEditModal(true)}
+            onRecheckMiscues={reportSessionId ? handleRecheckMiscues : undefined}
+            isRechecking={isRecheckingMiscues}
+            recheckSummary={recheckSummaryText}
           />
         </div>
       </main>

@@ -4,7 +4,7 @@ import { useMemo, useState, useCallback } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
-  ChevronLeft,
+  ArrowLeft,
   Download,
   Loader2,
 } from "lucide-react";
@@ -24,6 +24,10 @@ import { useAssessmentsByStudent } from "@/lib/hooks/useStudentAssessments";
 import { useClassById } from "@/lib/hooks/useClassById";
 import { useQueryClient } from "@tanstack/react-query";
 import { exportFluencyReportPdf } from "@/lib/exportFluencyReportPdf";
+import {
+  getDisplayReadingTimeSeconds,
+  resolveReadingDurationSeconds,
+} from "@/lib/readingDuration";
 import {
   findMatchingDbMiscue,
   removeFirstMatchingMiscue,
@@ -367,7 +371,8 @@ export default function ReadingFluencyReportPage() {
   const currentClassificationLevel =
     localClassificationLevel ??
     (assessment.oralFluency?.classificationLevel ?? "");
-  const duration = assessment.oralFluency?.duration ?? 0;
+  const duration = resolveReadingDurationSeconds(assessment.oralFluency?.duration);
+  const readingTimeSeconds = getDisplayReadingTimeSeconds(duration);
   const wordsCorrect = Math.max(0, totalWords - currentTotalMiscues);
   const wcpm =
     duration > 0 ? Math.round((wordsCorrect / duration) * 60) : 0;
@@ -406,7 +411,7 @@ export default function ReadingFluencyReportPage() {
         testType: formatTestType(passage?.testType),
         assessmentType: assessmentTypeLabel,
         wcpm,
-        readingTimeSeconds: Math.round(duration),
+        readingTimeSeconds,
         classificationLevel: currentClassificationLevel,
         miscueData,
         behaviors: behaviorItems.map((b) => ({
@@ -448,10 +453,11 @@ export default function ReadingFluencyReportPage() {
         <button
           type="button"
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white shadow-[0_0_20px_rgba(102,102,255,0.4),0_4px_12px_rgba(102,102,255,0.3)] transition-all hover:bg-[#5555EE]"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_4px_12px_rgba(102,102,255,0.35)] transition-all hover:bg-[#5555EE] hover:shadow-[0_6px_16px_rgba(102,102,255,0.45)] active:scale-95"
+          aria-label="Go back"
+          title="Go back"
         >
-          <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
-          <span>Previous</span>
+          <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
         </button>
 
         <div className="flex items-center gap-3">
@@ -476,7 +482,7 @@ export default function ReadingFluencyReportPage() {
           />
           <MetricCards
             wcpm={wcpm}
-            readingTimeSeconds={Math.round(duration)}
+            readingTimeSeconds={readingTimeSeconds}
             classificationLevel={currentClassificationLevel}
           />
         </div>

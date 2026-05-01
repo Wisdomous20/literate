@@ -2,7 +2,7 @@
 
 import { CreatePassageForm } from "@/components/admin-dash/passages/createPassageForm";
 import { useRouter } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 export default function CreatePassagePage() {
   const router = useRouter();
@@ -14,10 +14,10 @@ export default function CreatePassagePage() {
           type="button"
           aria-label="Go back"
           onClick={() => router.back()}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#F0F4FF] hover:bg-[#E4F4FF] text-[#162DB0] font-semibold text-base shadow transition-all"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_4px_12px_rgba(102,102,255,0.35)] transition-all hover:bg-[#5555EE] hover:shadow-[0_6px_16px_rgba(102,102,255,0.45)] active:scale-95"
+          title="Go back"
         >
-          <ChevronLeft className="h-5 w-5" />
-          Back
+          <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
         </button>
         <span className="text-base text-[#00306E]/70 font-medium">
           Create a new graded reading passage for assessments

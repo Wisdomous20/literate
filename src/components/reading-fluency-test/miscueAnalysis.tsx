@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { useMemo, useRef, useEffect, useState } from "react"
-import { Loader2, Download } from "lucide-react"
-import { useRouter } from "next/navigation"
-import type { MiscueResult } from "@/types/oral-reading"
+import { useMemo, useRef, useEffect, useState } from "react";
+import { Loader2, Download, RefreshCw, FileBarChart } from "lucide-react";
+import { useRouter } from "next/navigation";
+import type { MiscueResult } from "@/types/oral-reading";
 
 const MISCUE_CONFIG = [
   {
@@ -62,34 +62,49 @@ const MISCUE_CONFIG = [
     activeClass: "bg-[rgba(250,230,140,0.18)]",
     textClass: "text-[#8A6D00]",
   },
-] as const
+] as const;
 
 interface MiscueAnalysisProps {
-  miscues?: MiscueResult[]
-  totalMiscue?: number
-  oralFluencyScore?: number | string
-  classificationLevel?: string
-  isAnalyzing?: boolean
-  disabled?: boolean
-  highlightedTypes?: Set<string>
-  onToggleHighlight?: (miscueType: string) => void
-  onResetHighlight?: () => void
-  onExportPdf?: () => void
+  miscues?: MiscueResult[];
+  totalMiscue?: number;
+  oralFluencyScore?: number | string;
+  classificationLevel?: string;
+  isAnalyzing?: boolean;
+  disabled?: boolean;
+  highlightedTypes?: Set<string>;
+  onToggleHighlight?: (miscueType: string) => void;
+  onResetHighlight?: () => void;
+  onExportPdf?: () => void;
+  onRecheckMiscues?: () => void;
+  isRechecking?: boolean;
+  recheckSummary?: string | null;
 }
 
 function getClassificationClasses(level?: string): {
-  textClass: string
-  bgClass: string
+  textClass: string;
+  bgClass: string;
 } {
   switch (level?.toUpperCase()) {
     case "INDEPENDENT":
-      return { textClass: "text-[#1E7A35]", bgClass: "bg-[rgba(140,220,160,0.3)]" }
+      return {
+        textClass: "text-[#1E7A35]",
+        bgClass: "bg-[rgba(140,220,160,0.3)]",
+      };
     case "INSTRUCTIONAL":
-      return { textClass: "text-[#1A5FB4]", bgClass: "bg-[rgba(160,200,255,0.3)]" }
+      return {
+        textClass: "text-[#1A5FB4]",
+        bgClass: "bg-[rgba(160,200,255,0.3)]",
+      };
     case "FRUSTRATION":
-      return { textClass: "text-[#C41048]", bgClass: "bg-[rgba(253,182,210,0.3)]" }
+      return {
+        textClass: "text-[#C41048]",
+        bgClass: "bg-[rgba(253,182,210,0.3)]",
+      };
     default:
-      return { textClass: "text-[#2E2EA3]", bgClass: "bg-[rgba(230,230,250,0.2)]" }
+      return {
+        textClass: "text-[#2E2EA3]",
+        bgClass: "bg-[rgba(230,230,250,0.2)]",
+      };
   }
 }
 
@@ -104,46 +119,49 @@ export function MiscueAnalysis({
   onToggleHighlight,
   onResetHighlight,
   onExportPdf,
+  onRecheckMiscues,
+  isRechecking = false,
+  recheckSummary,
 }: MiscueAnalysisProps) {
-  const router = useRouter()
-  const cardRef = useRef<HTMLDivElement>(null)
-  const [activeView, setActiveView] = useState<"summary" | "words">("summary")
+  const router = useRouter();
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [activeView, setActiveView] = useState<"summary" | "words">("summary");
 
   useEffect(() => {
-    if (highlightedTypes.size === 0 || !onResetHighlight) return
+    if (highlightedTypes.size === 0 || !onResetHighlight) return;
     const handleMouseDown = (e: MouseEvent) => {
       if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
-        onResetHighlight()
+        onResetHighlight();
       }
-    }
-    document.addEventListener("mousedown", handleMouseDown)
-    return () => document.removeEventListener("mousedown", handleMouseDown)
-  }, [highlightedTypes.size, onResetHighlight])
+    };
+    document.addEventListener("mousedown", handleMouseDown);
+    return () => document.removeEventListener("mousedown", handleMouseDown);
+  }, [highlightedTypes.size, onResetHighlight]);
 
   const miscueCounts = useMemo(() => {
-    const counts: Record<string, number> = {}
+    const counts: Record<string, number> = {};
     for (const m of miscues) {
-      counts[m.miscueType] = (counts[m.miscueType] || 0) + 1
+      counts[m.miscueType] = (counts[m.miscueType] || 0) + 1;
     }
-    return counts
-  }, [miscues])
+    return counts;
+  }, [miscues]);
 
   const miscuedWords = useMemo(
     () =>
       miscues.map((miscue, index) => {
         const config =
           MISCUE_CONFIG.find((item) => item.key === miscue.miscueType) ??
-          MISCUE_CONFIG[0]
+          MISCUE_CONFIG[0];
         const primaryWord =
           miscue.miscueType === "REPETITION"
             ? miscue.expectedWord || miscue.spokenWord || "-"
-            : miscue.expectedWord || miscue.spokenWord || "-"
+            : miscue.expectedWord || miscue.spokenWord || "-";
         const spokenLabel =
           miscue.miscueType === "OMISSION"
             ? "Omitted"
             : miscue.spokenWord
               ? `Spoken: ${miscue.spokenWord}`
-              : "No spoken word"
+              : "No spoken word";
 
         return {
           id: `${miscue.miscueType}-${miscue.wordIndex}-${miscue.expectedWord}-${miscue.spokenWord ?? "none"}-${index}`,
@@ -151,26 +169,27 @@ export function MiscueAnalysis({
           miscue,
           primaryWord,
           spokenLabel,
-        }
+        };
       }),
     [miscues],
-  )
+  );
 
   const hasResults =
-    miscues.length > 0 || (totalMiscue !== undefined && totalMiscue > 0)
+    miscues.length > 0 || (totalMiscue !== undefined && totalMiscue > 0);
 
   const displayTotalMiscue =
-    totalMiscue ?? (hasResults ? miscues.filter((m) => !m.isSelfCorrected).length : 0)
+    totalMiscue ??
+    (hasResults ? miscues.filter((m) => !m.isSelfCorrected).length : 0);
 
   const displayScore =
     oralFluencyScore !== undefined
       ? typeof oralFluencyScore === "number"
         ? `${oralFluencyScore}%`
         : oralFluencyScore
-      : "--"
+      : "--";
 
-  const displayClassification = classificationLevel || "--"
-  const classificationClasses = getClassificationClasses(classificationLevel)
+  const displayClassification = classificationLevel || "--";
+  const classificationClasses = getClassificationClasses(classificationLevel);
 
   return (
     <div
@@ -204,7 +223,9 @@ export function MiscueAnalysis({
           <span className="text-sm font-medium text-[#31318A]">
             Analyzing reading fluency...
           </span>
-          <span className="text-xs text-[#31318A]/60">This may take a moment</span>
+          <span className="text-xs text-[#31318A]/60">
+            This may take a moment
+          </span>
         </div>
       ) : (
         <>
@@ -237,8 +258,8 @@ export function MiscueAnalysis({
             {activeView === "summary" ? (
               <div className="flex h-full flex-col">
                 {MISCUE_CONFIG.map((item, index) => {
-                  const isActive = highlightedTypes.has(item.key)
-                  const count = miscueCounts[item.key] || 0
+                  const isActive = highlightedTypes.has(item.key);
+                  const count = miscueCounts[item.key] || 0;
 
                   return (
                     <div key={item.key}>
@@ -253,7 +274,7 @@ export function MiscueAnalysis({
                       >
                         {/* Left: count badge */}
                         <div
-                          className={`flex h-6 w-7 shrink-0 items-center justify-center rounded-[5px] border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] text-sm font-bold ${item.colorClass} ${item.textClass}`}
+                          className={`flex h-6 w-7 shrink-0 items-center justify-center rounded-[5px] border border-[#C4B5FD] text-sm font-bold shadow-[0_2px_6px_rgba(102,83,249,0.15)] ${item.colorClass} ${item.textClass}`}
                         >
                           {count}
                         </div>
@@ -268,43 +289,45 @@ export function MiscueAnalysis({
                         <div className="h-px bg-[rgba(18,48,220,0.25)]" />
                       )}
                     </div>
-                  )
+                  );
                 })}
               </div>
             ) : (
               <div className="oral-reading-scroll flex max-h-[318px] flex-col gap-2 overflow-y-auto pr-1">
                 {miscuedWords.length > 0 ? (
-                  miscuedWords.map(({ id, config, miscue, primaryWord, spokenLabel }) => (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => onToggleHighlight?.(miscue.miscueType)}
-                      className={`w-full rounded-lg border border-[#DAE6FF] bg-white px-3 py-2 text-left transition-colors hover:bg-[#F8FBFF] ${
-                        highlightedTypes.has(miscue.miscueType)
-                          ? "ring-1 ring-[#6666FF]"
-                          : ""
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-bold text-[#00306E]">
-                            {primaryWord}
-                          </p>
-                          <p className="mt-0.5 truncate text-[11px] font-medium text-[#31318A]/65">
-                            {spokenLabel}
-                          </p>
+                  miscuedWords.map(
+                    ({ id, config, miscue, primaryWord, spokenLabel }) => (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => onToggleHighlight?.(miscue.miscueType)}
+                        className={`w-full rounded-lg border border-[#DAE6FF] bg-white px-3 py-2 text-left transition-colors hover:bg-[#F8FBFF] ${
+                          highlightedTypes.has(miscue.miscueType)
+                            ? "ring-1 ring-[#6666FF]"
+                            : ""
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-bold text-[#00306E]">
+                              {primaryWord}
+                            </p>
+                            <p className="mt-0.5 truncate text-[11px] font-medium text-[#31318A]/65">
+                              {spokenLabel}
+                            </p>
+                          </div>
+                          <span
+                            className={`shrink-0 rounded px-2 py-1 text-[10px] font-bold ${config.colorClass} ${config.textClass}`}
+                          >
+                            {config.label}
+                          </span>
                         </div>
-                        <span
-                          className={`shrink-0 rounded px-2 py-1 text-[10px] font-bold ${config.colorClass} ${config.textClass}`}
-                        >
-                          {config.label}
-                        </span>
-                      </div>
-                      <div className="mt-1 text-[10px] font-medium text-[#31318A]/50">
-                        Word #{miscue.wordIndex + 1}
-                      </div>
-                    </button>
-                  ))
+                        <div className="mt-1 text-[10px] font-medium text-[#31318A]/50">
+                          Word #{miscue.wordIndex + 1}
+                        </div>
+                      </button>
+                    ),
+                  )
                 ) : (
                   <div className="rounded-lg border border-dashed border-[#BFD7FF] bg-[#F8FBFF] px-3 py-6 text-center text-xs font-semibold text-[#00306E]">
                     No miscued words yet.
@@ -318,7 +341,7 @@ export function MiscueAnalysis({
           <div className="mt-auto pt-2">
             <div className="flex flex-col gap-1.5">
               {/* Total Miscue */}
-              <div className="flex items-center justify-between rounded-[10px] border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[rgba(230,230,250,0.5)] px-3 py-1.5">
+              <div className="flex items-center justify-between rounded-[10px] border border-[#C4B5FD] bg-[rgba(230,230,250,0.5)] px-3 py-1.5 shadow-[0_2px_8px_rgba(102,83,249,0.12)]">
                 <span className="text-xs font-bold text-[#31318A]">
                   Total Miscue:
                 </span>
@@ -328,7 +351,7 @@ export function MiscueAnalysis({
               </div>
 
               {/* Oral Fluency Score */}
-              <div className="flex items-center justify-between rounded-[10px] border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[rgba(230,230,250,0.35)] px-3 py-1.5">
+              <div className="flex items-center justify-between rounded-[10px] border border-[#C4B5FD] bg-[rgba(230,230,250,0.35)] px-3 py-1.5 shadow-[0_2px_8px_rgba(102,83,249,0.12)]">
                 <span className="text-xs font-bold text-[#31318A]">
                   Oral Fluency Score:
                 </span>
@@ -339,7 +362,7 @@ export function MiscueAnalysis({
 
               {/* Classification Level */}
               <div
-                className={`flex items-center justify-between rounded-[10px] border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] px-3 py-1.5 ${classificationClasses.bgClass}`}
+                className={`flex items-center justify-between rounded-[10px] border border-[#C4B5FD] px-3 py-1.5 shadow-[0_2px_8px_rgba(102,83,249,0.12)] ${classificationClasses.bgClass}`}
               >
                 <span className="text-xs font-bold text-[#31318A]">
                   Classification Level:
@@ -352,19 +375,50 @@ export function MiscueAnalysis({
               </div>
             </div>
 
+            {onRecheckMiscues && (
+              <div className="mt-2">
+                <button
+                  type="button"
+                  onClick={onRecheckMiscues}
+                  disabled={isRechecking || displayTotalMiscue <= 0}
+                  className="flex w-full items-center justify-center gap-2 rounded-[10px] border border-[#6666FF]/35 bg-[rgba(102,102,255,0.06)] px-4 py-2 text-sm font-semibold text-[#5555EE] transition-colors hover:bg-[rgba(102,102,255,0.12)] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isRechecking ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  <span>
+                    {isRechecking ? "Rechecking..." : "Recheck All Miscues"}
+                  </span>
+                </button>
+                {recheckSummary && (
+                  <p className="mt-2 text-center text-[11px] font-medium text-[#31318A]/70">
+                    {recheckSummary}
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* View Full Report Button */}
             <div className="mt-2.5 flex justify-center">
-              <button
-                type="button"
-                onClick={() => router.push("/dashboard/reading-fluency-test/report")}
-                className="mt-3 w-full rounded-[10px] border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#3B21CC] border-b-[#3B21CC] bg-[#6666FF] px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90"
-              >
-                View Fluency Report
-              </button>
+              <div className="relative w-full mt-3">
+                <div className="absolute inset-0 translate-y-1 rounded-[10px] bg-[#B3A4F1] shadow-[0_4px_24px_rgba(102,102,255,0.18)]" />
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push("/dashboard/reading-fluency-test/report")
+                  }
+                  className="relative flex w-full items-center justify-center gap-2 rounded-[10px] bg-[#6666FF] px-4 py-2 text-sm font-bold text-white transition-transform hover:-translate-y-0.5 active:translate-y-0 shadow"
+                >
+                  <FileBarChart className="h-4 w-4" />
+                  View Fluency Report
+                </button>
+              </div>
             </div>
           </div>
         </>
       )}
     </div>
-  )
+  );
 }

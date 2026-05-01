@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ChevronLeft,
+  ArrowLeft,
   ChevronRight,
   ChevronDown,
   Loader2,
@@ -441,10 +441,15 @@ export default function ReadingComprehensionQuestionsPage() {
 
       <div className="flex flex-1 min-h-0 flex-col gap-4 px-4 py-4 md:px-6 lg:px-8">
         <div className="flex items-center justify-between">
-          <NavButton onClick={handleGoBack}>
-            <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
-            <span>Previous</span>
-          </NavButton>
+          <button
+            type="button"
+            onClick={handleGoBack}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_4px_12px_rgba(102,102,255,0.35)] transition-all hover:bg-[#5555EE] hover:shadow-[0_6px_16px_rgba(102,102,255,0.45)] active:scale-95"
+            aria-label="Go back"
+            title="Go back"
+          >
+            <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
+          </button>
           <NavButton
             onClick={() =>
               router.push("/dashboard/reading-comprehension-test/report")

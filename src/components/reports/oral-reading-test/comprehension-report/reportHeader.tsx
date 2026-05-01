@@ -1,7 +1,7 @@
 // src/components/reports/oral-reading-test/comprehension-report/reportHeader.tsx
 "use client";
 
-import { LayoutDashboard, ChevronLeft, RotateCcw } from "lucide-react";
+import { LayoutDashboard, ArrowLeft, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { NavButton } from "@/components/ui/navButton";
 
@@ -36,10 +36,15 @@ export default function ReadingComprehensionReportHeader({ onExportPdf }: Readin
       </header>
 
       <div className="flex items-center justify-between px-4 md:px-6 pt-2">
-        <NavButton onClick={() => router.back()}>
-          <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
-          <span>Previous</span>
-        </NavButton>
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_4px_12px_rgba(102,102,255,0.35)] transition-all hover:bg-[#5555EE] hover:shadow-[0_6px_16px_rgba(102,102,255,0.45)] active:scale-95"
+          aria-label="Go back"
+          title="Go back"
+        >
+          <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
+        </button>
         <NavButton
           variant="outlined"
           onClick={() => {

@@ -2,7 +2,14 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronLeft, ChevronRight, Clock, Loader2, RotateCcw } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  Loader2,
+  RotateCcw,
+} from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import { ComprehensionBreakdown } from "@/components/oral-reading-test/comprehensionBreakdown";
 import { ComprehensionSubmitArea } from "@/components/oral-reading-test/comprehensionSubmitArea";
@@ -417,10 +424,15 @@ export default function OralReadingComprehensionPage() {
 
       console.log("answers state:", answers);
       console.log("formattedAnswers:", formattedAnswers);
-      console.log("questions ids:", questions.map(q => q.id));
+      console.log(
+        "questions ids:",
+        questions.map((q) => q.id),
+      );
 
       if (formattedAnswers.length === 0) {
-        setSubmitError("Please answer at least one question before submitting.");
+        setSubmitError(
+          "Please answer at least one question before submitting.",
+        );
         setIsSubmitting(false);
         return;
       }
@@ -492,16 +504,21 @@ export default function OralReadingComprehensionPage() {
             totalItems: comprehensionData.totalItems,
             percentage: comprehensionData.totalItems
               ? Math.round(
-                  (comprehensionData.score / comprehensionData.totalItems) * 100,
+                  (comprehensionData.score / comprehensionData.totalItems) *
+                    100,
                 )
               : 0,
             level: comprehensionData.level,
           };
 
           // Try to get oral reading level from the response
-          const immediateLevel = result.oralReadingResult?.oralReadingLevel ?? null;
+          const immediateLevel =
+            result.oralReadingResult?.oralReadingLevel ?? null;
           mainSession.oralReadingLevel = immediateLevel;
-          sessionStorage.setItem("oral-reading-session", JSON.stringify(mainSession));
+          sessionStorage.setItem(
+            "oral-reading-session",
+            JSON.stringify(mainSession),
+          );
 
           // If oral reading level wasn't computed yet (transcription still processing),
           // poll until it's ready
@@ -511,16 +528,18 @@ export default function OralReadingComprehensionPage() {
             const pollInterval = setInterval(async () => {
               try {
                 // Use your existing server action
-                const { getAssessmentByIdAction } = await import(
-                  "@/app/actions/assessment/getAssessmentById"
-                );
-                const assessment = await getAssessmentByIdAction(assessmentId) as {
+                const { getAssessmentByIdAction } =
+                  await import("@/app/actions/assessment/getAssessmentById");
+                const assessment = (await getAssessmentByIdAction(
+                  assessmentId,
+                )) as {
                   oralReadingResult?: { classificationLevel?: string };
                 };
 
                 if (assessment?.oralReadingResult?.classificationLevel) {
                   clearInterval(pollInterval);
-                  const level = assessment.oralReadingResult.classificationLevel;
+                  const level =
+                    assessment.oralReadingResult.classificationLevel;
                   console.log("Oral reading level ready:", level);
 
                   // Update sessionStorage
@@ -528,7 +547,10 @@ export default function OralReadingComprehensionPage() {
                   if (raw) {
                     const session = JSON.parse(raw);
                     session.oralReadingLevel = level;
-                    sessionStorage.setItem("oral-reading-session", JSON.stringify(session));
+                    sessionStorage.setItem(
+                      "oral-reading-session",
+                      JSON.stringify(session),
+                    );
                   }
                 }
               } catch (err) {
@@ -620,7 +642,7 @@ export default function OralReadingComprehensionPage() {
         <div className="flex min-h-0 flex-1 gap-4">
           {/* Left column — white container matching reading-comprehension style */}
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-[#6868f162] bg-white shadow-[0_8px_32px_rgba(168,85,247,0.18)]">
-            {/* Top bar: Back button · Questions info · Timer · Reading Level */}
+            {/* Top bar: Back button · Questions info · Timer */}
             <div className="flex items-center justify-between border-b border-[#E8E8FF] px-5 py-3 shrink-0">
               <div className="flex items-center gap-3">
                 <button
@@ -628,9 +650,9 @@ export default function OralReadingComprehensionPage() {
                   onClick={handleGoBack}
                   aria-label="Go back"
                   title="Go back"
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_2px_8px_rgba(102,102,255,0.4)] transition-colors hover:bg-[#5555EE]"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_4px_12px_rgba(102,102,255,0.35)] transition-all hover:bg-[#5555EE] hover:shadow-[0_6px_16px_rgba(102,102,255,0.45)] active:scale-95"
                 >
-                  <ChevronLeft className="h-5 w-5" />
+                  <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
                 </button>
                 <div>
                   <h2 className="text-sm font-bold text-[#00306E] md:text-base">
@@ -651,7 +673,9 @@ export default function OralReadingComprehensionPage() {
                       ? "border-[#E53E3E] bg-red-50 shadow-[0_0_12px_rgba(229,62,62,0.2)]"
                       : "border-[#D0D0FF] bg-[#F5F5FF] shadow-sm"
                   }`}
-                  title={isPaused ? "Click to resume timer" : "Click to pause timer"}
+                  title={
+                    isPaused ? "Click to resume timer" : "Click to pause timer"
+                  }
                 >
                   <Clock
                     className={`w-5 h-5 ${isPaused ? "text-[#E53E3E]" : "text-[#6666FF]"}`}
@@ -662,25 +686,10 @@ export default function OralReadingComprehensionPage() {
                     {formattedTime}
                   </span>
                   {isPaused && (
-                    <span className="text-[#E53E3E] text-[10px] font-semibold">PAUSED</span>
+                    <span className="text-[#E53E3E] text-[10px] font-semibold">
+                      PAUSED
+                    </span>
                   )}
-                </button>
-
-                {/* Reading Level button */}
-                <button
-                  type="button"
-                  onClick={() =>
-                    router.push("/dashboard/oral-reading-test/reading-level-report")
-                  }
-                  disabled={!isSubmitted}
-                  className={`flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-semibold transition-all ${
-                    isSubmitted
-                      ? "border-[#6666FF] bg-[#6666FF] text-white shadow-[0_2px_12px_rgba(102,102,255,0.35)] hover:bg-[#5555EE]"
-                      : "cursor-not-allowed border-[#C4C4FF] bg-white text-[#A5A5D6]"
-                  }`}
-                >
-                  <span>Reading Level</span>
-                  <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -710,6 +719,12 @@ export default function OralReadingComprehensionPage() {
                 isSubmitted={isSubmitted}
                 onSubmit={handleSubmit}
                 onTryAgain={handleTryAgain}
+                onReadingLevel={() =>
+                  router.push(
+                    "/dashboard/oral-reading-test/reading-level-report",
+                  )
+                }
+                canViewReadingLevel={isSubmitted}
               />
             </div>
           </div>

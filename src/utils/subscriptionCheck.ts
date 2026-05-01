@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-import { prisma } from "@/lib/prisma";
+import { getEffectiveActiveSubscription } from "@/service/subscription/resolveUserSubscription";
 
 export async function requireActiveSubscription() {
   const session = await getServerSession(authOptions);
@@ -8,30 +8,9 @@ export async function requireActiveSubscription() {
     throw new Error("Unauthorized");
   }
 
-  const directSub = await prisma.subscription.findFirst({
-    where: {
-      userId: session.user.id,
-      status: "ACTIVE",
-      currentPeriodEnd: { gte: new Date() },
-    },
-  });
-
-  if (directSub) return { session, subscription: directSub };
-
-  const orgMembership = await prisma.organizationMember.findFirst({
-    where: { userId: session.user.id },
-    include: {
-      organization: { include: { subscription: true } },
-    },
-  });
-
-  const orgSub = orgMembership?.organization?.subscription;
-  if (
-    orgSub?.status === "ACTIVE" &&
-    orgSub.currentPeriodEnd &&
-    orgSub.currentPeriodEnd >= new Date()
-  ) {
-    return { session, subscription: orgSub };
+  const resolved = await getEffectiveActiveSubscription(session.user.id);
+  if (resolved) {
+    return { session, subscription: resolved.subscription };
   }
 
   throw new Error("No active subscription");
@@ -39,20 +18,7 @@ export async function requireActiveSubscription() {
 
 export async function hasActiveSubscription(userId: string): Promise<boolean> {
   try {
-    const direct = await prisma.subscription.findFirst({
-      where: { userId, status: "ACTIVE", currentPeriodEnd: { gte: new Date() } },
-    });
-    if (direct) return true;
-
-    const org = await prisma.organizationMember.findFirst({
-      where: { userId },
-      include: { organization: { include: { subscription: true } } },
-    });
-
-    const sub = org?.organization?.subscription;
-    return sub?.status === "ACTIVE" &&
-      sub.currentPeriodEnd !== null &&
-      sub.currentPeriodEnd >= new Date();
+    return (await getEffectiveActiveSubscription(userId)) !== null;
   } catch {
     return false;
   }

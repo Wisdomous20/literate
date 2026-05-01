@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import {
-  ChevronLeft,
+  ArrowLeft,
   FileText,
   BarChart2,
   Globe,
@@ -164,10 +164,11 @@ export default function PassageQuestionsPage() {
       <div className="sticky top-0 z-10 bg-[#F4FCFD]/95 backdrop-blur border-b border-[#E4F4FF] px-8 py-4">
         <button
           onClick={() => router.push("/admin")}
-          className="flex items-center gap-1.5 text-sm text-[#162DB0] hover:opacity-70 transition-opacity font-medium"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_4px_12px_rgba(102,102,255,0.35)] transition-all hover:bg-[#5555EE] hover:shadow-[0_6px_16px_rgba(102,102,255,0.45)] active:scale-95"
+          aria-label="Back to Passages"
+          title="Back to Passages"
         >
-          <ChevronLeft className="h-4 w-4" />
-          Back to Passages
+          <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
         </button>
       </div>
 

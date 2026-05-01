@@ -187,11 +187,17 @@ function detectMonotonousReading(
 //             Falls back gracefully if no pitch data or no word timestamps.
 
 // Pause-based marks only — ! and ? removed from here
-const PAUSE_THRESHOLDS: Record<string, number> = {
-  ".": 0.35,
-  ",": 0.2,
-  ";": 0.3,
-  ":": 0.3,
+type PausePunctuationConfig = {
+  threshold: number;
+  weight: number;
+  strong: boolean;
+};
+
+const PAUSE_PUNCTUATION: Record<string, PausePunctuationConfig> = {
+  ".": { threshold: 0.3, weight: 1, strong: true },
+  ",": { threshold: 0.15, weight: 0.5, strong: false },
+  ";": { threshold: 0.25, weight: 1, strong: true },
+  ":": { threshold: 0.25, weight: 1, strong: true },
 };
 
 // Regex for marks that need only a pause check
@@ -203,6 +209,10 @@ const PITCH_PUNCT_RE = /([!?])["'\u2019\u201D\)\]]*$/;
 // > 0.05 = 5% rise/change → reader acknowledged the mark
 const INTONATION_CHANGE_THRESHOLD = 0.05;
 const MIN_PITCH_PUNCT_OPPORTUNITIES = 2;
+const MIN_PAUSE_PUNCT_OPPORTUNITIES = 3;
+const MIN_STRONG_PAUSE_DISMISSALS = 2;
+const MIN_WEIGHTED_PAUSE_DISMISSALS = 2.5;
+const PAUSE_DISMISSAL_RATIO_THRESHOLD = 0.7;
 
 async function detectPunctuationDismissal(
   alignedWords: AlignedWord[],
@@ -213,6 +223,9 @@ async function detectPunctuationDismissal(
   // ── Part 1: Pause-based detection for . , ; : ──────────────────────────
   let pauseDismissed = 0;
   let pauseTotal = 0;
+  let pauseDismissedWeight = 0;
+  let pauseTotalWeight = 0;
+  let strongPauseDismissed = 0;
   const dismissedPauseDetails: string[] = [];
   const dismissedPitchDetails: string[] = [];
 
@@ -227,21 +240,27 @@ async function detectPunctuationDismissal(
     const m = raw.match(PAUSE_PUNCT_RE);
     if (!m) continue;
 
-    const threshold = PAUSE_THRESHOLDS[m[1]];
-    if (threshold == null) continue;
+    const config = PAUSE_PUNCTUATION[m[1]];
+    if (config == null) continue;
 
     pauseTotal++;
+    pauseTotalWeight += config.weight;
 
-    if (next.timestamp - curr.endTimestamp < threshold) {
+    const gap = next.timestamp - curr.endTimestamp;
+
+    if (gap < config.threshold) {
       pauseDismissed++;
+      pauseDismissedWeight += config.weight;
+      if (config.strong) strongPauseDismissed++;
 
       dismissedPauseDetails.push(
-        `${raw} (gap=${(next.timestamp - curr.endTimestamp).toFixed(3)}s < ${threshold}s)`,
+        `${raw} (gap=${gap.toFixed(3)}s < ${config.threshold}s)`,
       );
     }
   }
 
-  const pauseDismissed_ratio = pauseTotal > 0 ? pauseDismissed / pauseTotal : 0;
+  const pauseDismissedRatio =
+    pauseTotalWeight > 0 ? pauseDismissedWeight / pauseTotalWeight : 0;
 
   // ── Part 2: Pitch-based detection for ! and ? 
   let pitchDismissed = 0;
@@ -261,8 +280,7 @@ async function detectPunctuationDismissal(
     const MIN_F0 = 60,
       MAX_F0 = 600;
 
-    // Lazy-load pitchfinder — only when needed
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    // Lazy-load pitchfinder only when needed.
     const { YIN } = await import("pitchfinder");
 
     // Convert WAV buffer to float32 once
@@ -330,7 +348,11 @@ async function detectPunctuationDismissal(
     }
   }
 
-  const pauseFired = pauseTotal >= 3 && pauseDismissed_ratio > 0.5;
+  const pauseFired =
+    pauseTotal >= MIN_PAUSE_PUNCT_OPPORTUNITIES &&
+    pauseDismissedRatio >= PAUSE_DISMISSAL_RATIO_THRESHOLD &&
+    pauseDismissedWeight >= MIN_WEIGHTED_PAUSE_DISMISSALS &&
+    strongPauseDismissed >= MIN_STRONG_PAUSE_DISMISSALS;
   const pitchFired =
     pitchTotal >= MIN_PITCH_PUNCT_OPPORTUNITIES &&
     pitchDismissed / pitchTotal > 0.5;
@@ -340,7 +362,11 @@ async function detectPunctuationDismissal(
   const details: string[] = [];
   if (pauseTotal > 0) {
     details.push(
-      `pause:${pauseDismissed}/${pauseTotal}(${Math.round(pauseDismissed_ratio * 100)}%)`,
+      [
+        `pause:${pauseDismissed}/${pauseTotal}`,
+        `weighted:${pauseDismissedWeight.toFixed(1)}/${pauseTotalWeight.toFixed(1)}`,
+        `ratio:${Math.round(pauseDismissedRatio * 100)}%`,
+      ].join(" "),
     );
   }
   if (pitchTotal > 0) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams, useParams } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { ViewQuestionDetails } from "@/components/admin-dash/questions/viewQuestionDetails";
 
 export default function ViewQuestionPage() {
@@ -15,10 +15,11 @@ export default function ViewQuestionPage() {
     <div className="min-h-screen bg-[#F4FCFD] px-8 py-8">
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-2 px-5 py-3 mb-8 rounded-xl bg-[#F0F4FF] hover:bg-[#E4F4FF] text-[#162DB0] font-bold text-lg shadow transition-all"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_4px_12px_rgba(102,102,255,0.35)] mb-8 transition-all hover:bg-[#5555EE] hover:shadow-[0_6px_16px_rgba(102,102,255,0.45)] active:scale-95"
+        aria-label="Go back"
+        title="Go back"
       >
-        <ChevronLeft className="h-6 w-6" />
-        Back
+        <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
       </button>
       {questionId ? (
         <ViewQuestionDetails questionId={questionId} passageId={passageId} />

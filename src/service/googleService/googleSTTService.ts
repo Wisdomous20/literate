@@ -26,7 +26,6 @@ function getAuth(): GoogleAuth {
   const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS;
   if (keyFile && fs.existsSync(keyFile)) {
     const keyData = JSON.parse(fs.readFileSync(keyFile, "utf8"));
-    console.log(`[STT] Using key file credentials, email: ${keyData.client_email}`);
     authClient = new GoogleAuth({
       credentials: {
         client_email: keyData.client_email,
@@ -37,7 +36,6 @@ function getAuth(): GoogleAuth {
   } else {
     const client_email = process.env.GOOGLE_CLOUD_CLIENT_EMAIL ?? "";
     const private_key = (process.env.GOOGLE_CLOUD_PRIVATE_KEY ?? "").replace(/\\n/g, "\n");
-    console.log(`[STT] Using env var credentials, email: ${client_email}`);
     authClient = new GoogleAuth({
       credentials: { client_email, private_key },
       scopes: ["https://www.googleapis.com/auth/cloud-platform"],
@@ -138,8 +136,8 @@ async function transcribeChunk(
   config: Record<string, unknown>,
   recognizer: string,
   timeOffsetSec: number,
+  accessToken: string,
 ): Promise<protos.google.cloud.speech.v2.ISpeechRecognitionResult[]> {
-  const token = await getAccessToken();
   const url = `https://${LOCATION}-speech.googleapis.com/v2/${recognizer}:recognize`;
 
   const body = JSON.stringify({
@@ -150,7 +148,7 @@ async function transcribeChunk(
   const response = await fetch(url, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
     },
     body,
@@ -203,6 +201,7 @@ export async function transcribeAudio(
   const languageCode = getGoogleLanguageCode(language);
   const recognizer = `projects/${PROJECT_ID}/locations/${LOCATION}/recognizers/_`;
   const config = buildConfig(languageCode, passageText);
+  const accessToken = await getAccessToken();
 
   const estimatedDurationSec =
     (audioBuffer.length - WAV_HEADER_BYTES) / BYTES_PER_SECOND;
@@ -218,7 +217,13 @@ export async function transcribeAudio(
   let allResults: protos.google.cloud.speech.v2.ISpeechRecognitionResult[];
 
   if (!isLong) {
-    allResults = await transcribeChunk(audioBuffer, config, recognizer, 0);
+    allResults = await transcribeChunk(
+      audioBuffer,
+      config,
+      recognizer,
+      0,
+      accessToken,
+    );
   } else {
     const header = audioBuffer.subarray(0, WAV_HEADER_BYTES);
     const audioData = audioBuffer.subarray(WAV_HEADER_BYTES);
@@ -243,7 +248,7 @@ export async function transcribeAudio(
 
     const chunkResults = await Promise.all(
       chunks.map((chunk, i) =>
-        transcribeChunk(chunk, config, recognizer, timeOffsets[i]),
+        transcribeChunk(chunk, config, recognizer, timeOffsets[i], accessToken),
       ),
     );
 

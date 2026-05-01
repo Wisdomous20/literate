@@ -13,7 +13,6 @@ import {
   Maximize2,
   Minimize2,
   Play,
-  GripHorizontal,
   ChevronDown,
   Pencil,
 } from "lucide-react";
@@ -246,7 +245,6 @@ export function PassageDisplay({
   expanded,
   onToggleExpand,
   passageLevel,
-  resizable = true,
   collapsible = false,
   collapsed = false,
   onToggleCollapsed,
@@ -263,11 +261,7 @@ export function PassageDisplay({
   const containerRef = useRef<HTMLDivElement>(null);
   const outerRef = useRef<HTMLDivElement>(null);
 
-  // Drag-to-resize state
   const [dragHeight, setDragHeight] = useState<number | null>(null);
-  const isDragging = useRef(false);
-  const dragStartY = useRef(0);
-  const dragStartH = useRef(0);
 
   // ─── Edit mode state ───
   const isEditing = editMode?.isEditing ?? false;
@@ -298,36 +292,15 @@ export function PassageDisplay({
   // ─── Delete/update action state ───
   const [actionLoading, setActionLoading] = useState(false);
 
-  const handleDragStart = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    isDragging.current = true;
-    dragStartY.current = e.clientY;
-    dragStartH.current =
-      outerRef.current?.getBoundingClientRect().height ?? 300;
-
-    const onMove = (ev: MouseEvent) => {
-      if (!isDragging.current) return;
-      const delta = Math.max(0, ev.clientY - dragStartY.current);
-      setDragHeight(Math.max(120, dragStartH.current + delta));
-    };
-    const onUp = () => {
-      isDragging.current = false;
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
-    };
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
-  }, []);
-
   // Keep dynamic height without using JSX inline styles
   useEffect(() => {
     const outer = outerRef.current;
     if (!outer) return;
-    if (expanded) {
-      outer.style.height = "100%";
+    if (expanded || !dragHeight) {
+      outer.style.height = "";
       return;
     }
-    outer.style.height = dragHeight ? `${dragHeight}px` : "100%";
+    outer.style.height = `${dragHeight}px`;
   }, [dragHeight, expanded]);
 
   // Position popup without JSX inline styles
@@ -896,7 +869,7 @@ export function PassageDisplay({
   return (
     <div
       ref={outerRef}
-      className={`relative flex min-h-30 flex-col ${dragHeight && !expanded ? "flex-none" : "flex-1"}`}
+      className={`relative flex flex-col ${expanded ? "min-h-0" : "min-h-30"} ${dragHeight && !expanded ? "flex-none" : "flex-1"}`}
     >
       {/* Collapsible header inside the passage — clicking collapses back */}
       {collapsible && !expanded && onToggleCollapsed && passageTitle && (
@@ -962,8 +935,7 @@ export function PassageDisplay({
 
       <div
         ref={containerRef}
-        className={`oral-reading-scroll relative flex-1 overflow-auto rounded-[10px] border-t border-l border-r-4 border-b-4 border-t-[#8315e9] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-white p-4 shadow-lg md:p-5 ${collapsible && !collapsed && !expanded ? "rounded-t-none border-t-0" : ""}`}
-      >
+        className={`oral-reading-scroll relative flex-1 overflow-auto rounded-[10px] border-2 border-[#A78BFA] bg-white p-4 md:p-5 ${collapsible && !collapsed && !expanded ? "rounded-t-none border-t-0" : ""}`}    >
         {content ? (
           <p
             className={`whitespace-pre-wrap text-center leading-relaxed text-[#00306E] px-8 md:px-10 ${getPassageTextClasses(passageLevel)}`}
@@ -1122,15 +1094,6 @@ export function PassageDisplay({
         )}
       </div>
 
-      {!expanded && resizable && (
-        <div
-          onMouseDown={handleDragStart}
-          className="flex h-4 cursor-row-resize items-center justify-center opacity-40 transition-opacity hover:opacity-80"
-          title="Drag to resize"
-        >
-          <GripHorizontal className="h-4 w-4 text-[#54A4FF]" />
-        </div>
-      )}
     </div>
   );
 }
