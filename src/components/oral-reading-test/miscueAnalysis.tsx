@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useEffect, useState } from "react";
-import { Loader2, Download, RefreshCw } from "lucide-react";
+import { Loader2, Download, RefreshCw, FileBarChart } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { MiscueResult } from "@/types/oral-reading";
 
@@ -402,17 +402,21 @@ export function MiscueAnalysis({
             )}
 
             <div className="mt-2.5 flex justify-center">
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(
-                    "/dashboard/oral-reading-test/reading-fluency-report",
-                  )
-                }
-                className="mt-3 w-full rounded-[10px] border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#3B21CC] border-b-[#3B21CC] bg-[#6666FF] px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90"
-              >
-                View Fluency Report
-              </button>
+              <div className="relative w-full mt-3">
+                <div className="absolute inset-0 translate-y-1 rounded-[10px] bg-[#B3A4F1] shadow-[0_4px_24px_rgba(102,102,255,0.18)]" />
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push(
+                      "/dashboard/oral-reading-test/reading-fluency-report",
+                    )
+                  }
+                  className="relative flex w-full items-center justify-center gap-2 rounded-[10px] bg-[#6666FF] px-4 py-2 text-sm font-bold text-white transition-transform hover:-translate-y-0.5 active:translate-y-0 shadow"
+                >
+                  <FileBarChart className="h-4 w-4" />
+                  View Fluency Report
+                </button>
+              </div>
             </div>
           </div>
         </>
