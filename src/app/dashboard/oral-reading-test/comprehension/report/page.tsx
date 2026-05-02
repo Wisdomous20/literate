@@ -80,7 +80,7 @@ export default function ComprehensionReportPage() {
     }
 
     for (const answer of test.answers) {
-      const tag = answer.question.tags
+      const tag = answer.tag
       if (tag === "Literal") {
         tagBreakdown.literal.total++
         if (answer.isCorrect) tagBreakdown.literal.correct++

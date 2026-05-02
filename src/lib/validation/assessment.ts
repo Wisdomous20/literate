@@ -45,6 +45,10 @@ export const getAssessmentsByStudentSchema = z.object({
   type: assessmentTypeSchema.optional(),
 });
 
+export const getAssessmentsByClassSchema = z.object({
+  classRoomId: idString("Class ID"),
+});
+
 export const studentAssessmentIdSchema = z.object({
   studentId: idString("Student ID"),
 });

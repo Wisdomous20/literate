@@ -21,6 +21,7 @@ import { getAssessmentsByStudentService } from "../getAssessmentsByStudentServic
 import { getAssessmentByIdService } from "../getAssessmentByIdService";
 import { getRecentAssessmentsService } from "../getRecentAssessmentsService";
 import { getAssessmentComprehensionService } from "../getAssessmentComprehensionService";
+import { getAssessmentSummariesByClassService } from "../getAssessmentSummariesByClassService";
 
 const baseAssessment = {
   id: "assessment-1",
@@ -204,6 +205,59 @@ describe("getAssessmentsByStudentService", () => {
 });
 
 // ─── getAssessmentByIdService ─────────────────────────────────────────────────
+
+describe("getAssessmentSummariesByClassService", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("returns VALIDATION_ERROR when classRoomId is empty", async () => {
+    const result = await getAssessmentSummariesByClassService("", "user-1");
+
+    expect(result.success).toBe(false);
+    expect(result.code).toBe("VALIDATION_ERROR");
+    expect(mockPrisma.assessment.findMany).not.toHaveBeenCalled();
+  });
+
+  it("returns VALIDATION_ERROR when userId is empty", async () => {
+    const result = await getAssessmentSummariesByClassService("class-1", "");
+
+    expect(result.success).toBe(false);
+    expect(result.code).toBe("VALIDATION_ERROR");
+    expect(mockPrisma.assessment.findMany).not.toHaveBeenCalled();
+  });
+
+  it("queries only summary fields for active students in the class", async () => {
+    mockPrisma.assessment.findMany.mockResolvedValue([baseAssessment]);
+
+    await getAssessmentSummariesByClassService("class-1", "user-1");
+
+    const callArgs = mockPrisma.assessment.findMany.mock.calls[0][0];
+    expect(callArgs.where).toMatchObject({
+      student: {
+        archived: false,
+        classRoomId: "class-1",
+        classRoom: { userId: "user-1" },
+      },
+    });
+    expect(callArgs.select).toMatchObject({
+      id: true,
+      studentId: true,
+      dateTaken: true,
+      type: true,
+      oralFluency: { select: { classificationLevel: true } },
+      comprehension: { select: { classificationLevel: true } },
+      oralReadingResult: { select: { classificationLevel: true } },
+    });
+  });
+
+  it("returns INTERNAL_ERROR when prisma throws", async () => {
+    mockPrisma.assessment.findMany.mockRejectedValue(new Error("DB down"));
+
+    const result = await getAssessmentSummariesByClassService("class-1", "user-1");
+
+    expect(result.success).toBe(false);
+    expect(result.code).toBe("INTERNAL_ERROR");
+  });
+});
 
 describe("getAssessmentByIdService", () => {
   beforeEach(() => vi.clearAllMocks());

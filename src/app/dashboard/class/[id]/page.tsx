@@ -23,18 +23,17 @@ import { WelcomeBox } from "@/components/class-lists/welcomeBox";
 import { createStudent } from "@/app/actions/student/createStudent";
 import { deleteStudent } from "@/app/actions/student/deleteStudent";
 import { updateStudent } from "@/app/actions/student/updateStudent";
-import { useStudentList } from "@/lib/hooks/useStudentList";
 import { useQueryClient } from "@tanstack/react-query";
 import { useClassById } from "@/lib/hooks/useClassById";
-import { useStudentAssessments } from "@/lib/hooks/useStudentAssessments";
-import type { AssessmentData, StudentTableItem } from "@/types/assessment";
+import { useClassAssessmentSummaries } from "@/lib/hooks/useClassAssessmentSummaries";
+import type { AssessmentSummaryData, StudentTableItem } from "@/types/assessment";
 
 interface StudentData {
   id: string;
   name: string;
   level?: number;
   classRoomId: string;
-  deletedAt?: Date | null;
+  archived?: boolean;
 }
 
 function levelToGradeLevel(level?: number): string {
@@ -48,7 +47,7 @@ function gradeLevelToNumber(gradeLevel: string): number {
 }
 
 function getAssessmentClassification(
-  assessment: AssessmentData,
+  assessment: AssessmentSummaryData,
 ): string | null {
   switch (assessment.type) {
     case "ORAL_READING":
@@ -85,22 +84,28 @@ export default function ClassListsPage() {
     error: classError,
   } = useClassById(classRoomId);
 
-  const {
-    data: students = [],
-    isLoading: studentsLoading,
-    error: studentsError,
-  } = useStudentList(classData?.name ?? "");
-
-  const studentIds = useMemo(
-    () => students.map((s: StudentData) => s.id),
-    [students],
+  const students = useMemo(
+    () => (classData?.students ?? []) as StudentData[],
+    [classData?.students],
   );
 
-  const { data: studentAssessments, isLoading: assessmentsLoading } =
-    useStudentAssessments(studentIds);
+  const {
+    data: assessmentSummaries = [],
+    isLoading: assessmentsLoading,
+    error: assessmentsError,
+  } = useClassAssessmentSummaries(classRoomId);
 
-  const loading = classLoading || studentsLoading || assessmentsLoading;
-  const fetchError = classError?.message || studentsError?.message || null;
+  const studentAssessments = useMemo(() => {
+    const grouped: Record<string, AssessmentSummaryData[]> = {};
+    for (const assessment of assessmentSummaries) {
+      if (!grouped[assessment.studentId]) grouped[assessment.studentId] = [];
+      grouped[assessment.studentId].push(assessment);
+    }
+    return grouped;
+  }, [assessmentSummaries]);
+
+  const loading = classLoading || assessmentsLoading;
+  const fetchError = classError?.message || assessmentsError?.message || null;
 
   const showToast = (message: string, type: "success" | "error") => {
     setToast({ message, type });
@@ -122,7 +127,10 @@ export default function ClassListsPage() {
       if (result.success) {
         showToast("Student created successfully!", "success");
         setIsModalOpen(false);
-        queryClient.invalidateQueries({ queryKey: ["students"] });
+        queryClient.invalidateQueries({ queryKey: ["class", classRoomId] });
+        queryClient.invalidateQueries({
+          queryKey: ["assessment-summaries", classRoomId],
+        });
       } else {
         showToast("Failed to create student.", "error");
       }
@@ -137,7 +145,10 @@ export default function ClassListsPage() {
       const result = await deleteStudent(studentId);
       if (result.success) {
         showToast("Student deleted successfully!", "success");
-        queryClient.invalidateQueries({ queryKey: ["students"] });
+        queryClient.invalidateQueries({ queryKey: ["class", classRoomId] });
+        queryClient.invalidateQueries({
+          queryKey: ["assessment-summaries", classRoomId],
+        });
       } else {
         showToast("Failed to delete student.", "error");
       }
@@ -157,7 +168,7 @@ export default function ClassListsPage() {
       const result = await updateStudent(studentId, name, level);
       if (result.success) {
         showToast("Student updated successfully!", "success");
-        queryClient.invalidateQueries({ queryKey: ["students"] });
+        queryClient.invalidateQueries({ queryKey: ["class", classRoomId] });
       } else {
         showToast("Failed to update student.", "error");
       }
@@ -186,7 +197,7 @@ export default function ClassListsPage() {
               assessmentType: "Awaiting Assessment",
             };
           }
-          const latest = assessments[0] as AssessmentData | undefined;
+          const latest = assessments[0] as AssessmentSummaryData | undefined;
           return {
             id: student.id,
             name: student.name || "No Name",
