@@ -91,7 +91,13 @@ export async function updateMiscueService(
     };
   }
 
-  if (action === "create" && (!sessionId || !newMiscueType || !expectedWord || wordIndex === undefined)) {
+  if (
+    action === "create" &&
+    (!sessionId ||
+      !newMiscueType ||
+      expectedWord === undefined ||
+      wordIndex === undefined)
+  ) {
     return {
       success: false,
       error:

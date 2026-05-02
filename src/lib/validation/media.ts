@@ -75,7 +75,7 @@ export const updateMiscueSchema = z
     sessionId: idString("sessionId").optional(),
     newMiscueType: z.nativeEnum(MiscueType).optional(),
     newSpokenWord: z.string().trim().min(1).optional(),
-    expectedWord: z.string().trim().min(1).optional(),
+    expectedWord: z.string().trim().optional(),
     spokenWord: z.string().trim().min(1).nullable().optional(),
     wordIndex: z.number().int().min(0).optional(),
     timestamp: z.number().nullable().optional(),
@@ -118,11 +118,18 @@ export const updateMiscueSchema = z
           message: "newMiscueType is required when action is 'create'.",
         });
       }
-      if (!data.expectedWord) {
+      if (
+        data.expectedWord === undefined ||
+        (data.newMiscueType !== MiscueType.INSERTION &&
+          data.expectedWord.length === 0)
+      ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["expectedWord"],
-          message: "expectedWord is required when action is 'create'.",
+          message:
+            data.newMiscueType === MiscueType.INSERTION
+              ? "expectedWord is required when action is 'create'."
+              : "expectedWord must not be empty when action is 'create'.",
         });
       }
       if (data.wordIndex === undefined) {

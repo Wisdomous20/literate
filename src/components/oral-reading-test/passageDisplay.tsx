@@ -405,7 +405,7 @@ export function PassageDisplay({
 
     const insertedMiscues = resolvedMiscues.filter(
       (m) =>
-        (m.miscueType === "INSERTION" ||
+        ((m.miscueType === "INSERTION" && m.expectedWord !== "") ||
           (m.miscueType === "REPETITION" && !m.expectedWord)) &&
         m.spokenWord &&
         !(

@@ -238,4 +238,31 @@ describe("updateMiscueService", () => {
     expect(result.miscueId).toBe("m-created");
     expect(result.updatedMetrics?.totalMiscues).toBe(1);
   });
+
+  it("allows creating an insertion with an empty expectedWord", async () => {
+    mockPrisma.oralFluencySession.findUnique.mockResolvedValue({
+      assessmentId: "a-1",
+    });
+    setupTransactionWith([{ isSelfCorrected: false }], 10);
+
+    const result = await updateMiscueService({
+      action: "create",
+      sessionId: "s-1",
+      newMiscueType: "INSERTION",
+      expectedWord: "",
+      spokenWord: "extra",
+      wordIndex: 2,
+      timestamp: null,
+      isSelfCorrected: false,
+    });
+
+    expect(result.success).toBe(true);
+    expect(mockTx.oralFluencyMiscue.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        miscueType: "INSERTION",
+        expectedWord: "",
+        spokenWord: "extra",
+      }),
+    });
+  });
 });
