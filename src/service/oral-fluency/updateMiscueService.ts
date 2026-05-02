@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { MiscueType, LevelClassification } from "@/generated/prisma/enums";
 import { createOralReadingService } from "@/service/oral-reading/createOralReadingService";
 
-
 function computeOralFluencyScore(
   totalWords: number,
   totalMiscues: number,
@@ -20,24 +19,24 @@ function classifyReadingLevel(
   return "FRUSTRATION";
 }
 
-// ─── Types ───
-
 export interface UpdateMiscueInput {
-  /** The ID of the miscue to update */
-  miscueId: string;
-  /** "delete" = permanently remove the miscue, "update" = change its type. "approve" is kept for older callers. */
-  action: "approve" | "delete" | "update";
-  /** Required when action is "update" — the new miscue type */
+  miscueId?: string;
+  action: "approve" | "delete" | "update" | "create";
+  sessionId?: string;
   newMiscueType?: MiscueType;
-  /** Optional when action is "update" — update the captured spoken word */
   newSpokenWord?: string;
+  expectedWord?: string;
+  spokenWord?: string | null;
+  wordIndex?: number;
+  timestamp?: number | null;
+  isSelfCorrected?: boolean;
 }
 
 export interface UpdateMiscueResult {
   success: boolean;
   error?: string;
   code?: "VALIDATION_ERROR" | "NOT_FOUND" | "INTERNAL_ERROR";
-  /** The recalculated session-level metrics after the change */
+  miscueId?: string;
   updatedMetrics?: {
     totalMiscues: number;
     oralFluencyScore: number;
@@ -46,25 +45,39 @@ export interface UpdateMiscueResult {
   };
 }
 
-// ─── Service ───
-
 export async function updateMiscueService(
   input: UpdateMiscueInput,
 ): Promise<UpdateMiscueResult> {
-  const { miscueId, action, newMiscueType, newSpokenWord } = input;
+  const {
+    miscueId,
+    action,
+    sessionId,
+    newMiscueType,
+    newSpokenWord,
+    expectedWord,
+    spokenWord,
+    wordIndex,
+    timestamp,
+    isSelfCorrected,
+  } = input;
 
-  if (!miscueId) {
+  if (
+    action !== "approve" &&
+    action !== "delete" &&
+    action !== "update" &&
+    action !== "create"
+  ) {
     return {
       success: false,
-      error: "miscueId is required.",
+      error: 'action must be "approve", "delete", "update", or "create".',
       code: "VALIDATION_ERROR",
     };
   }
 
-  if (action !== "approve" && action !== "delete" && action !== "update") {
+  if (action !== "create" && !miscueId) {
     return {
       success: false,
-      error: 'action must be "approve", "delete", or "update".',
+      error: "miscueId is required.",
       code: "VALIDATION_ERROR",
     };
   }
@@ -78,31 +91,64 @@ export async function updateMiscueService(
     };
   }
 
-  // 1. Find the miscue and its parent session
-  const miscue = await prisma.oralFluencyMiscue.findUnique({
-    where: { id: miscueId },
-    include: { session: true },
-  });
+  if (action === "create" && (!sessionId || !newMiscueType || !expectedWord || wordIndex === undefined)) {
+    return {
+      success: false,
+      error:
+        "sessionId, newMiscueType, expectedWord, and wordIndex are required when action is 'create'.",
+      code: "VALIDATION_ERROR",
+    };
+  }
 
-  if (!miscue) {
+  const existingMiscue =
+    action === "create"
+      ? null
+      : await prisma.oralFluencyMiscue.findUnique({
+          where: { id: miscueId! },
+          include: { session: true },
+        });
+
+  if (action !== "create" && !existingMiscue) {
     return { success: false, error: "Miscue not found.", code: "NOT_FOUND" };
   }
 
-  const sessionId = miscue.sessionId;
-  const assessmentId = miscue.session?.assessmentId;
+  const targetSessionId =
+    action === "create" ? sessionId! : existingMiscue!.sessionId;
+  const assessmentId =
+    action === "create"
+      ? (
+          await prisma.oralFluencySession.findUnique({
+            where: { id: sessionId! },
+            select: { assessmentId: true },
+          })
+        )?.assessmentId ?? null
+      : existingMiscue!.session?.assessmentId ?? null;
 
   try {
-    // 2. Perform the action + recalculate in a single transaction
-    const updatedMetrics = await prisma.$transaction(async (tx) => {
+    const transactionResult = await prisma.$transaction(async (tx) => {
+      let createdMiscueId: string | undefined;
+
       if (action === "approve" || action === "delete") {
-        // Permanently remove the miscue row from the session.
         await tx.oralFluencyMiscue.delete({
-          where: { id: miscueId },
+          where: { id: miscueId! },
         });
+      } else if (action === "create") {
+        const createdMiscue = await tx.oralFluencyMiscue.create({
+          data: {
+            sessionId: targetSessionId,
+            miscueType: newMiscueType!,
+            expectedWord: expectedWord!,
+            spokenWord: spokenWord ?? null,
+            wordIndex: wordIndex!,
+            timestamp: timestamp ?? null,
+            isSelfCorrected:
+              isSelfCorrected ?? newMiscueType === "SELF_CORRECTION",
+          },
+        });
+        createdMiscueId = createdMiscue.id;
       } else {
-        // User wants to change the miscue type
         await tx.oralFluencyMiscue.update({
-          where: { id: miscueId },
+          where: { id: miscueId! },
           data: {
             ...(newMiscueType ? { miscueType: newMiscueType } : {}),
             ...(newSpokenWord ? { spokenWord: newSpokenWord } : {}),
@@ -110,17 +156,16 @@ export async function updateMiscueService(
         });
       }
 
-      // 3. Recalculate session metrics from remaining miscues
       const remainingMiscues = await tx.oralFluencyMiscue.findMany({
-        where: { sessionId },
+        where: { sessionId: targetSessionId },
       });
 
       const countedMiscues = remainingMiscues.filter(
-        (m) => !m.isSelfCorrected,
+        (miscue) => !miscue.isSelfCorrected,
       ).length;
 
       const session = await tx.oralFluencySession.findUnique({
-        where: { id: sessionId },
+        where: { id: targetSessionId },
         select: { totalWords: true },
       });
 
@@ -134,9 +179,8 @@ export async function updateMiscueService(
             ) / 10
           : 0;
 
-      // 4. Persist recalculated metrics on the session
       await tx.oralFluencySession.update({
-        where: { id: sessionId },
+        where: { id: targetSessionId },
         data: {
           totalMiscues: countedMiscues,
           oralFluencyScore,
@@ -146,10 +190,13 @@ export async function updateMiscueService(
       });
 
       return {
-        totalMiscues: countedMiscues,
-        oralFluencyScore,
-        classificationLevel,
-        accuracy,
+        miscueId: createdMiscueId,
+        updatedMetrics: {
+          totalMiscues: countedMiscues,
+          oralFluencyScore,
+          classificationLevel,
+          accuracy,
+        },
       };
     });
 
@@ -163,7 +210,11 @@ export async function updateMiscueService(
       }
     }
 
-    return { success: true, updatedMetrics };
+    return {
+      success: true,
+      miscueId: transactionResult.miscueId,
+      updatedMetrics: transactionResult.updatedMetrics,
+    };
   } catch (err) {
     console.error("updateMiscueService error:", err);
     return {

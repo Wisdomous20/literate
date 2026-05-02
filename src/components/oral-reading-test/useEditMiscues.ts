@@ -79,12 +79,19 @@ async function syncEditsToBackend(
   sessionId: string,
   originalMiscues: EditableMiscueResult[],
   editedMiscues: EditableMiscueResult[],
-): Promise<EditMetrics | null> {
-  if (!sessionId) return null;
+): Promise<{
+  metrics: EditMetrics | null;
+  syncedMiscues: EditableMiscueResult[] | null;
+}> {
+  if (!sessionId) {
+    return { metrics: null, syncedMiscues: null };
+  }
 
   // 1. Fetch DB miscues to get IDs
   const dbResult = await fetchOralFluencyMiscues(sessionId);
-  if (!dbResult.success || !dbResult.data) return null;
+  if (!dbResult.success || !dbResult.data) {
+    return { metrics: null, syncedMiscues: null };
+  }
 
   const dbById = new Map<string, typeof dbResult.data[number]>();
   for (const m of dbResult.data) {
@@ -156,7 +163,48 @@ async function syncEditsToBackend(
     }
   }
 
-  return lastMetrics;
+  for (const edited of editedMiscues) {
+    const key = miscueKey(edited);
+    if (originalKeys.has(key) || dbById.has(key)) continue;
+
+    const result = await updateMiscueAction({
+      action: "create",
+      sessionId,
+      newMiscueType: edited.miscueType,
+      expectedWord: edited.expectedWord,
+      spokenWord: edited.spokenWord,
+      wordIndex: edited.wordIndex,
+      timestamp: edited.timestamp,
+      isSelfCorrected: edited.isSelfCorrected,
+    });
+    if (result.success && result.updatedMetrics) {
+      lastMetrics = {
+        totalMiscues: result.updatedMetrics.totalMiscues,
+        oralFluencyScore: result.updatedMetrics.oralFluencyScore,
+        classificationLevel:
+          result.updatedMetrics.classificationLevel as EditMetrics["classificationLevel"],
+      };
+    }
+  }
+
+  const refreshedDbResult = await fetchOralFluencyMiscues(sessionId);
+  if (!refreshedDbResult.success || !refreshedDbResult.data) {
+    return { metrics: lastMetrics, syncedMiscues: null };
+  }
+
+  return {
+    metrics: lastMetrics,
+    syncedMiscues: refreshedDbResult.data.map((dbMiscue) => {
+      const matchingEdited = editedMiscues.find((edited) =>
+        sameMiscue(edited, dbMiscue),
+      );
+      return {
+        ...dbMiscue,
+        wordIndexB: matchingEdited?.wordIndexB ?? null,
+        repetitionCount: matchingEdited?.repetitionCount,
+      };
+    }) as EditableMiscueResult[],
+  };
 }
 
 // ─── Hook ───
@@ -259,19 +307,24 @@ export function useEditMiscues({
     setIsSaving(true);
     try {
       let persistedMetrics: EditMetrics | null = null;
+      let persistedMiscues: EditableMiscueResult[] | null = null;
 
       // Sync changes to backend if sessionId is available
       if (sessionId) {
-        persistedMetrics = await syncEditsToBackend(
+        const persisted = await syncEditsToBackend(
           sessionId,
           originalRef.current,
           editedMiscues,
         );
+        persistedMetrics = persisted.metrics;
+        persistedMiscues = persisted.syncedMiscues;
       }
 
-      const metrics = persistedMetrics ?? computeMetrics(editedMiscues, totalWords);
-      await onSave?.(editedMiscues, metrics);
-      originalRef.current = editedMiscues;
+      const finalMiscues = persistedMiscues ?? editedMiscues;
+      const metrics = persistedMetrics ?? computeMetrics(finalMiscues, totalWords);
+      await onSave?.(finalMiscues, metrics);
+      originalRef.current = finalMiscues;
+      setEditedMiscues(finalMiscues);
       setIsEditing(false);
       setUndoStack([]);
       setRedoStack([]);

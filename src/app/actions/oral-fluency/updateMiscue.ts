@@ -25,6 +25,7 @@ export async function updateMiscueAction(input: UpdateMiscueInput) {
 
   return {
     success: true,
+    miscueId: result.miscueId,
     updatedMetrics: result.updatedMetrics,
   };
 }
