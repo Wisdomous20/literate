@@ -1,12 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockTx = {
-  oralFluencyMiscue: { delete: vi.fn(), update: vi.fn(), findMany: vi.fn() },
+  oralFluencyMiscue: {
+    create: vi.fn(),
+    delete: vi.fn(),
+    update: vi.fn(),
+    findMany: vi.fn(),
+  },
   oralFluencySession: { findUnique: vi.fn(), update: vi.fn() },
 };
 
 const mockPrisma = vi.hoisted(() => ({
   oralFluencyMiscue: { findUnique: vi.fn() },
+  oralFluencySession: { findUnique: vi.fn() },
   $transaction: vi.fn(),
 }));
 const mockCreateOralReadingService = vi.hoisted(() => vi.fn());
@@ -26,6 +32,7 @@ const baseMiscue = {
 
 function setupTransactionWith(remainingMiscues: { isSelfCorrected: boolean }[], totalWords = 10) {
   mockPrisma.$transaction.mockImplementation((fn: (tx: typeof mockTx) => Promise<unknown>) => fn(mockTx));
+  mockTx.oralFluencyMiscue.create.mockResolvedValue({ id: "m-created" });
   mockTx.oralFluencyMiscue.delete.mockResolvedValue({});
   mockTx.oralFluencyMiscue.update.mockResolvedValue({});
   mockTx.oralFluencyMiscue.findMany.mockResolvedValue(remainingMiscues);
@@ -194,5 +201,68 @@ describe("updateMiscueService", () => {
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("INTERNAL_ERROR");
+  });
+
+  it("creates a manual miscue and recalculates metrics", async () => {
+    mockPrisma.oralFluencySession.findUnique.mockResolvedValue({
+      assessmentId: "a-1",
+    });
+    setupTransactionWith(
+      [{ isSelfCorrected: false }, { isSelfCorrected: true }],
+      10,
+    );
+
+    const result = await updateMiscueService({
+      action: "create",
+      sessionId: "s-1",
+      newMiscueType: "OMISSION",
+      expectedWord: "dog",
+      spokenWord: null,
+      wordIndex: 2,
+      timestamp: null,
+      isSelfCorrected: false,
+    });
+
+    expect(mockTx.oralFluencyMiscue.create).toHaveBeenCalledWith({
+      data: {
+        sessionId: "s-1",
+        miscueType: "OMISSION",
+        expectedWord: "dog",
+        spokenWord: null,
+        wordIndex: 2,
+        timestamp: null,
+        isSelfCorrected: false,
+      },
+    });
+    expect(result.success).toBe(true);
+    expect(result.miscueId).toBe("m-created");
+    expect(result.updatedMetrics?.totalMiscues).toBe(1);
+  });
+
+  it("allows creating an insertion with an empty expectedWord", async () => {
+    mockPrisma.oralFluencySession.findUnique.mockResolvedValue({
+      assessmentId: "a-1",
+    });
+    setupTransactionWith([{ isSelfCorrected: false }], 10);
+
+    const result = await updateMiscueService({
+      action: "create",
+      sessionId: "s-1",
+      newMiscueType: "INSERTION",
+      expectedWord: "",
+      spokenWord: "extra",
+      wordIndex: 2,
+      timestamp: null,
+      isSelfCorrected: false,
+    });
+
+    expect(result.success).toBe(true);
+    expect(mockTx.oralFluencyMiscue.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        miscueType: "INSERTION",
+        expectedWord: "",
+        spokenWord: "extra",
+      }),
+    });
   });
 });

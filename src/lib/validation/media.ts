@@ -70,12 +70,26 @@ export const assessmentIdQuerySchema = z.object({
 
 export const updateMiscueSchema = z
   .object({
-    miscueId: idString("miscueId"),
-    action: z.enum(["approve", "delete", "update"]),
+    miscueId: idString("miscueId").optional(),
+    action: z.enum(["approve", "delete", "update", "create"]),
+    sessionId: idString("sessionId").optional(),
     newMiscueType: z.nativeEnum(MiscueType).optional(),
     newSpokenWord: z.string().trim().min(1).optional(),
+    expectedWord: z.string().trim().optional(),
+    spokenWord: z.string().trim().min(1).nullable().optional(),
+    wordIndex: z.number().int().min(0).optional(),
+    timestamp: z.number().nullable().optional(),
+    isSelfCorrected: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
+    if (data.action !== "create" && !data.miscueId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["miscueId"],
+        message: "miscueId is required unless action is 'create'.",
+      });
+    }
+
     if (
       data.action === "update" &&
       !data.newMiscueType &&
@@ -87,6 +101,44 @@ export const updateMiscueSchema = z
         message:
           "Either newMiscueType or newSpokenWord is required when action is 'update'.",
       });
+    }
+
+    if (data.action === "create") {
+      if (!data.sessionId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["sessionId"],
+          message: "sessionId is required when action is 'create'.",
+        });
+      }
+      if (!data.newMiscueType) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["newMiscueType"],
+          message: "newMiscueType is required when action is 'create'.",
+        });
+      }
+      if (
+        data.expectedWord === undefined ||
+        (data.newMiscueType !== MiscueType.INSERTION &&
+          data.expectedWord.length === 0)
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["expectedWord"],
+          message:
+            data.newMiscueType === MiscueType.INSERTION
+              ? "expectedWord is required when action is 'create'."
+              : "expectedWord must not be empty when action is 'create'.",
+        });
+      }
+      if (data.wordIndex === undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["wordIndex"],
+          message: "wordIndex is required when action is 'create'.",
+        });
+      }
     }
   });
 
