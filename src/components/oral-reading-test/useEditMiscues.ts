@@ -55,6 +55,18 @@ function miscueKey(m: { wordIndex: number; miscueType: string; expectedWord: str
   return `${m.wordIndex}::${m.miscueType}::${m.expectedWord}`;
 }
 
+function sameEditableShape(
+  left: EditableMiscueResult,
+  right: EditableMiscueResult,
+) {
+  return (
+    left.wordIndex === right.wordIndex &&
+    left.miscueType === right.miscueType &&
+    left.expectedWord === right.expectedWord &&
+    (left.wordIndexB ?? null) === (right.wordIndexB ?? null)
+  );
+}
+
 function haveSameMiscues(
   left: EditableMiscueResult[],
   right: EditableMiscueResult[],
@@ -147,10 +159,14 @@ async function syncEditsToBackend(
     if (edited) {
       const dbEntry = dbById.get(origKey);
       if (dbEntry) {
+        const spokenWordChanged =
+          (edited.spokenWord ?? null) !== (orig.spokenWord ?? null);
         const result = await updateMiscueAction({
           miscueId: dbEntry.id,
           action: "update",
           newMiscueType: edited.miscueType,
+          ...(spokenWordChanged ? { newSpokenWord: edited.spokenWord ?? undefined } : {}),
+          isSelfCorrected: edited.isSelfCorrected,
         });
         if (result.success && result.updatedMetrics) {
           lastMetrics = {
@@ -160,6 +176,35 @@ async function syncEditsToBackend(
           };
         }
       }
+    }
+  }
+
+  for (const orig of originalMiscues) {
+    const edited = editedMiscues.find((candidate) =>
+      sameEditableShape(candidate, orig),
+    );
+    if (!edited) continue;
+
+    const spokenWordChanged =
+      (edited.spokenWord ?? null) !== (orig.spokenWord ?? null);
+    if (!spokenWordChanged) continue;
+
+    const dbEntry = dbById.get(miscueKey(orig));
+    if (!dbEntry || !edited.spokenWord) continue;
+
+    const result = await updateMiscueAction({
+      miscueId: dbEntry.id,
+      action: "update",
+      newSpokenWord: edited.spokenWord,
+      isSelfCorrected: edited.isSelfCorrected,
+    });
+    if (result.success && result.updatedMetrics) {
+      lastMetrics = {
+        totalMiscues: result.updatedMetrics.totalMiscues,
+        oralFluencyScore: result.updatedMetrics.oralFluencyScore,
+        classificationLevel:
+          result.updatedMetrics.classificationLevel as EditMetrics["classificationLevel"],
+      };
     }
   }
 

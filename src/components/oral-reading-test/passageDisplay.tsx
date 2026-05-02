@@ -19,6 +19,7 @@ import {
 import type { MiscueResult, AlignedWord } from "@/types/oral-reading";
 import { formatMiscueTimestamp } from "@/lib/audioPlayback";
 import { hydrateMiscueTimestamps } from "@/lib/miscueTimestamps";
+import { sameMiscue } from "@/lib/miscueEditing";
 import { normalizeWord } from "@/utils/textUtils";
 import type {
   EditableMiscueResult,
@@ -183,6 +184,10 @@ export interface EditModeCallbacks {
     count: number,
   ) => void;
   removeMiscue: (index: number) => void;
+  updateMiscue: (
+    index: number,
+    updates: Partial<EditableMiscueResult>,
+  ) => void;
 }
 
 interface PassageDisplayProps {
@@ -600,6 +605,38 @@ export function PassageDisplay({
     });
   }, []);
 
+  const findEditedMiscueIndex = useCallback(
+    (target: MiscueResult) => {
+      if (!editMode) return -1;
+
+      const transpositionTarget = target as MiscueResult & {
+        wordIndexB?: number | null;
+      };
+
+      return editMode.editedMiscues.findIndex((miscue) => {
+        if (miscue.miscueType !== target.miscueType) {
+          return false;
+        }
+
+        if (miscue.miscueType === "TRANSPOSITION") {
+          const targetIndexes = new Set<number>([target.wordIndex]);
+          if (transpositionTarget.wordIndexB != null) {
+            targetIndexes.add(transpositionTarget.wordIndexB);
+          }
+
+          return (
+            sameMiscue(miscue, target) ||
+            targetIndexes.has(miscue.wordIndex) ||
+            (miscue.wordIndexB != null && targetIndexes.has(miscue.wordIndexB))
+          );
+        }
+
+        return sameMiscue(miscue, target);
+      });
+    },
+    [editMode],
+  );
+
   const renderHighlightedContent = () => {
     let wordIndex = 0;
     return words.map((token, i) => {
@@ -965,7 +1002,7 @@ export function PassageDisplay({
               popup.miscue.timestamp !== null &&
               popup.miscue.timestamp !== undefined;
             const hasActions =
-              isEditing && !!(onDeleteMiscue || onUpdateMiscueType);
+              isEditing || !!(onDeleteMiscue || onUpdateMiscueType || onUpdateSpokenWord);
 
             return (
               <div
@@ -984,6 +1021,13 @@ export function PassageDisplay({
                     spokenWord={popup.miscue.spokenWord}
                     isLoading={actionLoading}
                     onDelete={async () => {
+                      if (isEditing && editMode) {
+                        const index = findEditedMiscueIndex(popup.miscue);
+                        if (index === -1) return;
+                        editMode.removeMiscue(index);
+                        setPopup(null);
+                        return;
+                      }
                       if (!onDeleteMiscue) return;
                       setActionLoading(true);
                       try {
@@ -994,6 +1038,16 @@ export function PassageDisplay({
                       }
                     }}
                     onChangeType={async (newType) => {
+                      if (isEditing && editMode) {
+                        const index = findEditedMiscueIndex(popup.miscue);
+                        if (index === -1) return;
+                        editMode.updateMiscue(index, {
+                          miscueType: newType,
+                          isSelfCorrected: newType === "SELF_CORRECTION",
+                        });
+                        setPopup(null);
+                        return;
+                      }
                       if (!onUpdateMiscueType) return;
                       setActionLoading(true);
                       try {
@@ -1004,6 +1058,15 @@ export function PassageDisplay({
                       }
                     }}
                     onUpdateSpokenWord={async (newSpokenWord) => {
+                      if (isEditing && editMode) {
+                        const index = findEditedMiscueIndex(popup.miscue);
+                        if (index === -1) return;
+                        editMode.updateMiscue(index, {
+                          spokenWord: newSpokenWord,
+                        });
+                        setPopup(null);
+                        return;
+                      }
                       if (!onUpdateSpokenWord) return;
                       setActionLoading(true);
                       try {
