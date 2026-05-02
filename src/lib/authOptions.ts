@@ -9,17 +9,24 @@ import { randomBytes } from "crypto";
 const ACCESS_TOKEN_MAX_AGE = 15 * 60; // 15 minutes
 const REFRESH_TOKEN_TTL_REMEMBER = 30 * 24 * 60 * 60; // 30 days
 const REFRESH_TOKEN_TTL_DEFAULT = 2 * 60 * 60; // 2 hours
+const SESSION_MAX_AGE_REMEMBER = 30 * 24 * 60 * 60;
+const SESSION_MAX_AGE_DEFAULT = 2 * 60 * 60;
 
-async function createRefreshToken(userId: string, rememberMe: boolean): Promise<string> {
+async function createRefreshToken(
+  userId: string,
+  rememberMe: boolean,
+): Promise<string> {
   const redis = getRedis();
   const refreshToken = randomBytes(32).toString("hex");
-  const ttl = rememberMe ? REFRESH_TOKEN_TTL_REMEMBER : REFRESH_TOKEN_TTL_DEFAULT;
+  const ttl = rememberMe
+    ? REFRESH_TOKEN_TTL_REMEMBER
+    : REFRESH_TOKEN_TTL_DEFAULT;
 
   await redis.set(
     `refresh-token:${refreshToken}`,
     JSON.stringify({ userId, rememberMe }),
     "EX",
-    ttl
+    ttl,
   );
 
   return refreshToken;
@@ -34,7 +41,11 @@ async function validateRefreshToken(refreshToken: string) {
   return JSON.parse(data) as { userId: string; rememberMe: boolean };
 }
 
-async function rotateRefreshToken(oldToken: string, userId: string, rememberMe: boolean): Promise<string> {
+async function rotateRefreshToken(
+  oldToken: string,
+  userId: string,
+  rememberMe: boolean,
+): Promise<string> {
   const redis = getRedis();
   // Delete old token
   await redis.del(`refresh-token:${oldToken}`);
@@ -42,7 +53,9 @@ async function rotateRefreshToken(oldToken: string, userId: string, rememberMe: 
   return createRefreshToken(userId, rememberMe);
 }
 
-export async function invalidateRefreshToken(refreshToken: string): Promise<void> {
+export async function invalidateRefreshToken(
+  refreshToken: string,
+): Promise<void> {
   const redis = getRedis();
   await redis.del(`refresh-token:${refreshToken}`);
 }
@@ -51,7 +64,7 @@ export const authOptions: NextAuthOptions = {
   debug: true,
   session: {
     strategy: "jwt",
-    maxAge: ACCESS_TOKEN_MAX_AGE,
+    maxAge: SESSION_MAX_AGE_REMEMBER,
   },
   providers: [
     CredentialsProvider({
@@ -99,7 +112,10 @@ export const authOptions: NextAuthOptions = {
         const rememberMe = credentials.rememberMe === "true";
 
         // Create refresh token in Redis
-        const refreshToken = await createRefreshToken(result.user.id, rememberMe);
+        const refreshToken = await createRefreshToken(
+          result.user.id,
+          rememberMe,
+        );
 
         return {
           id: result.user.id,
@@ -120,15 +136,32 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       // Initial sign in
+      const refreshToken = token.refreshToken as string;
+
+      
       if (user) {
-        const u = user as User & { rememberMe?: boolean; refreshToken?: string };
+        const u = user as User & {
+          rememberMe?: boolean;
+          refreshToken?: string;
+        };
         token.id = user.id;
         token.role = user.role;
         token.rememberMe = u.rememberMe;
         token.refreshToken = u.refreshToken;
         token.accessTokenExpires = Date.now() + ACCESS_TOKEN_MAX_AGE * 1000;
+
+        token.sessionExpiresAt =
+          Date.now() +
+          (u.rememberMe ? SESSION_MAX_AGE_REMEMBER : SESSION_MAX_AGE_DEFAULT) *
+            1000;
+
         return token;
       }
+
+      
+        if (Date.now() > (token.sessionExpiresAt as number)) {
+          return { ...token, error: "RefreshTokenExpired" };
+        }
 
       // Access token still valid
       if (Date.now() < (token.accessTokenExpires as number)) {
@@ -136,7 +169,6 @@ export const authOptions: NextAuthOptions = {
       }
 
       // Access token expired — try to refresh
-      const refreshToken = token.refreshToken as string;
       if (!refreshToken) {
         // No refresh token, force re-login
         return { ...token, error: "RefreshTokenExpired" };
@@ -162,7 +194,7 @@ export const authOptions: NextAuthOptions = {
       const newRefreshToken = await rotateRefreshToken(
         refreshToken,
         refreshData.userId,
-        refreshData.rememberMe
+        refreshData.rememberMe,
       );
 
       return {
