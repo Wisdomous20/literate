@@ -23,8 +23,9 @@ export interface AssessmentQuestion {
 
 export interface ComprehensionAnswer {
   id: string;
-  questionId: string;
-  question: AssessmentQuestion;
+  question: string;
+  tag: "Literal" | "Inferential" | "Critical";
+  answer: string;
   isCorrect: boolean | null;
 }
 

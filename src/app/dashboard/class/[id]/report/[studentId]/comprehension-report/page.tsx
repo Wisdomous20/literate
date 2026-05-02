@@ -72,13 +72,9 @@ export default function ReadingComprehensionReportPage() {
 
   const answers: ComprehensionAnswer[] = comprehension?.answers ?? [];
 
-  const literalAnswers = answers.filter((a) => a.question?.tags === "Literal");
-  const inferentialAnswers = answers.filter(
-    (a) => a.question?.tags === "Inferential",
-  );
-  const criticalAnswers = answers.filter(
-    (a) => a.question?.tags === "Critical",
-  );
+  const literalAnswers = answers.filter((a) => a.tag === "Literal");
+  const inferentialAnswers = answers.filter((a) => a.tag === "Inferential");
+  const criticalAnswers = answers.filter((a) => a.tag === "Critical");
 
   const literalCorrect = literalAnswers.filter((a) => a.isCorrect).length;
   const inferentialCorrect = inferentialAnswers.filter(
