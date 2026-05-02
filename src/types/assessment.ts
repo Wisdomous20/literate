@@ -90,6 +90,16 @@ export interface AssessmentStudentData {
   level?: number;
 }
 
+export interface AssessmentSummaryData {
+  id: string;
+  studentId: string;
+  dateTaken: string;
+  type: AssessmentType;
+  oralFluency?: Pick<OralFluencyData, "classificationLevel"> | null;
+  comprehension?: Pick<ComprehensionData, "classificationLevel"> | null;
+  oralReadingResult?: Pick<OralReadingResultData, "classificationLevel"> | null;
+}
+
 export interface AssessmentData {
   id: string;
   studentId: string;

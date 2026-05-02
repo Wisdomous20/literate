@@ -12,12 +12,12 @@ import {
   User,
   BookOpen,
 } from "lucide-react";
-import type { AssessmentData, StudentTableItem } from "@/types/assessment";
+import type { AssessmentSummaryData, StudentTableItem } from "@/types/assessment";
 
 interface StudentTableProps {
   students: StudentTableItem[];
   totalStudents: number;
-  studentAssessments: Record<string, AssessmentData[]>;
+  studentAssessments: Record<string, AssessmentSummaryData[]>;
   onDeleteStudent?: (studentId: string) => Promise<void>;
   onUpdateStudent?: (
     studentId: string,
