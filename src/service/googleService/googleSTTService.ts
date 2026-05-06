@@ -306,5 +306,6 @@ export async function transcribeAudio(
     audioBuffer,
     true,
     passageText,
+    language,
   );
 }

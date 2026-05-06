@@ -61,6 +61,83 @@ function isMorphologicalVariant(a: string, b: string): boolean {
   return false;
 }
 
+function isFilipinoLanguage(language: string): boolean {
+  return ["tagalog", "tl", "filipino", "fil"].includes(language.toLowerCase().trim());
+}
+
+function isConsonantVowelSyllable(value: string): boolean {
+  return /^[bcdfghjklmnpqrstvwxyz][aeiou]$/.test(value);
+}
+
+const FILIPINO_INFIXES = ["um", "in"];
+const FILIPINO_PREFIXES = ["pinag", "mang", "nang", "mag", "nag", "pag", "ma", "na"];
+const FILIPINO_PREFIX_GROUPS = [
+  ["mag", "nag"],
+  ["ma", "na"],
+  ["mang", "nang"],
+];
+
+function canRemoveSegmentToMatch(
+  longer: string,
+  shorter: string,
+  matchesSegment: (segment: string) => boolean,
+): boolean {
+  if (longer.length <= shorter.length) return false;
+
+  const diff = longer.length - shorter.length;
+  for (let index = 0; index <= longer.length - diff; index++) {
+    const segment = longer.slice(index, index + diff);
+    if (!matchesSegment(segment)) continue;
+    if (longer.slice(0, index) + longer.slice(index + diff) === shorter) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function isFilipinoMorphologicalVariant(a: string, b: string): boolean {
+  if (a === b) return false;
+
+  const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a];
+
+  if (
+    canRemoveSegmentToMatch(longer, shorter, (segment) =>
+      FILIPINO_INFIXES.includes(segment),
+    )
+  ) {
+    return true;
+  }
+
+  if (canRemoveSegmentToMatch(longer, shorter, isConsonantVowelSyllable)) {
+    return true;
+  }
+
+  for (const prefix of FILIPINO_PREFIXES) {
+    if (!longer.startsWith(prefix)) continue;
+
+    const stem = longer.slice(prefix.length);
+    if (stem === shorter) return true;
+    if (canRemoveSegmentToMatch(stem, shorter, isConsonantVowelSyllable)) {
+      return true;
+    }
+  }
+
+  for (const group of FILIPINO_PREFIX_GROUPS) {
+    const aPrefix = group.find((prefix) => a.startsWith(prefix));
+    const bPrefix = group.find((prefix) => b.startsWith(prefix));
+    if (!aPrefix || !bPrefix || aPrefix === bPrefix) continue;
+
+    const aStem = a.slice(aPrefix.length);
+    const bStem = b.slice(bPrefix.length);
+    if (aStem === bStem) return true;
+    if (canRemoveSegmentToMatch(aStem, bStem, isConsonantVowelSyllable)) return true;
+    if (canRemoveSegmentToMatch(bStem, aStem, isConsonantVowelSyllable)) return true;
+  }
+
+  return false;
+}
+
 /**
  * Passage-guided correction using Needleman-Wunsch global alignment.
  *
@@ -80,7 +157,8 @@ function isMorphologicalVariant(a: string, b: string): boolean {
 export default function correctWithPassage(
   transcribedWords: TranscriptWord[],
   passageText: string,
-  similarityThreshold = 0.55
+  similarityThreshold = 0.55,
+  language = "english",
 ): TranscriptWord[] {
   // Expand hyphenated words so "well-known" becomes "well known"
   const expandedPassageText = passageText.replace(
@@ -108,7 +186,7 @@ export default function correctWithPassage(
   const simMatrix: number[][] = Array.from({ length: tLen }, () => Array(pLen).fill(0));
   for (let i = 0; i < tLen; i++) {
     for (let j = 0; j < pLen; j++) {
-      simMatrix[i][j] = similarityRatio(normTranscribed[i], normPassage[j]);
+      simMatrix[i][j] = similarityRatio(normTranscribed[i], normPassage[j], language);
     }
   }
 
@@ -188,7 +266,10 @@ export default function correctWithPassage(
         sim > effectiveThreshold &&
         transcribedNorm !== passageNorm
       ) {
-        const isMorph = isMorphologicalVariant(transcribedNorm, passageNorm);
+        const isMorph =
+          isMorphologicalVariant(transcribedNorm, passageNorm) ||
+          (isFilipinoLanguage(language) &&
+            isFilipinoMorphologicalVariant(transcribedNorm, passageNorm));
 
         if (!isMorph) {
           // Only correct if the transcribed word is NOT already a real word
