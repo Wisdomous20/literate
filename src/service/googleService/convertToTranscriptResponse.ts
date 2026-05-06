@@ -15,7 +15,8 @@ export default function convertToTranscriptResponse(
   results: protos.google.cloud.speech.v2.ISpeechRecognitionResult[],
   audioBuffer: Buffer,
   isWav: boolean,
-  passageText?: string
+  passageText?: string,
+  language = "english",
 ): TranscriptResponse {
   const passageWords = passageText
     ? passageText.split(/\s+/).filter((w) => w.length > 0).map(normalizeWord)
@@ -49,7 +50,7 @@ export default function convertToTranscriptResponse(
 
   // Apply passage-guided correction if passage text is available
   if (passageText && allWords.length > 0) {
-    allWords = correctWithPassage(allWords, passageText);
+    allWords = correctWithPassage(allWords, passageText, 0.55, language);
   }
 
   const fullText = allWords.map((w) => w.word).join(" ").trim();

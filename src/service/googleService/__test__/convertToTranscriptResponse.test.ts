@@ -116,6 +116,19 @@ describe("convertToTranscriptResponse", () => {
     expect(mockCorrectWithPassage).toHaveBeenCalledOnce();
   });
 
+  it("passes the assessment language into passage correction", () => {
+    const results = [makeResult([makeWordInfo("bumubukas", 0, 1)])];
+
+    convertToTranscriptResponse(results, ONE_SECOND_WAV, true, "bumukas", "filipino");
+
+    expect(mockCorrectWithPassage).toHaveBeenCalledWith(
+      expect.any(Array),
+      "bumukas",
+      0.55,
+      "filipino",
+    );
+  });
+
   it("does not call correctWithPassage when no passage text is given", () => {
     const results = [makeResult([makeWordInfo("hello", 0, 1)])];
 
