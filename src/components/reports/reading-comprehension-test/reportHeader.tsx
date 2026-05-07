@@ -23,14 +23,17 @@ export default function ReadingComprehensionReportHeader({ onExportPdf }: Readin
           </h1>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => onExportPdf?.()}
-            disabled={!onExportPdf}
-            className="px-5 py-2 bg-[#2E2E68] text-white text-xs font-medium rounded-lg border border-[#5D5DFB] shadow-[0_1px_20px_rgba(65,155,180,0.47)] hover:bg-[#2E2E68]/90 transition-colors disabled:opacity-50 disabled:pointer-events-none"
-          >
-            Export to PDF
-          </button>
+          <div className="relative">
+            <div className="absolute inset-0 rounded-full translate-y-1 bg-[#1e3a8a]/30" />
+            <button
+              type="button"
+              onClick={() => onExportPdf?.()}
+              disabled={!onExportPdf}
+              className="relative inline-flex items-center gap-1.5 rounded-full bg-[#1e3a8a] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-transform hover:bg-[#1d4ed8] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none"
+            >
+              Export to PDF
+            </button>
+          </div>
         </div>
       </header>
 

@@ -125,33 +125,39 @@ export default function ReadingComprehensionReportPage() {
         <DashboardHeader title="Reading Comprehension Test Report" />
         <div className="mb-4 max-w-6xl mx-auto px-6 lg:px-12">
           <div className="mt-6 flex items-center justify-between">
-            <button
-              onClick={() => window.history.back()}
-              className="flex items-center gap-1.5 rounded-full bg-[#6666FF] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5555EE] active:scale-95"
-              type="button"
-            >
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                viewBox="0 0 24 24"
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full translate-y-1 bg-[#E0E0FF]" />
+              <button
+                onClick={() => window.history.back()}
+                className="relative flex items-center gap-1.5 rounded-full border border-[#6666FF]/40 px-4 py-2 text-xs font-semibold shadow-sm transition-transform bg-white text-[#6666FF] hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
+                type="button"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-              Previous
-            </button>
-            <button
-              onClick={handleExport}
-              className="rounded-full bg-[#297CEC] px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-              type="button"
-            >
-              Export to PDF
-            </button>
+                <svg
+                  className="h-3.5 w-3.5 shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+                Back
+              </button>
+            </div>
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full translate-y-1 bg-[#1e3a8a]/30" />
+              <button
+                onClick={handleExport}
+                className="relative inline-flex items-center gap-1.5 rounded-full bg-[#1e3a8a] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-transform hover:bg-[#1d4ed8] hover:-translate-y-0.5 active:translate-y-0"
+                type="button"
+              >
+                Export to PDF
+              </button>
+            </div>
           </div>
         </div>
       </div>

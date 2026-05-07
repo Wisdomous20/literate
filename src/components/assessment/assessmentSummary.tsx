@@ -20,6 +20,7 @@ interface OralReadingLevel {
 interface AssessmentSummaryProps {
   studentName: string;
   studentGrade: string;
+  studentClass?: string;
   assessmentTypeLabel: string;
   oralReadingLevel: OralReadingLevel;
   assessmentCards: AssessmentCard[];
@@ -187,6 +188,7 @@ function generatePDF(
 export function AssessmentSummary({
   studentName,
   studentGrade,
+  studentClass,
   assessmentTypeLabel,
   oralReadingLevel,
   assessmentCards,
@@ -215,7 +217,7 @@ export function AssessmentSummary({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="relative">
-                  <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+                  <div className="absolute inset-0 rounded-full translate-y-1 bg-[#E0E0FF]" />
                   <button
                     type="button"
                     onClick={onBack}
@@ -228,26 +230,38 @@ export function AssessmentSummary({
                   </button>
                 </div>
                 <div className="flex flex-col gap-0.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-semibold text-black uppercase tracking-widest">
+                  <h1 className="text-base font-bold text-[#3B2F7F] leading-tight">
+                    {studentName}
+                  </h1>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] font-semibold text-[#5D5DFB] uppercase tracking-widest">
                       {studentGrade}
                     </span>
-                  <span className="rounded-full px-2 py-0.5 text-[11px] font-medium text-[#3B2F7F] bg-[#dcdff8f9] border border-[#A855F7]">
+                    {studentClass && (
+                      <>
+                        <span className="text-[#C4B5FD] font-bold">·</span>
+                        <span className="text-[11px] font-semibold text-[#5D5DFB]">
+                          {studentClass}
+                        </span>
+                      </>
+                    )}
+                    <span className="text-[#C4B5FD] font-bold">·</span>
+                    <span className="rounded-full px-2 py-0.5 text-[10px] font-medium text-[#3B2F7F] bg-[#EDE9FE] border border-[#A855F7]/40">
                       {assessmentTypeLabel}
                     </span>
                   </div>
-                  <h1 className="text-lg font-bold text-black leading-tight">
-                    {studentName}
-                  </h1>
                 </div>
               </div>
-              <button
-                onClick={handleExportPdf}
-                className="rounded-lg bg-[#297CEC] px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                type="button"
-              >
-                Export to PDF
-              </button>
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full translate-y-1 bg-[#1e3a8a]/30" />
+                <button
+                  onClick={handleExportPdf}
+                  className="relative inline-flex items-center gap-1.5 rounded-full bg-[#1e3a8a] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-transform hover:bg-[#1d4ed8] hover:-translate-y-0.5 active:translate-y-0"
+                  type="button"
+                >
+                  Export to PDF
+                </button>
+              </div>
             </div>
           </div>
 
@@ -296,11 +310,13 @@ export function AssessmentSummary({
               {assessmentCards.map((card) => (
                 <div
                   key={card.id}
+                  onClick={() => onViewReport(card.id)}
                   className="
-    rounded-xl overflow-hidden
+    rounded-xl overflow-hidden cursor-pointer
     border-l-2 border-t-2 border-r-4 border-b-4
     border-l-[#E5E7EB] border-t-[#E5E7EB]
     border-r-[#2E2E68] border-b-[#2E2E68]
+    transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:shadow-[#6666FF]/10 active:scale-[0.98]
   "
                 >
                   <div className="bg-white p-6 flex flex-col h-full">
@@ -317,14 +333,17 @@ export function AssessmentSummary({
                           Based on all assessments
                         </span>
                       </div>
-                      <button
-                        onClick={() => onViewReport(card.id)}
-                        className="rounded-full bg-[#A855F7] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#9333EA] transition whitespace-nowrap"
-                        type="button"
-                        aria-label={`View ${card.title} report`}
-                      >
-                        View Report
-                      </button>
+                      <div className="relative shrink-0">
+                        <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onViewReport(card.id); }}
+                          className="relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold shadow transition-transform bg-[#6666FF] text-white hover:bg-[#4F46E5] hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap"
+                          type="button"
+                          aria-label={`View ${card.title} report`}
+                        >
+                          View Report
+                        </button>
+                      </div>
                     </div>
 
                     <div className="mb-4">

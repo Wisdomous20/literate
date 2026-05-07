@@ -409,10 +409,10 @@ export default function ReadingComprehensionQuestionsPage() {
           <div className="flex flex-col items-center gap-4 text-center px-4">
             <p className="text-red-600 font-medium">{loadError}</p>
             <div className="relative">
-              <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+              <div className="absolute inset-0 rounded-full translate-y-1 bg-[#E0E0FF]" />
               <button
                 onClick={() => router.back()}
-                className="relative flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold shadow transition-transform bg-[#6666FF] text-white hover:bg-[#4F46E5] hover:-translate-y-0.5 active:translate-y-0"
+                className="relative flex items-center gap-1.5 rounded-full border border-[#6666FF]/40 px-4 py-2 text-xs font-semibold shadow-sm transition-transform bg-white text-[#6666FF] hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
               >
                 <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
                 Back
@@ -445,19 +445,19 @@ export default function ReadingComprehensionQuestionsPage() {
 
       <div className="flex flex-1 min-h-0 flex-col gap-4 px-4 py-4 md:px-6 lg:px-8">
         <div className="flex items-center justify-between">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
-            <button
-              type="button"
-              onClick={handleGoBack}
-              className="relative flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold shadow transition-transform bg-[#6666FF] text-white hover:bg-[#4F46E5] hover:-translate-y-0.5 active:translate-y-0"
-              aria-label="Go back"
-              title="Go back"
-            >
-              <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
-              Back
-            </button>
-          </div>
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full translate-y-1 bg-[#E0E0FF]" />
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="relative flex items-center gap-1.5 rounded-full border border-[#6666FF]/40 px-4 py-2 text-xs font-semibold shadow-sm transition-transform bg-white text-[#6666FF] hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
+                aria-label="Go back"
+                title="Go back"
+              >
+                <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                Back
+              </button>
+            </div>
           <NavButton
             onClick={() =>
               router.push("/dashboard/reading-comprehension-test/report")

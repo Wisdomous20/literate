@@ -648,14 +648,14 @@ export default function OralReadingReportPage() {
         </div>
       </div>
 
-      {/* Nav row: Previous (purple bg rounded) on left, Export PDF + Start New on right */}
+      {/* Nav row: Back (white filled) on left, Export PDF + Start New on right */}
       <div className="flex items-center justify-between px-8 pt-5 pb-2">
         <div className="relative">
-          <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+          <div className="absolute inset-0 rounded-full translate-y-1 bg-[#E0E0FF]" />
           <button
             type="button"
             onClick={() => router.back()}
-            className="relative flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold shadow transition-transform bg-[#6666FF] text-white hover:bg-[#4F46E5] hover:-translate-y-0.5 active:translate-y-0"
+            className="relative flex items-center gap-1.5 rounded-full border border-[#6666FF]/40 px-4 py-2 text-xs font-semibold shadow-sm transition-transform bg-white text-[#6666FF] hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
             aria-label="Go back"
             title="Go back"
           >
@@ -665,14 +665,17 @@ export default function OralReadingReportPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleExportPdf}
-            className="flex items-center gap-2 px-5 py-2 bg-[#2E2E68] text-white text-xs font-medium rounded-lg border border-[#5D5DFB] shadow-[0_1px_20px_rgba(65,155,180,0.47)] hover:bg-[#2E2E68]/90 transition-colors"
-          >
-            <Download className="h-3.5 w-3.5" />
-            Export to PDF
-          </button>
+          <div className="relative">
+            <div className="absolute inset-0 rounded-full translate-y-1 bg-[#1e3a8a]/30" />
+            <button
+              type="button"
+              onClick={handleExportPdf}
+              className="relative inline-flex items-center gap-1.5 rounded-full bg-[#1e3a8a] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-transform hover:bg-[#1d4ed8] hover:-translate-y-0.5 active:translate-y-0"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Export to PDF
+            </button>
+          </div>
 
           <button
             type="button"

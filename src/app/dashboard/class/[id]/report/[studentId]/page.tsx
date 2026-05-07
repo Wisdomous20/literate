@@ -64,11 +64,16 @@ export default function AssessmentReportPage() {
           assessmentType: assessmentTypeLabels[a.type] ?? a.type,
           testType: formatTestType(a.passage?.testType),
           assessmentDate: a.dateTaken
-            ? new Date(a.dateTaken).toLocaleDateString()
+            ? new Date(a.dateTaken).toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              })
             : "",
           schoolYear: "",
           id: a.id,
           type: a.type,
+          language: a.passage?.language ?? "—",
         }))
     : [];
 
