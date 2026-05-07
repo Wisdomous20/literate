@@ -293,12 +293,16 @@ export default function ReadingLevelReportPage() {
             <p className="text-[#00306E]/60 text-sm">
               Please complete an oral reading session first.
             </p>
-            <button
-              onClick={() => router.back()}
-              className="rounded-lg bg-[#297CEC] px-6 py-2 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
-            >
-              Go Back
-            </button>
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+              <button
+                onClick={() => router.back()}
+                className="relative flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold shadow transition-transform bg-[#6666FF] text-white hover:bg-[#4F46E5] hover:-translate-y-0.5 active:translate-y-0"
+              >
+                <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                Back
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -331,15 +335,19 @@ export default function ReadingLevelReportPage() {
           <div className="px-6 py-4 bg-[#E0E7FF]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  onClick={() => router.back()}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_4px_12px_rgba(102,102,255,0.35)] transition-all hover:bg-[#5555EE] hover:shadow-[0_6px_16px_rgba(102,102,255,0.45)] active:scale-95"
-                  aria-label="Go back"
-                  title="Go back"
-                >
-                  <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
-                </button>
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+                  <button
+                    type="button"
+                    onClick={() => router.back()}
+                    className="relative flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold shadow transition-transform bg-[#6666FF] text-white hover:bg-[#4F46E5] hover:-translate-y-0.5 active:translate-y-0"
+                    aria-label="Go back"
+                    title="Go back"
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                    Back
+                  </button>
+                </div>
                 <div className="flex flex-col gap-0.5">
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] font-semibold text-black uppercase tracking-widest">

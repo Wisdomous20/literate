@@ -6,7 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
-  Loader2,
+  Plus,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
@@ -145,7 +145,7 @@ export function ClassInventory({
                 type="button"
                 data-tour-target="view-all-classes-button"
                 onClick={() => router.push("/dashboard/class/all")}
-                className="rounded-full bg-[#5D5DFB] px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-[#4a4ae8] shadow-sm"
+                className="text-xs font-medium text-[#5D5DFB] underline underline-offset-2 hover:text-[#4a4ae8] transition-colors"
               >
                 View All
               </button>
@@ -163,7 +163,7 @@ export function ClassInventory({
                 type="button"
                 data-tour-target="school-year-button"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center gap-2 rounded-full border border-[#5D5DFB]/30 bg-[#5D5DFB]/5 px-4 py-1.5 text-xs sm:text-sm font-medium text-[#5D5DFB] whitespace-nowrap hover:bg-[#5D5DFB]/10 transition-colors"
+                className="flex items-center gap-2 rounded-full border border-[#5D5DFB]/30 bg-[#5D5DFB]/5 px-5 py-2 text-sm font-medium text-[#5D5DFB] whitespace-nowrap hover:bg-[#5D5DFB]/10 transition-colors"
               >
                 School Year
                 <ChevronDown className="h-3 w-3" />
@@ -203,22 +203,39 @@ export function ClassInventory({
             </div>
 
             {/* Create Class Button */}
-            <button
-              type="button"
-              data-tour-target="create-class-button"
-              onClick={() => setIsModalOpen(true)}
-              className="rounded-full bg-[#5D5DFB] px-4 py-1.5 text-xs sm:text-sm font-medium text-white shadow-[0px_1px_20px_rgba(93,93,251,0.4)] transition-colors hover:bg-[#4a4ae8] whitespace-nowrap"
-            >
-              + Create Class
-            </button>
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+              <button
+                type="button"
+                data-tour-target="create-class-button"
+                onClick={() => setIsModalOpen(true)}
+                className="relative flex items-center justify-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold shadow transition-transform bg-[#6666FF] text-white hover:bg-[#4F46E5] hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap"
+              >
+                <Plus className="h-4 w-4 shrink-0" />
+                Create Class
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Class Cards Section */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-[#5D5DFB]" />
+        <div className="grid grid-cols-2 gap-3 md:gap-4 w-full">
+          {[0,1,2,3].map((i) => (
+            <div key={i} className="border-l border-t border-r-[6px] border-b-[6px] border-[#5D5DFB]/30 rounded-2xl overflow-hidden bg-white min-h-35 shadow-lg shadow-[#5D5DFB]/5 animate-pulse">
+              <div className="p-4 flex flex-col justify-between h-full min-h-35">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-md bg-[#E0E7FF]" />
+                  <div className="h-3 w-10 rounded bg-[#E0E7FF]" />
+                </div>
+                <div className="mt-4 flex flex-col gap-2">
+                  <div className="h-5 w-3/4 rounded bg-[#E0E7FF]" />
+                  <div className="h-3 w-1/2 rounded bg-[#E0E7FF]" />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       ) : error ? (
         <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
@@ -234,7 +251,7 @@ export function ClassInventory({
           </p>
         </div>
       ) : (
-        <div className="relative w-full min-h-[320px] flex flex-col">
+        <div className="relative w-full min-h-80 flex flex-col">
           {/* Class cards grid - 2 columns x 2 rows */}
           <div
             data-tour-target="class-cards"
@@ -243,7 +260,7 @@ export function ClassInventory({
             {visibleClasses.map((classItem) => (
               <div
                 key={classItem.id}
-                className="border-l border-t border-r-4 border-b-4 border-[#5D5DFB] rounded-2xl overflow-hidden bg-white min-h-35 shadow-lg shadow-[#5D5DFB]/10"
+                className="border-l border-t border-r-[6px] border-b-[6px] border-[#5D5DFB] rounded-2xl overflow-hidden bg-white min-h-35 shadow-lg shadow-[#5D5DFB]/10"
               >
                 <ClassCard
                   classRoomId={classItem.id}

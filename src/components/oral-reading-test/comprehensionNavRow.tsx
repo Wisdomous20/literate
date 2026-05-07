@@ -18,15 +18,19 @@ export function ComprehensionNavRow({
 }: ComprehensionNavRowProps) {
   return (
     <div className="flex items-center justify-between">
-      <button
-        type="button"
-        onClick={onGoBack}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_4px_12px_rgba(102,102,255,0.35)] transition-all hover:bg-[#5555EE] hover:shadow-[0_6px_16px_rgba(102,102,255,0.45)] active:scale-95"
-        aria-label="Go back"
-        title="Go back"
-      >
-        <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
-      </button>
+      <div className="relative">
+        <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+        <button
+          type="button"
+          onClick={onGoBack}
+          className="relative flex items-center gap-1.5 rounded-full border border-[#6666FF]/40 px-4 py-2 text-xs font-semibold shadow-sm transition-transform bg-white text-[#6666FF] hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
+          aria-label="Go back"
+          title="Go back"
+        >
+          <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+          Back
+        </button>
+      </div>
       <NavButton onClick={onContinue} disabled={!continueEnabled}>
         <span>{continueLabel}</span>
         <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />

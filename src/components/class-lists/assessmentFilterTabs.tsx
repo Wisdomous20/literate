@@ -28,31 +28,33 @@ export function AssessmentFilterTabs({
     return (
       <div
         data-tour-target="assessment-tabs"
-        className="flex items-center gap-4 overflow-x-auto pb-1"
+        className="flex items-stretch overflow-x-auto border border-[#6666FF]/20 rounded-xl bg-[#F8F9FF] px-1"
       >
-        {filterOptions.map((option) => (
-          <button
-            key={option.value}
-            onClick={() => onFilterChange(option.value)}
-            className="relative flex flex-col items-center gap-1.5 transition-all whitespace-nowrap"
-          >
-            <span
-              className={`text-xs font-semibold transition-colors ${
-                selectedType === option.value
-                  ? "text-[#6666FF]"
-                  : "text-[#00306E]/60 hover:text-[#00306E]"
-              }`}
+        {filterOptions.map((option, idx) => (
+          <div key={option.value} className="flex items-center flex-1">
+            {idx > 0 && <div className="w-px h-5 bg-[#6666FF]/20 shrink-0 self-center" />}
+            <button
+              onClick={() => onFilterChange(option.value)}
+              className="relative flex-1 flex flex-col items-center gap-1 transition-all whitespace-nowrap px-2 py-2"
             >
-              {option.label}
-            </span>
-            <div
-              className={`h-0.5 w-full rounded-full transition-all ${
-                selectedType === option.value
-                  ? "bg-[#6666FF]"
-                  : "bg-transparent"
-              }`}
-            />
-          </button>
+              <span
+                className={`text-xs font-normal transition-colors ${
+                  selectedType === option.value
+                    ? "text-[#6666FF]"
+                    : "text-black/70 hover:text-black"
+                }`}
+              >
+                {option.label}
+              </span>
+              <div
+                className={`h-0.5 w-full rounded-full transition-all ${
+                  selectedType === option.value
+                    ? "bg-[#6666FF]"
+                    : "bg-transparent"
+                }`}
+              />
+            </button>
+          </div>
         ))}
       </div>
     );

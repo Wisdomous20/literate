@@ -12,7 +12,7 @@ export function WelcomeSection({
   schoolYear,
 }: WelcomeSectionProps) {
   return (
-    <div className="relative overflow-visible rounded-2xl border-l border-t border-r-4 border-b-4 border-[#5D5DFB] bg-white min-h-35 shadow-lg shadow-[#5D5DFB]/10 font-poppins">
+    <div className="relative overflow-visible rounded-2xl border-l border-t border-r-[6px] border-b-[6px] border-[#5D5DFB] bg-white min-h-35 shadow-lg shadow-[#5D5DFB]/10 font-poppins">
       {/* Cloud SVG Background */}
       <div className="absolute inset-0 rounded-2xl overflow-hidden z-0">
         <Image

@@ -650,15 +650,19 @@ export default function OralReadingReportPage() {
 
       {/* Nav row: Previous (purple bg rounded) on left, Export PDF + Start New on right */}
       <div className="flex items-center justify-between px-8 pt-5 pb-2">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_4px_12px_rgba(102,102,255,0.35)] transition-all hover:bg-[#5555EE] hover:shadow-[0_6px_16px_rgba(102,102,255,0.45)] active:scale-95"
-          aria-label="Go back"
-          title="Go back"
-        >
-          <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
-        </button>
+        <div className="relative">
+          <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="relative flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold shadow transition-transform bg-[#6666FF] text-white hover:bg-[#4F46E5] hover:-translate-y-0.5 active:translate-y-0"
+            aria-label="Go back"
+            title="Go back"
+          >
+            <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+            Back
+          </button>
+        </div>
 
         <div className="flex items-center gap-3">
           <button

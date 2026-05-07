@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Folder, MoreVertical } from "lucide-react";
+import { ChevronRight, Users, MoreVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useRef, useEffect } from "react";
 import { deleteClass } from "@/app/actions/class/deleteClass";
@@ -121,13 +121,13 @@ export function ClassCard({
           onKeyDown={handleCardKeyDown}
           tabIndex={0}
           className={cn(
-            "group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-[#E0E7FF] bg-white p-4 min-h-35 shadow-[0px_0px_16px_1px_rgba(84,164,255,0.25)] transition-all hover:shadow-[0px_0px_20px_2px_rgba(84,164,255,0.4)] hover:border-[#5D5DFB]/40 cursor-pointer",
+            "group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-[#E0E7FF] bg-white p-4 min-h-35 shadow-[0px_0px_16px_1px_rgba(84,164,255,0.25)] transition-all hover:shadow-[0px_0px_20px_2px_rgba(84,164,255,0.4)] hover:border-[#5D5DFB]/40 hover:-translate-y-1 cursor-pointer active:scale-95 active:shadow-[0px_0px_28px_4px_rgba(93,93,251,0.45)] active:border-[#5D5DFB]",
           )}
         >
           {/* Top section with folder icon and label */}
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[#e0e7ff]">
-              <Folder className="h-4 w-4 text-[#7c3aed]" />
+              <Users className="h-4 w-4 text-[#7c3aed]" />
             </div>
             <span className="text-xs font-semibold text-[#0C1A6D]">Class</span>
           </div>

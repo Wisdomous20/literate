@@ -408,12 +408,16 @@ export default function ReadingComprehensionQuestionsPage() {
         <div className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-4 text-center px-4">
             <p className="text-red-600 font-medium">{loadError}</p>
-            <button
-              onClick={() => router.back()}
-              className="rounded-lg bg-[#6666FF] px-6 py-2 text-sm font-semibold text-white hover:bg-[#5555EE] transition-colors"
-            >
-              Go Back
-            </button>
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+              <button
+                onClick={() => router.back()}
+                className="relative flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold shadow transition-transform bg-[#6666FF] text-white hover:bg-[#4F46E5] hover:-translate-y-0.5 active:translate-y-0"
+              >
+                <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                Back
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -441,15 +445,19 @@ export default function ReadingComprehensionQuestionsPage() {
 
       <div className="flex flex-1 min-h-0 flex-col gap-4 px-4 py-4 md:px-6 lg:px-8">
         <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={handleGoBack}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_4px_12px_rgba(102,102,255,0.35)] transition-all hover:bg-[#5555EE] hover:shadow-[0_6px_16px_rgba(102,102,255,0.45)] active:scale-95"
-            aria-label="Go back"
-            title="Go back"
-          >
-            <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
-          </button>
+          <div className="relative">
+            <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+            <button
+              type="button"
+              onClick={handleGoBack}
+              className="relative flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold shadow transition-transform bg-[#6666FF] text-white hover:bg-[#4F46E5] hover:-translate-y-0.5 active:translate-y-0"
+              aria-label="Go back"
+              title="Go back"
+            >
+              <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+              Back
+            </button>
+          </div>
           <NavButton
             onClick={() =>
               router.push("/dashboard/reading-comprehension-test/report")
