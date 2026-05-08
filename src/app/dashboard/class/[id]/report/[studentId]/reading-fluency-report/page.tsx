@@ -3,7 +3,6 @@
 import { useMemo, useState, useCallback, useRef } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import {
-  LayoutDashboard,
   ArrowLeft,
   Download,
   Loader2,
@@ -15,6 +14,7 @@ import MiscueAnalysisReport from "@/components/reports/oral-reading-test/reading
 import AudioPlaybackCard from "@/components/reports/oral-reading-test/reading-fluency-report/audioPlaybackCard";
 import BehaviorChecklist from "@/components/reports/oral-reading-test/reading-fluency-report/readingBehaviorChecklist";
 import ViewMiscuesModal from "@/components/reports/oral-reading-test/reading-fluency-report/viewMiscuesModal";
+import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay";
 import { useEditMiscues } from "@/components/oral-reading-test/useEditMiscues";
 import { fetchOralFluencyMiscues } from "@/app/actions/oral-fluency/getMiscues";
@@ -314,22 +314,11 @@ export default function ReadingFluencyReportPage() {
   if (isLoading) {
     return (
       <div className="flex h-screen flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-8 py-5 border-b-[3px] border-[#5D5DFB] bg-white">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#5D5DFB]/10">
-              <LayoutDashboard size={20} className="text-[#5D5DFB]" />
-            </div>
-            <h1 className="text-xl lg:text-2xl font-semibold text-[#31318A]">
-              Oral Fluency Test Report
-            </h1>
-          </div>
-        </div>
+        <DashboardHeader title="Oral Fluency Test Report" />
         <div className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-[#6666FF]" />
-            <span className="text-[#00306E] font-medium">
-              Loading report...
-            </span>
+            <span className="text-sm font-medium text-[#00306E]/60">Loading report...</span>
           </div>
         </div>
       </div>
@@ -339,29 +328,12 @@ export default function ReadingFluencyReportPage() {
   if (!assessment) {
     return (
       <div className="flex h-screen flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-8 py-5 border-b-[3px] border-[#5D5DFB] bg-white">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#5D5DFB]/10">
-              <LayoutDashboard size={20} className="text-[#5D5DFB]" />
-            </div>
-            <h1 className="text-xl lg:text-2xl font-semibold text-[#31318A]">
-              Oral Fluency Test Report
-            </h1>
-          </div>
-        </div>
+        <DashboardHeader title="Oral Fluency Test Report" />
         <div className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-4 text-center px-4">
-            <p className="text-[#00306E] font-semibold text-lg">
-              No report data found.
-            </p>
-            <p className="text-[#00306E]/60 text-sm">
-              Please complete an assessment session first.
-            </p>
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="rounded-lg bg-[#6666FF] px-6 py-2 text-sm font-semibold text-white hover:bg-[#5555EE] transition-colors"
-            >
+            <p className="text-[#00306E] font-semibold text-lg">No report data found.</p>
+            <p className="text-[#00306E]/60 text-sm">Please complete an assessment session first.</p>
+            <button type="button" onClick={() => router.back()} className="rounded-lg bg-[#6666FF] px-6 py-2 text-sm font-semibold text-white hover:bg-[#5555EE] transition-colors">
               Go Back
             </button>
           </div>
@@ -432,102 +404,103 @@ export default function ReadingFluencyReportPage() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-8 py-5 border-b-[3px] border-[#5D5DFB] bg-white">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#5D5DFB]/10">
-            <LayoutDashboard size={20} className="text-[#5D5DFB]" />
-          </div>
-          <div className="flex flex-col">
-            <h1 className="text-xl lg:text-2xl font-semibold text-[#31318A]">
-              Oral Fluency Test Report
-            </h1>
-            {assessmentId && (
-              <p className="text-xs font-medium text-[#2E2E68]/65">
-                Assessment ID:{" "}
-                <span className="font-semibold text-[#2E2E68]">
-                  {assessmentId}
-                </span>
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
+      <DashboardHeader title="Oral Fluency Test Report" />
 
-      {/* Nav row: Back (white filled) on left, Export PDF on right */}
-      <div className="flex items-center justify-between px-8 pt-5 pb-2">
-        <div className="relative">
-          <div className="absolute inset-0 rounded-full translate-y-1 bg-[#E0E0FF]" />
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="relative flex items-center gap-1.5 rounded-full border border-[#6666FF]/40 px-4 py-2 text-xs font-semibold shadow-sm transition-transform bg-white text-[#6666FF] hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
-            aria-label="Go back"
-            title="Go back"
-          >
-            <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
-            Back
-          </button>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full translate-y-1 bg-[#1e3a8a]/30" />
-            <button
-              type="button"
-              onClick={handleExport}
-              className="relative inline-flex items-center gap-1.5 rounded-full bg-[#1e3a8a] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-transform hover:bg-[#1d4ed8] hover:-translate-y-0.5 active:translate-y-0"
-            >
-              <Download className="h-3.5 w-3.5" />
-              Export to PDF
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth max-w-300 mx-auto px-6 py-6 md:px-8 lg:px-12 space-y-6 w-full">
-        {/* Top row: Student Info + Metric Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-          <StudentInfoCard
-            studentName={studentName}
-            gradeLevel={gradeLevel}
-            className={classData?.name}
-          />
-          <MetricCards
-            wcpm={wcpm}
-            readingTimeSeconds={readingTimeSeconds}
-            classificationLevel={currentClassificationLevel}
-          />
-        </div>
-
-        {/* Three-column row */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="flex flex-col gap-6">
-            <PassageInfoCard
-              passageTitle={passage?.title ?? "—"}
-              passageLevel={
-                passage?.level ? `Grade ${passage.level}` : "—"
-              }
-              numberOfWords={numberOfWords}
-              testType={formatTestType(passage?.testType)}
-              assessmentType={assessmentTypeLabel}
-            />
-            <AudioPlaybackCard
-              audioSrc={assessment.oralFluency?.audioUrl}
-              audioRef={audioRef}
-            />
+      <main className="flex flex-1 flex-col overflow-y-auto px-4 py-4 lg:px-8">
+        <div className="rounded-2xl bg-white overflow-hidden flex flex-col flex-1 border-t border-l border-r-[4px] border-b-[4px] border-[#A855F7] border-r-[#5D5DFB] border-b-[#5D5DFB]">
+          {/* Header bar */}
+          <div className="px-5 py-4 bg-white border-b border-[#EDE9FE]">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-full translate-y-1 bg-[#E0E0FF]" />
+                  <button
+                    type="button"
+                    onClick={() => router.back()}
+                    className="relative flex items-center gap-1.5 rounded-full border border-[#6666FF]/40 px-4 py-2 text-xs font-semibold shadow-sm transition-transform bg-white text-[#6666FF] hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
+                    aria-label="Go back"
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                    Back
+                  </button>
+                </div>
+                <div className="h-6 w-px bg-[#C4B5FD] mx-1" />
+                <div className="flex flex-col gap-0.5">
+                  <h2 className="text-base font-bold text-[#3B2F7F] leading-tight">{studentName}</h2>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] font-semibold text-[#5D5DFB] uppercase tracking-widest">{gradeLevel}</span>
+                    {classData?.name && (
+                      <>
+                        <span className="text-[#C4B5FD] font-bold">·</span>
+                        <span className="text-[11px] font-semibold text-[#5D5DFB]">{classData.name}</span>
+                      </>
+                    )}
+                    {assessmentId && (
+                      <>
+                        <span className="text-[#C4B5FD] font-bold">·</span>
+                        <span className="font-mono text-[9px] text-[#5D5DFB]/70 break-all">{assessmentId}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+                <button
+                  type="button"
+                  onClick={handleExport}
+                  className="relative inline-flex items-center gap-1.5 rounded-full bg-[#6666FF] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-transform hover:bg-[#5555EE] hover:-translate-y-0.5 active:translate-y-0"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Export to PDF
+                </button>
+              </div>
+            </div>
           </div>
 
-          <BehaviorChecklist
-            behaviors={behaviorItems}
-            onSave={sessionId ? handleSaveBehaviors : undefined}
-          />
+          <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
+            {/* Top row: Student Info + Metric Cards */}
+            <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+              <StudentInfoCard
+                studentName={studentName}
+                gradeLevel={gradeLevel}
+                className={classData?.name}
+              />
+              <MetricCards
+                wcpm={wcpm}
+                readingTimeSeconds={readingTimeSeconds}
+                classificationLevel={currentClassificationLevel}
+              />
+            </div>
 
-          <MiscueAnalysisReport
-            miscueData={miscueData}
-            onViewMiscues={() => setShowMiscuesModal(true)}
-            onEditMiscues={() => setShowEditModal(true)}
-          />
+            {/* Three-column row */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <div className="flex flex-col gap-6">
+                <PassageInfoCard
+                  passageTitle={passage?.title ?? "—"}
+                  passageLevel={passage?.level ? `Grade ${passage.level}` : "—"}
+                  numberOfWords={numberOfWords}
+                  testType={formatTestType(passage?.testType)}
+                  assessmentType={assessmentTypeLabel}
+                />
+                <AudioPlaybackCard
+                  audioSrc={assessment.oralFluency?.audioUrl}
+                  audioRef={audioRef}
+                />
+              </div>
+
+              <BehaviorChecklist
+                behaviors={behaviorItems}
+                onSave={sessionId ? handleSaveBehaviors : undefined}
+              />
+
+              <MiscueAnalysisReport
+                miscueData={miscueData}
+                onViewMiscues={() => setShowMiscuesModal(true)}
+                onEditMiscues={() => setShowEditModal(true)}
+              />
+            </div>
+          </div>
         </div>
       </main>
 

@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import type { OralFluencyAnalysis } from "@/types/oral-reading";
-import { DeleteConfirmModal } from "@/components/ui/deleteConfirmModal";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import {
   buildFluencyReportData,
@@ -115,7 +114,6 @@ function getWidthClass(percent: number) {
 export default function ReadingLevelReportPage() {
   const router = useRouter();
   const [isHydrated, setIsHydrated] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const isClient = useSyncExternalStore(
     () => () => {},
@@ -382,24 +380,9 @@ export default function ReadingLevelReportPage() {
                     Export to PDF
                   </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteModal(true)}
-                  className="rounded-lg bg-[#DE3B40] px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                >
-                  Delete
-                </button>
               </div>
             </div>
           </div>
-
-          <DeleteConfirmModal
-            open={showDeleteModal}
-            onClose={() => setShowDeleteModal(false)}
-            onConfirm={() => {
-              /* TODO */
-            }}
-          />
 
           {/* Scrollable content area */}
           <div className="flex-1 overflow-y-auto px-6 py-6">

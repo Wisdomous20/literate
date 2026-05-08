@@ -108,31 +108,27 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
 
   useEffect(() => {
     let cancelled = false;
-    setIsLoading(true);
-    setHasError(false);
-
-    const params = new URLSearchParams({
-      schoolYear,
-      assessmentType: selectedType,
-      testType: selectedTestType,
-      ...(selectedLanguage !== "ALL" && { language: selectedLanguage }),
-    });
-
-    fetch(`/api/dashboard/classification-distribution?${params.toString()}`)
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`Status ${res.status}`);
-        return (await res.json()) as DistributionResponse;
-      })
-      .then((json) => {
-        if (!cancelled) setDistribution(json);
-      })
-      .catch(() => {
-        if (!cancelled) setHasError(true);
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
+    const fetchData = async () => {
+      setIsLoading(true);
+      setHasError(false);
+      const params = new URLSearchParams({
+        schoolYear,
+        assessmentType: selectedType,
+        testType: selectedTestType,
+        ...(selectedLanguage !== "ALL" && { language: selectedLanguage }),
       });
-
+      try {
+        const res = await fetch(`/api/dashboard/classification-distribution?${params.toString()}`);
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+        const json = (await res.json()) as DistributionResponse;
+        if (!cancelled) setDistribution(json);
+      } catch {
+        if (!cancelled) setHasError(true);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+    fetchData();
     return () => {
       cancelled = true;
     };
@@ -166,14 +162,14 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
           <h3 className="text-base md:text-lg font-bold text-[#00306E] truncate">
             Classification Distribution
           </h3>
-          <div className="flex flex-row items-center gap-2 overflow-x-auto">
-            <div className="flex flex-row shrink-0 gap-2 flex-nowrap">
+          <div className="flex flex-row items-center gap-1.5 flex-wrap mt-1">
+            <div className="flex flex-row shrink-0 gap-1.5 flex-wrap">
               <div className="relative" ref={dropdownRef}>
                 <button
                   type="button"
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   className={cn(
-                    "flex items-center gap-1 rounded-full border border-dashed px-2 py-1 text-xs font-medium min-w-22.5 transition-colors",
+                    "flex items-center gap-1 rounded-full border border-dashed px-2 py-0.5 text-[11px] font-medium transition-colors",
                     selectedType !== "ALL"
                       ? "bg-[#5D5DFB] text-white border-[#5D5DFB]"
                       : "bg-white text-[#5D5DFB] border-[#5D5DFB] hover:bg-[#E4F4FF]"
@@ -183,7 +179,7 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
                   aria-label="Select assessment type"
                 >
                   <span className="truncate">{selectedTypeLabel}</span>
-                  <ChevronDown className={cn("h-3 w-3 shrink-0 transition-transform", isDropdownOpen && "rotate-180")} />
+                  <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform", isDropdownOpen && "rotate-180")} />
                 </button>
                 {isDropdownOpen && (
                   <div className="absolute left-0 top-full z-10 mt-1 w-full min-w-32 rounded-lg border border-[#5D5DFB]/30 bg-white py-1 shadow-lg">
@@ -213,7 +209,7 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
                   type="button"
                   onClick={() => setIsTestDropdownOpen(!isTestDropdownOpen)}
                   className={cn(
-                    "flex items-center gap-1 rounded-full border border-dashed px-2 py-1 text-xs font-medium min-w-22.5 transition-colors",
+                    "flex items-center gap-1 rounded-full border border-dashed px-2 py-0.5 text-[11px] font-medium transition-colors",
                     selectedTestType !== "PRE"
                       ? "bg-[#5D5DFB] text-white border-[#5D5DFB]"
                       : "bg-white text-[#5D5DFB] border-[#5D5DFB] hover:bg-[#E4F4FF]"
@@ -223,7 +219,7 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
                   aria-label="Select test type"
                 >
                   <span className="truncate">{selectedTestTypeLabel}</span>
-                  <ChevronDown className={cn("h-3 w-3 shrink-0 transition-transform", isTestDropdownOpen && "rotate-180")} />
+                  <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform", isTestDropdownOpen && "rotate-180")} />
                 </button>
                 {isTestDropdownOpen && (
                   <div className="absolute left-0 top-full z-10 mt-1 w-full min-w-24 rounded-lg border border-[#5D5DFB]/30 bg-white py-1 shadow-lg">
@@ -253,7 +249,7 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
                   type="button"
                   onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
                   className={cn(
-                    "flex items-center gap-1 rounded-full border border-dashed px-2 py-1 text-xs font-medium min-w-22.5 transition-colors",
+                    "flex items-center gap-1 rounded-full border border-dashed px-2 py-0.5 text-[11px] font-medium transition-colors",
                     selectedLanguage !== "ALL"
                       ? "bg-[#5D5DFB] text-white border-[#5D5DFB]"
                       : "bg-white text-[#5D5DFB] border-[#5D5DFB] hover:bg-[#E4F4FF]"
@@ -263,7 +259,7 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
                   aria-label="Select language"
                 >
                   <span className="truncate">{selectedLanguageLabel}</span>
-                  <ChevronDown className={cn("h-3 w-3 shrink-0 transition-transform", isLanguageDropdownOpen && "rotate-180")} />
+                  <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform", isLanguageDropdownOpen && "rotate-180")} />
                 </button>
                 {isLanguageDropdownOpen && (
                   <div className="absolute left-0 top-full z-10 mt-1 w-full min-w-24 rounded-lg border border-[#5D5DFB]/30 bg-white py-1 shadow-lg">

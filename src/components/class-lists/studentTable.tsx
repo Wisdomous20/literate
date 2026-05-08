@@ -231,7 +231,7 @@ export function StudentTable({
                       >
                         {student.name}
                       </span>
-                      <span className="shrink-0 text-[9px] rounded-full bg-[#E8D5FF]/60 px-1.5 py-0.5 text-black font-normal leading-tight">
+                      <span className="shrink-0 text-[11px] rounded-full bg-[#E8D5FF]/60 px-1.5 py-0.5 text-black font-normal leading-tight">
                         {student.gradeLevel}
                       </span>
                     </div>
@@ -241,8 +241,8 @@ export function StudentTable({
                       <span className="text-[9px] font-normal text-[#5D5DFB]/60 uppercase tracking-wider">Assessment Type</span>
                       <div className="flex items-center gap-2">
                         <BookOpen className="h-3.5 w-3.5 text-[#6666FF] shrink-0" />
-                        <span className="text-xs text-[#00306E] truncate">
-                          {getAssessmentTypeLabel(student.assessmentType)}
+<span className="text-xs font-medium text-[#00306E] truncate">
+                            {getAssessmentTypeLabel(student.assessmentType)}
                         </span>
                       </div>
                     </div>
@@ -252,7 +252,7 @@ export function StudentTable({
                       <span className="text-[9px] font-normal text-[#5D5DFB]/60 uppercase tracking-wider">Date</span>
                       <div className="flex items-center gap-2">
                         <Calendar className="h-3.5 w-3.5 text-[#6666FF] shrink-0" />
-                        <span className="text-xs text-[#00306E]">
+                        <span className="text-xs font-medium text-[#00306E]">
                           {student.lastAssessment ? (
                             <span>{student.lastAssessment}</span>
                           ) : (

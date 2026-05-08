@@ -169,19 +169,22 @@ export function AssessmentReport({
                   <button
                     type="button"
                     onClick={() => setIsLangDropdownOpen((v) => !v)}
-                    className="flex items-center gap-1.5 rounded-full border border-[#6666FF]/30 bg-white px-3 py-1.5 text-xs font-semibold text-[#6666FF] transition-all hover:border-[#6666FF]/60 hover:bg-[#F8F9FF] shadow-sm"
+                    className={`flex items-center gap-1 rounded-full border border-dashed px-3 py-1.5 text-xs font-medium transition-colors ${
+                      languageFilter !== "All"
+                        ? "bg-[#5D5DFB] text-white border-[#5D5DFB]"
+                        : "bg-white text-[#5D5DFB] border-[#5D5DFB] hover:bg-[#E4F4FF]"
+                    }`}
                     aria-label="Filter by language"
                   >
-                    <span>
-                      Language:{" "}
-                      {languageFilter === "All" ? "All" : languageFilter}
+                    <span className="truncate">
+                      {languageFilter === "All" ? "Language" : languageFilter}
                     </span>
                     <ChevronDown
-                      className={`h-3 w-3 shrink-0 transition-transform ${isLangDropdownOpen ? "rotate-180" : ""}`}
+                      className={`h-4 w-4 shrink-0 transition-transform ${isLangDropdownOpen ? "rotate-180" : ""}`}
                     />
                   </button>
                   {isLangDropdownOpen && (
-                    <div className="absolute right-0 top-full z-20 mt-1 min-w-32 rounded-xl border border-[#6666FF]/20 bg-white py-1 shadow-lg">
+                    <div className="absolute right-0 top-full z-20 mt-1 min-w-28 rounded-lg border border-[#5D5DFB]/30 bg-white py-1 shadow-lg">
                       {languages.map((lang) => (
                         <button
                           key={lang}
@@ -191,9 +194,9 @@ export function AssessmentReport({
                             setIsLangDropdownOpen(false);
                             setCurrentPage(1);
                           }}
-                          className={`w-full px-4 py-2 text-left text-xs transition-colors hover:bg-[#DDD6FE] ${
+                          className={`w-full px-4 py-2 text-left text-xs transition-colors hover:bg-[#E4F4FF] ${
                             languageFilter === lang
-                              ? "font-bold text-[#6666FF] bg-[#DDD6FE]"
+                              ? "font-medium text-[#5D5DFB] bg-[#E4F4FF]"
                               : "text-[#3B2F7F]"
                           }`}
                         >
@@ -209,20 +212,22 @@ export function AssessmentReport({
                   <button
                     type="button"
                     onClick={() => setIsTestDropdownOpen((v) => !v)}
-                    className="flex items-center gap-1.5 rounded-full border border-[#6666FF]/30 bg-white px-3 py-1.5 text-xs font-semibold text-[#6666FF] transition-all hover:border-[#6666FF]/60 hover:bg-[#F8F9FF] shadow-sm"
+                    className={`flex items-center gap-1 rounded-full border border-dashed px-3 py-1.5 text-xs font-medium transition-colors ${
+                      testTypeFilter !== "All"
+                        ? "bg-[#5D5DFB] text-white border-[#5D5DFB]"
+                        : "bg-white text-[#5D5DFB] border-[#5D5DFB] hover:bg-[#E4F4FF]"
+                    }`}
                     aria-label="Select test type"
                   >
-                    <span>
-                      {testTypeFilter === "All"
-                        ? "Test Type: All"
-                        : testTypeFilter}
+                    <span className="truncate">
+                      {testTypeFilter === "All" ? "Test Type" : testTypeFilter}
                     </span>
                     <ChevronDown
-                      className={`h-3 w-3 shrink-0 transition-transform ${isTestDropdownOpen ? "rotate-180" : ""}`}
+                      className={`h-4 w-4 shrink-0 transition-transform ${isTestDropdownOpen ? "rotate-180" : ""}`}
                     />
                   </button>
                   {isTestDropdownOpen && (
-                    <div className="absolute right-0 top-full z-20 mt-1 min-w-28 rounded-xl border border-[#6666FF]/20 bg-white py-1 shadow-lg">
+                    <div className="absolute right-0 top-full z-20 mt-1 min-w-24 rounded-lg border border-[#5D5DFB]/30 bg-white py-1 shadow-lg">
                       {testTypeOptions.map((type) => (
                         <button
                           key={type.value}
@@ -232,9 +237,9 @@ export function AssessmentReport({
                             setIsTestDropdownOpen(false);
                             setCurrentPage(1);
                           }}
-                          className={`w-full px-4 py-2 text-left text-xs transition-colors hover:bg-[#DDD6FE] ${
+                          className={`w-full px-4 py-2 text-left text-xs transition-colors hover:bg-[#E4F4FF] ${
                             testTypeFilter === type.value
-                              ? "font-bold text-[#6666FF] bg-[#DDD6FE]"
+                              ? "font-semibold text-[#5D5DFB] bg-[#E4F4FF]"
                               : "text-[#3B2F7F]"
                           }`}
                         >
@@ -277,12 +282,12 @@ export function AssessmentReport({
                     key={`${record.id}-${index}`}
                     className={`
                       grid grid-cols-6 items-center px-4 py-3.5 cursor-pointer text-[13px] w-full
-                      transition-all duration-200 select-none border-b border-[#E8E4FF]
+                      transition-all duration-200 transition-transform select-none border-b border-[#E8E4FF]
                       ${index % 2 === 1 ? "bg-[#F8F6FF]" : "bg-white"}
                       ${
                         clickedRow === record.id
-                          ? "!bg-[#DDD6FE] scale-[1.01] shadow-md -translate-y-0.5"
-                          : "hover:!bg-[#EDE9FE] hover:scale-[1.01] hover:shadow-md hover:-translate-y-0.5 active:!bg-[#DDD6FE] active:scale-[0.99]"
+                          ? "bg-[#DDD6FE] shadow-md"
+                          : "hover:bg-[#EDE9FE] hover:shadow-md hover:scale-105 active:bg-[#DDD6FE]"
                       }
                     `}
                     onClick={() => handleRowClick(record)}
@@ -296,7 +301,7 @@ export function AssessmentReport({
                     <span className="font-semibold text-[#5D5DFB] text-center">
                       {record.attempt}
                     </span>
-                    <span className="font-mono text-[11px] font-medium text-[#3B2F7F]/60 text-center truncate px-1">
+                    <span className="font-mono text-[13px] font-semibold text-[#3B2F7F]/70 text-center truncate px-1">
                       {record.id.slice(0, 8)}…
                     </span>
                     <span className="font-medium text-[#3B2F7F] text-center">

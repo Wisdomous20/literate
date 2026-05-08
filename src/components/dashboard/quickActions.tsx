@@ -46,14 +46,13 @@ export function QuickActions({ schoolYear, minimal }: QuickActionsProps) {
     }
   };
 
-  // Card border style: thick left & bottom, thin top & right
-  const cardBorder =
-    "border-l-4 border-b-4 border-t border-r border-[#5D5DFB] rounded-xl bg-white shadow-lg";
+  // Card border style: equal all sides, purple
+  const cardBorder = "border border-[#A855F7] rounded-xl";
 
   // Minimal mode: just the list, no card, no header
   if (minimal) {
     return (
-      <div className="flex flex-1 flex-col gap-4 overflow-y-auto">
+      <div className="flex flex-1 flex-col gap-4 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-[#A855F7] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent">
         {isLoading ? (
           <div className="flex flex-1 items-center justify-center">
             <Loader2 className="h-5 w-5 animate-spin text-[#6666FF]" />
@@ -69,20 +68,19 @@ export function QuickActions({ schoolYear, minimal }: QuickActionsProps) {
               text: "text-gray-500",
             };
             const pastelBg =
-              idx % 4 === 0
-                ? "bg-blue-50"
-                : idx % 4 === 1
-                ? "bg-pink-50"
-                : idx % 4 === 2
-                ? "bg-green-50"
-                : "bg-yellow-50";
+              item.classificationLevel === "FRUSTRATION"
+                ? "bg-[#FFF0F0]"
+                : item.classificationLevel === "INSTRUCTIONAL"
+                ? "bg-[#EFF6FF]"
+                : item.classificationLevel === "INDEPENDENT"
+                ? "bg-[#F0FFF4]"
+                : "bg-[#FAF5FF]";
             return (
               <button
                 key={item.id}
                 onClick={() => handleAssessmentClick(item)}
                 type="button"
-                className={`flex items-center justify-between px-4 py-2.5 transition-all hover:shadow-xl hover:border-[#6666FF]/50 hover:bg-white ${cardBorder} ${pastelBg}`}
-                style={{ transition: "box-shadow 0.2s, background 0.2s" }}
+                className={`flex items-center justify-between px-4 py-2.5 transition-all hover:shadow-lg hover:border-[#6666FF] hover:bg-white active:scale-95 ${cardBorder} ${pastelBg}`}
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#EEF0FF]">
@@ -93,7 +91,7 @@ export function QuickActions({ schoolYear, minimal }: QuickActionsProps) {
                       {item.studentName}
                     </p>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[11px] text-[#00306E]/60">
+                      <span className="text-[11px] text-[#333333]">
                         {assessmentTypeLabels[item.assessmentType] ?? item.assessmentType}
                       </span>
                       <span
@@ -104,7 +102,7 @@ export function QuickActions({ schoolYear, minimal }: QuickActionsProps) {
                     </div>
                   </div>
                 </div>
-                <span className="ml-2 shrink-0 text-[11px] text-[#00306E]/50">
+                <span className="ml-2 shrink-0 text-[11px] text-[#333333]">
                   {formatDate(item.dateTaken)}
                 </span>
               </button>
@@ -125,7 +123,7 @@ export function QuickActions({ schoolYear, minimal }: QuickActionsProps) {
         <p className="text-xs text-[#5d5db6]">Students Below Grade Level</p>
       </div>
 
-      <div className="flex flex-1 flex-col gap-4 overflow-y-auto">
+      <div className="flex flex-1 flex-col gap-4 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-[#A855F7] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent">
         {isLoading ? (
           <div className="flex flex-1 items-center justify-center">
             <Loader2 className="h-5 w-5 animate-spin text-[#6666FF]" />
@@ -141,20 +139,19 @@ export function QuickActions({ schoolYear, minimal }: QuickActionsProps) {
               text: "text-gray-500",
             };
             const pastelBg =
-              idx % 4 === 0
-                ? "bg-blue-50"
-                : idx % 4 === 1
-                ? "bg-pink-50"
-                : idx % 4 === 2
-                ? "bg-green-50"
-                : "bg-yellow-50";
+              item.classificationLevel === "FRUSTRATION"
+                ? "bg-[#FFF0F0]"
+                : item.classificationLevel === "INSTRUCTIONAL"
+                ? "bg-[#EFF6FF]"
+                : item.classificationLevel === "INDEPENDENT"
+                ? "bg-[#F0FFF4]"
+                : "bg-[#FAF5FF]";
             return (
               <button
                 key={item.id}
                 onClick={() => handleAssessmentClick(item)}
                 type="button"
-                className={`flex items-center justify-between px-4 py-2.5 transition-all hover:shadow-xl hover:border-[#6666FF]/50 hover:bg-white ${cardBorder} ${pastelBg}`}
-                style={{ transition: "box-shadow 0.2s, background 0.2s" }}
+                className={`flex items-center justify-between px-4 py-2.5 transition-all hover:shadow-lg hover:border-[#6666FF] hover:bg-white active:scale-95 ${cardBorder} ${pastelBg}`}
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#EEF0FF]">
@@ -165,7 +162,7 @@ export function QuickActions({ schoolYear, minimal }: QuickActionsProps) {
                       {item.studentName}
                     </p>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[11px] text-[#00306E]/60">
+                      <span className="text-[11px] text-[#333333]">
                         {assessmentTypeLabels[item.assessmentType] ?? item.assessmentType}
                       </span>
                       <span
@@ -176,7 +173,7 @@ export function QuickActions({ schoolYear, minimal }: QuickActionsProps) {
                     </div>
                   </div>
                 </div>
-                <span className="ml-2 shrink-0 text-[11px] text-[#00306E]/50">
+                <span className="ml-2 shrink-0 text-[11px] text-[#333333]">
                   {formatDate(item.dateTaken)}
                 </span>
               </button>

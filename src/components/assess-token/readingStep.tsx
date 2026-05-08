@@ -154,7 +154,7 @@ export function QuestionsStep({
 
       <main className="mx-auto flex w-full max-w-6xl flex-1 px-4 py-6 md:px-6 lg:px-8">
         <div className="flex w-full gap-6">
-          <div className="min-w-0 flex-1 space-y-4">
+          <div className="min-w-0 flex-1 space-y-4 rounded-2xl border border-[#A855F7]/40 bg-white p-4 shadow-sm">
             <div className={`${surfaceClass} px-5 py-4 md:px-6`}>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-wrap items-center gap-3 text-sm">

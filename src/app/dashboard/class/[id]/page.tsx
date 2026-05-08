@@ -204,7 +204,7 @@ export default function ClassListsPage() {
             name: student.name || "No Name",
             gradeLevel: levelToGradeLevel(student.level),
             lastAssessment: latest
-              ? new Date(latest.dateTaken).toLocaleDateString()
+              ? new Date(latest.dateTaken).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
               : null,
             assessmentType: latest ? latest.type : "Awaiting Assessment",
           };
@@ -228,7 +228,7 @@ export default function ClassListsPage() {
             name: student.name || "No Name",
             gradeLevel: levelToGradeLevel(student.level),
             lastAssessment: latest
-              ? new Date(latest.dateTaken).toLocaleDateString()
+              ? new Date(latest.dateTaken).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
               : null,
             assessmentType: assessmentType as string,
           };

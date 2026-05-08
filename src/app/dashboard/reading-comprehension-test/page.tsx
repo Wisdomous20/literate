@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Clock, Loader2, Maximize2, Minimize2, ArrowRight } from "lucide-react";
+import { Clock, Maximize2, Minimize2, ArrowRight } from "lucide-react";
 
 import { TestPageLayout } from "@/components/assessment/testPageLayout";
 import { StudentSetupSection } from "@/components/assessment/studentSetupSection";
@@ -884,12 +884,23 @@ export default function ReadingComprehensionTestPage() {
             />
 
             {isLoadingQuestions && (
-              <div className="flex items-center justify-center py-12">
-                <div className="flex flex-col items-center gap-3">
-                  <Loader2 className="h-8 w-8 animate-spin text-[#6666FF]" />
-                  <span className="text-sm font-medium text-[#00306E]">
-                    Loading questions...
-                  </span>
+              <div className="flex-1 min-h-0 overflow-hidden space-y-4 animate-pulse py-2 pr-2">
+                {[1, 2, 3].map((n) => (
+                  <div key={n} className="rounded-xl border border-[#E8E8FF] p-4 space-y-3">
+                    <div className="h-4 w-3/4 rounded bg-[#E8E8FF]" />
+                    <div className="space-y-2">
+                      {[1, 2, 3, 4].map((o) => (
+                        <div key={o} className="flex items-center gap-2">
+                          <div className="h-5 w-5 rounded-full bg-[#E8E8FF] shrink-0" />
+                          <div className="h-4 w-1/2 rounded bg-[#E8E8FF]" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <div className="flex justify-center gap-3 pt-2">
+                  <div className="h-10 w-28 rounded-full bg-[#E8E8FF]" />
+                  <div className="h-10 w-32 rounded-full bg-[#D5E7FE]" />
                 </div>
               </div>
             )}
@@ -903,29 +914,34 @@ export default function ReadingComprehensionTestPage() {
             )}
 
             {!isLoadingQuestions && !questionsLoadError && (
-              <div className="oral-reading-scroll flex-1 min-h-0 overflow-y-auto pr-2">
-                <div className="space-y-6">
-                  {questions.map((question) => (
-                    <QuestionCard
-                      key={question.id}
-                      question={question}
-                      answer={answers[question.id]}
-                      isSubmitted={isSubmitted}
-                      highlightedTag={highlightedTag}
-                      onSelectOption={handleSelectOption}
-                      onEssayChange={handleEssayChange}
-                    />
-                  ))}
+              <>
+                <div className="oral-reading-scroll flex-1 min-h-0 overflow-y-auto pr-2">
+                  <div className="space-y-6">
+                    {questions.map((question) => (
+                      <QuestionCard
+                        key={question.id}
+                        question={question}
+                        answer={answers[question.id]}
+                        isSubmitted={isSubmitted}
+                        highlightedTag={highlightedTag}
+                        onSelectOption={handleSelectOption}
+                        onEssayChange={handleEssayChange}
+                      />
+                    ))}
+                  </div>
                 </div>
 
-                <ComprehensionSubmitArea
-                  isSubmitting={isSubmitting}
-                  isSubmitted={isSubmitted}
-                  submitError={submitError}
-                  onSubmit={handleSubmit}
-                  onTryAgain={handleTryAgain}
-                />
-              </div>
+                {/* Static submit area — always visible below scroll */}
+                <div className="shrink-0 border-t border-[#E5DEFF] bg-white pt-2 pb-1">
+                  <ComprehensionSubmitArea
+                    isSubmitting={isSubmitting}
+                    isSubmitted={isSubmitted}
+                    submitError={submitError}
+                    onSubmit={handleSubmit}
+                    onTryAgain={handleTryAgain}
+                  />
+                </div>
+              </>
             )}
           </div>
         )}

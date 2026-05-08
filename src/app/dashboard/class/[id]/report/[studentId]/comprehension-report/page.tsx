@@ -57,8 +57,29 @@ export default function ReadingComprehensionReportPage() {
     [allAssessments, assessmentId],
   );
 
-  if (isLoading) return <div>Loading...</div>;
-  if (!assessment) return <div>No data found.</div>;
+  if (isLoading) {
+    return (
+      <div className="flex h-screen flex-col overflow-hidden">
+        <DashboardHeader title="Reading Comprehension Test Report" />
+        <div className="flex flex-1 items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-[#6666FF]/20 border-t-[#6666FF]" />
+            <span className="text-sm font-medium text-[#00306E]/60">Loading report...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (!assessment) {
+    return (
+      <div className="flex h-screen flex-col overflow-hidden">
+        <DashboardHeader title="Reading Comprehension Test Report" />
+        <div className="flex flex-1 items-center justify-center">
+          <p className="text-sm font-medium text-[#00306E]/60">No data found.</p>
+        </div>
+      </div>
+    );
+  }
 
   const studentName = assessment.student?.name ?? "";
   const gradeLevel = assessment.student?.level
@@ -121,118 +142,134 @@ export default function ReadingComprehensionReportPage() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <div className="w-full">
-        <DashboardHeader title="Reading Comprehension Test Report" />
-        <div className="mb-4 max-w-6xl mx-auto px-6 lg:px-12">
-          <div className="mt-6 flex items-center justify-between">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full translate-y-1 bg-[#E0E0FF]" />
-              <button
-                onClick={() => window.history.back()}
-                className="relative flex items-center gap-1.5 rounded-full border border-[#6666FF]/40 px-4 py-2 text-xs font-semibold shadow-sm transition-transform bg-white text-[#6666FF] hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
-                type="button"
-              >
-                <svg
-                  className="h-3.5 w-3.5 shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2.5}
-                  viewBox="0 0 24 24"
+      <DashboardHeader title="Reading Comprehension Test Report" />
+
+      <main className="flex flex-1 flex-col overflow-y-auto px-4 py-4 lg:px-8">
+        <div className="rounded-2xl bg-white overflow-hidden flex flex-col flex-1 border-t border-l border-r-[4px] border-b-[4px] border-[#A855F7] border-r-[#5D5DFB] border-b-[#5D5DFB]">
+          {/* Header bar */}
+          <div className="px-5 py-4 bg-white border-b border-[#EDE9FE]">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-full translate-y-1 bg-[#E0E0FF]" />
+                  <button
+                    onClick={() => window.history.back()}
+                    className="relative flex items-center gap-1.5 rounded-full border border-[#6666FF]/40 px-4 py-2 text-xs font-semibold shadow-sm transition-transform bg-white text-[#6666FF] hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
+                    type="button"
+                  >
+                    <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Back
+                  </button>
+                </div>
+                <div className="h-6 w-px bg-[#C4B5FD] mx-1" />
+                <div className="flex flex-col gap-0.5">
+                  <h1 className="text-base font-bold text-[#3B2F7F] leading-tight">{studentName}</h1>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] font-semibold text-[#5D5DFB] uppercase tracking-widest">{gradeLevel}</span>
+                    {classData?.name && (
+                      <>
+                        <span className="text-[#C4B5FD] font-bold">·</span>
+                        <span className="text-[11px] font-semibold text-[#5D5DFB]">{classData.name}</span>
+                      </>
+                    )}
+                    {assessmentId && (
+                      <>
+                        <span className="text-[#C4B5FD] font-bold">·</span>
+                        <span className="font-mono text-[9px] text-[#5D5DFB]/70 break-all">{assessmentId}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+                <button
+                  onClick={handleExport}
+                  className="relative inline-flex items-center gap-1.5 rounded-full bg-[#6666FF] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-transform hover:bg-[#5555EE] hover:-translate-y-0.5 active:translate-y-0"
+                  type="button"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
-                Back
-              </button>
-            </div>
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full translate-y-1 bg-[#1e3a8a]/30" />
-              <button
-                onClick={handleExport}
-                className="relative inline-flex items-center gap-1.5 rounded-full bg-[#1e3a8a] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-transform hover:bg-[#1d4ed8] hover:-translate-y-0.5 active:translate-y-0"
-                type="button"
-              >
-                Export to PDF
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth max-w-6xl mx-auto px-6 py-6 md:px-8 lg:px-12 space-y-6 w-full">
-        {/* Row 1: Student Info | Percentage Grade | Comprehension Level — 3 equal boxes */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <div className="min-w-0">
-            <StudentInfoCard
-              studentName={studentName}
-              gradeLevel={gradeLevel}
-              className={classData?.name}
-            />
-          </div>
-
-          {/* Percentage Grade Card */}
-          <div className="flex flex-col justify-center gap-2 rounded-xl border-t border-l border-r-4 border-b-4 border-t-[#54A4FF] border-l-[#54A4FF] border-r-[#297CEC] border-b-[#297CEC] bg-[#EFFDFF] px-5 py-5 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#DAE6FF] bg-[rgba(74,74,252,0.06)]">
-                <FileText size={16} className="text-[#1A6673]" />
+                  Export to PDF
+                </button>
               </div>
-              <h3 className="text-sm font-bold leading-tight text-[#003366]">
-                Percentage Grade
-              </h3>
             </div>
-            <p className="pl-10 text-4xl font-bold text-[#1A6673]">
-              {percentageGrade}%
-            </p>
-            <span className="pl-10 text-xs font-medium text-[#003366]/60">
-              Percentage
-            </span>
           </div>
 
-          {/* Comprehension Level Card */}
-          <div className="flex flex-col justify-center gap-2 rounded-xl border-t border-l border-r-4 border-b-4 border-t-[#54A4FF] border-l-[#54A4FF] border-r-[#297CEC] border-b-[#297CEC] bg-[#EFFDFF] px-5 py-5 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#DAE6FF] bg-[rgba(74,74,252,0.06)]">
-                <ClipboardCheck size={16} className="text-[#CE330C]" />
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
+            {/* Row 1: Student Info | Percentage Grade | Comprehension Level */}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              <div className="min-w-0">
+                <StudentInfoCard
+                  studentName={studentName}
+                  gradeLevel={gradeLevel}
+                  className={classData?.name}
+                />
               </div>
-              <h3 className="text-sm font-bold leading-tight text-[#003366]">
-                Comprehension Level
-              </h3>
-            </div>
-            <p
-              className={`pl-10 text-2xl font-bold ${getLevelColorClass(comprehensionLevel)}`}
-            >
-              {comprehensionLevel || "—"}
-            </p>
-            <span className="pl-10 text-xs font-medium text-[#003366]/60">
-              Comprehension Level
-            </span>
-          </div>
-        </div>
 
-        {/* Row 2: Passage Info | Comprehension Breakdown */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <div className="min-w-0">
-            <PassageInfoCard
-              passageTitle={passage?.title ?? ""}
-              passageLevel={passage?.level ? `Grade ${passage.level}` : ""}
-              numberOfWords={numberOfWords}
-              testType={formatTestType(passage?.testType)}
-              assessmentType={assessmentTypeLabel}
-            />
-          </div>
-          <div className="min-w-0">
-            <ComprehensionBreakdownReport
-              score={`${totalCorrect}`}
-              literal={literalCorrect}
-              inferential={inferentialCorrect}
-              critical={criticalCorrect}
-              mistakes={mistakes}
-              numberOfItems={totalItems}
-              classificationLevel={comprehensionLevel}
-            />
+              {/* Percentage Grade Card */}
+              <div className="flex flex-col justify-center gap-2 rounded-xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#F8F5FF] px-5 py-5 shadow-[0_1px_20px_rgba(168,85,247,0.15)]">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#E9D5FF] bg-[rgba(168,85,247,0.06)]">
+                    <FileText size={16} className="text-[#A855F7]" />
+                  </div>
+                  <h3 className="text-sm font-bold leading-tight text-[#3B2F7F]">
+                    Percentage Grade
+                  </h3>
+                </div>
+                <p className="pl-10 text-4xl font-bold text-[#5D5DFB]">
+                  {percentageGrade}%
+                </p>
+                <span className="pl-10 text-xs font-medium text-[#3B2F7F]/60">
+                  Percentage
+                </span>
+              </div>
+
+              {/* Comprehension Level Card */}
+              <div className="flex flex-col justify-center gap-2 rounded-xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#F8F5FF] px-5 py-5 shadow-[0_1px_20px_rgba(168,85,247,0.15)]">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#E9D5FF] bg-[rgba(168,85,247,0.06)]">
+                    <ClipboardCheck size={16} className="text-[#A855F7]" />
+                  </div>
+                  <h3 className="text-sm font-bold leading-tight text-[#3B2F7F]">
+                    Comprehension Level
+                  </h3>
+                </div>
+                <p
+                  className={`pl-10 text-2xl font-bold ${getLevelColorClass(comprehensionLevel)}`}
+                >
+                  {comprehensionLevel || "—"}
+                </p>
+                <span className="pl-10 text-xs font-medium text-[#3B2F7F]/60">
+                  Comprehension Level
+                </span>
+              </div>
+            </div>
+
+            {/* Row 2: Passage Info | Comprehension Breakdown */}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div className="min-w-0">
+                <PassageInfoCard
+                  passageTitle={passage?.title ?? ""}
+                  passageLevel={passage?.level ? `Grade ${passage.level}` : ""}
+                  numberOfWords={numberOfWords}
+                  testType={formatTestType(passage?.testType)}
+                  assessmentType={assessmentTypeLabel}
+                />
+              </div>
+              <div className="min-w-0">
+                <ComprehensionBreakdownReport
+                  score={`${totalCorrect}`}
+                  literal={literalCorrect}
+                  inferential={inferentialCorrect}
+                  critical={criticalCorrect}
+                  mistakes={mistakes}
+                  numberOfItems={totalItems}
+                  classificationLevel={comprehensionLevel}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </main>

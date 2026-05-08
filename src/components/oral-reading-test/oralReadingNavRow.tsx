@@ -338,27 +338,30 @@ export function OralReadingNavRow({
           <>
             {/* Back button — only if provided */}
             {onGoBack && (
-              <button
-                type="button"
-                onClick={onGoBack}
-                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-[#A855F7] bg-white text-[#6666FF] transition-colors hover:bg-[#F3F0FF]"
-                aria-label="Go back"
-                title="Go back"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              <div className="relative shrink-0">
+                <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+                <button
+                  type="button"
+                  onClick={onGoBack}
+                  className="relative flex items-center gap-1.5 rounded-full border border-[#6666FF]/40 bg-white px-4 py-2 text-xs font-semibold text-[#6666FF] shadow-sm transition-transform hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
+                  aria-label="Go back"
                 >
-                  <path d="m15 18-6-6 6-6" />
-                </svg>
-              </button>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="m15 18-6-6 6-6" />
+                  </svg>
+                  Back
+                </button>
+              </div>
             )}
 
             {/* Compact student info */}
@@ -397,7 +400,7 @@ export function OralReadingNavRow({
                     data-tour-target="assessment-continue-button"
                     onClick={onContinue}
                     disabled={!continueEnabled}
-                    className={`relative flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition-transform ${
+                    className={`relative flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold transition-transform ${
                       continueEnabled
                         ? "bg-[#6666FF] text-white hover:-translate-y-0.5 active:translate-y-0"
                         : "cursor-not-allowed bg-[#C4C4FF] text-white"

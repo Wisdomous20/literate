@@ -636,99 +636,107 @@ export default function OralReadingReportPage() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-8 py-5 border-b-[3px] border-[#5D5DFB] bg-white">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#5D5DFB]/10">
-            <LayoutDashboard size={20} className="text-[#5D5DFB]" />
-          </div>
-          <h1 className="text-xl lg:text-2xl font-semibold text-[#31318A]">
-            Oral Fluency Test Report
-          </h1>
+      {/* Header — title only */}
+      <div className="flex items-center gap-3 border-b-[3px] border-[#5D5DFB] bg-white px-8 py-5">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#5D5DFB]/10">
+          <LayoutDashboard size={20} className="text-[#5D5DFB]" />
         </div>
+        <h1 className="text-xl lg:text-2xl font-semibold text-[#31318A]">
+          Oral Fluency Test Report
+        </h1>
       </div>
 
-      {/* Nav row: Back (white filled) on left, Export PDF + Start New on right */}
-      <div className="flex items-center justify-between px-8 pt-5 pb-2">
-        <div className="relative">
-          <div className="absolute inset-0 rounded-full translate-y-1 bg-[#E0E0FF]" />
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="relative flex items-center gap-1.5 rounded-full border border-[#6666FF]/40 px-4 py-2 text-xs font-semibold shadow-sm transition-transform bg-white text-[#6666FF] hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
-            aria-label="Go back"
-            title="Go back"
-          >
-            <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
-            Back
-          </button>
-        </div>
+      <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth">
+        <div className="max-w-[1400px] mx-auto px-6 py-6 md:px-8 lg:px-12 w-full">
+          {/* All cards in one container */}
+          <div className="rounded-2xl border border-[#6666FF]/20 bg-white shadow-sm overflow-hidden">
+            {/* Action bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E8E8FF] bg-[#F8F8FF] px-6 py-4">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+                <button
+                  type="button"
+                  onClick={() => router.back()}
+                  className="relative flex items-center gap-1.5 rounded-full border border-[#6666FF]/40 bg-white px-4 py-2 text-xs font-semibold text-[#6666FF] shadow-sm transition-transform hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                  Back
+                </button>
+              </div>
 
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full translate-y-1 bg-[#1e3a8a]/30" />
-            <button
-              type="button"
-              onClick={handleExportPdf}
-              className="relative inline-flex items-center gap-1.5 rounded-full bg-[#1e3a8a] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-transform hover:bg-[#1d4ed8] hover:-translate-y-0.5 active:translate-y-0"
-            >
-              <Download className="h-3.5 w-3.5" />
-              Export to PDF
-            </button>
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Export PDF */}
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-full translate-y-1 bg-[#1e3a8a]/30" />
+                  <button
+                    type="button"
+                    onClick={handleExportPdf}
+                    className="relative inline-flex items-center gap-1.5 rounded-full bg-[#1e3a8a] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-transform hover:bg-[#1d4ed8] hover:-translate-y-0.5 active:translate-y-0"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Export to PDF
+                  </button>
+                </div>
+                {/* Start New */}
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+                  <button
+                    type="button"
+                    onClick={handleStartNew}
+                    className="relative inline-flex items-center gap-1.5 rounded-full border border-[#6666FF] bg-white px-5 py-2 text-xs font-semibold text-[#6666FF] shadow transition-transform hover:bg-[#6666FF] hover:text-white hover:-translate-y-0.5 active:translate-y-0"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Start New
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Cards content */}
+            <div className="p-6 space-y-6">
+              {/* Top row: Student Info + Metric Cards */}
+              <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+                <StudentInfoCard
+                  studentName={studentName}
+                  gradeLevel={gradeLevel}
+                  className={studentClass}
+                />
+                <MetricCards
+                  wcpm={wcpm}
+                  readingTimeSeconds={readingTimeSeconds}
+                  classificationLevel={classification}
+                />
+              </div>
+
+              {/* Three-column row */}
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                <div className="flex flex-col gap-6">
+                  <PassageInfoCard
+                    passageTitle={passageTitle}
+                    passageLevel={passageLevel}
+                    numberOfWords={totalWords}
+                    testType={testType}
+                    assessmentType="Oral Reading"
+                  />
+                  <AudioPlaybackCard audioSrc={audioSrc} audioRef={audioRef} />
+                </div>
+
+                <BehaviorChecklist
+                  behaviors={behaviorItems}
+                  onSave={session.sessionId ? handleSaveBehaviors : undefined}
+                />
+
+                <MiscueAnalysisReport
+                  miscueData={miscueData}
+                  onViewMiscues={() => setShowMiscuesModal(true)}
+                  onEditMiscues={() => setShowEditModal(true)}
+                  onRecheckMiscues={reportSessionId ? handleRecheckMiscues : undefined}
+                  isRechecking={isRecheckingMiscues}
+                  recheckSummary={recheckSummaryText}
+                />
+              </div>
+            </div>
           </div>
-
-          <button
-            type="button"
-            onClick={handleStartNew}
-            className="flex items-center gap-2 rounded-lg border border-[#6666FF]/30 bg-[rgba(102,102,255,0.06)] px-4 py-2 text-sm font-semibold text-[#6666FF] transition-all hover:bg-[rgba(102,102,255,0.12)]"
-          >
-            <RotateCcw className="h-4 w-4" />
-            <span>Start New</span>
-          </button>
-        </div>
-      </div>
-
-      <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth max-w-300 mx-auto px-6 py-6 md:px-8 lg:px-12 space-y-6 w-full">
-        {/* Top row: Student Info + Metric Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-          <StudentInfoCard
-            studentName={studentName}
-            gradeLevel={gradeLevel}
-            className={studentClass}
-          />
-          <MetricCards
-            wcpm={wcpm}
-            readingTimeSeconds={readingTimeSeconds}
-            classificationLevel={classification}
-          />
-        </div>
-
-        {/* Three-column row */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="flex flex-col gap-6">
-            <PassageInfoCard
-              passageTitle={passageTitle}
-              passageLevel={passageLevel}
-              numberOfWords={totalWords}
-              testType={testType}
-              assessmentType="Oral Reading"
-            />
-            <AudioPlaybackCard audioSrc={audioSrc} audioRef={audioRef} />
-          </div>
-
-          <BehaviorChecklist
-            behaviors={behaviorItems}
-            onSave={session.sessionId ? handleSaveBehaviors : undefined}
-          />
-
-          <MiscueAnalysisReport
-            miscueData={miscueData}
-            onViewMiscues={() => setShowMiscuesModal(true)}
-            onEditMiscues={() => setShowEditModal(true)}
-            onRecheckMiscues={reportSessionId ? handleRecheckMiscues : undefined}
-            isRechecking={isRecheckingMiscues}
-            recheckSummary={recheckSummaryText}
-          />
         </div>
       </main>
 

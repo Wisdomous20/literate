@@ -30,6 +30,19 @@ interface AssessmentSummaryProps {
   onBack: () => void;
 }
 
+function getBannerGradient(level: string): string {
+  switch (level?.toLowerCase()) {
+    case "independent":
+      return "from-[#16A34A]/90 to-[#16A34A]/75";
+    case "instructional":
+      return "from-[#2563EB]/90 to-[#2563EB]/75";
+    case "frustration":
+      return "from-[#DC2626]/90 to-[#DC2626]/75";
+    default:
+      return "from-[#6666FF]/90 to-[#6666FF]/75";
+  }
+}
+
 function getLevelColor(level: string): string {
   switch (level?.toLowerCase()) {
     case "independent":
@@ -241,7 +254,7 @@ export function AssessmentSummary({
                       <>
                         <span className="text-[#C4B5FD] font-bold">·</span>
                         <span className="text-[11px] font-semibold text-[#5D5DFB]">
-                          {studentClass}
+                          Class {studentClass}
                         </span>
                       </>
                     )}
@@ -269,7 +282,7 @@ export function AssessmentSummary({
             {oralReadingLevel.level && (
               <div className="relative rounded-2xl overflow-hidden mb-6 h-48">
                 <div className="absolute inset-0 bg-[url('/images/Class-bg.png')] bg-cover bg-center" />
-                <div className="absolute inset-0 bg-linear-to-r from-[#6666FF]/90 to-[#6666FF]/75" />
+                <div className={`absolute inset-0 bg-linear-to-r ${getBannerGradient(oralReadingLevel.level)}`} />
 
                 <div className="relative h-full flex items-center justify-between px-8 py-6">
                   <div className="flex flex-col gap-2">
@@ -315,7 +328,7 @@ export function AssessmentSummary({
     rounded-xl overflow-hidden cursor-pointer
     border-l-2 border-t-2 border-r-4 border-b-4
     border-l-[#E5E7EB] border-t-[#E5E7EB]
-    border-r-[#2E2E68] border-b-[#2E2E68]
+    border-r-[#A855F7] border-b-[#A855F7]
     transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:shadow-[#6666FF]/10 active:scale-[0.98]
   "
                 >

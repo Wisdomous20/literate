@@ -60,24 +60,30 @@ export function DeleteConfirmModal({
 
         {/* Buttons */}
         <div className="mt-1 flex w-full items-center gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 rounded-lg border border-[#6666FF]/40 bg-transparent px-4 py-2.5 text-sm font-semibold text-[#6666FF] transition-colors hover:bg-[rgba(102,102,255,0.06)]"
-          >
-            Cancel
-          </button>
-          <button
-            ref={deleteButtonRef}
-            type="button"
-            onClick={() => {
-              onConfirm();
-              onClose();
-            }}
-            className="flex-1 rounded-lg bg-[#DE3B40] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_0_16px_rgba(222,59,64,0.3)] transition-colors hover:bg-[#C8333A]"
-          >
-            Delete
-          </button>
+          <div className="relative flex-1">
+            <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+            <button
+              type="button"
+              onClick={onClose}
+              className="relative w-full rounded-full border border-[#6666FF]/40 bg-white px-4 py-2.5 text-sm font-semibold text-[#6666FF] shadow-sm transition-transform hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
+            >
+              Cancel
+            </button>
+          </div>
+          <div className="relative flex-1">
+            <div className="absolute inset-0 rounded-full translate-y-1 bg-[#9B2226]" />
+            <button
+              ref={deleteButtonRef}
+              type="button"
+              onClick={() => {
+                onConfirm();
+                onClose();
+              }}
+              className="relative w-full rounded-full bg-[#DE3B40] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform hover:bg-[#C8333A] hover:-translate-y-0.5 active:translate-y-0"
+            >
+              Delete
+            </button>
+          </div>
         </div>
       </div>
     </div>

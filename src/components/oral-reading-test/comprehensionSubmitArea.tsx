@@ -35,7 +35,7 @@ export function ComprehensionSubmitArea({
               <button
                 type="button"
                 onClick={onTryAgain}
-                className="relative flex items-center gap-2 rounded-full bg-[#6666FF] px-7 py-3 text-base font-bold text-white transition-transform hover:-translate-y-0.5 active:translate-y-0 shadow"
+                className="relative flex items-center gap-2 rounded-full bg-[#6666FF] px-8 py-3.5 text-base font-bold text-white transition-transform hover:-translate-y-0.5 active:translate-y-0 shadow"
               >
                 <RotateCcw className="h-5 w-5" />
                 Try Again
@@ -52,7 +52,7 @@ export function ComprehensionSubmitArea({
                 type="button"
                 onClick={onReadingLevel}
                 disabled={!canViewReadingLevel}
-                className={`relative flex items-center gap-2 rounded-full px-7 py-3 text-base font-bold transition-transform shadow border-t-2 ${
+                className={`relative flex items-center gap-2 rounded-full px-6 py-3.5 text-base font-bold transition-transform shadow border-t-2 ${
                   canViewReadingLevel
                     ? "border-t-[#A855F7] bg-white text-[#3B21CC] hover:bg-[#6666FF] hover:text-white"
                     : "cursor-not-allowed border-t-[#D4D4F0] bg-[#C4C4FF] text-white"
@@ -71,7 +71,7 @@ export function ComprehensionSubmitArea({
             type="button"
             onClick={onSubmit}
             disabled={isSubmitting}
-            className="relative flex items-center justify-center gap-2 rounded-full bg-[#6666FF] px-10 py-3 text-base font-bold text-white transition-transform hover:-translate-y-0.5 active:translate-y-0 shadow disabled:opacity-60 min-w-[220px]"
+            className="relative flex items-center justify-center gap-2 rounded-full bg-[#6666FF] px-10 py-3.5 text-base font-bold text-white transition-transform hover:-translate-y-0.5 active:translate-y-0 shadow disabled:opacity-60 min-w-[220px]"
           >
             {isSubmitting ? "Submitting..." : "Submit"}
           </button>
