@@ -40,7 +40,7 @@ export default function ProblemSection() {
         </AnimatedSection>
 
         <AnimatedSection direction="right" delay={0.15}>
-          <div className="relative group">
+          <div className="relative group" data-floating-visual="">
             {/* IMG_40 sits below, IMG_8_1 overlaps it from the top */}
             <Image
               src="/assets/IMG_40.svg"

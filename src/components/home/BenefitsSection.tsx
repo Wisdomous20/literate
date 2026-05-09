@@ -12,6 +12,7 @@ export default function BenefitsSection() {
     <section className="py-24 relative overflow-hidden">
       {/* Decorative image top-right */}
       <Image
+        data-floating-visual=""
         src="/assets/IMG_24.png"
         alt=""
         width={900}
@@ -46,7 +47,7 @@ export default function BenefitsSection() {
 
         {/* Right side: mascot + testimonials */}
         <AnimatedSection direction="right" delay={0.15}>
-        <div className="relative group">
+        <div className="relative group" data-benefit-visual="" data-floating-visual="">
           <Image
             src="/assets/IMG_36.svg"
             alt="Mascot with Badges"
@@ -56,7 +57,7 @@ export default function BenefitsSection() {
           />
 
           {/* Testimonial Card 1 - top right */}
-          <div className="absolute -top-10 -right-10 z-10 w-80">
+          <div className="absolute -top-10 -right-10 z-10 w-80" data-testimonial-card="">
             <div className="absolute inset-0 bg-[#B3A4F1] rounded-[10px] translate-y-2" />
             <div className="relative bg-white p-6 rounded-[12px] shadow-xl hover:-translate-y-1 transition-transform active:translate-y-0">
               <div className="flex justify-between items-center mb-4">
@@ -84,7 +85,7 @@ export default function BenefitsSection() {
           </div>
 
           {/* Testimonial Card 2 - bottom left */}
-          <div className="absolute -bottom-10 -left-10 z-10 w-80">
+          <div className="absolute -bottom-10 -left-10 z-10 w-80" data-testimonial-card="">
             <div className="absolute inset-0 bg-[#B3A4F1] rounded-[10px] translate-y-2" />
             <div className="relative bg-white p-6 rounded-[12px] shadow-xl hover:-translate-y-1 transition-transform active:translate-y-0">
               <div className="flex justify-between items-center mb-4">

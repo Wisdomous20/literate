@@ -20,6 +20,7 @@ export default function HeroSection() {
 
       <div className="px-6 md:px-12 grid lg:grid-cols-2 gap-12 items-center -mt-12">
         <motion.div
+          data-hero-copy=""
           className="z-10"
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
@@ -76,6 +77,7 @@ export default function HeroSection() {
         </motion.div>
 
         <motion.div
+          data-hero-art=""
           className="relative flex justify-end"
           initial={{ opacity: 0, x: 60 }}
           animate={{ opacity: 1, x: 0 }}
@@ -90,6 +92,7 @@ export default function HeroSection() {
             priority
           />
           <Image
+            data-hero-orbit=""
             src="/assets/IMG_6_5.svg"
             alt=""
             width={650}

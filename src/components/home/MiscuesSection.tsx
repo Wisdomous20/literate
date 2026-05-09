@@ -67,7 +67,7 @@ export default function MiscuesSection() {
   return (
     <section className="h-screen flex flex-col justify-center relative overflow-hidden py-6">
       {/* IMG_7 flipped, leftmost */}
-      <div className="absolute -top-16 left-0 -z-10 pointer-events-none">
+      <div className="absolute -top-16 left-0 -z-10 pointer-events-none" data-floating-visual="">
         <Image
           src="/assets/IMG_33_1.svg"
           alt=""
@@ -77,7 +77,7 @@ export default function MiscuesSection() {
         />
       </div>
       {/* IMG_22 flipped, leftmost - above IMG_33_1 */}
-      <div className="absolute -top-[200px] -left-40 -z-[5] pointer-events-none">
+      <div className="absolute -top-[200px] -left-40 -z-[5] pointer-events-none" data-floating-visual="">
         <Image
           src="/assets/IMG_22_3.svg"
           alt=""
@@ -102,7 +102,7 @@ export default function MiscuesSection() {
       {/* 4×2 compact grid — all 8 miscues visible */}
       <AnimatedList className="px-6 md:px-12 grid grid-cols-2 md:grid-cols-4 gap-2" staggerDelay={0.08} baseDelay={0.05}>
         {miscues.map((m) => (
-          <div key={m.name} className="relative group h-[148px]">
+          <div key={m.name} className="relative group h-[148px]" data-miscue-card="">
             <div
               className="absolute inset-0 rounded-[10px] translate-y-1.5"
               style={{ background: m.color }}

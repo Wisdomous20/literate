@@ -35,7 +35,7 @@ export default function HowItWorksSection() {
   return (
     <section className="pt-24 pb-[20vh] relative">
       {/* Decorative mascot top-left */}
-      <div className="absolute -top-16 left-0 -z-10">
+      <div className="absolute -top-16 left-0 -z-10" data-floating-visual="">
         <Image
           src="/assets/IMG_12.png"
           alt=""
@@ -45,7 +45,7 @@ export default function HowItWorksSection() {
         />
       </div>
       {/* Background wave */}
-      <div className="absolute inset-0 -z-20 opacity-[0.82] translate-y-[10%]">
+      <div className="absolute inset-0 -z-20 opacity-[0.82] translate-y-[10%]" data-how-bg="">
         <Image
           src="/assets/IMG_13_2.svg"
           alt=""

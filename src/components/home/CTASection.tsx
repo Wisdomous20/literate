@@ -5,9 +5,9 @@ import { AnimatedSection } from "./AnimatedSection";
 export default function CTASection() {
   return (
     <section className="py-24 px-6 md:px-12">
-      <div className="group mx-auto rounded-[40px] p-12 md:p-24 relative overflow-hidden shadow-2xl bg-gradient-to-br from-[#eb4cb6] via-[#6C4EEB] to-[#6C4EEB]">
+      <div className="group mx-auto rounded-[40px] p-12 md:p-24 relative overflow-hidden shadow-2xl bg-gradient-to-br from-[#eb4cb6] via-[#6C4EEB] to-[#6C4EEB]" data-cta-panel="">
         {/* Decorative mascot right */}
-        <div className="absolute top-[-65%] right-[-15%] flex items-center opacity-40 group-hover:opacity-70 group-hover:scale-110 transition-all duration-500 pointer-events-none">
+        <div className="absolute top-[-65%] right-[-15%] flex items-center opacity-40 group-hover:opacity-70 group-hover:scale-110 transition-all duration-500 pointer-events-none" data-floating-visual="">
           <Image
             src="/assets/IMG_30_1.svg"
             alt=""
