@@ -8,7 +8,9 @@ interface Question {
   type: string;
   passageLevel: number;
   language: string;
-  passageId?: string; 
+  passageId?: string;
+  options?: string[];
+  correctAnswer?: string | null;
 }
 
 interface GetAllQuestionsResult {
@@ -38,7 +40,9 @@ export async function getAllQuestionsService(): Promise<GetAllQuestionsResult> {
       type: q.type,
       passageLevel: q.quiz?.passage?.level || 0,
       language: q.quiz?.passage?.language || "English",
-      passageId: q.quiz?.passage?.id, // 
+      passageId: q.quiz?.passage?.id,
+      options: Array.isArray(q.options) ? q.options.map(String) : [],
+      correctAnswer: q.correctAnswer,
     }));
 
     return {
