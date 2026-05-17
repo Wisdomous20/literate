@@ -47,32 +47,32 @@ export default function PassageInventory() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4FCFD] flex flex-col px-0 py-0">
-      <div className="flex items-center justify-between px-6 pt-8 pb-4">
+    <div className="flex min-h-screen flex-col bg-[#F4FCFD] px-0 py-0">
+      <div className="flex items-center justify-between px-6 pb-4 pt-8">
         <h1 className="text-xl font-bold text-[#31318A]">Passage Inventory</h1>
         <Link
           href="/admin/passages/create"
-          className="rounded-lg px-4 py-2 text-sm font-semibold text-white bg-[#2E2E68] hover:opacity-90 shadow"
+          className="rounded-lg bg-[#2E2E68] px-4 py-2 text-sm font-semibold text-white shadow hover:opacity-90"
         >
           + Create Passage
         </Link>
       </div>
 
       <div className="flex-1 overflow-auto">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4 px-6 pb-8">
+        <div className="grid grid-cols-2 gap-4 px-6 pb-8 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
           {isLoading ? (
-            <div className="col-span-full flex justify-center items-center h-32">
-              <span className="text-[#00306E]/60 text-base">Loading passages...</span>
+            <div className="col-span-full flex h-32 items-center justify-center">
+              <span className="text-base text-[#00306E]/60">Loading passages...</span>
             </div>
           ) : passages.length === 0 ? (
-            <div className="col-span-full flex justify-center items-center h-32">
-              <span className="text-[#00306E]/60 text-base">No passages found.</span>
+            <div className="col-span-full flex h-32 items-center justify-center">
+              <span className="text-base text-[#00306E]/60">No passages found.</span>
             </div>
           ) : (
             passages.map((p) => (
               <div
                 key={p.id}
-                className="group flex flex-col justify-between rounded-xl bg-white border border-[#E4F4FF] shadow hover:shadow-lg transition-all p-3 cursor-pointer hover:scale-[1.02] relative min-h-3 max-w-xs"
+                className="group relative flex max-w-xs cursor-pointer flex-col justify-between rounded-xl border border-[#E4F4FF] bg-white p-3 shadow transition-all hover:scale-[1.02] hover:shadow-lg"
               >
                 <div
                   className="absolute right-2 top-2 z-10"
@@ -87,18 +87,18 @@ export default function PassageInventory() {
                     }}
                     aria-label="More options"
                   >
-                    <MoreVertical className="w-4 h-4 text-[#2E2E68]" />
+                    <MoreVertical className="h-4 w-4 text-[#2E2E68]" />
                   </button>
 
                   {menuOpenId === p.id && (
                     <div
-                      className="absolute right-0 mt-2 w-28 rounded-lg bg-white border shadow-lg flex flex-col z-20"
+                      className="absolute right-0 z-20 mt-2 flex w-28 flex-col rounded-lg border bg-white shadow-lg"
                       onMouseDown={(e) => e.stopPropagation()}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button
                         type="button"
-                        className="px-3 py-2 text-left hover:bg-[#E4F4FF] text-[#00306E] text-sm"
+                        className="px-3 py-2 text-left text-sm text-[#00306E] hover:bg-[#E4F4FF]"
                         onClick={() => {
                           setMenuOpenId(null);
                           router.push(`/admin/passages/edit/${p.id}`);
@@ -108,7 +108,7 @@ export default function PassageInventory() {
                       </button>
                       <button
                         type="button"
-                        className="px-3 py-2 text-left hover:bg-red-100 text-red-700 text-sm"
+                        className="px-3 py-2 text-left text-sm text-red-700 hover:bg-red-100"
                         onClick={() => handleDelete(p.id)}
                         disabled={deletingId === p.id}
                       >
@@ -120,29 +120,31 @@ export default function PassageInventory() {
 
                 <Link
                   href={`/admin/passages/${p.id}`}
-                  className="flex-1 flex flex-col justify-between min-w-0"
+                  className="flex min-w-0 flex-1 flex-col justify-between"
                 >
-                  <div className="flex items-center gap-2 mb-2 min-w-0">
+                  <div className="mb-2 flex min-w-0 items-center gap-2">
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E4F4FF]">
                       <FileText className="h-4 w-4 text-[#6666FF]" />
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="min-w-0 flex-1">
                       <h2
-                        className="text-base font-bold text-[#31318A] truncate max-w-37.5"
+                        className="max-w-37.5 truncate text-base font-bold text-[#31318A]"
                         title={p.title}
                       >
                         {p.title}
                       </h2>
-                      <div className="text-xs text-[#00306E]/60 truncate">
-                        {p.language} • {p.content?.split(/\s+/).filter(Boolean).length || 0} words
+                      <div className="truncate text-xs text-[#00306E]/60">
+                        {`${p.language} • ${
+                          p.content?.split(/\s+/).filter(Boolean).length || 0
+                        } words`}
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    <span className="rounded-full bg-[#6666FF]/10 text-[#6666FF] px-2 py-0.5 text-[11px] font-medium">
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    <span className="whitespace-nowrap rounded-full bg-[#6666FF]/10 px-2.5 py-0.5 text-[11px] font-medium text-[#6666FF]">
                       {p.testType === "PRE_TEST" ? "Pre-Test" : "Post-Test"}
                     </span>
-                    <span className="rounded-full bg-[#2E8B57]/10 text-[#2E8B57] px-2 py-0.5 text-[11px] font-medium">
+                    <span className="rounded-full bg-[#2E8B57]/10 px-2 py-0.5 text-[11px] font-medium text-[#2E8B57]">
                       {p.level === 0 ? "Kindergarten" : `Grade ${p.level}`}
                     </span>
                   </div>

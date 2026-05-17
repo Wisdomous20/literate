@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { testType } from "@/generated/prisma/enums";
+import { testType, userType } from "@/generated/prisma/enums";
 import {
   idString,
   nonNegativeInt,
@@ -219,4 +219,25 @@ export const getPassageByIdSchema = z.object({
 
 export const getQuizByPassageSchema = z.object({
   passageId: idString("Passage ID"),
+});
+
+export const adminToggleUserStatusSchema = z.object({
+  userId: idString("User ID"),
+  disable: z.boolean(),
+});
+
+export const adminUpdateUserRoleSchema = z.object({
+  userId: idString("User ID"),
+  role: z.nativeEnum(userType),
+});
+
+export const adminRenameOrganizationSchema = z.object({
+  organizationId: idString("Organization ID"),
+  name: requiredString("Organization name").pipe(
+    z.string().max(255, "Organization name must be 255 characters or fewer")
+  ),
+});
+
+export const adminRemoveMembershipSchema = z.object({
+  membershipId: idString("Membership ID"),
 });

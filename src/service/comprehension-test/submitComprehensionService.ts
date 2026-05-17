@@ -57,7 +57,6 @@ export async function submitComprehensionService(
     }
 
     const questionMap = new Map(quiz.questions.map((q) => [q.id, q]));
-    const passageExcerpt = passage.content.slice(0, 1000);
 
     const mcResults: {
       questionText: string;
@@ -100,8 +99,9 @@ export async function submitComprehensionService(
           gradeEssayAnswer({
             questionText: question.questionText,
             correctAnswer: question.correctAnswer,
-            passageContent: passageExcerpt,
+            passageContent: passage.content,
             studentAnswer: a.answer,
+            tag: question.tags,
           }).then((result) => ({
             questionText: question.questionText,
             answer: a.answer,
