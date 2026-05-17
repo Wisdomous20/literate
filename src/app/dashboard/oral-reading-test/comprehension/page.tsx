@@ -7,7 +7,6 @@ import {
   ChevronDown,
   ChevronRight,
   Clock,
-  Loader2,
   RotateCcw,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
@@ -595,17 +594,56 @@ export default function OralReadingComprehensionPage() {
 
   const totalQuestions = questions.length;
 
-  // Loading state
+  // Loading state — skeleton
   if (isLoading) {
     return (
       <div className="flex flex-col h-screen overflow-hidden">
         <DashboardHeader title="Oral Reading Test" />
-        <div className="flex flex-1 items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-[#6666FF]" />
-            <span className="text-[#00306E] font-medium">
-              Loading questions...
-            </span>
+        <div className="flex flex-1 min-h-0 overflow-hidden p-4 gap-4 animate-pulse">
+          {/* Questions skeleton */}
+          <div className="flex flex-1 flex-col gap-4 overflow-hidden rounded-2xl border border-[#E8E8FF] bg-white p-5">
+            {/* Nav bar skeleton */}
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-16 rounded-full bg-[#E8E8FF]" />
+              <div className="h-5 w-40 rounded bg-[#E8E8FF]" />
+            </div>
+            {/* Question cards skeleton */}
+            <div className="flex flex-col gap-4 flex-1 overflow-hidden">
+              {[1, 2, 3].map((n) => (
+                <div key={n} className="rounded-xl border border-[#E8E8FF] p-4 space-y-3">
+                  <div className="h-4 w-3/4 rounded bg-[#E8E8FF]" />
+                  <div className="space-y-2">
+                    {[1, 2, 3, 4].map((o) => (
+                      <div key={o} className="flex items-center gap-2">
+                        <div className="h-5 w-5 rounded-full bg-[#E8E8FF] shrink-0" />
+                        <div className="h-4 w-1/2 rounded bg-[#E8E8FF]" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Submit area skeleton */}
+            <div className="flex justify-center gap-3 pt-2 border-t border-[#E8E8FF]">
+              <div className="h-10 w-28 rounded-full bg-[#E8E8FF]" />
+              <div className="h-10 w-32 rounded-full bg-[#D5E7FE]" />
+            </div>
+          </div>
+          {/* Sidebar skeleton */}
+          <div className="hidden md:flex w-72 shrink-0 flex-col gap-4">
+            <div className="rounded-2xl border border-[#E8E8FF] bg-white p-4 space-y-3">
+              <div className="h-5 w-32 rounded bg-[#E8E8FF]" />
+              {[1, 2, 3, 4].map((n) => (
+                <div key={n} className="flex justify-between">
+                  <div className="h-4 w-24 rounded bg-[#E8E8FF]" />
+                  <div className="h-4 w-12 rounded bg-[#D5E7FE]" />
+                </div>
+              ))}
+            </div>
+            <div className="rounded-2xl border border-[#E8E8FF] bg-white p-4 space-y-2">
+              <div className="h-5 w-28 rounded bg-[#E8E8FF]" />
+              <div className="h-20 rounded-lg bg-[#E8E8FF]" />
+            </div>
           </div>
         </div>
       </div>
@@ -645,15 +683,18 @@ export default function OralReadingComprehensionPage() {
             {/* Top bar: Back button · Questions info · Timer */}
             <div className="flex items-center justify-between border-b border-[#E8E8FF] px-5 py-3 shrink-0">
               <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleGoBack}
-                  aria-label="Go back"
-                  title="Go back"
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_4px_12px_rgba(102,102,255,0.35)] transition-all hover:bg-[#5555EE] hover:shadow-[0_6px_16px_rgba(102,102,255,0.45)] active:scale-95"
-                >
-                  <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
-                </button>
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+                  <button
+                    type="button"
+                    onClick={handleGoBack}
+                    aria-label="Go back"
+                    className="relative flex items-center gap-1.5 rounded-full border border-[#6666FF]/40 bg-white px-4 py-2 text-xs font-semibold text-[#6666FF] shadow-sm transition-transform hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                    Back
+                  </button>
+                </div>
                 <div>
                   <h2 className="text-sm font-bold text-[#00306E] md:text-base">
                     Questions 1-{totalQuestions}
@@ -712,7 +753,10 @@ export default function OralReadingComprehensionPage() {
                   />
                 ))}
               </div>
+            </div>
 
+            {/* Static action buttons area — always visible */}
+            <div className="shrink-0 border-t border-[#E8E8FF] bg-white px-5 pb-4 pt-3">
               <ComprehensionSubmitArea
                 submitError={submitError}
                 isSubmitting={isSubmitting}

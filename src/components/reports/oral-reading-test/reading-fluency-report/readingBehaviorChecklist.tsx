@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Pencil } from "lucide-react";
 
 export type BehaviorType =
   | "WORD_BY_WORD_READING"
@@ -50,16 +50,25 @@ export default function BehaviorChecklist({
   );
   const [observations, setObservations] = useState(otherObservations);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  // snapshot for cancel
+  const [savedChecked, setSavedChecked] = useState<boolean[]>(
+    behaviors.map((b) => b.checked ?? false),
+  );
+  const [savedObservations, setSavedObservations] = useState(otherObservations);
 
   useEffect(() => {
     setCheckedItems(behaviors.map((b) => b.checked ?? false));
+    setSavedChecked(behaviors.map((b) => b.checked ?? false));
   }, [behaviors]);
 
   useEffect(() => {
     setObservations(otherObservations);
+    setSavedObservations(otherObservations);
   }, [otherObservations]);
 
   const toggleItem = (index: number) => {
+    if (!isEditMode) return;
     setCheckedItems((prev) => {
       const next = [...prev];
       next[index] = !next[index];
@@ -72,26 +81,53 @@ export default function BehaviorChecklist({
       .filter((item, index) => item.key && checkedItems[index])
       .map((item) => item.key!);
 
-  const saveChanges = async (behaviorTypes = selectedBehaviorTypes()) => {
-    if (!onSave) return;
+  const handleSave = async () => {
+    if (!onSave) {
+      setSavedChecked([...checkedItems]);
+      setSavedObservations(observations);
+      setIsEditMode(false);
+      return;
+    }
     setIsSaving(true);
     try {
-      await onSave(behaviorTypes);
+      await onSave(selectedBehaviorTypes());
+      setSavedChecked([...checkedItems]);
+      setSavedObservations(observations);
+      setIsEditMode(false);
     } finally {
       setIsSaving(false);
     }
   };
 
-  const clearBehaviors = async () => {
+  const handleCancel = () => {
+    setCheckedItems([...savedChecked]);
+    setObservations(savedObservations);
+    setIsEditMode(false);
+  };
+
+  const handleClear = () => {
     setCheckedItems(behaviors.map(() => false));
-    await saveChanges([]);
+    setObservations("");
   };
 
   return (
     <div className="bg-white border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] shadow-[0_1px_20px_rgba(108,164,239,0.37)] rounded-[10px] p-5 pb-3 flex flex-col">
-      <h3 className="text-base font-bold text-[#003366] mb-0.5">
-        Oral Behavior Checklist
-      </h3>
+      {/* Header row */}
+      <div className="flex items-start justify-between mb-0.5">
+        <h3 className="text-base font-bold text-[#003366]">
+          Oral Behavior Checklist
+        </h3>
+        {!isEditMode && (
+          <button
+            type="button"
+            onClick={() => setIsEditMode(true)}
+            className="flex items-center gap-1 rounded-full border border-[#6666FF]/30 bg-[#F0F4FF] px-3 py-1 text-[10px] font-semibold text-[#6666FF] transition-colors hover:bg-[#E0E8FF]"
+          >
+            <Pencil className="h-3 w-3" />
+            Edit
+          </button>
+        )}
+      </div>
       <p className="mb-4 font-kanit text-sm text-[rgba(40,19,19,0.71)]">
         Behavior analysis during reading
       </p>
@@ -102,11 +138,16 @@ export default function BehaviorChecklist({
             <button
               type="button"
               onClick={() => toggleItem(i)}
-              className="flex items-start gap-3 py-3 w-full text-left"
+              disabled={!isEditMode}
+              className={`flex items-start gap-3 py-3 w-full text-left ${isEditMode ? "cursor-pointer" : "cursor-default"}`}
             >
               <div
-                className={`w-8 h-8 shrink-0 rounded border border-[#5D5DFB] mt-0.5 flex items-center justify-center transition-colors ${
-                  checkedItems[i] ? "bg-[#5D5DFB]" : "bg-white"
+                className={`w-8 h-8 shrink-0 rounded border mt-0.5 flex items-center justify-center transition-colors ${
+                  checkedItems[i]
+                    ? "bg-[#5D5DFB] border-[#5D5DFB]"
+                    : isEditMode
+                      ? "bg-white border-[#5D5DFB]"
+                      : "bg-white border-[#9CA3AF]"
                 }`}
               >
                 {checkedItems[i] && (
@@ -143,35 +184,54 @@ export default function BehaviorChecklist({
         <textarea
           value={observations}
           onChange={(e) => setObservations(e.target.value)}
+          disabled={!isEditMode}
           placeholder="Enter observations..."
-          className="w-full p-3 bg-[rgba(201,201,250,0.15)] rounded text-xs text-[#31318A] placeholder:text-[#31318A]/40 resize-none focus:outline-none focus:ring-1 focus:ring-[#5D5DFB]"
-          rows={3}
+          className={`w-full p-3 bg-[rgba(201,201,250,0.15)] rounded text-xs text-[#31318A] placeholder:text-[#31318A]/40 resize-none focus:outline-none focus:ring-1 focus:ring-[#5D5DFB] ${!isEditMode ? "opacity-70 cursor-default" : ""}`}
+          rows={4}
         />
       </div>
 
-      {/* Save / Delete buttons */}
-      <div className="flex items-center justify-end gap-2 mt-2">
-        <button
-          type="button"
-          disabled={!onSave || isSaving}
-          onClick={() => saveChanges()}
-          className="px-3 py-1 text-[7px] font-bold italic text-[#31318A] bg-[rgba(108,164,239,0.19)] rounded hover:bg-[rgba(108,164,239,0.3)] transition-colors"
-        >
-          {isSaving ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : (
-            "Save"
-          )}
-        </button>
-        <button
-          type="button"
-          disabled={!onSave || isSaving}
-          onClick={clearBehaviors}
-          className="px-3 py-1 text-[7px] font-bold italic text-[#31318A] bg-[rgba(108,164,239,0.19)] rounded hover:bg-[rgba(108,164,239,0.3)] transition-colors"
-        >
-          Clear
-        </button>
-      </div>
+      {/* Buttons */}
+      {isEditMode ? (
+        <div className="flex items-center justify-between gap-2 mt-3">
+          <button
+            type="button"
+            onClick={handleClear}
+            disabled={isSaving}
+            className="px-4 py-1.5 text-xs font-bold text-[#31318A] bg-[rgba(108,164,239,0.19)] rounded-full hover:bg-[rgba(108,164,239,0.3)] transition-colors disabled:opacity-50"
+          >
+            Clear
+          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleCancel}
+              disabled={isSaving}
+              className="px-4 py-1.5 text-xs font-bold text-[#6666FF] border border-[#6666FF]/40 bg-white rounded-full hover:bg-[#F0F4FF] transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={isSaving}
+              className="px-4 py-1.5 text-xs font-bold text-white bg-[#6666FF] rounded-full hover:bg-[#5555EE] transition-colors disabled:opacity-50 flex items-center gap-1"
+            >
+              {isSaving ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                "Save Observation"
+              )}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex justify-end mt-3">
+          <span className="text-[10px] text-[#31318A]/50 italic">
+            Click Edit to modify
+          </span>
+        </div>
+      )}
     </div>
   );
 }

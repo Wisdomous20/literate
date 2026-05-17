@@ -24,8 +24,15 @@ const testTypes = [
   { label: "Post-Test", value: "POST" },
 ] as const;
 
+const languageTypes = [
+  { label: "Language", value: "ALL" },
+  { label: "English", value: "ENGLISH" },
+  { label: "Filipino", value: "FILIPINO" },
+] as const;
+
 type AssessmentTypeValue = (typeof assessmentTypes)[number]["value"];
 type TestTypeValue = (typeof testTypes)[number]["value"];
+type LanguageValue = (typeof languageTypes)[number]["value"];
 
 interface DistributionResponse {
   independent: number;
@@ -61,8 +68,10 @@ interface ClassificationChartProps {
 export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
   const [selectedType, setSelectedType] = useState<AssessmentTypeValue>("ALL");
   const [selectedTestType, setSelectedTestType] = useState<TestTypeValue>("PRE");
+  const [selectedLanguage, setSelectedLanguage] = useState<LanguageValue>("ALL");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isTestDropdownOpen, setIsTestDropdownOpen] = useState(false);
+  const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
 
   const [distribution, setDistribution] = useState<DistributionResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,6 +79,7 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const testDropdownRef = useRef<HTMLDivElement>(null);
+  const languageDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -85,6 +95,12 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
       ) {
         setIsTestDropdownOpen(false);
       }
+      if (
+        languageDropdownRef.current &&
+        !languageDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsLanguageDropdownOpen(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -92,34 +108,31 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
 
   useEffect(() => {
     let cancelled = false;
-    setIsLoading(true);
-    setHasError(false);
-
-    const params = new URLSearchParams({
-      schoolYear,
-      assessmentType: selectedType,
-      testType: selectedTestType,
-    });
-
-    fetch(`/api/dashboard/classification-distribution?${params.toString()}`)
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`Status ${res.status}`);
-        return (await res.json()) as DistributionResponse;
-      })
-      .then((json) => {
-        if (!cancelled) setDistribution(json);
-      })
-      .catch(() => {
-        if (!cancelled) setHasError(true);
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
+    const fetchData = async () => {
+      setIsLoading(true);
+      setHasError(false);
+      const params = new URLSearchParams({
+        schoolYear,
+        assessmentType: selectedType,
+        testType: selectedTestType,
+        ...(selectedLanguage !== "ALL" && { language: selectedLanguage }),
       });
-
+      try {
+        const res = await fetch(`/api/dashboard/classification-distribution?${params.toString()}`);
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+        const json = (await res.json()) as DistributionResponse;
+        if (!cancelled) setDistribution(json);
+      } catch {
+        if (!cancelled) setHasError(true);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+    fetchData();
     return () => {
       cancelled = true;
     };
-  }, [schoolYear, selectedType, selectedTestType]);
+  }, [schoolYear, selectedType, selectedTestType, selectedLanguage]);
 
   const chartData = useMemo<ChartRow[]>(
     () => (distribution ? toChartRows(distribution) : toChartRows({ independent: 0, instructional: 0, frustration: 0 })),
@@ -140,22 +153,23 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
     assessmentTypes.find((t) => t.value === selectedType)?.label || "Assessment Type";
   const selectedTestTypeLabel =
     testTypes.find((t) => t.value === selectedTestType)?.label || "Pre-Test";
+  const selectedLanguageLabel =
+    languageTypes.find((t) => t.value === selectedLanguage)?.label || "Language";
 
   return (
-<div className="flex h-full flex-col rounded-3xl bg-white p-4 md:p-6 shadow-[0px_0px_20px_1px_rgba(84,164,255,0.35)] border-l border-t border-r-4 border-b-4 border-[#5D5DFB]">      <div className="flex flex-row items-center justify-between flex-wrap mb-4 gap-y-2">
+<div className="flex h-full flex-col rounded-3xl bg-white p-4 md:p-6 shadow-[0px_0px_20px_1px_rgba(84,164,255,0.35)] border-l border-t border-r-[6px] border-b-[6px] border-[#5D5DFB]">      <div className="flex flex-row items-center justify-between flex-wrap mb-4 gap-y-2">
         <div className="flex flex-col min-w-0">
           <h3 className="text-base md:text-lg font-bold text-[#00306E] truncate">
             Classification Distribution
           </h3>
-          <div className="flex flex-row items-center gap-2">
-            <p className="text-xs text-[#5D5DFB] whitespace-nowrap">SY {schoolYear}</p>
-            <div className="flex flex-row shrink-0 gap-2 max-w-full">
+          <div className="flex flex-row items-center gap-1.5 flex-wrap mt-1">
+            <div className="flex flex-row shrink-0 gap-1.5 flex-wrap">
               <div className="relative" ref={dropdownRef}>
                 <button
                   type="button"
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   className={cn(
-                    "flex items-center gap-1 rounded-full border border-dashed px-2 py-1 text-xs font-medium min-w-22.5 transition-colors",
+                    "flex items-center gap-1 rounded-full border border-dashed px-2 py-0.5 text-[11px] font-medium transition-colors",
                     selectedType !== "ALL"
                       ? "bg-[#5D5DFB] text-white border-[#5D5DFB]"
                       : "bg-white text-[#5D5DFB] border-[#5D5DFB] hover:bg-[#E4F4FF]"
@@ -165,10 +179,10 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
                   aria-label="Select assessment type"
                 >
                   <span className="truncate">{selectedTypeLabel}</span>
-                  <ChevronDown className={cn("h-3 w-3 shrink-0 transition-transform", isDropdownOpen && "rotate-180")} />
+                  <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform", isDropdownOpen && "rotate-180")} />
                 </button>
                 {isDropdownOpen && (
-                  <div className="absolute right-0 top-full z-10 mt-1 w-full min-w-32 rounded-lg border border-[#5D5DFB]/30 bg-white py-1 shadow-lg">
+                  <div className="absolute left-0 top-full z-10 mt-1 w-full min-w-32 rounded-lg border border-[#5D5DFB]/30 bg-white py-1 shadow-lg">
                     {assessmentTypes.map((type) => (
                       <button
                         key={type.value}
@@ -195,7 +209,7 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
                   type="button"
                   onClick={() => setIsTestDropdownOpen(!isTestDropdownOpen)}
                   className={cn(
-                    "flex items-center gap-1 rounded-full border border-dashed px-2 py-1 text-xs font-medium min-w-22.5 transition-colors",
+                    "flex items-center gap-1 rounded-full border border-dashed px-2 py-0.5 text-[11px] font-medium transition-colors",
                     selectedTestType !== "PRE"
                       ? "bg-[#5D5DFB] text-white border-[#5D5DFB]"
                       : "bg-white text-[#5D5DFB] border-[#5D5DFB] hover:bg-[#E4F4FF]"
@@ -205,10 +219,10 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
                   aria-label="Select test type"
                 >
                   <span className="truncate">{selectedTestTypeLabel}</span>
-                  <ChevronDown className={cn("h-3 w-3 shrink-0 transition-transform", isTestDropdownOpen && "rotate-180")} />
+                  <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform", isTestDropdownOpen && "rotate-180")} />
                 </button>
                 {isTestDropdownOpen && (
-                  <div className="absolute right-0 top-full z-10 mt-1 w-full min-w-24 rounded-lg border border-[#5D5DFB]/30 bg-white py-1 shadow-lg">
+                  <div className="absolute left-0 top-full z-10 mt-1 w-full min-w-24 rounded-lg border border-[#5D5DFB]/30 bg-white py-1 shadow-lg">
                     {testTypes.map((type) => (
                       <button
                         key={type.value}
@@ -230,11 +244,50 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
                   </div>
                 )}
               </div>
+              <div className="relative" ref={languageDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
+                  className={cn(
+                    "flex items-center gap-1 rounded-full border border-dashed px-2 py-0.5 text-[11px] font-medium transition-colors",
+                    selectedLanguage !== "ALL"
+                      ? "bg-[#5D5DFB] text-white border-[#5D5DFB]"
+                      : "bg-white text-[#5D5DFB] border-[#5D5DFB] hover:bg-[#E4F4FF]"
+                  )}
+                  aria-haspopup="listbox"
+                  aria-expanded={isLanguageDropdownOpen}
+                  aria-label="Select language"
+                >
+                  <span className="truncate">{selectedLanguageLabel}</span>
+                  <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform", isLanguageDropdownOpen && "rotate-180")} />
+                </button>
+                {isLanguageDropdownOpen && (
+                  <div className="absolute left-0 top-full z-10 mt-1 w-full min-w-24 rounded-lg border border-[#5D5DFB]/30 bg-white py-1 shadow-lg">
+                    {languageTypes.map((type) => (
+                      <button
+                        key={type.value}
+                        type="button"
+                        onClick={() => {
+                          setSelectedLanguage(type.value);
+                          setIsLanguageDropdownOpen(false);
+                        }}
+                        className={cn(
+                          "w-full px-4 py-2 text-left text-xs transition-colors hover:bg-[#E4F4FF]",
+                          selectedLanguage === type.value
+                            ? "font-semibold text-[#5D5DFB] bg-[#E4F4FF]"
+                            : "text-[#00306E]"
+                        )}
+                      >
+                        {type.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
-
       <div className="h-64 w-full relative">
         {isLoading ? (
           <div className="h-full w-full animate-pulse rounded-xl bg-[#E4F4FF]" />

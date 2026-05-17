@@ -19,6 +19,7 @@ interface PassageFiltersProps {
   onOpenPassageModal: () => void;
   onShareLink?: () => void;
   showShareLink?: boolean;
+  disabled?: boolean;
 }
 
 function FilterChip({
@@ -53,6 +54,7 @@ export function PassageFilters({
   onOpenPassageModal,
   onShareLink,
   showShareLink = false,
+  disabled = false,
 }: PassageFiltersProps) {
   return (
     <div className="flex items-start justify-between gap-4">
@@ -109,18 +111,20 @@ export function PassageFilters({
           </button>
         )}
         <div className="relative">
-          <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+          <div className={`absolute inset-0 rounded-full translate-y-1 ${disabled ? "bg-[#D1D5DB]" : "bg-[#B3A4F1]"}`} />
           <button
             type="button"
             data-tour-target="add-passage-button"
-            onClick={onOpenPassageModal}
+            onClick={disabled ? undefined : onOpenPassageModal}
+            disabled={disabled}
             className={`relative flex items-center justify-center gap-1.5 rounded-full px-5 py-2 text-xs font-semibold shadow transition-transform
       ${
-        hasPassage
-          ? "bg-[#6666FF] text-white hover:bg-[#4F46E5]"
-          : "bg-[#4F46E5] text-white hover:bg-[#6666FF]"
+        disabled
+          ? "bg-[#9CA3AF] text-white cursor-not-allowed opacity-60 shadow-none"
+          : hasPassage
+          ? "bg-[#6666FF] text-white hover:bg-[#4F46E5] hover:-translate-y-0.5 active:translate-y-0"
+          : "bg-[#4F46E5] text-white hover:bg-[#6666FF] hover:-translate-y-0.5 active:translate-y-0"
       }
-      hover:-translate-y-0.5 active:translate-y-0
     `}
           >
             <Plus className="h-3.5 w-3.5 shrink-0" />

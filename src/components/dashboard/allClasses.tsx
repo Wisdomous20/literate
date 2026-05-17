@@ -83,24 +83,23 @@ export default function AllClassesPage({
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
 
   return (
-    <div className="flex min-h-full flex-col overflow-y-auto">
+    <div className="flex min-h-full flex-col overflow-y-auto dashboard-scroll">
       <DashboardHeader title="Class Inventory" />
 
       <div className="w-full px-4 sm:px-6 py-6 lg:px-8">
         <div className="flex flex-row items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.push("/dashboard")}
-              className="flex items-center gap-2.5 group"
-              aria-label="Back to Dashboard"
-            >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_4px_12px_rgba(102,102,255,0.35)] transition-all group-hover:bg-[#5555EE] group-hover:shadow-[0_6px_16px_rgba(102,102,255,0.45)]">
-                <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
-              </span>
-              <span className="text-[#00306E] font-medium text-sm">
-                Back to Dashboard
-              </span>
-            </button>
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+              <button
+                onClick={() => router.push("/dashboard")}
+                className="relative flex items-center gap-1.5 rounded-full border border-[#6666FF]/40 px-4 py-2 text-xs font-semibold shadow-sm transition-transform bg-white text-[#6666FF] hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
+                aria-label="Back to Dashboard"
+              >
+                <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                Back
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
@@ -151,13 +150,17 @@ export default function AllClassesPage({
             </div>
 
             {onCreateClass && (
-              <button
-                type="button"
-                onClick={onCreateClass}
-                className="rounded-lg border border-[#7A7AFB] bg-[#6666FF] px-5 py-2 text-sm font-medium text-white shadow-[0px_1px_20px_rgba(65,155,180,0.47)] transition-opacity hover:opacity-90 h-10 min-w-30"
-              >
-                + Create Class
-              </button>
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+                <button
+                  type="button"
+                  onClick={onCreateClass}
+                  className="relative flex items-center justify-center gap-1.5 rounded-full px-5 py-2 text-xs font-semibold shadow transition-transform bg-[#6666FF] text-white hover:bg-[#4F46E5] hover:-translate-y-0.5 active:translate-y-0"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Create Class
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -186,7 +189,7 @@ export default function AllClassesPage({
               {paginatedClasses.map((c, idx) => (
                 <div
                   key={c.id}
-                  className="border-l border-t border-r-4 border-b-4 border-[#6666FF] rounded-2xl overflow-hidden bg-white min-h-35 shadow-lg shadow-[#6666FF]/10"
+                  className="border-l border-t border-r-[6px] border-b-[6px] border-[#6666FF] rounded-2xl overflow-hidden bg-white min-h-35 shadow-lg shadow-[#6666FF]/10"
                 >
                   <ClassCard
                     classRoomId={c.id}

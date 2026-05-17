@@ -22,20 +22,20 @@ const statConfigs = [
   {
     label: "Instructional Students",
     key: "instructional",
-    bg: "bg-[#7F51C6]/[.44]",
-    text: "text-[#7F51C6]",
+    bg: "bg-[#DBEAFE]",
+    text: "text-[#2563EB]",
   },
   {
     label: "Independent Students",
     key: "independent",
-    bg: "bg-[#6666FF]/[.38]",
-    text: "text-[#6666FF]",
+    bg: "bg-[#DCFCE7]",
+    text: "text-[#16A34A]",
   },
   {
     label: "Frustrated Students",
     key: "frustrated",
-    bg: "bg-[#993D8D]/[.37]",
-    text: "text-[#993D8D]",
+    bg: "bg-[#FEE2E2]",
+    text: "text-[#DC2626]",
   },
 ];
 
@@ -58,7 +58,7 @@ export function StatisticsSidebar({
   const arc = percent * circumference;
 
 return (
-  <div className="bg-white rounded-2xl border border-[#9999FF]/25 p-6 shadow-[0_4px_16px_rgba(102,102,255,0.08)] flex flex-col gap-6 w-full">
+  <div className="bg-white rounded-2xl border border-[#9999FF]/25 p-6 shadow-[0_4px_16px_rgba(102,102,255,0.08)] flex flex-col gap-6 w-full h-full">
     {/* Statistics Title */}
     <div>
       <h3 className="text-xs font-bold text-[#00306E]/60 uppercase tracking-wider mb-1">
@@ -110,7 +110,7 @@ return (
           key={stat.key}
           className={`rounded-2xl ${stat.bg} p-4 flex flex-col justify-between h-28 w-full`}
         >
-          <span className="text-xs font-semibold text-black mb-2">{stat.label}</span>
+          <span className="text-xs font-semibold text-[#7C3AED] mb-2">{stat.label}</span>
           <span className={`text-3xl font-bold ${stat.text} mt-auto`}>
             {stats[stat.key as keyof typeof stats]}
           </span>

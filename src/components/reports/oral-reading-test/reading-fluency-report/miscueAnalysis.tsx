@@ -17,7 +17,6 @@ export interface MiscueData {
 interface MiscueAnalysisProps {
   miscueData: MiscueData;
   onViewMiscues?: () => void;
-  onEditMiscues?: () => void;
   onRecheckMiscues?: () => void;
   isRechecking?: boolean;
   recheckSummary?: string | null;
@@ -102,7 +101,6 @@ function getClassificationColorClasses(level: string) {
 export default function MiscueAnalysisReport({
   miscueData,
   onViewMiscues,
-  onEditMiscues,
   onRecheckMiscues,
   isRechecking = false,
   recheckSummary,
@@ -173,26 +171,15 @@ export default function MiscueAnalysisReport({
         </div>
       </div>
 
-      {(onViewMiscues || onEditMiscues) && (
+      {onViewMiscues && (
         <div className="mt-3 flex justify-center gap-2">
-          {onViewMiscues && (
-            <button
-              type="button"
-              onClick={onViewMiscues}
-              className="flex-1 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90"
-            >
-              View Miscues
-            </button>
-          )}
-          {onEditMiscues && (
-            <button
-              type="button"
-              onClick={onEditMiscues}
-              className="flex-1 rounded-lg border border-[#6666FF] px-4 py-2 text-sm font-medium text-[#6666FF] transition-colors hover:bg-[#6666FF]/10"
-            >
-              Edit Miscues
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onViewMiscues}
+            className="flex-1 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90"
+          >
+            View Miscues
+          </button>
         </div>
       )}
 

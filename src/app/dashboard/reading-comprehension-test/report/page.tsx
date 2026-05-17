@@ -158,12 +158,16 @@ export default function ReadingComprehensionReportPage() {
             <p className="text-red-600 font-medium">
               {error || "No report data available."}
             </p>
-            <button
-              onClick={() => router.back()}
-              className="rounded-lg bg-[#6666FF] px-6 py-2 text-sm font-semibold text-white hover:bg-[#5555EE] transition-colors"
-            >
-              Go Back
-            </button>
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full translate-y-1 bg-[#E0E0FF]" />
+              <button
+                onClick={() => router.back()}
+                className="relative flex items-center gap-1.5 rounded-full border border-[#6666FF]/40 px-4 py-2 text-xs font-semibold shadow-sm transition-transform bg-white text-[#6666FF] hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
+              >
+                <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                Back
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -198,80 +202,108 @@ export default function ReadingComprehensionReportPage() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      {/* Custom Header */}
-      <div className="flex items-center justify-between px-8 py-5 border-b-[3px] border-[#5D5DFB] bg-white">
+      {/* Header */}
+      <div className="flex items-center gap-3 border-b-[3px] border-[#5D5DFB] bg-white px-4 md:px-6 py-4">
+        <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg bg-[#5D5DFB]/10 shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5 text-[#5D5DFB]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+        </div>
+        <div className="flex flex-col">
           <h1 className="text-base md:text-lg font-semibold text-[#483efa]">
-          Reading Comprehension Test Report
-        </h1>
-      </div>
-
-      {/* Nav row */}
-      <div className="flex items-center justify-between px-8 pt-5 pb-2">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_4px_12px_rgba(102,102,255,0.35)] transition-all hover:bg-[#5555EE] hover:shadow-[0_6px_16px_rgba(102,102,255,0.45)] active:scale-95"
-          aria-label="Go back"
-          title="Go back"
-        >
-          <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
-        </button>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleExportPdf}
-            className="flex items-center gap-2 px-5 py-2 bg-[#2E2E68] text-white text-xs font-medium rounded-lg border border-[#5D5DFB] shadow-[0_1px_20px_rgba(65,155,180,0.47)] hover:bg-[#2E2E68]/90 transition-colors"
-          >
-            <Download className="h-3.5 w-3.5" />
-            Export to PDF
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              try {
-                sessionStorage.removeItem("reading-comprehension-session");
-                sessionStorage.removeItem("reading-comprehension-assessmentId");
-              } catch {}
-              router.push("/dashboard/reading-comprehension-test");
-            }}
-            className="flex items-center gap-2 rounded-lg border border-[#6666FF]/30 bg-[rgba(102,102,255,0.06)] px-4 py-2 text-sm font-semibold text-[#6666FF] transition-all hover:bg-[rgba(102,102,255,0.12)]"
-          >
-            <RotateCcw className="h-4 w-4" />
-            <span>Start New</span>
-          </button>
+            Reading Comprehension Test Report
+          </h1>
+          {assessmentId && (
+            <p className="text-xs md:text-sm font-medium text-[#2E2E68]/65 mt-0.5">
+              Assessment ID:{" "}
+              <span className="font-bold text-[#2E2E68] font-mono tracking-wide select-all">
+                {assessmentId}
+              </span>
+            </p>
+          )}
         </div>
       </div>
 
-      <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth max-w-300 mx-auto px-6 py-6 md:px-8 lg:px-12 space-y-6 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-[40%_1fr] gap-4">
-          <StudentInfoCard
-            studentName={reportData.studentName}
-            gradeLevel={reportData.gradeLevel}
-            className={reportData.className}
-          />
-          <ComprehensionMetricCards
-            percentageGrade={reportData.percentage}
-            comprehensionLevel={reportData.level}
-          />
-        </div>
+      <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth">
+        <div className="max-w-[1400px] mx-auto px-6 py-6 md:px-8 lg:px-12 w-full">
+          <div className="rounded-2xl border border-[#6666FF]/20 bg-white shadow-sm overflow-hidden">
+            {/* Action bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E8E8FF] bg-[#F8F8FF] px-6 py-4">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+                <button
+                  type="button"
+                  onClick={() => router.back()}
+                  className="relative flex items-center gap-1.5 rounded-full border border-[#6666FF]/40 bg-white px-4 py-2 text-xs font-semibold text-[#6666FF] shadow-sm transition-transform hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                  Back
+                </button>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-full translate-y-1 bg-[#1e3a8a]/30" />
+                  <button
+                    type="button"
+                    onClick={handleExportPdf}
+                    className="relative inline-flex items-center gap-1.5 rounded-full bg-[#1e3a8a] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-transform hover:bg-[#1d4ed8] hover:-translate-y-0.5 active:translate-y-0"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Export to PDF
+                  </button>
+                </div>
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      try {
+                        sessionStorage.removeItem("reading-comprehension-session");
+                        sessionStorage.removeItem("reading-comprehension-assessmentId");
+                      } catch {}
+                      router.push("/dashboard/reading-comprehension-test");
+                    }}
+                    className="relative inline-flex items-center gap-1.5 rounded-full border border-[#6666FF] bg-white px-5 py-2 text-xs font-semibold text-[#6666FF] shadow transition-transform hover:bg-[#6666FF] hover:text-white hover:-translate-y-0.5 active:translate-y-0"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Start New
+                  </button>
+                </div>
+              </div>
+            </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4">
-          <PassageInfoCard
-            passageTitle={reportData.passageTitle}
-            passageLevel={reportData.passageLevel}
-            numberOfWords={reportData.totalWords}
-            testType={reportData.testType}
-            assessmentType="Reading Comprehension Test"
-          />
-          <ComprehensionBreakdownReport
-            score={`${reportData.score}/${reportData.totalItems}`}
-            literal={`${reportData.literal.correct}/${reportData.literal.total}`}
-            inferential={`${reportData.inferential.correct}/${reportData.inferential.total}`}
-            critical={`${reportData.critical.correct}/${reportData.critical.total}`}
-            mistakes={mistakes}
-            numberOfItems={reportData.totalItems}
-            classificationLevel={reportData.level}
-          />
+            {/* Cards content */}
+            <div className="p-6 space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-[40%_1fr] gap-4">
+                <StudentInfoCard
+                  studentName={reportData.studentName}
+                  gradeLevel={reportData.gradeLevel}
+                  className={reportData.className}
+                />
+                <ComprehensionMetricCards
+                  percentageGrade={reportData.percentage}
+                  comprehensionLevel={reportData.level}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4">
+                <PassageInfoCard
+                  passageTitle={reportData.passageTitle}
+                  passageLevel={reportData.passageLevel}
+                  numberOfWords={reportData.totalWords}
+                  testType={reportData.testType}
+                  assessmentType="Reading Comprehension Test"
+                />
+                <ComprehensionBreakdownReport
+                  score={`${reportData.score}/${reportData.totalItems}`}
+                  literal={`${reportData.literal.correct}/${reportData.literal.total}`}
+                  inferential={`${reportData.inferential.correct}/${reportData.inferential.total}`}
+                  critical={`${reportData.critical.correct}/${reportData.critical.total}`}
+                  mistakes={mistakes}
+                  numberOfItems={reportData.totalItems}
+                  classificationLevel={reportData.level}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </main>
     </div>

@@ -132,7 +132,7 @@ export function StudentTable({
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 flex-1 min-h-0">
       {/* Cards Grid */}
       {paginatedStudents.length === 0 ? (
         <div className="flex items-center justify-center rounded-2xl border-2 border-dashed border-[#6666FF]/20 bg-[#F8F9FF] py-12 px-4">
@@ -141,7 +141,7 @@ export function StudentTable({
           </span>
         </div>
       ) : (
-        <div className="grid gap-6 grid-cols-3 w-full">
+        <div className="grid gap-4 grid-cols-3 w-full flex-1">
           {paginatedStudents.map((student) => {
             const hasAssessment =
               (studentAssessments[student.id] || []).length > 0;
@@ -157,17 +157,16 @@ export function StudentTable({
                 }
                 className={`
                   relative bg-white rounded-2xl
-                  border-l-2 border-t-2 border-[#5D5DFB]
-                  border-r-4 border-b-4 border-r-[#A855F7] border-b-[#A855F7]
-                  shadow-lg shadow-[#5D5DFB]/10
+                  border-l border-t border-r-[3px] border-b-[3px] border-[#5D5DFB]
+                  shadow-md shadow-[#5D5DFB]/10
                   transition-all duration-200
-                  p-5 flex flex-col gap-5
+                  p-4 flex flex-col gap-3
                   ${
                     editingId === student.id
                       ? ""
                       : hasAssessment
-                        ? "cursor-pointer hover:scale-[1.03] hover:shadow-2xl hover:bg-[#F8F9FF] hover:border-[#7A7AFB] active:scale-95"
-                        : "cursor-not-allowed opacity-60 grayscale"
+                        ? "cursor-pointer hover:scale-[1.02] hover:shadow-xl hover:shadow-[#5D5DFB]/20 active:scale-95"
+                        : "cursor-not-allowed"
                   }
                 `}
                 title={
@@ -223,45 +222,66 @@ export function StudentTable({
                 ) : (
                   // View Mode
                   <>
-                    {/* Student Name and Grade */}
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-[#6666FF]" />
-                      <span className="text-base font-bold text-[#00306E] line-clamp-1">
-                        {student.name}
-                      </span>
-                      <span className="ml-2 text-xs rounded-full bg-[#E8D5FF] px-2 py-0.5 text-black font-normal">
-                        {student.gradeLevel}
-                      </span>
+                    {/* No results badge */}
+                    {!hasAssessment && (
+                      <div className="absolute top-2.5 right-2.5 pointer-events-none z-10">
+                        <span className="bg-[#FFF8EC] text-[#B45309] text-[10px] font-semibold px-2.5 py-1 rounded-full border border-[#B45309]/25 shadow-sm">
+                          No results yet
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Content — grayed out when no assessment */}
+                    <div className={!hasAssessment ? "opacity-40 grayscale" : ""}>
+                      {/* Student Name and Grade */}
+                      <div className="flex items-center gap-2 min-w-0 mb-3">
+                        <User className="h-4 w-4 text-[#6666FF] shrink-0" />
+                        <span
+                          className="text-sm font-bold text-[#00306E] truncate flex-1 min-w-0"
+                          title={student.name}
+                        >
+                          {student.name}
+                        </span>
+                        <span className="shrink-0 text-[11px] rounded-full bg-[#E8D5FF]/60 px-1.5 py-0.5 text-black font-normal leading-tight">
+                          {student.gradeLevel}
+                        </span>
+                      </div>
+
+                      {/* Assessment Type with label */}
+                      <div className="flex flex-col gap-0.5 mb-3">
+                        <span className="text-[9px] font-normal text-[#5D5DFB]/60 uppercase tracking-wider">Assessment Type</span>
+                        <div className="flex items-center gap-2">
+                          <BookOpen className="h-3.5 w-3.5 text-[#6666FF] shrink-0" />
+                          <span className="text-xs font-medium text-[#00306E] truncate">
+                            {getAssessmentTypeLabel(student.assessmentType)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Date with label */}
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[9px] font-normal text-[#5D5DFB]/60 uppercase tracking-wider">Date</span>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-3.5 w-3.5 text-[#6666FF] shrink-0" />
+                          <span className="text-xs font-medium text-[#00306E]">
+                            {student.lastAssessment ? (
+                              <span>{student.lastAssessment}</span>
+                            ) : (
+                              <span className="text-[#00306E]/40">—</span>
+                            )}
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Assessment Type - always show */}
-                    <div className="flex items-center gap-2">
-                      <BookOpen className="h-4 w-4 text-[#6666FF]" />
-                      <span className="text-xs text-[#00306E]">
-                        {getAssessmentTypeLabel(student.assessmentType)}
-                      </span>
-                    </div>
-
-                    {/* Last Assessment Date */}
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-[#6666FF]" />
-                      <span className="text-xs text-[#00306E]">
-                        {student.lastAssessment ? (
-                          <span>{student.lastAssessment}</span>
-                        ) : (
-                          <span className="text-[#00306E]/40">—</span>
-                        )}
-                      </span>
-                    </div>
-
-                    {/* Action Buttons */}
+                    {/* Action Buttons — always full opacity */}
                     <div className="flex gap-2 pt-2 mt-auto">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleEdit(e, student);
                         }}
-                        className="flex-1 flex items-center justify-center gap-1 rounded-lg bg-[#E8D5FF] px-2 py-2 text-xs font-bold text-[#6666FF] transition-all hover:bg-[#D9C0FF] active:scale-95"
+                        className="flex-1 flex items-center justify-center gap-1 rounded-lg bg-white border border-[#6666FF]/40 px-2 py-2 text-xs font-bold text-[#6666FF] transition-all hover:bg-[#F0F4FF] hover:border-[#6666FF] active:scale-95"
                       >
                         <Edit2 className="h-3 w-3" />
                         Edit
@@ -271,19 +291,12 @@ export function StudentTable({
                           e.stopPropagation();
                           setDeleteConfirmId(student.id);
                         }}
-                        className="flex-1 flex items-center justify-center gap-1 rounded-lg bg-[#FFD9D5] px-2 py-2 text-xs font-bold text-[#E84C3D] transition-all hover:bg-[#FFCCBE] active:scale-95"
+                        className="flex-1 flex items-center justify-center gap-1 rounded-lg bg-white border border-[#E84C3D]/40 px-2 py-2 text-xs font-bold text-[#E84C3D] transition-all hover:bg-[#FFF0EE] hover:border-[#E84C3D] active:scale-95"
                       >
                         <Trash2 className="h-3 w-3" />
                         Delete
                       </button>
                     </div>
-                    {!hasAssessment && (
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <span className="bg-white/80 text-[#6666FF] text-xs font-semibold px-3 py-1 rounded-lg shadow">
-                          No results yet
-                        </span>
-                      </div>
-                    )}
                   </>
                 )}
 
@@ -316,9 +329,9 @@ export function StudentTable({
         </div>
       )}
 
-      {/* Pagination - Circular with numbers */}
+      {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 pt-6">
+        <div className="flex items-center justify-center gap-2 pt-4 mt-auto">
           <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}

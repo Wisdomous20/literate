@@ -359,26 +359,18 @@ export function Sidebar() {
         <div
           className={cn(
             "flex items-center gap-2 pb-4 pt-4 px-4",
-            collapsed ? "justify-center" : "justify-between px-6",
+            collapsed ? "flex-col justify-center gap-2" : "justify-between px-6",
           )}
         >
-          {!collapsed && (
+          {collapsed ? null : (
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center">
-                <svg
-                  viewBox="0 0 32 32"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-8 w-8"
-                >
-                  <path d="M16 4L6 10V22L16 28L26 22V10L16 4Z" fill="white" />
-                  <path
-                    d="M16 4L6 10M16 4L26 10M16 4V16M6 10V22L16 28M6 10L16 16M26 10V22L16 28M26 10L16 16M16 28V16"
-                    stroke="#6666FF"
-                    strokeWidth="1.5"
-                  />
-                </svg>
-              </div>
+              <Image
+                src="/Final%20Icon%20Logo.svg"
+                alt="LiteRate"
+                width={40}
+                height={40}
+                className="h-10 w-10"
+              />
               <span className="text-xl font-bold tracking-[0.02em] text-white">
                 LiteRate
               </span>

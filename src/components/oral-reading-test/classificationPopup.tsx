@@ -1,7 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
-import Image from "next/image";
+import { X, Star, BookOpen, Flame } from "lucide-react";
 
 interface ClassificationPopupProps {
   classificationLevel: string;
@@ -14,44 +13,33 @@ interface ClassificationPopupProps {
 const LEVEL_CONFIG: Record<
   string,
   {
-    label: string;
+    icon: React.ReactNode;
     message: string;
-    badge: string;
-    badgeBg: string;
-    badgeText: string;
+    bubble: string;
     accent: string;
-    mascot: string;
+    iconBg: string;
   }
 > = {
   INDEPENDENT: {
-    label: "Independent Reader",
-    message:
-      "Amazing! You can read this all on your own. Keep up the great work!",
-    badge: "⭐ Independent",
-    badgeBg: "bg-[#e8f5e9]",
-    badgeText: "text-[#2e7d32]",
-    accent: "border-[#4CAF50]",
-    mascot: "/Independent.svg",
+    icon: <Star className="h-8 w-8 text-[#2e7d32]" strokeWidth={2} />,
+    message: "Amazing! You can read this all on your own. Keep up the great work!",
+    bubble: "bg-[#e8f5e9] border-[#4CAF50]",
+    accent: "text-[#2e7d32]",
+    iconBg: "bg-[#e8f5e9] border-[#4CAF50]",
   },
   INSTRUCTIONAL: {
-    label: "Instructional Reader",
-    message:
-      "Great effort! With a little guidance, you'll master this in no time.",
-    badge: "📘 Instructional",
-    badgeBg: "bg-[#e8eaff]",
-    badgeText: "text-[#27348B]",
-    accent: "border-[#6666FF]",
-    mascot: "/Instructional.svg",
+    icon: <BookOpen className="h-8 w-8 text-[#27348B]" strokeWidth={2} />,
+    message: "Great effort! With a little guidance, you'll master this in no time.",
+    bubble: "bg-[#e8eaff] border-[#6666FF]",
+    accent: "text-[#27348B]",
+    iconBg: "bg-[#e8eaff] border-[#6666FF]",
   },
   FRUSTRATION: {
-    label: "Keep Practicing!",
-    message:
-      "Don't give up! Every reader grows one page at a time. You've got this!",
-    badge: "💪 Needs Practice",
-    badgeBg: "bg-[#fff3e0]",
-    badgeText: "text-[#e65100]",
-    accent: "border-[#FF9800]",
-    mascot: "/Frustrated.svg",
+    icon: <Flame className="h-8 w-8 text-[#e65100]" strokeWidth={2} />,
+    message: "Don't give up! Every reader grows one page at a time. You've got this!",
+    bubble: "bg-[#fff3e0] border-[#FF9800]",
+    accent: "text-[#e65100]",
+    iconBg: "bg-[#fff3e0] border-[#FF9800]",
   },
 };
 
@@ -68,11 +56,11 @@ export function ClassificationPopup({
 
   return (
     <div
-      className="fixed inset-0 z-100 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      className="fixed inset-0 z-100 flex items-center justify-center bg-black/30 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className={`relative mx-4 flex w-full max-w-sm flex-col items-center rounded-2xl border-l border-t border-r-[6px] border-b-[6px] ${config.accent} bg-white p-6 shadow-[0_8px_32px_rgba(102,102,255,0.18)]`}
+        className={`relative mx-4 w-full max-w-xs rounded-2xl border-2 ${config.bubble} bg-white p-6 shadow-[0_8px_32px_rgba(0,0,0,0.15)]`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
@@ -83,43 +71,39 @@ export function ClassificationPopup({
           aria-label="Close popup"
           title="Close popup"
         >
-          <X className="h-5 w-5" />
+          <X className="h-4 w-4" />
         </button>
 
-        <div className="flex items-center justify-center -mt-8 mb-0">
-          <Image
-            src={config.mascot}
-            alt={config.label}
-            width={200}
-            height={200}
-            className="object-contain"
-            priority
-          />
+        {/* Icon bubble */}
+        <div className="flex flex-col items-center gap-3">
+          <div className={`flex h-16 w-16 items-center justify-center rounded-full border-2 ${config.iconBg}`}>
+            {config.icon}
+          </div>
+
+          <div className="text-center">
+            <p className="text-sm font-bold text-[#27348B]">
+              Well done, {firstName}!
+            </p>
+            <p className={`mt-1 text-xs font-semibold ${config.accent}`}>
+              {classificationLevel.charAt(0) + classificationLevel.slice(1).toLowerCase()} Level
+            </p>
+          </div>
+
+          {/* Speech bubble message */}
+          <div className={`relative rounded-xl border ${config.bubble} px-4 py-3 text-center`}>
+            {/* Bubble tail */}
+            <div className={`absolute -top-2 left-1/2 -translate-x-1/2 h-3 w-3 rotate-45 border-t-2 border-l-2 ${config.bubble} bg-white`} />
+            <p className="text-xs text-[#27348B]/80 leading-relaxed">
+              {config.message}
+            </p>
+          </div>
         </div>
-
-        <span
-          className={`mb-1 inline-block rounded-full px-4 py-1 text-xs font-bold ${config.badgeBg} ${config.badgeText}`}
-        >
-          {config.badge}
-        </span>
-
-        <h2 className="mb-1 text-center text-xl font-bold text-[#27348B]">
-          {config.label}
-        </h2>
-
-        <p className="mb-1 text-center text-sm font-semibold text-[#6666FF]">
-          Well done, {firstName}!
-        </p>
-        {/* Message */}
-        <p className="text-center text-sm text-[#27348B]/70 leading-relaxed">
-          {config.message}
-        </p>
 
         {/* Dismiss button */}
         <button
           type="button"
           onClick={onClose}
-          className="mt-5 w-full rounded-full bg-[#6666FF] hover:bg-[#5555ee] text-white font-bold py-2.5 text-sm border-l border-t border-r-[6px] border-b-[6px] border-[#4444CC] transition-colors"
+          className="mt-4 w-full rounded-full bg-[#6666FF] hover:bg-[#5555ee] text-white font-bold py-2.5 text-sm transition-colors"
         >
           Got it!
         </button>

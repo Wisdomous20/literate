@@ -7,8 +7,9 @@ import {
   CheckCircle,
   XCircle,
   Search,
-  ArrowUpDown,
+  AArrowDown,
   X,
+  Plus,
 } from "lucide-react";
 import { ClassListsHeader } from "@/components/class-lists/classListsHeader";
 import {
@@ -69,8 +70,8 @@ export default function ClassListsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOption, setSortOption] = useState<
-    "nameAsc" | "nameDesc" | "gradeAsc" | "gradeDesc"
-  >("nameAsc");
+    "dateDesc" | "nameAsc" | "nameDesc" | "gradeAsc" | "gradeDesc"
+  >("dateDesc");
   const [assessmentType, setAssessmentType] =
     useState<AssessmentTypeFilter>("ALL");
   const [toast, setToast] = useState<{
@@ -203,7 +204,7 @@ export default function ClassListsPage() {
             name: student.name || "No Name",
             gradeLevel: levelToGradeLevel(student.level),
             lastAssessment: latest
-              ? new Date(latest.dateTaken).toLocaleDateString()
+              ? new Date(latest.dateTaken).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
               : null,
             assessmentType: latest ? latest.type : "Awaiting Assessment",
           };
@@ -227,7 +228,7 @@ export default function ClassListsPage() {
             name: student.name || "No Name",
             gradeLevel: levelToGradeLevel(student.level),
             lastAssessment: latest
-              ? new Date(latest.dateTaken).toLocaleDateString()
+              ? new Date(latest.dateTaken).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
               : null,
             assessmentType: assessmentType as string,
           };
@@ -289,6 +290,11 @@ export default function ClassListsPage() {
 
   const sortedStudents = [...tableStudents].sort((a, b) => {
     switch (sortOption) {
+      case "dateDesc": {
+        const aTime = a.lastAssessment ? new Date(a.lastAssessment).getTime() : 0;
+        const bTime = b.lastAssessment ? new Date(b.lastAssessment).getTime() : 0;
+        return bTime - aTime;
+      }
       case "nameAsc":
         return a.name.localeCompare(b.name);
       case "nameDesc":
@@ -303,6 +309,7 @@ export default function ClassListsPage() {
   });
 
   const sortLabels: Record<typeof sortOption, string> = {
+    dateDesc: "Newest to Latest",
     nameAsc: "Alphabetically (A-Z)",
     nameDesc: "Alphabetically (Z-A)",
     gradeAsc: "Grade (Low-High)",
@@ -310,7 +317,7 @@ export default function ClassListsPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-linear-to-br from-white via-[#F8F9FF] to-[#EEF0FF]">
+    <div className="flex flex-col min-h-screen bg-linear-to-br from-white via-[#F8F9FF] to-[#EEF0FF] overflow-y-auto scrollbar-thin scrollbar-thumb-[#5D5DFB]/40 scrollbar-track-transparent">
       <ClassListsHeader />
 
       {toast && (
@@ -337,8 +344,8 @@ export default function ClassListsPage() {
         </div>
       )}
 
-      <div className="flex-1 px-6 py-6 gap-6 flex">
-        <div className="flex-1 bg-white rounded-2xl border border-[#9999FF]/25 p-6 shadow-[0_4px_16px_rgba(102,102,255,0.08)] flex flex-col gap-4">
+      <div className="flex-1 px-4 py-4 md:px-6 md:py-6 gap-4 md:gap-6 flex flex-col xl:flex-row min-w-0">
+        <div className="flex-1 bg-white rounded-2xl border border-[#9999FF]/25 p-4 md:p-6 shadow-[0_4px_16px_rgba(102,102,255,0.08)] flex flex-col gap-4 min-w-0 overflow-x-hidden">
           <div className="flex items-center justify-between">
             <ClassInfoBox
               classData={classData}
@@ -348,47 +355,50 @@ export default function ClassListsPage() {
             />
           </div>
 
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 flex-1">
-              <div
-                data-tour-target="class-search"
-                className="flex items-center gap-2 flex-1 border border-[#6666FF] rounded-full px-4 py-2 bg-[#F8F9FF]"
-              >
-                <Search className="h-4 w-4 text-[#6666FF]/70" />
-                <input
-                  type="text"
-                  placeholder="Search students..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1 bg-transparent text-sm text-[#00306E] placeholder-[#00306E]/40 outline-none"
-                />
-              </div>
-              <button
-                data-tour-target="class-sort-button"
-                onClick={() => {
-                  const options: (
-                    | "nameAsc"
-                    | "nameDesc"
-                    | "gradeAsc"
-                    | "gradeDesc"
-                  )[] = ["nameAsc", "nameDesc", "gradeAsc", "gradeDesc"];
-                  const currentIndex = options.indexOf(sortOption);
-                  setSortOption(options[(currentIndex + 1) % options.length]);
-                }}
-                className="flex items-center justify-center w-10 h-10 rounded-lg border border-[#6666FF]/30 bg-[#F8F9FF] text-[#6666FF] hover:bg-[#EEF0FF] transition-colors"
-                title={`Sort: ${sortLabels[sortOption]}`}
-                aria-label={`Sort students: ${sortLabels[sortOption]}`}
-              >
-                <ArrowUpDown className="h-4 w-4" />
-              </button>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div
+              data-tour-target="class-search"
+              className="flex items-center gap-2 flex-1 min-w-0 border border-[#6666FF] rounded-full px-4 py-2 bg-[#F8F9FF]"
+            >
+              <Search className="h-4 w-4 text-[#6666FF]/70 shrink-0" />
+              <input
+                type="text"
+                placeholder="Search students..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1 bg-transparent text-sm text-[#00306E] placeholder-[#00306E]/40 outline-none"
+              />
             </div>
-            <div className="text-right whitespace-nowrap">
-              <span className="text-xs font-bold text-[#00306E]/60 uppercase block">
-                Total Students
-              </span>
-              <div className="text-2xl font-bold text-[#6666FF]">
-                {students.length}
-              </div>
+            <button
+              data-tour-target="class-sort-button"
+              onClick={() => {
+                const options: (
+                  | "dateDesc"
+                  | "nameAsc"
+                  | "nameDesc"
+                  | "gradeAsc"
+                  | "gradeDesc"
+                )[] = ["dateDesc", "nameAsc", "nameDesc", "gradeAsc", "gradeDesc"];
+                const currentIndex = options.indexOf(sortOption);
+                setSortOption(options[(currentIndex + 1) % options.length]);
+              }}
+              className="flex items-center justify-center gap-1.5 h-10 rounded-lg border border-[#6666FF]/30 bg-[#F8F9FF] px-3 text-[#6666FF] hover:bg-[#EEF0FF] transition-colors shrink-0"
+              title={`Sort: ${sortLabels[sortOption]}`}
+              aria-label={`Sort students: ${sortLabels[sortOption]}`}
+            >
+              <AArrowDown className="h-4 w-4" />
+              <span className="text-xs font-semibold hidden sm:inline">{sortOption === "nameAsc" ? "A→Z" : sortOption === "nameDesc" ? "Z→A" : sortOption === "gradeAsc" ? "Gr↑" : sortOption === "gradeDesc" ? "Gr↓" : "Date"}</span>
+            </button>
+            <div className="relative shrink-0">
+              <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+              <button
+                data-tour-target="create-student-button"
+                onClick={() => setIsModalOpen(true)}
+                className="relative flex items-center justify-center gap-1.5 rounded-full px-5 py-2 text-xs font-semibold shadow transition-transform bg-[#6666FF] text-white hover:bg-[#4F46E5] hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap"
+              >
+                <Plus className="h-3.5 w-3.5 shrink-0" />
+                Create Student
+              </button>
             </div>
           </div>
 
@@ -411,7 +421,7 @@ export default function ClassListsPage() {
 
         <div
           data-tour-target="statistics-sidebar"
-          className="w-80 flex flex-col gap-4 self-start"
+          className="w-full xl:w-80 flex flex-col gap-4 xl:self-start"
         >
           <WelcomeBox assessmentType={assessmentType} />
           <StatisticsSidebar stats={stats} assessmentType={assessmentType} />

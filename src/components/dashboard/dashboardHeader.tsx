@@ -66,7 +66,7 @@ export function DashboardHeader({
                 <X className="h-5 w-5 text-[#5D5DFB]" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-[#A855F7] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent">
               <QuickActions schoolYear={schoolYear} minimal />
             </div>
           </aside>

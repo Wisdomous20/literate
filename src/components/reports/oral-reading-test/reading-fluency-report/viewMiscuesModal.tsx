@@ -1,13 +1,16 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect, useCallback, Fragment } from "react";
-import { X, Play, Trash2, Pencil, Loader2 } from "lucide-react";
+import { X, Play, Pause, Trash2, Pencil, Loader2, Mic } from "lucide-react";
 import type { MiscueResult, AlignedWord } from "@/types/oral-reading";
 import { getPassageTextStyle } from "@/components/oral-reading-test/passageDisplay";
+import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay";
+import type { EditModeCallbacks } from "@/components/oral-reading-test/passageDisplay";
 import { MiscueActionPopover } from "@/components/oral-reading-test/miscueEditPopover";
-import { formatMiscueTimestamp } from "@/lib/audioPlayback";
+import { formatMiscueTimestamp, seekAudioToTimestamp } from "@/lib/audioPlayback";
 import { hydrateMiscueTimestamps } from "@/lib/miscueTimestamps";
 import { normalizeWord } from "@/utils/textUtils";
+import { formatAudioClock } from "@/lib/readingDuration";
 
 const MISCUE_CONFIG = [
   {
@@ -123,12 +126,18 @@ interface ViewMiscuesModalProps {
   miscues: MiscueResult[];
   alignedWords?: AlignedWord[];
   passageLevel?: string;
+  audioSrc?: string | null;
   onDeleteMiscue?: (miscue: MiscueResult) => Promise<void>;
   onUpdateMiscueType?: (
     miscue: MiscueResult,
     newType: MiscueResult["miscueType"],
   ) => Promise<void>;
+  onUpdateSpokenWord?: (
+    miscue: MiscueResult,
+    newSpokenWord: string,
+  ) => Promise<void>;
   onJumpToTime?: (timestamp: number) => void;
+  editMiscues?: EditModeCallbacks;
 }
 
 export default function ViewMiscuesModal({
@@ -138,19 +147,57 @@ export default function ViewMiscuesModal({
   miscues,
   alignedWords,
   passageLevel,
+  audioSrc,
   onDeleteMiscue,
   onUpdateMiscueType,
+  onUpdateSpokenWord,
   onJumpToTime,
+  editMiscues,
 }: ViewMiscuesModalProps) {
   const [highlightedTypes, setHighlightedTypes] = useState<Set<string>>(
     new Set(),
   );
-  const [activeTab, setActiveTab] = useState<"passage" | "list">("passage");
+  const [activeTab, setActiveTab] = useState<"passage" | "list" | "edit">("passage");
   const [showMiscues, setShowMiscues] = useState(true);
   const [popup, setPopup] = useState<PopupState | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const internalAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [audioPlaying, setAudioPlaying] = useState(false);
+  const [audioCurrentTime, setAudioCurrentTime] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
+
+  useEffect(() => {
+    const audio = internalAudioRef.current;
+    if (!audio) return;
+    const onPlay = () => setAudioPlaying(true);
+    const onPause = () => setAudioPlaying(false);
+    const onTimeUpdate = () => setAudioCurrentTime(audio.currentTime);
+    const onLoaded = () => setAudioDuration(audio.duration);
+    const onEnded = () => { setAudioPlaying(false); setAudioCurrentTime(0); audio.currentTime = 0; };
+    audio.addEventListener("play", onPlay);
+    audio.addEventListener("pause", onPause);
+    audio.addEventListener("timeupdate", onTimeUpdate);
+    audio.addEventListener("loadedmetadata", onLoaded);
+    audio.addEventListener("ended", onEnded);
+    return () => {
+      audio.removeEventListener("play", onPlay);
+      audio.removeEventListener("pause", onPause);
+      audio.removeEventListener("timeupdate", onTimeUpdate);
+      audio.removeEventListener("loadedmetadata", onLoaded);
+      audio.removeEventListener("ended", onEnded);
+    };
+  }, [audioSrc]);
+
+  const effectiveJumpToTime = useMemo(() => {
+    if (audioSrc) {
+      return (timestamp: number) => {
+        seekAudioToTimestamp(internalAudioRef.current, timestamp);
+      };
+    }
+    return onJumpToTime;
+  }, [audioSrc, onJumpToTime]);
 
   const resolvedMiscues = useMemo(
     () => hydrateMiscueTimestamps(miscues, alignedWords),
@@ -373,8 +420,11 @@ export default function ViewMiscuesModal({
       setShowMiscues(true);
       setPopup(null);
       setActionLoading(false);
+      if (editMiscues?.isEditing) {
+        editMiscues.cancelEdit();
+      }
     }
-  }, [open]);
+  }, [open, editMiscues]);
 
   const openMiscuePopup = useCallback((anchorEl: HTMLElement, miscue: MiscueResult) => {
     const rect = anchorEl.getBoundingClientRect();
@@ -560,10 +610,10 @@ export default function ViewMiscuesModal({
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 {miscue.timestamp != null && (
-                  onJumpToTime ? (
+                  effectiveJumpToTime ? (
                     <button
                       type="button"
-                      onClick={() => onJumpToTime(miscue.timestamp!)}
+                      onClick={() => effectiveJumpToTime(miscue.timestamp!)}
                       className="inline-flex items-center gap-1 rounded-full bg-[#F3F7FF] px-2.5 py-1 text-[11px] font-semibold text-[#31318A]/70 transition-colors hover:bg-[#E8F1FF] hover:text-[#1A5FB4]"
                       aria-label={`Jump to ${primaryWord} at ${formatMiscueTimestamp(miscue.timestamp)}`}
                       title="Jump to timestamp"
@@ -671,7 +721,7 @@ export default function ViewMiscuesModal({
           })}
         </div>
 
-        <div className="border-b border-[#DAE6FF] px-6 py-3">
+        <div className="flex items-center justify-between gap-4 border-b border-[#DAE6FF] px-6 py-3">
           <div className="inline-flex rounded-lg bg-[#F3F7FF] p-1">
             <button
               type="button"
@@ -701,15 +751,88 @@ export default function ViewMiscuesModal({
             >
               Miscued Words
             </button>
+            {editMiscues && (
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("edit");
+                  setPopup(null);
+                }}
+                className={`min-w-[118px] rounded-md px-3 py-2 text-xs font-semibold transition-colors ${
+                  activeTab === "edit"
+                    ? "bg-white text-[#00306E] shadow-sm"
+                    : "text-[#31318A]/70 hover:text-[#00306E]"
+                }`}
+              >
+                Edit Miscues
+              </button>
+            )}
           </div>
+          {audioSrc && (
+            <div className="flex items-center gap-2 rounded-full border border-[#DAE6FF] bg-[#F8FBFF] px-3 py-1.5">
+              {audioSrc && <audio ref={internalAudioRef} src={audioSrc} preload="metadata" />}
+              <Mic className="h-3.5 w-3.5 shrink-0 text-[#6666FF]" />
+              <span className="text-xs font-semibold text-[#31318A]">Playback Audio</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const audio = internalAudioRef.current;
+                  if (!audio) return;
+                  if (audio.paused) { audio.play().catch(() => {}); } else { audio.pause(); }
+                }}
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white transition-colors hover:bg-[#5555EE]"
+                aria-label={audioPlaying ? "Pause" : "Play"}
+              >
+                {audioPlaying
+                  ? <Pause className="h-3 w-3" fill="white" />
+                  : <Play className="h-3 w-3" fill="white" />}
+              </button>
+              <span className="min-w-[72px] text-center text-xs font-medium tabular-nums text-[#31318A]/70">
+                {formatAudioClock(audioCurrentTime)} / {formatAudioClock(audioDuration, "nearest")}
+              </span>
+            </div>
+          )}
         </div>
 
-                {/* Passage content with highlighted words */}
+        {/* Passage content with highlighted words */}
         <div
           ref={containerRef}
           className="oral-reading-scroll relative flex-1 overflow-auto px-6 py-5"
         >
-          {activeTab === "passage" ? (
+          {activeTab === "edit" && editMiscues ? (
+            <div className="flex h-full flex-col">
+              <div className="flex-1 overflow-auto">
+                <PassageDisplay
+                  content={passageContent}
+                  miscues={
+                    editMiscues.isEditing
+                      ? editMiscues.editedMiscues
+                      : miscues
+                  }
+                  alignedWords={alignedWords}
+                  passageLevel={passageLevel}
+                  expanded
+                  resizable={false}
+                  editMode={editMiscues}
+                  onJumpToTime={effectiveJumpToTime}
+                  onDeleteMiscue={onDeleteMiscue}
+                  onUpdateMiscueType={onUpdateMiscueType}
+                  onUpdateSpokenWord={onUpdateSpokenWord}
+                />
+              </div>
+              {!editMiscues.isEditing && (
+                <div className="mt-4 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => editMiscues.enterEditMode()}
+                    className="rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white hover:bg-[#5555EE]"
+                  >
+                    Start Editing
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : activeTab === "passage" ? (
             <>
               <div className="rounded-xl border border-[#54A4FF] bg-[#EFFDFF] p-5 shadow-[0px_1px_20px_rgba(108,164,239,0.37)]">
                 <p
@@ -824,18 +947,18 @@ export default function ViewMiscuesModal({
                             Spoken: &ldquo;{popup.miscue.spokenWord}&rdquo;
                           </div>
                         )}
-                        {hasTimestamp && !onJumpToTime && (
+                        {hasTimestamp && !effectiveJumpToTime && (
                           <div className="mt-1 flex items-center justify-center gap-1 text-[10px] text-[#31318A]/50">
                             <Play className="h-2.5 w-2.5" />
                             {formatMiscueTimestamp(popup.miscue.timestamp!)}
                           </div>
                         )}
                       </div>
-                      {hasTimestamp && onJumpToTime && (
+                      {hasTimestamp && effectiveJumpToTime && (
                         <button
                           type="button"
                           onClick={() => {
-                            onJumpToTime(popup.miscue.timestamp!);
+                            effectiveJumpToTime(popup.miscue.timestamp!);
                             setPopup(null);
                           }}
                           className="flex w-full items-center justify-center gap-1.5 rounded-md bg-[#6666FF] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:brightness-110"

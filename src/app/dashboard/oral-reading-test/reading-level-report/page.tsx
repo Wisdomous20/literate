@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import type { OralFluencyAnalysis } from "@/types/oral-reading";
-import { DeleteConfirmModal } from "@/components/ui/deleteConfirmModal";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import {
   buildFluencyReportData,
@@ -115,7 +114,6 @@ function getWidthClass(percent: number) {
 export default function ReadingLevelReportPage() {
   const router = useRouter();
   const [isHydrated, setIsHydrated] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const isClient = useSyncExternalStore(
     () => () => {},
@@ -293,12 +291,16 @@ export default function ReadingLevelReportPage() {
             <p className="text-[#00306E]/60 text-sm">
               Please complete an oral reading session first.
             </p>
-            <button
-              onClick={() => router.back()}
-              className="rounded-lg bg-[#297CEC] px-6 py-2 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
-            >
-              Go Back
-            </button>
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full translate-y-1 bg-[#E0E0FF]" />
+              <button
+                onClick={() => router.back()}
+                className="relative flex items-center gap-1.5 rounded-full border border-[#6666FF]/40 px-4 py-2 text-xs font-semibold shadow-sm transition-transform bg-white text-[#6666FF] hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
+              >
+                <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                Back
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -331,57 +333,64 @@ export default function ReadingLevelReportPage() {
           <div className="px-6 py-4 bg-[#E0E7FF]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  onClick={() => router.back()}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white shadow-[0_4px_12px_rgba(102,102,255,0.35)] transition-all hover:bg-[#5555EE] hover:shadow-[0_6px_16px_rgba(102,102,255,0.45)] active:scale-95"
-                  aria-label="Go back"
-                  title="Go back"
-                >
-                  <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
-                </button>
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-full translate-y-1 bg-[#E0E0FF]" />
+                  <button
+                    type="button"
+                    onClick={() => router.back()}
+                    className="relative flex items-center gap-1.5 rounded-full border border-[#6666FF]/40 px-4 py-2 text-xs font-semibold shadow-sm transition-transform bg-white text-[#6666FF] hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
+                    aria-label="Go back"
+                    title="Go back"
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                    Back
+                  </button>
+                </div>
                 <div className="flex flex-col gap-0.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-semibold text-black uppercase tracking-widest">
-                      {session.gradeLevel
-                        ? `Grade ${session.gradeLevel}`
-                        : "—"}
+                  <h1 className="text-base font-bold text-[#3B2F7F] leading-tight">
+                    {session.studentName || "Unknown Student"}
+                  </h1>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] font-semibold text-[#5D5DFB] uppercase tracking-widest">
+                      {session.gradeLevel ? `Grade ${session.gradeLevel}` : "\u2014"}
                     </span>
-                    <span className="rounded-full px-2 py-0.5 text-[11px] font-medium text-black bg-indigo-100">
+                    {session.selectedClassName && (
+                      <>
+                        <span className="text-[#C4B5FD] font-bold">&middot;</span>
+                        <span className="text-[11px] font-semibold text-[#5D5DFB]">
+                          {session.selectedClassName}
+                        </span>
+                      </>
+                    )}
+                    <span className="text-[#C4B5FD] font-bold">&middot;</span>
+                    <span className="rounded-full px-2 py-0.5 text-[10px] font-medium text-[#3B2F7F] bg-[#EDE9FE] border border-[#A855F7]/40">
                       Oral Reading Test
                     </span>
                   </div>
-                  <h1 className="text-lg font-bold text-black leading-tight">
-                    {session.studentName || "Unknown Student"}
-                  </h1>
+                  {assessmentId && (
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <span className="text-[11px] font-medium text-[#5D5DFB]/70">Assessment ID:</span>
+                      <span className="text-[11px] font-bold text-[#3B2F7F] font-mono tracking-wide select-all">
+                        {assessmentId}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleExportPdf}
-                  className="rounded-lg bg-[#297CEC] px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                  type="button"
-                >
-                  Export to PDF
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteModal(true)}
-                  className="rounded-lg bg-[#DE3B40] px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                >
-                  Delete
-                </button>
+                <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-full translate-y-1 bg-[#1e3a8a]/30" />
+                  <button
+                    onClick={handleExportPdf}
+                    className="relative inline-flex items-center gap-1.5 rounded-full bg-[#1e3a8a] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-transform hover:bg-[#1d4ed8] hover:-translate-y-0.5 active:translate-y-0"
+                    type="button"
+                  >
+                    Export to PDF
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-
-          <DeleteConfirmModal
-            open={showDeleteModal}
-            onClose={() => setShowDeleteModal(false)}
-            onConfirm={() => {
-              /* TODO */
-            }}
-          />
 
           {/* Scrollable content area */}
           <div className="flex-1 overflow-y-auto px-6 py-6">
@@ -431,11 +440,13 @@ export default function ReadingLevelReportPage() {
               {/* Oral Fluency Test Report Card */}
               <div
                 className="
-                  rounded-xl overflow-hidden
+                  rounded-xl overflow-hidden cursor-pointer
                   border-l-2 border-t-2 border-r-4 border-b-4
                   border-l-[#E5E7EB] border-t-[#E5E7EB]
                   border-r-[#2E2E68] border-b-[#2E2E68]
+                  transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:shadow-[#6666FF]/10 active:scale-[0.98]
                 "
+                onClick={() => router.push("/dashboard/oral-reading-test/reading-fluency-report")}
               >
                 <div className="bg-white p-6 flex flex-col h-full">
                   <div className="flex items-start justify-between mb-4">
@@ -447,18 +458,17 @@ export default function ReadingLevelReportPage() {
                         Based on all assessments
                       </span>
                     </div>
-                    <button
-                      onClick={() =>
-                        router.push(
-                          "/dashboard/oral-reading-test/reading-fluency-report",
-                        )
-                      }
-                      className="rounded-full bg-[#A855F7] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#9333EA] transition whitespace-nowrap"
-                      type="button"
-                      aria-label="View Oral Fluency Test report"
-                    >
-                      View Report
-                    </button>
+                    <div className="relative shrink-0">
+                      <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+                      <button
+                        onClick={(e) => { e.stopPropagation(); router.push("/dashboard/oral-reading-test/reading-fluency-report"); }}
+                        className="relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold shadow transition-transform bg-[#6666FF] text-white hover:bg-[#4F46E5] hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap"
+                        type="button"
+                        aria-label="View Oral Fluency Test report"
+                      >
+                        View Report
+                      </button>
+                    </div>
                   </div>
 
                   <div className="mb-4">
@@ -489,11 +499,13 @@ export default function ReadingLevelReportPage() {
               {/* Reading Comprehension Test Report Card */}
               <div
                 className="
-                  rounded-xl overflow-hidden
+                  rounded-xl overflow-hidden cursor-pointer
                   border-l-2 border-t-2 border-r-4 border-b-4
                   border-l-[#E5E7EB] border-t-[#E5E7EB]
                   border-r-[#2E2E68] border-b-[#2E2E68]
+                  transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:shadow-[#6666FF]/10 active:scale-[0.98]
                 "
+                onClick={() => router.push("/dashboard/oral-reading-test/comprehension/report")}
               >
                 <div className="bg-white p-6 flex flex-col h-full">
                   <div className="flex items-start justify-between mb-4">
@@ -505,18 +517,17 @@ export default function ReadingLevelReportPage() {
                         Based on all assessments
                       </span>
                     </div>
-                    <button
-                      onClick={() =>
-                        router.push(
-                          "/dashboard/oral-reading-test/comprehension/report",
-                        )
-                      }
-                      className="rounded-full bg-[#A855F7] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#9333EA] transition whitespace-nowrap"
-                      type="button"
-                      aria-label="View Reading Comprehension Test report"
-                    >
-                      View Report
-                    </button>
+                    <div className="relative shrink-0">
+                      <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+                      <button
+                        onClick={(e) => { e.stopPropagation(); router.push("/dashboard/oral-reading-test/comprehension/report"); }}
+                        className="relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold shadow transition-transform bg-[#6666FF] text-white hover:bg-[#4F46E5] hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap"
+                        type="button"
+                        aria-label="View Reading Comprehension Test report"
+                      >
+                        View Report
+                      </button>
+                    </div>
                   </div>
 
                   <div className="mb-4">

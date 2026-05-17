@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { AssessmentSummary } from "@/components/assessment/assessmentSummary";
 import { useAssessmentsByStudent } from "@/lib/hooks/useStudentAssessments";
+import { useClassById } from "@/lib/hooks/useClassById";
 import {
   computeFinalClassification,
   type AssessmentCard,
@@ -21,6 +22,8 @@ export default function AssessmentSummaryPage() {
 
   const { data: allAssessments = [], isLoading } =
     useAssessmentsByStudent(studentId);
+
+  const { data: classData } = useClassById(classRoomId);
 
   const found = useMemo(
     () =>
@@ -116,7 +119,9 @@ export default function AssessmentSummaryPage() {
     <AssessmentSummary
       studentName={found.student.name}
       studentGrade={found.student.level != null ? `Grade ${found.student.level}` : ""}
+      studentClass={classData?.name}
       assessmentTypeLabel="Oral Reading Test"
+      assessmentId={assessmentId}
       assessmentCards={assessmentCards}
       oralReadingLevel={{
         level: oralReadingLevel,

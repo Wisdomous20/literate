@@ -594,15 +594,6 @@ export function OnboardingGuide() {
                     </p>
                   </div>
 
-                  <div className="mt-4 rounded-3xl border border-[#D7F3E3] bg-[#F3FFF8] p-5">
-                    <p className="text-xs font-black uppercase tracking-[0.2em] text-[#1E9E59]">
-                      What happens next
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-[#00306E]/78">
-                      {activeStep.outcome}
-                    </p>
-                  </div>
-
                   <div className="mt-6 flex items-center justify-between gap-3">
                     <button
                       type="button"
