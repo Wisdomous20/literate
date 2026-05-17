@@ -30,6 +30,7 @@ async function processGrading(job: Job<GradingJobData>) {
                   questionText: true,
                   type: true,
                   correctAnswer: true,
+                  tags: true,
                 },
               },
             },
@@ -70,6 +71,7 @@ async function processGrading(job: Job<GradingJobData>) {
       correctAnswer: originalQuestion.correctAnswer,
       studentAnswer: ans.answer,
       passageContent,
+      tag: originalQuestion.tags,
     });
 
     await prisma.comprehensionAnswer.update({

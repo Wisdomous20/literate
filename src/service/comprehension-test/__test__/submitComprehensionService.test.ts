@@ -117,6 +117,7 @@ describe("submitComprehensionService", () => {
       expect.objectContaining({
         questionText: essayQuestion.questionText,
         studentAnswer: "A small village near the forest.",
+        tag: essayQuestion.tags,
       }),
     );
   });
