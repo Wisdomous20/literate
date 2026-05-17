@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, BookOpen, FileText, Plus } from "lucide-react";
+import { BookOpen, FileText, Plus } from "lucide-react";
+import { PassageWorkspaceHeader } from "@/components/admin-dash/passages/passageWorkspaceHeader";
 import { QuestionTable } from "@/components/admin-dash/questions/questionTable";
 import { usePassageById } from "@/lib/hooks/usePassageById";
 import { useQuestionList } from "@/lib/hooks/useQuestionList";
@@ -53,7 +53,6 @@ function isAllowedTag(tag: string): tag is AllowedTag {
 
 export default function PassageQuestionsPage() {
   const params = useParams();
-  const router = useRouter();
   const passageId = params.id as string;
   const queryClient = useQueryClient();
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
@@ -119,40 +118,21 @@ export default function PassageQuestionsPage() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(124,198,254,0.14),transparent_22%),linear-gradient(180deg,#F4F8FC_0%,#EDF3F9_100%)]">
-      <div className="sticky top-0 z-10 border-b border-[#DCE7F5] bg-white/88 px-4 py-4 backdrop-blur sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.push("/admin")}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0C2D57] text-white shadow-[0_8px_20px_rgba(12,45,87,0.28)] transition hover:bg-[#163D70]"
-              aria-label="Back to passages"
-              title="Back to passages"
-            >
-              <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
-            </button>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#7B92AC]">
-                Passage Workspace
-              </p>
-              <h1 className="text-lg font-semibold text-[#0F2744]">
-                {passage.title}
-              </h1>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <ViewToggle passageId={passageId} active="questions" />
-            <button
-              type="button"
-              onClick={() => setIsCreateModalOpen(true)}
-              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#0C2D57] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#163D70]"
-            >
-              <Plus className="h-4 w-4" />
-              Create Question
-            </button>
-          </div>
-        </div>
-      </div>
+      <PassageWorkspaceHeader
+        passageId={passageId}
+        title={passage.title}
+        active="questions"
+        action={
+          <button
+            type="button"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#0C2D57] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#163D70]"
+          >
+            <Plus className="h-4 w-4" />
+            Create Question
+          </button>
+        }
+      />
 
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
         <section className="rounded-[28px] border border-[#D9E5F5] bg-white p-6 shadow-[0_24px_64px_rgba(15,23,42,0.08)]">
@@ -455,9 +435,6 @@ function CreateQuestionModalForm({
                   onClick={() => removeQuestion(index)}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100"
                 >
-                  <FileText className="hidden" />
-                  <Plus className="hidden" />
-                  <ArrowLeft className="hidden" />
                   <span className="sr-only">Remove question</span>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -696,46 +673,6 @@ function CreateQuestionModalForm({
           </button>
         </div>
       </div>
-    </div>
-  );
-}
-
-function ViewToggle({
-  passageId,
-  active,
-}: {
-  passageId: string;
-  active: "passage" | "questions";
-}) {
-  const items = [
-    {
-      id: "passage" as const,
-      label: "Passage",
-      href: `/admin/passages/${passageId}/view`,
-    },
-    {
-      id: "questions" as const,
-      label: "Questions",
-      href: `/admin/passages/${passageId}`,
-    },
-  ];
-
-  return (
-    <div className="inline-flex rounded-full border border-[#D6E3F8] bg-white p-1 shadow-[0_8px_20px_rgba(15,23,42,0.05)]">
-      {items.map((item) => (
-        <Link
-          key={item.id}
-          href={item.href}
-          className={cn(
-            "rounded-full px-4 py-2 text-sm font-semibold transition",
-            active === item.id
-              ? "bg-[#0C2D57] text-white"
-              : "text-[#33507A] hover:bg-[#EEF5FF]"
-          )}
-        >
-          {item.label}
-        </Link>
-      ))}
     </div>
   );
 }

@@ -9,18 +9,16 @@ import {
   FileText,
   Loader2,
   Users,
-  UserRoundCog,
 } from "lucide-react";
 import { updateAdminUserRoleAction } from "@/app/actions/admin/updateUserRole";
 import { toggleAdminUserStatusAction } from "@/app/actions/admin/toggleUserStatus";
 import { renameOrganizationByAdminAction } from "@/app/actions/admin/renameOrganization";
-import { removeMembershipByAdminAction } from "@/app/actions/admin/removeMembership";
 import { useAdminManagementSnapshot } from "@/lib/hooks/useAdminManagementSnapshot";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-type AdminTab = "users" | "organizations" | "memberships" | "passages";
+type AdminTab = "users" | "organizations" | "passages";
 
 const queryKey = ["admin", "management-snapshot"];
 
@@ -32,7 +30,6 @@ const tabs: {
   { id: "passages", label: "Passages", icon: FileText },
   { id: "users", label: "Users", icon: Users },
   { id: "organizations", label: "Organizations", icon: Building2 },
-  { id: "memberships", label: "Memberships", icon: UserRoundCog },
 ];
 
 const roleOptions = ["USER", "ORG_ADMIN", "ADMIN"] as const;
@@ -95,16 +92,6 @@ export function AdminControlCenter() {
     onSuccess: refreshSnapshot,
   });
 
-  const membershipMutation = useMutation({
-    mutationFn: async (membershipId: string) => {
-      const result = await removeMembershipByAdminAction(membershipId);
-      if (!result.success) {
-        throw new Error(result.error ?? "Failed to remove membership");
-      }
-    },
-    onSuccess: refreshSnapshot,
-  });
-
   const snapshot = managementQuery.data;
   const normalizedSearch = search.trim().toLowerCase();
 
@@ -131,14 +118,6 @@ export function AdminControlCenter() {
           organization.ownerName,
           organization.ownerEmail,
           organization.subscriptionPlan
-        )
-      ),
-      memberships: snapshot.memberships.filter((membership) =>
-        matches(
-          membership.userName,
-          membership.userEmail,
-          membership.organizationName,
-          membership.userRole
         )
       ),
       passages: snapshot.passages.filter((passage) =>
@@ -168,8 +147,7 @@ export function AdminControlCenter() {
   const busy =
     roleMutation.isPending ||
     statusMutation.isPending ||
-    organizationMutation.isPending ||
-    membershipMutation.isPending;
+    organizationMutation.isPending;
 
   return (
     <div className="flex flex-col gap-6">
@@ -244,7 +222,7 @@ export function AdminControlCenter() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search users, orgs, memberships, passages"
-              className="h-11 min-w-[280px] rounded-full border-[#D6E3F8] bg-[#F8FBFE] px-4 text-sm text-[#16324F] placeholder:text-[#7B92AC]"
+              className="h-11 min-w-[280px] rounded-full border-[#CCD9EA] bg-[#F5F9FD] px-4 text-sm text-[#16324F] placeholder:text-[#7B92AC]"
             />
             <Button
               type="button"
@@ -268,23 +246,20 @@ export function AdminControlCenter() {
             count={filtered.users.length}
           />
           <div className="overflow-x-auto px-4 pb-4 sm:px-6 sm:pb-6">
-            <table className="min-w-full border-separate border-spacing-y-3">
+            <table className="min-w-full border-separate border-spacing-y-4">
               <thead>
                 <tr className="text-left text-xs font-semibold uppercase tracking-[0.18em] text-[#6E85A0]">
-                  <th className="px-4">User</th>
-                  <th className="px-4">Role</th>
-                  <th className="px-4">Organizations</th>
-                  <th className="px-4">Created</th>
-                  <th className="px-4">Actions</th>
+                  <th className="px-4 py-3">User</th>
+                  <th className="px-4 py-3">Role</th>
+                  <th className="px-4 py-3">Organizations</th>
+                  <th className="px-4 py-3">Created</th>
+                  <th className="px-4 py-3">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.users.map((user) => (
-                  <tr
-                    key={user.id}
-                    className="rounded-[22px] bg-[#F9FBFE] text-sm text-[#16324F] shadow-[0_8px_24px_rgba(15,23,42,0.04)]"
-                  >
-                    <td className="rounded-l-[22px] px-4 py-4">
+                  <tr key={user.id} className="text-sm text-[#16324F]">
+                    <td className="rounded-l-[22px] border-y border-l border-[#E4EBF5] bg-[#FBFCFE] px-4 py-5 align-top shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
                       <div className="font-semibold text-[#0F2744]">{user.name}</div>
                       <div className="mt-1 text-xs text-[#6E85A0]">{user.email}</div>
                       <div className="mt-2 flex gap-2 text-[11px] font-semibold uppercase tracking-[0.08em]">
@@ -303,7 +278,7 @@ export function AdminControlCenter() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="border-y border-[#E4EBF5] bg-white px-4 py-5 align-top">
                       <select
                         value={user.role}
                         disabled={busy}
@@ -330,16 +305,16 @@ export function AdminControlCenter() {
                         ))}
                       </select>
                     </td>
-                    <td className="px-4 py-4 text-sm text-[#4D6785]">
+                    <td className="border-y border-l border-[#EDF2F8] bg-[#F7FAFD] px-4 py-5 align-top text-sm text-[#4D6785]">
                       <div>{user.membershipCount} memberships</div>
                       <div className="mt-1 text-xs text-[#7F94AE]">
                         {user.ownedOrganizationCount} owned organizations
                       </div>
                     </td>
-                    <td className="px-4 py-4 text-sm text-[#4D6785]">
+                    <td className="border-y border-l border-[#EDF2F8] bg-white px-4 py-5 align-top text-sm text-[#4D6785]">
                       {formatDate(user.createdAt)}
                     </td>
-                    <td className="rounded-r-[22px] px-4 py-4">
+                    <td className="rounded-r-[22px] border-y border-l border-r border-[#E4EBF5] bg-[#FBFCFE] px-4 py-5 align-top">
                       <Button
                         type="button"
                         variant={user.isDisabled ? "default" : "outline"}
@@ -456,110 +431,17 @@ export function AdminControlCenter() {
                   >
                     Save Name
                   </Button>
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="h-11 rounded-full border-[#C9D8EC] bg-white px-5 text-[#16324F]"
+                  >
+                    <Link href={`/admin/organizations/${organization.id}`}>View Org</Link>
+                  </Button>
                 </div>
               </article>
             ))}
             {filtered.organizations.length === 0 && <EmptyState label="organizations" />}
-          </div>
-        </section>
-      )}
-
-      {activeTab === "memberships" && (
-        <section className="rounded-[28px] border border-[#D9E5F5] bg-white shadow-[0_20px_60px_rgba(15,23,42,0.07)]">
-          <SectionHeader
-            eyebrow="Relationships"
-            title="Memberships"
-            description="Inspect every user-to-organization link and remove memberships where needed."
-            count={filtered.memberships.length}
-          />
-          <div className="overflow-x-auto px-4 pb-4 sm:px-6 sm:pb-6">
-            <table className="min-w-full border-separate border-spacing-y-3">
-              <thead>
-                <tr className="text-left text-xs font-semibold uppercase tracking-[0.18em] text-[#6E85A0]">
-                  <th className="px-4">Member</th>
-                  <th className="px-4">Organization</th>
-                  <th className="px-4">Joined</th>
-                  <th className="px-4">State</th>
-                  <th className="px-4">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.memberships.map((membership) => (
-                  <tr
-                    key={membership.membershipId}
-                    className="bg-[#F9FBFE] text-sm text-[#16324F] shadow-[0_8px_24px_rgba(15,23,42,0.04)]"
-                  >
-                    <td className="rounded-l-[22px] px-4 py-4">
-                      <div className="font-semibold text-[#0F2744]">
-                        {membership.userName}
-                      </div>
-                      <div className="mt-1 text-xs text-[#6E85A0]">
-                        {membership.userEmail} / {membership.userRole}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="font-medium text-[#16324F]">
-                        {membership.organizationName}
-                      </div>
-                      <div className="mt-1 text-xs text-[#6E85A0]">
-                        {membership.isOwnerMembership
-                          ? "Owner membership"
-                          : "Standard membership"}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-[#4D6785]">
-                      {formatDate(membership.joinedAt)}
-                    </td>
-                    <td className="px-4 py-4">
-                      <span
-                        className={cn(
-                          "rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em]",
-                          membership.userDisabled
-                            ? "bg-red-100 text-red-700"
-                            : "bg-emerald-100 text-emerald-700"
-                        )}
-                      >
-                        {membership.userDisabled ? "User disabled" : "User active"}
-                      </span>
-                    </td>
-                    <td className="rounded-r-[22px] px-4 py-4">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-10 rounded-full border-red-200 bg-red-50 px-4 text-red-700 hover:bg-red-100"
-                        disabled={busy || membership.isOwnerMembership}
-                        onClick={async () => {
-                          const confirmed = window.confirm(
-                            `Remove ${membership.userName} from ${membership.organizationName}?`
-                          );
-
-                          if (!confirmed) {
-                            return;
-                          }
-
-                          try {
-                            await membershipMutation.mutateAsync(
-                              membership.membershipId
-                            );
-                          } catch (error) {
-                            alert(
-                              error instanceof Error
-                                ? error.message
-                                : "Failed to remove membership"
-                            );
-                          }
-                        }}
-                      >
-                        {membership.isOwnerMembership
-                          ? "Owner Locked"
-                          : "Remove Membership"}
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {filtered.memberships.length === 0 && <EmptyState label="memberships" />}
           </div>
         </section>
       )}
@@ -581,28 +463,28 @@ export function AdminControlCenter() {
             {filtered.passages.map((passage) => (
               <article
                 key={passage.id}
-                className="rounded-[22px] border border-[#DCE7F5] bg-[linear-gradient(180deg,#FFFFFF_0%,#F8FBFE_100%)] p-5 shadow-[0_16px_40px_rgba(15,23,42,0.05)]"
+                className="rounded-[22px] border border-[#D8E3F2] bg-[linear-gradient(180deg,#FFFFFF_0%,#F6FAFE_100%)] p-5 shadow-[0_16px_40px_rgba(15,23,42,0.05)]"
               >
                 <Link
                   href={`/admin/passages/${passage.id}`}
                   className="block rounded-[16px] outline-none transition hover:opacity-95 focus-visible:ring-2 focus-visible:ring-[#2453A6]/40"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <h3 className="text-lg font-semibold text-[#0F2744]">
+                    <h3 className="min-w-0 text-lg font-semibold leading-7 text-[#0F2744]">
                       {passage.title}
                     </h3>
-                    <span className="rounded-full bg-[#EAF2FF] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#2453A6]">
-                      {passage.testType === "PRE_TEST" ? "Pre-test" : "Post-test"}
+                    <span className="shrink-0 whitespace-nowrap rounded-full border border-[#D6E4FB] bg-[#EAF2FF] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#2453A6]">
+                      {passage.testType === "PRE_TEST" ? "Pre-Test" : "Post-Test"}
                     </span>
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.08em]">
-                    <span className="rounded-full bg-[#EEF7FF] px-2.5 py-1 text-[#2453A6]">
+                    <span className="rounded-full border border-[#DCEBFA] bg-[#EEF7FF] px-2.5 py-1 text-[#2453A6]">
                       {passage.language}
                     </span>
-                    <span className="rounded-full bg-[#F0FDF4] px-2.5 py-1 text-[#15803D]">
+                    <span className="rounded-full border border-[#D6F3DE] bg-[#F0FDF4] px-2.5 py-1 text-[#15803D]">
                       {passage.level === 0 ? "Kindergarten" : `Grade ${passage.level}`}
                     </span>
-                    <span className="rounded-full bg-[#FFF7ED] px-2.5 py-1 text-[#C2410C]">
+                    <span className="rounded-full border border-[#F5E3CF] bg-[#FFF7ED] px-2.5 py-1 text-[#C2410C]">
                       {passage.wordCount} words
                     </span>
                   </div>

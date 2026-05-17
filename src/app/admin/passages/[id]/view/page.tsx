@@ -1,11 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowLeft,
   BarChart2,
   BookOpen,
   FilePenLine,
@@ -14,6 +12,7 @@ import {
   Save,
   X,
 } from "lucide-react";
+import { PassageWorkspaceHeader } from "@/components/admin-dash/passages/passageWorkspaceHeader";
 import { usePassageById } from "@/lib/hooks/usePassageById";
 import { updatePassageAction } from "@/app/actions/admin/updatePassage";
 import { cn } from "@/lib/utils";
@@ -39,7 +38,6 @@ const levels = [
 
 export default function PassageViewPage() {
   const params = useParams();
-  const router = useRouter();
   const queryClient = useQueryClient();
   const passageId = params.id as string;
   const [isEditing, setIsEditing] = useState(false);
@@ -159,7 +157,7 @@ export default function PassageViewPage() {
     {
       icon: <FileText className="h-3 w-3" />,
       label: testType === "PRE_TEST" ? "Pre-Test" : "Post-Test",
-      color: "bg-violet-100 text-violet-700 border border-violet-200",
+      color: "border border-violet-200 bg-violet-100 text-violet-700 whitespace-nowrap",
     },
     {
       icon: <BarChart2 className="h-3 w-3" />,
@@ -180,30 +178,11 @@ export default function PassageViewPage() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(124,198,254,0.14),transparent_22%),linear-gradient(180deg,#F4F8FC_0%,#EDF3F9_100%)]">
-      <div className="sticky top-0 z-10 border-b border-[#DCE7F5] bg-white/88 px-4 py-4 backdrop-blur sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.push("/admin")}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0C2D57] text-white shadow-[0_8px_20px_rgba(12,45,87,0.28)] transition hover:bg-[#163D70]"
-              aria-label="Back to passages"
-              title="Back to passages"
-            >
-              <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
-            </button>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#7B92AC]">
-                Passage Workspace
-              </p>
-              <h1 className="text-lg font-semibold text-[#0F2744]">
-                {passage.title}
-              </h1>
-            </div>
-          </div>
-
-          <ViewToggle passageId={passageId} active="passage" />
-        </div>
-      </div>
+      <PassageWorkspaceHeader
+        passageId={passageId}
+        title={passage.title}
+        active="passage"
+      />
 
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
         <section className="overflow-hidden rounded-[30px] border border-[#D9E5F5] bg-white shadow-[0_24px_64px_rgba(15,23,42,0.08)]">
@@ -223,7 +202,7 @@ export default function PassageViewPage() {
                         {badges.map((badge, index) => (
                           <span
                             key={index}
-                            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${badge.color}`}
+                            className={`inline-flex min-h-8 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${badge.color}`}
                           >
                             {badge.icon}
                             {badge.label}
@@ -368,46 +347,6 @@ export default function PassageViewPage() {
           </div>
         </section>
       </div>
-    </div>
-  );
-}
-
-function ViewToggle({
-  passageId,
-  active,
-}: {
-  passageId: string;
-  active: "passage" | "questions";
-}) {
-  const items = [
-    {
-      id: "passage" as const,
-      label: "Passage",
-      href: `/admin/passages/${passageId}/view`,
-    },
-    {
-      id: "questions" as const,
-      label: "Questions",
-      href: `/admin/passages/${passageId}`,
-    },
-  ];
-
-  return (
-    <div className="inline-flex rounded-full border border-[#D6E3F8] bg-white p-1 shadow-[0_8px_20px_rgba(15,23,42,0.05)]">
-      {items.map((item) => (
-        <Link
-          key={item.id}
-          href={item.href}
-          className={cn(
-            "rounded-full px-4 py-2 text-sm font-semibold transition",
-            active === item.id
-              ? "bg-[#0C2D57] text-white"
-              : "text-[#33507A] hover:bg-[#EEF5FF]"
-          )}
-        >
-          {item.label}
-        </Link>
-      ))}
     </div>
   );
 }

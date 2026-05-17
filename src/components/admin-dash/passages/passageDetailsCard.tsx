@@ -26,7 +26,7 @@ export function PassageDetailsCard({ passageId }: { passageId: string }) {
         <div className="flex-1 min-w-0">
           <h1 className="text-2xl font-bold text-[#31318A] wrap-break-word">{passage.title}</h1>
           <div className="flex flex-wrap items-center gap-2 mt-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium bg-violet-100 text-violet-700 border border-violet-200">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-100 px-3 py-1 text-xs font-medium text-violet-700 whitespace-nowrap">
               <FileText className="h-3 w-3" />
               {passage.testType === "PRE_TEST" ? "Pre-Test" : "Post-Test"}
             </span>
