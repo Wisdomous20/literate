@@ -630,6 +630,7 @@ export default function OralReadingReportPage() {
         miscues={analysis?.miscues || []}
         alignedWords={analysis?.alignedWords}
         passageLevel={session.selectedLevel}
+        audioSrc={audioSrc}
         onJumpToTime={handleJumpToMiscueTime}
         onDeleteMiscue={reportSessionId ? handleDeleteMiscue : undefined}
         onUpdateMiscueType={reportSessionId ? handleUpdateMiscueType : undefined}

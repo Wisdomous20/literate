@@ -511,6 +511,7 @@ export default function ReadingFluencyReportPage() {
         passageLevel={
           passage?.level ? `Grade ${passage.level}` : undefined
         }
+        audioSrc={assessment.oralFluency?.audioUrl}
         onJumpToTime={handleJumpToMiscueTime}
         onDeleteMiscue={sessionId ? handleDeleteMiscue : undefined}
         onUpdateMiscueType={sessionId ? handleUpdateMiscueType : undefined}

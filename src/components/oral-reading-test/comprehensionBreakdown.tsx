@@ -105,7 +105,7 @@ export function ComprehensionBreakdown({
 
   return (
     <div
-      className={`flex h-full flex-col rounded-3xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#EFFDFF] px-5 py-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)] transition-opacity duration-300 ${
+      className={`flex h-full flex-col rounded-3xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-white px-5 py-4 shadow-[0px_1px_20px_rgba(108,164,239,0.37)] transition-opacity duration-300 ${
         disabled ? "pointer-events-none opacity-40" : "opacity-100"
       }`}
     >
