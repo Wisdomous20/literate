@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LayoutDashboard, ClipboardList, X } from "lucide-react";
+import { LayoutDashboard, History, X } from "lucide-react";
 import { QuickActions } from "./quickActions";
 
 interface DashboardHeaderProps {
@@ -41,7 +41,7 @@ export function DashboardHeader({
             aria-label="History"
             onClick={() => setShowDrawer(true)}
           >
-            <ClipboardList className="h-4 w-4 md:h-5 md:w-5" />
+            <History className="h-4 w-4 md:h-5 md:w-5" />
           </button>
         </div>
       </header>

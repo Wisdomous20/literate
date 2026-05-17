@@ -367,6 +367,14 @@ export default function ReadingLevelReportPage() {
                       Oral Reading Test
                     </span>
                   </div>
+                  {assessmentId && (
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <span className="text-[11px] font-medium text-[#5D5DFB]/70">Assessment ID:</span>
+                      <span className="text-[11px] font-bold text-[#3B2F7F] font-mono tracking-wide select-all">
+                        {assessmentId}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
                 <div className="flex items-center gap-3">

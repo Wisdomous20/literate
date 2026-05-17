@@ -22,6 +22,7 @@ interface AssessmentSummaryProps {
   studentGrade: string;
   studentClass?: string;
   assessmentTypeLabel: string;
+  assessmentId?: string | null;
   oralReadingLevel: OralReadingLevel;
   assessmentCards: AssessmentCard[];
   onViewReport: (cardId: string) => void;
@@ -203,6 +204,7 @@ export function AssessmentSummary({
   studentGrade,
   studentClass,
   assessmentTypeLabel,
+  assessmentId,
   oralReadingLevel,
   assessmentCards,
   onViewReport,
@@ -243,9 +245,19 @@ export function AssessmentSummary({
                   </button>
                 </div>
                 <div className="flex flex-col gap-0.5">
-                  <h1 className="text-base font-bold text-[#3B2F7F] leading-tight">
-                    {studentName}
-                  </h1>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h1 className="text-base font-bold text-[#3B2F7F] leading-tight">
+                      {studentName}
+                    </h1>
+                    {assessmentId && (
+                      <>
+                        <span className="text-[#C4B5FD] font-bold text-sm">|</span>
+                        <span className="text-[11px] font-semibold text-[#5D5DFB] font-mono tracking-wide select-all">
+                          {assessmentId}
+                        </span>
+                      </>
+                    )}
+                  </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-[11px] font-semibold text-[#5D5DFB] uppercase tracking-widest">
                       {studentGrade}

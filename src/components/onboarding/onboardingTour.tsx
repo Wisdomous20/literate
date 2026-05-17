@@ -513,15 +513,6 @@ export function OnboardingTour() {
               </p>
             </div>
 
-            <div className="mt-3 px-1">
-              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#6B7DB3]">
-                What happens next
-              </p>
-              <p className="mt-1 text-xs font-medium leading-5 text-[#00306E]/58">
-                {activeStep.next}
-              </p>
-            </div>
-
             <div className="mt-5 flex items-center justify-between gap-3">
               <button
                 type="button"

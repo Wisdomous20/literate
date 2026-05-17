@@ -620,7 +620,7 @@ export default function SettingsPage() {
     <div className="flex h-screen flex-col overflow-hidden">
       <DashboardHeader title="Settings" />
 
-      <main className="flex-1 overflow-auto bg-[#F7F8FF] px-4 py-4 sm:px-6 sm:py-6 xl:px-8">
+      <main className="flex-1 overflow-auto bg-[#ffffff] px-4 py-4 sm:px-6 sm:py-6 xl:px-8">
         <div className="mx-auto max-w-5xl space-y-8">
           <section>
             <div className="mb-5">

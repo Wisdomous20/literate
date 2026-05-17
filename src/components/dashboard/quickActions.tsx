@@ -1,7 +1,9 @@
-import { FileText, Loader2 } from "lucide-react";
+
+import { UserRound, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRecentAssessments } from "@/lib/hooks/useRecentAssessments";
 import { RecentAssessmentItem } from "@/service/assessment/getRecentAssessmentsService";
+import "./quickActionsPop.css";
 
 const assessmentTypeLabels: Record<string, string> = {
   ORAL_READING: "Oral Reading",
@@ -10,9 +12,9 @@ const assessmentTypeLabels: Record<string, string> = {
 };
 
 const classificationBadge: Record<string, { bg: string; text: string }> = {
-  FRUSTRATION: { bg: "bg-red-50", text: "text-red-600" },
-  INSTRUCTIONAL: { bg: "bg-blue-50", text: "text-blue-600" },
-  INDEPENDENT: { bg: "bg-green-50", text: "text-green-700" },
+  FRUSTRATION: { bg: "bg-[rgba(253,182,210,0.45)]", text: "text-[#C41048]" },
+  INSTRUCTIONAL: { bg: "bg-[rgba(160,200,255,0.45)]", text: "text-[#1A5FB4]" },
+  INDEPENDENT: { bg: "bg-[rgba(140,220,160,0.45)]", text: "text-[#1E7A35]" },
 };
 
 function formatDate(date: Date | string): string {
@@ -46,8 +48,8 @@ export function QuickActions({ schoolYear, minimal }: QuickActionsProps) {
     }
   };
 
-  // Card border style: equal all sides, purple
-  const cardBorder = "border border-[#A855F7] rounded-xl";
+  // Card border style: equal sides + thick left purple accent
+  const cardBorder = "border border-[#A855F7] border-l-[3px] rounded-xl";
 
   // Minimal mode: just the list, no card, no header
   if (minimal) {
@@ -69,40 +71,46 @@ export function QuickActions({ schoolYear, minimal }: QuickActionsProps) {
             };
             const pastelBg =
               item.classificationLevel === "FRUSTRATION"
-                ? "bg-[#FFF0F0]"
+                ? "bg-[rgba(253,182,210,0.35)]"
                 : item.classificationLevel === "INSTRUCTIONAL"
-                ? "bg-[#EFF6FF]"
+                ? "bg-[rgba(160,200,255,0.35)]"
                 : item.classificationLevel === "INDEPENDENT"
-                ? "bg-[#F0FFF4]"
+                ? "bg-[rgba(140,220,160,0.35)]"
                 : "bg-[#FAF5FF]";
+            const iconColor =
+              item.classificationLevel === "FRUSTRATION"
+                ? "text-[#C41048]"
+                : item.classificationLevel === "INSTRUCTIONAL"
+                ? "text-[#1A5FB4]"
+                : item.classificationLevel === "INDEPENDENT"
+                ? "text-[#1E7A35]"
+                : "text-[#A855F7]";
             return (
               <button
                 key={item.id}
                 onClick={() => handleAssessmentClick(item)}
                 type="button"
-                className={`flex items-center justify-between px-4 py-2.5 transition-all hover:shadow-lg hover:border-[#6666FF] hover:bg-white active:scale-95 ${cardBorder} ${pastelBg}`}
+                className={`flex items-center justify-between px-4 py-3 transition-all hover:shadow-md hover:border-[#6666FF] hover:brightness-95 active:scale-95 motion-safe:animate-none ${cardBorder} ${pastelBg} pop-on-click`}
               >
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#EEF0FF]">
-                    <FileText className="h-4 w-4 text-[#6666FF]" />
-                  </div>
-                  <div className="min-w-0 text-left">
-                    <p className="truncate text-sm font-semibold text-[#6666FF]">
+                <div className="flex min-w-0 flex-col gap-0.5 text-left">
+                  <div className="flex items-center gap-1.5">
+                    <UserRound className={`h-3.5 w-3.5 shrink-0 ${iconColor}`} />
+                    <p className="truncate text-sm font-bold text-black">
                       {item.studentName}
                     </p>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[11px] text-[#333333]">
-                        {assessmentTypeLabels[item.assessmentType] ?? item.assessmentType}
-                      </span>
-                      <span
-                        className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${badge.bg} ${badge.text}`}
-                      >
-                        {item.classificationLevel}
-                      </span>
-                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 pl-5">
+                    <span className="text-[11px] text-[#111111]">
+                      {assessmentTypeLabels[item.assessmentType] ?? item.assessmentType}
+                    </span>
+                    <span
+                      className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${badge.bg} ${badge.text}`}
+                    >
+                      {item.classificationLevel}
+                    </span>
                   </div>
                 </div>
-                <span className="ml-2 shrink-0 text-[11px] text-[#333333]">
+                <span className="ml-2 shrink-0 text-[11px] text-[#1b1a1a]">
                   {formatDate(item.dateTaken)}
                 </span>
               </button>
@@ -135,45 +143,52 @@ export function QuickActions({ schoolYear, minimal }: QuickActionsProps) {
         ) : (
           assessments.map((item: RecentAssessmentItem, idx) => {
             const badge = classificationBadge[item.classificationLevel] ?? {
-              bg: "bg-gray-50",
+              bg: "bg-gray-100",
               text: "text-gray-500",
             };
             const pastelBg =
               item.classificationLevel === "FRUSTRATION"
-                ? "bg-[#FFF0F0]"
+                ? "bg-[rgba(253,182,210,0.35)]"
                 : item.classificationLevel === "INSTRUCTIONAL"
-                ? "bg-[#EFF6FF]"
+                ? "bg-[rgba(160,200,255,0.35)]"
                 : item.classificationLevel === "INDEPENDENT"
-                ? "bg-[#F0FFF4]"
+                ? "bg-[rgba(140,220,160,0.35)]"
                 : "bg-[#FAF5FF]";
+            const iconColor =
+              item.classificationLevel === "FRUSTRATION"
+                ? "text-[#C41048]"
+                : item.classificationLevel === "INSTRUCTIONAL"
+                ? "text-[#1A5FB4]"
+                : item.classificationLevel === "INDEPENDENT"
+                ? "text-[#1E7A35]"
+                : "text-[#A855F7]";
             return (
               <button
                 key={item.id}
                 onClick={() => handleAssessmentClick(item)}
                 type="button"
-                className={`flex items-center justify-between px-4 py-2.5 transition-all hover:shadow-lg hover:border-[#6666FF] hover:bg-white active:scale-95 ${cardBorder} ${pastelBg}`}
+                className={`flex items-center justify-between px-4 py-3 transition-all hover:shadow-md hover:border-[#6666FF] hover:brightness-95 active:scale-95 motion-safe:animate-none ${cardBorder} ${pastelBg} pop-on-click`}
+
               >
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#EEF0FF]">
-                    <FileText className="h-4 w-4 text-[#6666FF]" />
-                  </div>
-                  <div className="min-w-0 text-left">
-                    <p className="truncate text-sm font-semibold text-[#6666FF]">
+                <div className="flex min-w-0 flex-col gap-0.5 text-left">
+                  <div className="flex items-center gap-1.5">
+                    <UserRound className={`h-3.5 w-3.5 shrink-0 ${iconColor}`} />
+                    <p className="truncate text-sm font-bold text-black">
                       {item.studentName}
                     </p>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[11px] text-[#333333]">
-                        {assessmentTypeLabels[item.assessmentType] ?? item.assessmentType}
-                      </span>
-                      <span
-                        className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${badge.bg} ${badge.text}`}
-                      >
-                        {item.classificationLevel}
-                      </span>
-                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 pl-5">
+                    <span className="text-[11px] text-[#555555]">
+                      {assessmentTypeLabels[item.assessmentType] ?? item.assessmentType}
+                    </span>
+                    <span
+                      className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${badge.bg} ${badge.text}`}
+                    >
+                      {item.classificationLevel}
+                    </span>
                   </div>
                 </div>
-                <span className="ml-2 shrink-0 text-[11px] text-[#333333]">
+                <span className="ml-2 shrink-0 text-[11px] text-[#555555]">
                   {formatDate(item.dateTaken)}
                 </span>
               </button>

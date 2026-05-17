@@ -4,6 +4,8 @@ import { useState, useMemo, useRef, useEffect, useCallback, Fragment } from "rea
 import { X, Play, Trash2, Pencil, Loader2 } from "lucide-react";
 import type { MiscueResult, AlignedWord } from "@/types/oral-reading";
 import { getPassageTextStyle } from "@/components/oral-reading-test/passageDisplay";
+import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay";
+import type { EditModeCallbacks } from "@/components/oral-reading-test/passageDisplay";
 import { MiscueActionPopover } from "@/components/oral-reading-test/miscueEditPopover";
 import { formatMiscueTimestamp } from "@/lib/audioPlayback";
 import { hydrateMiscueTimestamps } from "@/lib/miscueTimestamps";
@@ -128,7 +130,12 @@ interface ViewMiscuesModalProps {
     miscue: MiscueResult,
     newType: MiscueResult["miscueType"],
   ) => Promise<void>;
+  onUpdateSpokenWord?: (
+    miscue: MiscueResult,
+    newSpokenWord: string,
+  ) => Promise<void>;
   onJumpToTime?: (timestamp: number) => void;
+  editMiscues?: EditModeCallbacks;
 }
 
 export default function ViewMiscuesModal({
@@ -140,12 +147,14 @@ export default function ViewMiscuesModal({
   passageLevel,
   onDeleteMiscue,
   onUpdateMiscueType,
+  onUpdateSpokenWord,
   onJumpToTime,
+  editMiscues,
 }: ViewMiscuesModalProps) {
   const [highlightedTypes, setHighlightedTypes] = useState<Set<string>>(
     new Set(),
   );
-  const [activeTab, setActiveTab] = useState<"passage" | "list">("passage");
+  const [activeTab, setActiveTab] = useState<"passage" | "list" | "edit">("passage");
   const [showMiscues, setShowMiscues] = useState(true);
   const [popup, setPopup] = useState<PopupState | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -373,8 +382,11 @@ export default function ViewMiscuesModal({
       setShowMiscues(true);
       setPopup(null);
       setActionLoading(false);
+      if (editMiscues?.isEditing) {
+        editMiscues.cancelEdit();
+      }
     }
-  }, [open]);
+  }, [open, editMiscues]);
 
   const openMiscuePopup = useCallback((anchorEl: HTMLElement, miscue: MiscueResult) => {
     const rect = anchorEl.getBoundingClientRect();
@@ -701,15 +713,64 @@ export default function ViewMiscuesModal({
             >
               Miscued Words
             </button>
+            {editMiscues && (
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("edit");
+                  setPopup(null);
+                }}
+                className={`min-w-[118px] rounded-md px-3 py-2 text-xs font-semibold transition-colors ${
+                  activeTab === "edit"
+                    ? "bg-white text-[#00306E] shadow-sm"
+                    : "text-[#31318A]/70 hover:text-[#00306E]"
+                }`}
+              >
+                Edit Miscues
+              </button>
+            )}
           </div>
         </div>
 
-                {/* Passage content with highlighted words */}
+        {/* Passage content with highlighted words */}
         <div
           ref={containerRef}
           className="oral-reading-scroll relative flex-1 overflow-auto px-6 py-5"
         >
-          {activeTab === "passage" ? (
+          {activeTab === "edit" && editMiscues ? (
+            <div className="flex h-full flex-col">
+              <div className="flex-1 overflow-auto">
+                <PassageDisplay
+                  content={passageContent}
+                  miscues={
+                    editMiscues.isEditing
+                      ? editMiscues.editedMiscues
+                      : miscues
+                  }
+                  alignedWords={alignedWords}
+                  passageLevel={passageLevel}
+                  expanded
+                  resizable={false}
+                  editMode={editMiscues}
+                  onJumpToTime={onJumpToTime}
+                  onDeleteMiscue={onDeleteMiscue}
+                  onUpdateMiscueType={onUpdateMiscueType}
+                  onUpdateSpokenWord={onUpdateSpokenWord}
+                />
+              </div>
+              {!editMiscues.isEditing && (
+                <div className="mt-4 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => editMiscues.enterEditMode()}
+                    className="rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white hover:bg-[#5555EE]"
+                  >
+                    Start Editing
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : activeTab === "passage" ? (
             <>
               <div className="rounded-xl border border-[#54A4FF] bg-[#EFFDFF] p-5 shadow-[0px_1px_20px_rgba(108,164,239,0.37)]">
                 <p

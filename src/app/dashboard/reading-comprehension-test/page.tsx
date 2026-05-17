@@ -698,6 +698,7 @@ export default function ReadingComprehensionTestPage() {
                   : undefined
               }
               hideStudentInfo
+              disabled={showQuestions}
             />
 
             {showQuestions && hasPassage && (

@@ -15,7 +15,6 @@ import AudioPlaybackCard from "@/components/reports/oral-reading-test/reading-fl
 import BehaviorChecklist from "@/components/reports/oral-reading-test/reading-fluency-report/readingBehaviorChecklist";
 import ViewMiscuesModal from "@/components/reports/oral-reading-test/reading-fluency-report/viewMiscuesModal";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
-import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay";
 import { useEditMiscues } from "@/components/oral-reading-test/useEditMiscues";
 import { fetchOralFluencyMiscues } from "@/app/actions/oral-fluency/getMiscues";
 import { updateMiscueAction } from "@/app/actions/oral-fluency/updateMiscue";
@@ -128,7 +127,6 @@ export default function ReadingFluencyReportPage() {
   const assessmentId = searchParams.get("id");
 
   const [showMiscuesModal, setShowMiscuesModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Local overrides after editing miscues
@@ -432,13 +430,13 @@ export default function ReadingFluencyReportPage() {
                     {classData?.name && (
                       <>
                         <span className="text-[#C4B5FD] font-bold">·</span>
-                        <span className="text-[11px] font-semibold text-[#5D5DFB]">{classData.name}</span>
+                        <span className="text-[11px] font-semibold text-[#5D5DFB]">Class {classData.name}</span>
                       </>
                     )}
                     {assessmentId && (
                       <>
                         <span className="text-[#C4B5FD] font-bold">·</span>
-                        <span className="font-mono text-[9px] text-[#5D5DFB]/70 break-all">{assessmentId}</span>
+                        <span className="font-mono text-[11px] font-semibold text-[#5D5DFB] break-all">{assessmentId}</span>
                       </>
                     )}
                   </div>
@@ -497,7 +495,6 @@ export default function ReadingFluencyReportPage() {
               <MiscueAnalysisReport
                 miscueData={miscueData}
                 onViewMiscues={() => setShowMiscuesModal(true)}
-                onEditMiscues={() => setShowEditModal(true)}
               />
             </div>
           </div>
@@ -515,65 +512,12 @@ export default function ReadingFluencyReportPage() {
           passage?.level ? `Grade ${passage.level}` : undefined
         }
         onJumpToTime={handleJumpToMiscueTime}
+        onDeleteMiscue={sessionId ? handleDeleteMiscue : undefined}
+        onUpdateMiscueType={sessionId ? handleUpdateMiscueType : undefined}
+        onUpdateSpokenWord={sessionId ? handleUpdateSpokenWord : undefined}
+        editMiscues={editMiscues}
       />
 
-      {/* Edit Miscues Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="relative flex h-[80vh] w-[90vw] max-w-4xl flex-col rounded-2xl bg-white p-6 shadow-2xl">
-            <h2 className="mb-4 text-lg font-bold text-[#003366]">
-              Edit Miscues
-            </h2>
-            <div className="flex-1 overflow-auto">
-              <PassageDisplay
-                content={passage?.content ?? ""}
-                miscues={
-                  editMiscues.isEditing
-                    ? editMiscues.editedMiscues
-                    : activeMiscues
-                }
-                alignedWords={undefined}
-                passageLevel={
-                  passage?.level ? String(passage.level) : undefined
-                }
-                expanded
-                resizable={false}
-                editMode={editMiscues}
-                onJumpToTime={handleJumpToMiscueTime}
-                onDeleteMiscue={
-                  sessionId ? handleDeleteMiscue : undefined
-                }
-                onUpdateMiscueType={
-                  sessionId ? handleUpdateMiscueType : undefined
-                }
-                onUpdateSpokenWord={
-                  sessionId ? handleUpdateSpokenWord : undefined
-                }
-              />
-            </div>
-            {!editMiscues.isEditing && (
-              <div className="mt-4 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    editMiscues.enterEditMode();
-                  }}
-                  className="rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white hover:bg-[#5555EE]"
-                >
-                  Start Editing
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-200"
-                >
-                  Close
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

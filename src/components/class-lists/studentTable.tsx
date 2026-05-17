@@ -222,47 +222,59 @@ export function StudentTable({
                 ) : (
                   // View Mode
                   <>
-                    {/* Student Name and Grade */}
-                    <div className="flex items-center gap-2 min-w-0">
-                      <User className="h-4 w-4 text-[#6666FF] shrink-0" />
-                      <span
-                        className="text-sm font-bold text-[#00306E] truncate flex-1 min-w-0"
-                        title={student.name}
-                      >
-                        {student.name}
-                      </span>
-                      <span className="shrink-0 text-[11px] rounded-full bg-[#E8D5FF]/60 px-1.5 py-0.5 text-black font-normal leading-tight">
-                        {student.gradeLevel}
-                      </span>
-                    </div>
+                    {/* No results badge */}
+                    {!hasAssessment && (
+                      <div className="absolute top-2.5 right-2.5 pointer-events-none z-10">
+                        <span className="bg-[#FFF8EC] text-[#B45309] text-[10px] font-semibold px-2.5 py-1 rounded-full border border-[#B45309]/25 shadow-sm">
+                          No results yet
+                        </span>
+                      </div>
+                    )}
 
-                    {/* Assessment Type with label */}
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-[9px] font-normal text-[#5D5DFB]/60 uppercase tracking-wider">Assessment Type</span>
-                      <div className="flex items-center gap-2">
-                        <BookOpen className="h-3.5 w-3.5 text-[#6666FF] shrink-0" />
-<span className="text-xs font-medium text-[#00306E] truncate">
+                    {/* Content — grayed out when no assessment */}
+                    <div className={!hasAssessment ? "opacity-40 grayscale" : ""}>
+                      {/* Student Name and Grade */}
+                      <div className="flex items-center gap-2 min-w-0 mb-3">
+                        <User className="h-4 w-4 text-[#6666FF] shrink-0" />
+                        <span
+                          className="text-sm font-bold text-[#00306E] truncate flex-1 min-w-0"
+                          title={student.name}
+                        >
+                          {student.name}
+                        </span>
+                        <span className="shrink-0 text-[11px] rounded-full bg-[#E8D5FF]/60 px-1.5 py-0.5 text-black font-normal leading-tight">
+                          {student.gradeLevel}
+                        </span>
+                      </div>
+
+                      {/* Assessment Type with label */}
+                      <div className="flex flex-col gap-0.5 mb-3">
+                        <span className="text-[9px] font-normal text-[#5D5DFB]/60 uppercase tracking-wider">Assessment Type</span>
+                        <div className="flex items-center gap-2">
+                          <BookOpen className="h-3.5 w-3.5 text-[#6666FF] shrink-0" />
+                          <span className="text-xs font-medium text-[#00306E] truncate">
                             {getAssessmentTypeLabel(student.assessmentType)}
-                        </span>
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Date with label */}
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[9px] font-normal text-[#5D5DFB]/60 uppercase tracking-wider">Date</span>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-3.5 w-3.5 text-[#6666FF] shrink-0" />
+                          <span className="text-xs font-medium text-[#00306E]">
+                            {student.lastAssessment ? (
+                              <span>{student.lastAssessment}</span>
+                            ) : (
+                              <span className="text-[#00306E]/40">—</span>
+                            )}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Date with label */}
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-[9px] font-normal text-[#5D5DFB]/60 uppercase tracking-wider">Date</span>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-3.5 w-3.5 text-[#6666FF] shrink-0" />
-                        <span className="text-xs font-medium text-[#00306E]">
-                          {student.lastAssessment ? (
-                            <span>{student.lastAssessment}</span>
-                          ) : (
-                            <span className="text-[#00306E]/40">—</span>
-                          )}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
+                    {/* Action Buttons — always full opacity */}
                     <div className="flex gap-2 pt-2 mt-auto">
                       <button
                         onClick={(e) => {
@@ -285,13 +297,6 @@ export function StudentTable({
                         Delete
                       </button>
                     </div>
-                    {!hasAssessment && (
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none rounded-2xl bg-white/70 backdrop-blur-[2px]">
-                        <span className="bg-white text-[#6666FF] text-xs font-semibold px-4 py-1.5 rounded-full shadow-lg border border-[#6666FF]/20">
-                          No results yet
-                        </span>
-                      </div>
-                    )}
                   </>
                 )}
 

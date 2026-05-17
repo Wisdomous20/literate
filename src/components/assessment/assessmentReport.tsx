@@ -301,8 +301,8 @@ export function AssessmentReport({
                     <span className="font-semibold text-[#5D5DFB] text-center">
                       {record.attempt}
                     </span>
-                    <span className="font-mono text-[13px] font-semibold text-[#3B2F7F]/70 text-center truncate px-1">
-                      {record.id.slice(0, 8)}…
+                    <span className="font-mono text-[11px] font-semibold text-[#3B2F7F]/70 text-center break-all px-1 leading-tight">
+                      {record.id}
                     </span>
                     <span className="font-medium text-[#3B2F7F] text-center">
                       {record.assessmentType}

@@ -117,7 +117,7 @@ export default function ComprehensionReportPage() {
   if (isLoading) {
     return (
       <div className="flex h-screen flex-col overflow-hidden">
-        <ComprehensionReportHeader />
+        <ComprehensionReportHeader assessmentId={assessmentId} />
         <div className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-[#6666FF]" />
@@ -139,7 +139,7 @@ export default function ComprehensionReportPage() {
   if (error || !reportData) {
     return (
       <div className="flex h-screen flex-col overflow-hidden">
-        <ComprehensionReportHeader />
+        <ComprehensionReportHeader assessmentId={assessmentId} />
         <div className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-4 text-center px-4">
             <p className="text-red-600 font-medium">{error || "No report data available."}</p>
@@ -183,7 +183,7 @@ export default function ComprehensionReportPage() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <ComprehensionReportHeader />
+      <ComprehensionReportHeader assessmentId={assessmentId} />
 
       <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth">
         <div className="max-w-[1400px] mx-auto px-6 py-6 md:px-8 lg:px-12 w-full">

@@ -19,9 +19,9 @@ export default function ReportHeader({ assessmentId }: ReportHeaderProps) {
             Oral Fluency Test Report
           </h1>
           {assessmentId && (
-            <p className="text-[11px] md:text-xs font-medium text-[#2E2E68]/65">
+            <p className="text-xs md:text-sm font-medium text-[#2E2E68]/65 mt-0.5">
               Assessment ID:{" "}
-              <span className="font-semibold text-[#2E2E68]">
+              <span className="font-bold text-[#2E2E68] font-mono tracking-wide select-all">
                 {assessmentId}
               </span>
             </p>

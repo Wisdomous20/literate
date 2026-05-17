@@ -121,6 +121,7 @@ export default function AssessmentSummaryPage() {
       studentGrade={found.student.level != null ? `Grade ${found.student.level}` : ""}
       studentClass={classData?.name}
       assessmentTypeLabel="Oral Reading Test"
+      assessmentId={assessmentId}
       assessmentCards={assessmentCards}
       oralReadingLevel={{
         level: oralReadingLevel,

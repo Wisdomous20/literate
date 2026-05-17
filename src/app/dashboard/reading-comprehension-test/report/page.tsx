@@ -204,9 +204,22 @@ export default function ReadingComprehensionReportPage() {
     <div className="flex h-screen flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 border-b-[3px] border-[#5D5DFB] bg-white px-4 md:px-6 py-4">
-        <h1 className="text-base md:text-lg font-semibold text-[#483efa]">
-          Reading Comprehension Test Report
-        </h1>
+        <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg bg-[#5D5DFB]/10 shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5 text-[#5D5DFB]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+        </div>
+        <div className="flex flex-col">
+          <h1 className="text-base md:text-lg font-semibold text-[#483efa]">
+            Reading Comprehension Test Report
+          </h1>
+          {assessmentId && (
+            <p className="text-xs md:text-sm font-medium text-[#2E2E68]/65 mt-0.5">
+              Assessment ID:{" "}
+              <span className="font-bold text-[#2E2E68] font-mono tracking-wide select-all">
+                {assessmentId}
+              </span>
+            </p>
+          )}
+        </div>
       </div>
 
       <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth">

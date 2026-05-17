@@ -171,13 +171,13 @@ export default function ReadingComprehensionReportPage() {
                     {classData?.name && (
                       <>
                         <span className="text-[#C4B5FD] font-bold">·</span>
-                        <span className="text-[11px] font-semibold text-[#5D5DFB]">{classData.name}</span>
+                        <span className="text-[11px] font-semibold text-[#5D5DFB]">Class {classData.name}</span>
                       </>
                     )}
                     {assessmentId && (
                       <>
                         <span className="text-[#C4B5FD] font-bold">·</span>
-                        <span className="font-mono text-[9px] text-[#5D5DFB]/70 break-all">{assessmentId}</span>
+                        <span className="font-mono text-[11px] font-semibold text-[#5D5DFB] break-all">{assessmentId}</span>
                       </>
                     )}
                   </div>

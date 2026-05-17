@@ -10,7 +10,6 @@ import MiscueAnalysisReport from "@/components/reports/oral-reading-test/reading
 import AudioPlaybackCard from "@/components/reports/oral-reading-test/reading-fluency-report/audioPlaybackCard";
 import BehaviorChecklist from "@/components/reports/oral-reading-test/reading-fluency-report/readingBehaviorChecklist";
 import ViewMiscuesModal from "@/components/reports/oral-reading-test/reading-fluency-report/viewMiscuesModal";
-import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay";
 import { useEditMiscues } from "@/components/oral-reading-test/useEditMiscues";
 import { fetchOralFluencyMiscues } from "@/app/actions/oral-fluency/getMiscues";
 import { recheckAllMiscuesAction } from "@/app/actions/oral-fluency/recheckAllMiscues";
@@ -178,7 +177,6 @@ function formatRecheckSummary(summary: RecheckSummary | undefined): string {
 export default function OralReadingReportPage() {
   const router = useRouter();
   const [showMiscuesModal, setShowMiscuesModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [localAnalysis, setLocalAnalysis] = useState<OralFluencyAnalysis | null>(null);
   const [isRecheckingMiscues, setIsRecheckingMiscues] = useState(false);
   const [recheckSummaryText, setRecheckSummaryText] = useState<string | null>(
@@ -729,7 +727,6 @@ export default function OralReadingReportPage() {
                 <MiscueAnalysisReport
                   miscueData={miscueData}
                   onViewMiscues={() => setShowMiscuesModal(true)}
-                  onEditMiscues={() => setShowEditModal(true)}
                   onRecheckMiscues={reportSessionId ? handleRecheckMiscues : undefined}
                   isRechecking={isRecheckingMiscues}
                   recheckSummary={recheckSummaryText}
@@ -749,63 +746,12 @@ export default function OralReadingReportPage() {
         alignedWords={analysis?.alignedWords}
         passageLevel={session.selectedLevel}
         onJumpToTime={handleJumpToMiscueTime}
+        onDeleteMiscue={reportSessionId ? handleDeleteMiscue : undefined}
+        onUpdateMiscueType={reportSessionId ? handleUpdateMiscueType : undefined}
+        onUpdateSpokenWord={reportSessionId ? handleUpdateSpokenWord : undefined}
+        editMiscues={editMiscues}
       />
 
-      {/* Edit Miscues Modal */}
-      {showEditModal && analysis && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="relative flex h-[80vh] w-[90vw] max-w-4xl flex-col rounded-2xl bg-white p-6 shadow-2xl">
-            <h2 className="mb-4 text-lg font-bold text-[#003366]">
-              Edit Miscues
-            </h2>
-            <div className="flex-1 overflow-auto">
-              <PassageDisplay
-                content={session.passageContent || ""}
-                miscues={
-                  editMiscues.isEditing
-                    ? editMiscues.editedMiscues
-                    : analysis?.miscues
-                }
-                alignedWords={analysis?.alignedWords}
-                passageLevel={session.selectedLevel}
-                expanded
-                resizable={false}
-                editMode={editMiscues}
-                onJumpToTime={handleJumpToMiscueTime}
-                onDeleteMiscue={
-                  reportSessionId ? handleDeleteMiscue : undefined
-                }
-                onUpdateMiscueType={
-                  reportSessionId ? handleUpdateMiscueType : undefined
-                }
-                onUpdateSpokenWord={
-                  reportSessionId ? handleUpdateSpokenWord : undefined
-                }
-              />
-            </div>
-            {!editMiscues.isEditing && (
-              <div className="mt-4 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    editMiscues.enterEditMode();
-                  }}
-                  className="rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white hover:bg-[#5555EE]"
-                >
-                  Start Editing
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-200"
-                >
-                  Close
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

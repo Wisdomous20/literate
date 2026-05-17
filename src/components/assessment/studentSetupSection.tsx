@@ -44,6 +44,7 @@ interface StudentSetupSectionProps {
     assessmentType: string;
   };
   hideStudentInfo?: boolean;
+  disabled?: boolean;
 }
 
 export function StudentSetupSection({
@@ -66,6 +67,7 @@ export function StudentSetupSection({
   onOpenPassageModal,
   shareableLink,
   hideStudentInfo = false,
+  disabled = false,
 }: StudentSetupSectionProps) {
   const [showShareModal, setShowShareModal] = useState(false);
 
@@ -102,6 +104,7 @@ export function StudentSetupSection({
           onOpenPassageModal={onOpenPassageModal}
           showShareLink={!!shareableLink}
           onShareLink={shareableLink ? handleToggleShare : undefined}
+          disabled={disabled}
         />
       </div>
 
