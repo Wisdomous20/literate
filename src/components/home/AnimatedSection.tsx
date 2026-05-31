@@ -53,6 +53,10 @@ export function AnimatedSection({
 interface AnimatedListProps {
   children: ReactNode;
   className?: string;
+  itemClassName?: string;
+  carouselControls?: boolean;
+  carouselControlsClassName?: string;
+  carouselLabel?: string;
   staggerDelay?: number;
   baseDelay?: number;
 }
@@ -60,29 +64,73 @@ interface AnimatedListProps {
 export function AnimatedList({
   children,
   className,
+  itemClassName,
+  carouselControls = false,
+  carouselControlsClassName = "md:hidden",
+  carouselLabel = "Cards",
   staggerDelay = 0.1,
   baseDelay = 0,
 }: AnimatedListProps) {
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement | null>(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
   const childArray = Children.toArray(children);
 
+  const scrollCarousel = (direction: "previous" | "next") => {
+    const node = ref.current;
+    if (!node) return;
+
+    node.scrollBy({
+      left: (direction === "next" ? 1 : -1) * node.clientWidth * 0.82,
+      behavior: "smooth",
+    });
+  };
+
   return (
-    <div ref={ref} className={className}>
-      {childArray.map((child, i) => (
-        <motion.div
-          key={i}
-          initial={{ opacity: 0, y: 30 }}
-          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-          transition={{
-            duration: 0.55,
-            ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
-            delay: baseDelay + i * staggerDelay,
-          }}
+    <>
+      {carouselControls && (
+        <div
+          className={`mb-4 flex items-center justify-between gap-3 px-6 ${carouselControlsClassName}`}
         >
-          {child}
-        </motion.div>
-      ))}
-    </div>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#6C4EEB]">
+            Swipe {carouselLabel}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => scrollCarousel("previous")}
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border-2 border-[#6C4EEB] bg-white text-lg font-black text-[#6C4EEB] shadow-sm transition-transform active:scale-95"
+              aria-label={`Previous ${carouselLabel}`}
+            >
+              <span aria-hidden="true">‹</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollCarousel("next")}
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border-2 border-[#6C4EEB] bg-[#6C4EEB] text-lg font-black text-white shadow-sm transition-transform active:scale-95"
+              aria-label={`Next ${carouselLabel}`}
+            >
+              <span aria-hidden="true">›</span>
+            </button>
+          </div>
+        </div>
+      )}
+      <div ref={ref} className={className}>
+        {childArray.map((child, i) => (
+          <motion.div
+            key={i}
+            className={itemClassName}
+            initial={{ opacity: 0, y: 30 }}
+            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+            transition={{
+              duration: 0.55,
+              ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+              delay: baseDelay + i * staggerDelay,
+            }}
+          >
+            {child}
+          </motion.div>
+        ))}
+      </div>
+    </>
   );
 }

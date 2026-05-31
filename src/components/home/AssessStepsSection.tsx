@@ -42,9 +42,9 @@ const steps = [
 
 export default function AssessStepsSection() {
   return (
-    <section className="pt-24 pb-[20vh] relative">
+    <section className="relative scroll-mt-28 py-16 sm:scroll-mt-32 sm:py-24 lg:pb-[20vh]">
       {/* Decorative mascot top-left — same as HowItWorks */}
-      <div className="absolute -top-16 left-0 -z-10">
+      <div className="absolute -top-16 left-0 -z-10 hidden lg:block">
         <Image
           src="/assets/IMG_12.png"
           alt=""
@@ -55,7 +55,7 @@ export default function AssessStepsSection() {
       </div>
 
       {/* Full-bleed background wave */}
-      <div className="absolute inset-0 -z-20 opacity-[0.82]">
+      <div className="absolute inset-0 -z-20 hidden opacity-[0.82] sm:block">
         <Image
           src="/assets/IMG_13.png"
           alt=""
@@ -65,16 +65,16 @@ export default function AssessStepsSection() {
       </div>
 
       <AnimatedSection direction="up" delay={0.05}>
-        <div className="px-6 md:px-12 mb-16 flex justify-center -mt-8">
+        <div className="mb-10 flex justify-center px-6 text-center sm:mb-16 md:px-12 lg:-mt-8">
           <div className="text-center">
             <p className="text-[#6C4EEB] text-sm font-semibold uppercase tracking-widest mb-3">
               The Process
             </p>
-            <h2 className="text-4xl md:text-5xl font-bold tracking-[6px] uppercase mb-4">
+            <h2 className="mb-4 text-3xl font-bold uppercase leading-tight tracking-[0.08em] sm:text-4xl md:text-5xl md:tracking-[6px]">
               How to Run an{" "}
               <span className="text-[#6C4EEB]">Assessment</span>
             </h2>
-            <p className="text-[#575E6B] text-lg max-w-xl mx-auto">
+            <p className="mx-auto max-w-xl text-base leading-7 text-[#575E6B] sm:text-lg">
               From launch to report in under 10 minutes — here&apos;s the end-to-end
               flow every teacher follows.
             </p>
@@ -83,7 +83,10 @@ export default function AssessStepsSection() {
       </AnimatedSection>
 
       <AnimatedList
-        className="px-6 md:px-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-8"
+        className="flex snap-x snap-mandatory gap-5 overflow-x-auto px-6 pb-5 [scrollbar-width:none] md:grid md:grid-cols-2 md:gap-6 md:overflow-visible md:px-12 md:pb-0 lg:grid-cols-4 lg:gap-8 [&::-webkit-scrollbar]:hidden"
+        itemClassName="w-[calc(100vw-36px)] shrink-0 snap-center md:w-auto md:max-w-none"
+        carouselControls
+        carouselLabel="steps"
         staggerDelay={0.12}
         baseDelay={0.1}
       >
@@ -94,7 +97,7 @@ export default function AssessStepsSection() {
 
             {/* Card */}
             <div
-              className={`relative bg-white border-2 border-[#6C4EEB] rounded-[14px] p-8 h-full transition-transform hover:-translate-y-1 active:translate-y-0 ${
+                className={`relative h-full rounded-[14px] border-2 border-[#6C4EEB] bg-white p-6 transition-transform hover:-translate-y-1 active:translate-y-0 sm:p-8 ${
                 s.highlight ? "shadow-2xl" : "shadow-lg"
               }`}
             >

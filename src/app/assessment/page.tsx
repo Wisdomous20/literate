@@ -16,7 +16,7 @@ export default function AssessmentPage() {
   return (
     <div className="relative min-h-screen font-sans text-[#323743]">
       {/* Full-page background — same as home */}
-      <div className="fixed inset-0 -z-10 opacity-10 pointer-events-none">
+      <div className="pointer-events-none fixed inset-0 -z-10 hidden opacity-10 sm:block">
         <Image
           src="/assets/IMG_2.jpg"
           alt=""

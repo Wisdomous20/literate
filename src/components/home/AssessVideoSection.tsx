@@ -68,20 +68,20 @@ export default function AssessVideoSection() {
   return (
     <section
       id="video"
-      className="py-24 bg-[#F5F3FF]/40 relative"
+      className="relative bg-[#F5F3FF]/40 py-16 sm:py-24"
     >
       <div className="px-6 md:px-12">
         <AnimatedSection direction="up" delay={0.05}>
-          <div className="text-center mb-16">
+          <div className="mb-10 text-center sm:mb-16">
             <p className="text-[#6C4EEB] text-sm font-semibold uppercase tracking-widest mb-3">
               Tutorials
             </p>
-            <h2 className="text-4xl lg:text-5xl font-bold text-[#323743] mb-4">
+            <h2 className="mb-4 text-3xl font-bold leading-tight text-[#323743] sm:text-4xl lg:text-5xl">
               Watch Each Assessment
               <br />
               <span className="text-[#6C4EEB]">in Action</span>
             </h2>
-            <p className="text-[#575E6B] text-lg max-w-xl mx-auto">
+            <p className="mx-auto max-w-xl text-base leading-7 text-[#575E6B] sm:text-lg">
               Click any assessment below to expand its tutorial. See exactly
               what teachers and students experience during each test.
             </p>
@@ -109,11 +109,11 @@ export default function AssessVideoSection() {
                   >
                     {/* Header — always visible */}
                     <button
-                      className="w-full flex items-center justify-between gap-4 p-6 text-left"
+                      className="flex w-full items-center justify-between gap-3 p-4 text-left sm:gap-4 sm:p-6"
                       onClick={() => toggle(a.id)}
                       aria-expanded={isOpen}
                     >
-                      <div className="flex items-center gap-4">
+                      <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                         {/* Color badge */}
                         <div
                           className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-black text-lg shrink-0 shadow-inner"
@@ -121,14 +121,14 @@ export default function AssessVideoSection() {
                         >
                           {a.label[0]}
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <span
                             className="text-[10px] font-black tracking-widest uppercase block mb-0.5"
                             style={{ color: a.color }}
                           >
                             Assessment Type
                           </span>
-                          <h3 className="text-lg font-bold text-[#16181D]">
+                          <h3 className="text-base font-bold text-[#16181D] sm:text-lg">
                             {a.label}
                           </h3>
                           {!isOpen && (
@@ -163,11 +163,11 @@ export default function AssessVideoSection() {
                           transition={{ duration: 0.45, ease: EASE }}
                           className="overflow-hidden"
                         >
-                          <div className="px-6 pb-6">
+                          <div className="px-4 pb-5 sm:px-6 sm:pb-6">
                             {/* Divider */}
                             <div className="h-px mb-6" style={{ background: a.color + "33" }} />
 
-                            <div className="grid lg:grid-cols-[1fr_1.4fr] gap-8 items-start">
+                            <div className="grid items-start gap-6 lg:grid-cols-[1fr_1.4fr] lg:gap-8">
                               {/* Left — description + bullets */}
                               <div>
                                 <p className="text-[#575E6B] text-sm leading-relaxed mb-6">
