@@ -322,6 +322,7 @@ export function OnboardingTour() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const [isOpen, setIsOpen] = useState(false);
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<TourRect | null>(null);
 
@@ -335,6 +336,16 @@ export function OnboardingTour() {
     () => getTooltipPosition(targetRect),
     [targetRect],
   );
+
+  useEffect(() => {
+    const updateScreenSize = () => {
+      setIsSmallScreen(window.matchMedia("(max-width: 767px)").matches);
+    };
+
+    updateScreenSize();
+    window.addEventListener("resize", updateScreenSize);
+    return () => window.removeEventListener("resize", updateScreenSize);
+  }, []);
 
   useEffect(() => {
     const handleRestartTour = () => {
@@ -354,7 +365,13 @@ export function OnboardingTour() {
   }, []);
 
   useEffect(() => {
-    if (status === "loading" || !surface || !userId || steps.length === 0) {
+    if (
+      status === "loading" ||
+      !surface ||
+      !userId ||
+      steps.length === 0 ||
+      isSmallScreen
+    ) {
       return;
     }
 
@@ -370,7 +387,7 @@ export function OnboardingTour() {
     }, 700);
 
     return () => window.clearTimeout(timer);
-  }, [status, surface, steps.length, userId]);
+  }, [isSmallScreen, status, surface, steps.length, userId]);
 
   useEffect(() => {
     if (!isOpen || !activeStep) return;

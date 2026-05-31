@@ -24,6 +24,9 @@ import {
   ChevronsRight,
   Zap,
   Users,
+  Menu,
+  X,
+  MoreHorizontal,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -177,10 +180,52 @@ function renderMenuItems(
   );
 }
 
+type MobileNavLinkProps = {
+  href: string;
+  icon: LucideIcon;
+  isActive: boolean;
+  label: string;
+  onActivate?: () => void;
+};
+
+function MobileNavLink({
+  href,
+  icon: Icon,
+  isActive,
+  label,
+  onActivate,
+}: MobileNavLinkProps) {
+  return (
+    <Link
+      href={href}
+      onClick={onActivate}
+      aria-current={isActive ? "page" : undefined}
+      className={cn(
+        "flex min-h-11 items-center gap-3 rounded-2xl px-3 py-2 text-sm font-semibold transition-colors",
+        isActive
+          ? "bg-[#F3F0FF] text-[#5D5DFB]"
+          : "text-[#323743] hover:bg-[#F8F6FF]",
+        "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#6C4EEB]/20",
+      )}
+    >
+      <span
+        className={cn(
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
+          isActive ? "bg-[#5D5DFB] text-white" : "bg-[#F3F0FF] text-[#6C4EEB]",
+        )}
+      >
+        <Icon className="h-4.5 w-4.5" />
+      </span>
+      <span className="min-w-0 truncate">{label}</span>
+    </Link>
+  );
+}
+
 export function Sidebar() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [hasActiveSubscription, setHasActiveSubscription] = useState<
     boolean | null
   >(null);
@@ -206,6 +251,7 @@ export function Sidebar() {
 
   useEffect(() => {
     setOptimisticHref(null);
+    setMobileMenuOpen(false);
   }, [pathname]);
 
   const setNavItemRef = useCallback(
@@ -323,13 +369,164 @@ export function Sidebar() {
     await signOut({ redirect: true, callbackUrl: "/login" });
   };
 
+  const allItems = [
+    ...menuItems,
+    ...generalItems,
+    ...(isOrgAdmin ? orgAdminItems : []),
+  ];
+  const mobilePrimaryItems = menuItems.slice(0, 3);
+  const isMoreActive = !mobilePrimaryItems.some(
+    (item) => item.href === activeHref,
+  );
+  const mobileLabels: Record<string, string> = {
+    "/dashboard": "Home",
+    "/dashboard/oral-reading-test": "Oral",
+    "/dashboard/reading-fluency-test": "Fluency",
+  };
+
   return (
-    <aside
-      className={cn(
-        "relative z-30 flex h-screen flex-col overflow-hidden bg-[#6e55fd] transition-all duration-300",
-        collapsed ? "w-20 min-w-20" : "w-65 min-w-65",
+    <>
+      <div className="flex h-15 items-center justify-between border-b border-[#EDE8FF] bg-white px-4 text-[#323743] md:hidden">
+        <Link href="/dashboard" className="flex min-w-0 items-center gap-3">
+          <Image
+            src="/Final%20Icon%20Logo.svg"
+            alt="LiteRate"
+            width={36}
+            height={36}
+            className="h-9 w-9 shrink-0"
+            priority
+          />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-bold leading-tight">LiteRate</p>
+            <p className="truncate text-[11px] text-[#6C4EEB]">
+              S.Y {schoolYear}
+            </p>
+          </div>
+        </Link>
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen(true)}
+          aria-label="Open navigation menu"
+          className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#F3F0FF] text-[#6C4EEB] transition-colors active:bg-[#EDE8FF] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#6C4EEB]/20"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+      </div>
+
+      <nav
+        aria-label="Primary mobile navigation"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-[#DED7FF] bg-white/95 px-2 pb-[max(0.45rem,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-10px_28px_rgba(76,59,171,0.12)] backdrop-blur md:hidden"
+      >
+        <div className="mx-auto grid max-w-md grid-cols-4 gap-1">
+          {mobilePrimaryItems.map((item) => {
+            const isActive = activeHref === item.href;
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "flex min-h-13 flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[10px] font-semibold transition-colors",
+                  isActive
+                    ? "bg-[#F3F0FF] text-[#5D5DFB]"
+                    : "text-[#575E6B] active:bg-[#F8F6FF]",
+                  "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#6C4EEB]/20",
+                )}
+              >
+                <Icon className="h-5 w-5" />
+                <span className="max-w-full truncate">
+                  {mobileLabels[item.href] ?? item.label}
+                </span>
+              </Link>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(true)}
+            className={cn(
+              "flex min-h-13 flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[10px] font-semibold transition-colors active:bg-[#F8F6FF] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#6C4EEB]/20",
+              isMoreActive ? "bg-[#F3F0FF] text-[#5D5DFB]" : "text-[#575E6B]",
+            )}
+            aria-label="Open more navigation"
+          >
+            <MoreHorizontal className="h-5 w-5" />
+            <span>More</span>
+          </button>
+        </div>
+      </nav>
+
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <button
+            type="button"
+            aria-label="Close navigation menu"
+            className="absolute inset-0 bg-[#1F2147]/45"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <aside className="absolute inset-y-0 right-0 flex w-[min(22rem,92vw)] flex-col bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#EDE8FF] px-5 py-4">
+              <div>
+                <p className="text-sm font-bold text-[#323743]">
+                  Hi, Teacher {firstName}
+                </p>
+                <p className="text-xs text-[#575E6B]">School Year {schoolYear}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+                aria-label="Close navigation menu"
+                className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#F3F0FF] text-[#6C4EEB] transition-colors active:bg-[#EDE8FF] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#6C4EEB]/20"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-5">
+              <p className="mb-3 px-3 text-[11px] font-semibold tracking-[0.22em] text-[#6C4EEB]">
+                NAVIGATION
+              </p>
+              <div className="space-y-1">
+                {allItems.map((item) => (
+                  <MobileNavLink
+                    key={item.href}
+                    href={item.href}
+                    icon={item.icon}
+                    isActive={activeHref === item.href}
+                    label={item.label}
+                    onActivate={() => setOptimisticHref(item.href)}
+                  />
+                ))}
+              </div>
+              {hasActiveSubscription === false && (
+                <Link
+                  href="/dashboard/subscription"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="mt-5 flex min-h-12 items-center justify-center rounded-2xl bg-[#6666FF] px-4 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(102,102,255,0.24)]"
+                >
+                  Upgrade to Premium
+                </Link>
+              )}
+            </div>
+            <div className="border-t border-[#EDE8FF] p-4">
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#F8F6FF] px-4 text-sm font-semibold text-[#5D5DFB] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#6C4EEB]/20"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout Account
+              </button>
+            </div>
+          </aside>
+        </div>
       )}
-    >
+
+      <aside
+        className={cn(
+          "relative z-30 hidden h-dvh flex-col overflow-hidden bg-[#6e55fd] transition-all duration-300 md:flex",
+          collapsed ? "w-20 min-w-20" : "w-65 min-w-65",
+        )}
+      >
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <svg
           viewBox="0 0 320 800"
@@ -538,6 +735,7 @@ export function Sidebar() {
           </button>
         </div>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }

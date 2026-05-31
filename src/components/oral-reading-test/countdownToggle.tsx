@@ -18,7 +18,7 @@ export function CountdownToggle({
   onIncrease,
 }: CountdownToggleProps) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex min-w-0 flex-wrap items-center gap-2">
       <Timer className="h-4 w-4" style={{ color: "#6666FF" }} />
       <span className="text-xs font-medium text-[#31318A]">Countdown</span>
       <button

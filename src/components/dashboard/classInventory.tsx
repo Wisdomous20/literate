@@ -156,14 +156,14 @@ export function ClassInventory({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 z-30">
+          <div className="z-30 flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
             {/* Year Dropdown */}
             <div className="relative">
               <button
                 type="button"
                 data-tour-target="school-year-button"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center gap-2 rounded-full border border-[#5D5DFB]/30 bg-[#5D5DFB]/5 px-5 py-2 text-sm font-medium text-[#5D5DFB] whitespace-nowrap hover:bg-[#5D5DFB]/10 transition-colors"
+                className="flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-[#5D5DFB]/30 bg-[#5D5DFB]/5 px-5 py-2 text-sm font-medium text-[#5D5DFB] whitespace-nowrap transition-colors hover:bg-[#5D5DFB]/10 sm:w-auto"
               >
                 School Year
                 <ChevronDown className="h-3 w-3" />
@@ -209,7 +209,7 @@ export function ClassInventory({
                 type="button"
                 data-tour-target="create-class-button"
                 onClick={() => setIsModalOpen(true)}
-                className="relative flex items-center justify-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold shadow transition-transform bg-[#6666FF] text-white hover:bg-[#4F46E5] hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap"
+                className="relative flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[#6666FF] px-6 py-2.5 text-sm font-semibold text-white shadow transition-transform hover:-translate-y-0.5 hover:bg-[#4F46E5] active:translate-y-0 sm:w-auto whitespace-nowrap"
               >
                 <Plus className="h-4 w-4 shrink-0" />
                 Create Class
@@ -221,7 +221,7 @@ export function ClassInventory({
 
       {/* Class Cards Section */}
       {isLoading ? (
-        <div className="grid grid-cols-2 gap-3 md:gap-4 w-full">
+        <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4">
           {[0,1,2,3].map((i) => (
             <div key={i} className="border-l border-t border-r-[6px] border-b-[6px] border-[#5D5DFB]/30 rounded-2xl overflow-hidden bg-white min-h-35 shadow-lg shadow-[#5D5DFB]/5 animate-pulse">
               <div className="p-4 flex flex-col justify-between h-full min-h-35">
@@ -255,7 +255,7 @@ export function ClassInventory({
           {/* Class cards grid - 2 columns x 2 rows */}
           <div
             data-tour-target="class-cards"
-            className="grid grid-cols-2 gap-3 md:gap-4 w-full"
+            className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4"
           >
             {visibleClasses.map((classItem) => (
               <div

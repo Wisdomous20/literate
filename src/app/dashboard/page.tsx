@@ -32,7 +32,7 @@ export default function DashboardPage() {
     <div className="flex min-h-full flex-col">
       {toast && (
         <div
-          className={`fixed top-6 right-6 z-50 flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium shadow-lg transition-all duration-300 ${
+          className={`fixed left-4 right-4 top-20 z-50 flex items-start gap-2 rounded-lg px-4 py-3 text-sm font-medium shadow-lg transition-all duration-300 sm:left-auto sm:top-6 sm:w-full sm:max-w-sm ${
             toast.type === "success"
               ? "bg-green-50 border border-green-200 text-green-800"
               : "bg-red-50 border border-red-200 text-red-800"
@@ -58,9 +58,9 @@ export default function DashboardPage() {
 
       <DashboardHeader title="My Dashboard" schoolYear={selectedYear} />
 
-      <main className="flex-1 p-4 md:p-6 lg:p-8">
-        <div className="flex flex-col xl:flex-row gap-6">
-          <div className="flex-1 space-y-6 min-w-0">
+      <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8">
+        <div className="flex flex-col gap-4 md:gap-6 xl:flex-row">
+          <div className="min-w-0 flex-1 space-y-4 md:space-y-6">
             <WelcomeSection schoolYear={selectedYear} />
 
             <ClassInventory
@@ -70,7 +70,7 @@ export default function DashboardPage() {
             />
           </div>
 
-          <div className="w-full xl:w-95 2xl:w-105 space-y-6 shrink-0 xl:flex xl:h-full xl:flex-col">
+          <div className="w-full shrink-0 space-y-4 md:space-y-6 xl:flex xl:h-full xl:w-95 xl:flex-col 2xl:w-105">
             <div className="min-h-80" data-tour-target="classification-chart">
               <ClassificationChart schoolYear={selectedYear} />
             </div>

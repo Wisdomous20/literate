@@ -7,7 +7,6 @@ import {
   Bar,
   XAxis,
   YAxis,
-  ResponsiveContainer,
   Cell,
 } from "recharts";
 import { cn } from "@/lib/utils";
@@ -80,6 +79,8 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const testDropdownRef = useRef<HTMLDivElement>(null);
   const languageDropdownRef = useRef<HTMLDivElement>(null);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const [chartWidth, setChartWidth] = useState(0);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -134,6 +135,26 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
     };
   }, [schoolYear, selectedType, selectedTestType, selectedLanguage]);
 
+  useEffect(() => {
+    const node = chartContainerRef.current;
+    if (!node) return;
+
+    const updateWidth = () => {
+      setChartWidth(Math.max(0, Math.floor(node.getBoundingClientRect().width)));
+    };
+
+    updateWidth();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", updateWidth);
+      return () => window.removeEventListener("resize", updateWidth);
+    }
+
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
   const chartData = useMemo<ChartRow[]>(
     () => (distribution ? toChartRows(distribution) : toChartRows({ independent: 0, instructional: 0, frustration: 0 })),
     [distribution]
@@ -157,19 +178,20 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
     languageTypes.find((t) => t.value === selectedLanguage)?.label || "Language";
 
   return (
-<div className="flex h-full flex-col rounded-3xl bg-white p-4 md:p-6 shadow-[0px_0px_20px_1px_rgba(84,164,255,0.35)] border-l border-t border-r-[6px] border-b-[6px] border-[#5D5DFB]">      <div className="flex flex-row items-center justify-between flex-wrap mb-4 gap-y-2">
+    <div className="flex h-full flex-col rounded-3xl border-l border-t border-r-[6px] border-b-[6px] border-[#5D5DFB] bg-white p-4 shadow-[0px_0px_20px_1px_rgba(84,164,255,0.35)] md:p-6">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
         <div className="flex flex-col min-w-0">
           <h3 className="text-base md:text-lg font-bold text-[#00306E] truncate">
             Classification Distribution
           </h3>
-          <div className="flex flex-row items-center gap-1.5 flex-wrap mt-1">
-            <div className="flex flex-row shrink-0 gap-1.5 flex-wrap">
+          <div className="mt-2 flex flex-row flex-wrap items-center gap-2">
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
               <div className="relative" ref={dropdownRef}>
                 <button
                   type="button"
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   className={cn(
-                    "flex items-center gap-1 rounded-full border border-dashed px-2 py-0.5 text-[11px] font-medium transition-colors",
+                    "flex min-h-11 w-full items-center justify-center gap-1 rounded-full border border-dashed px-3 py-2 text-xs font-medium transition-colors sm:w-auto sm:min-h-8 sm:px-2 sm:py-1 sm:text-[11px]",
                     selectedType !== "ALL"
                       ? "bg-[#5D5DFB] text-white border-[#5D5DFB]"
                       : "bg-white text-[#5D5DFB] border-[#5D5DFB] hover:bg-[#E4F4FF]"
@@ -209,7 +231,7 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
                   type="button"
                   onClick={() => setIsTestDropdownOpen(!isTestDropdownOpen)}
                   className={cn(
-                    "flex items-center gap-1 rounded-full border border-dashed px-2 py-0.5 text-[11px] font-medium transition-colors",
+                    "flex min-h-11 w-full items-center justify-center gap-1 rounded-full border border-dashed px-3 py-2 text-xs font-medium transition-colors sm:w-auto sm:min-h-8 sm:px-2 sm:py-1 sm:text-[11px]",
                     selectedTestType !== "PRE"
                       ? "bg-[#5D5DFB] text-white border-[#5D5DFB]"
                       : "bg-white text-[#5D5DFB] border-[#5D5DFB] hover:bg-[#E4F4FF]"
@@ -249,7 +271,7 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
                   type="button"
                   onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
                   className={cn(
-                    "flex items-center gap-1 rounded-full border border-dashed px-2 py-0.5 text-[11px] font-medium transition-colors",
+                    "flex min-h-11 w-full items-center justify-center gap-1 rounded-full border border-dashed px-3 py-2 text-xs font-medium transition-colors sm:w-auto sm:min-h-8 sm:px-2 sm:py-1 sm:text-[11px]",
                     selectedLanguage !== "ALL"
                       ? "bg-[#5D5DFB] text-white border-[#5D5DFB]"
                       : "bg-white text-[#5D5DFB] border-[#5D5DFB] hover:bg-[#E4F4FF]"
@@ -288,18 +310,19 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
           </div>
         </div>
       </div>
-      <div className="h-64 w-full relative">
+      <div ref={chartContainerRef} className="relative h-64 min-h-64 min-w-0 w-full">
         {isLoading ? (
           <div className="h-full w-full animate-pulse rounded-xl bg-[#E4F4FF]" />
         ) : hasError ? (
           <div className="flex h-full items-center justify-center text-sm text-[#00306E]/70">
             Failed to load distribution.
           </div>
-        ) : (
-          <ResponsiveContainer width="100%" height="100%">
+        ) : chartWidth > 0 ? (
             <BarChart
+              width={chartWidth}
+              height={256}
               data={chartData}
-              barSize={50}
+              barSize={42}
               margin={{ top: 10, right: 10, left: -10, bottom: 30 }}
             >
               <XAxis
@@ -353,7 +376,8 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
                 ))}
               </Bar>
             </BarChart>
-          </ResponsiveContainer>
+        ) : (
+          <div className="h-full w-full rounded-xl bg-[#F8F9FF]" />
         )}
       </div>
     </div>

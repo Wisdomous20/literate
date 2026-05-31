@@ -302,7 +302,7 @@ export function OralReadingNavRow({
       {/* Toast notification */}
       {toast && (
         <div
-          className={`fixed right-6 top-6 z-50 flex animate-in slide-in-from-right items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium shadow-lg duration-300 ${
+          className={`fixed left-4 right-4 top-18 z-50 flex animate-in items-start gap-2 rounded-lg px-4 py-3 text-sm font-medium shadow-lg duration-300 sm:left-auto sm:right-6 sm:top-6 sm:w-full sm:max-w-sm ${
             toast.type === "success"
               ? "border border-green-200 bg-green-50 text-green-800"
               : "border border-red-200 bg-red-50 text-red-800"
@@ -332,7 +332,7 @@ export function OralReadingNavRow({
 
       <div
         data-tour-target="assessment-student-setup"
-        className="flex items-center gap-3 rounded-2xl border-t border-l border-r-2 border-b-2 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#F5F2FF] px-4 py-2.5 shadow-[0_4px_16px_rgba(102,102,255,0.12)]"
+        className="flex flex-col gap-3 rounded-2xl border border-[#D9D1FF] bg-white px-3 py-3 shadow-[0_8px_22px_rgba(102,102,255,0.08)] md:flex-row md:items-center md:border-t-[#A855F7] md:border-l-[#A855F7] md:border-r-2 md:border-b-2 md:border-r-[#6653F9] md:border-b-[#6653F9] md:bg-[#F5F2FF] md:px-4 md:py-2.5"
       >
         {hasPassage ? (
           <>
@@ -387,7 +387,7 @@ export function OralReadingNavRow({
             </div>
 
             {/* Action buttons */}
-            <div className="flex flex-shrink-0 items-center gap-2">
+            <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto md:flex-shrink-0 md:items-center">
               {showContinue && (
                 <div className="relative">
                   <div
@@ -400,7 +400,7 @@ export function OralReadingNavRow({
                     data-tour-target="assessment-continue-button"
                     onClick={onContinue}
                     disabled={!continueEnabled}
-                    className={`relative flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold transition-transform ${
+                    className={`relative flex min-h-11 w-full items-center justify-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold transition-transform sm:w-auto ${
                       continueEnabled
                         ? "bg-[#6666FF] text-white hover:-translate-y-0.5 active:translate-y-0"
                         : "cursor-not-allowed bg-[#C4C4FF] text-white"
@@ -418,7 +418,7 @@ export function OralReadingNavRow({
                   type="button"
                   data-tour-target="assessment-clear-button"
                   onClick={onClear}
-                  className="relative ml-1 inline-flex items-center gap-1.5 rounded-full border-2 border-[#DC2626] bg-white px-5 py-2 text-xs font-semibold text-[#DC2626] shadow-[0_2px_8px_rgba(220,38,38,0.18)] transition-transform hover:bg-[#DC2626] hover:text-white hover:-translate-y-0.5 active:translate-y-0"
+                  className="relative inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full border-2 border-[#DC2626] bg-white px-5 py-2 text-xs font-semibold text-[#DC2626] shadow-[0_2px_8px_rgba(220,38,38,0.18)] transition-transform hover:bg-[#DC2626] hover:text-white hover:-translate-y-0.5 active:translate-y-0 sm:w-auto md:ml-1"
                 >
                   <X className="h-3 w-3" />
                   Clear
@@ -428,9 +428,9 @@ export function OralReadingNavRow({
           </>
         ) : (
           /* ── NO PASSAGE: inline input fields ── */
-          <div className="flex min-w-0 flex-1 gap-3">
+          <div className="grid min-w-0 flex-1 grid-cols-2 gap-3 md:flex md:flex-row">
             {/* Student Name */}
-            <div className="flex min-w-0 flex-1 flex-col">
+            <div className="col-span-2 flex min-w-0 flex-1 flex-col md:col-span-1">
               <label className="mb-0.5 block text-[10px] font-bold uppercase tracking-widest text-[#2e0f7e]">
                 Student Name
               </label>
@@ -443,7 +443,7 @@ export function OralReadingNavRow({
                   onChange={(e) => handleStudentNameInput(e.target.value)}
                   onFocus={() => setIsStudentInputFocused(true)}
                   placeholder="Student name"
-                  className="w-full rounded-xl border border-[#7C3AED] bg-white py-1.5 pl-9 pr-3 text-xs text-[#00306E] outline-none transition-all placeholder:text-[#00306E]/35 focus:border-[#7C3AED] focus:ring-2 focus:ring-[#A855F7]/15 shadow-[0_4px_16px_rgba(124,58,237,0.18)]"
+                  className="min-h-10 w-full rounded-xl border border-[#7C3AED] bg-white py-2 pl-9 pr-3 text-sm text-[#00306E] shadow-[0_4px_16px_rgba(124,58,237,0.12)] outline-none transition-all placeholder:text-[#00306E]/35 focus:border-[#7C3AED] focus:ring-2 focus:ring-[#A855F7]/15 md:min-h-0 md:py-1.5 md:text-xs"
                 />
                 {showSuggestions && (
                   <div
@@ -491,7 +491,7 @@ export function OralReadingNavRow({
             </div>
 
             {/* Grade Level — always pastel fill */}
-            <div className="flex w-32 flex-shrink-0 flex-col">
+            <div className="flex w-full flex-shrink-0 flex-col md:w-32">
               <span className="mb-0.5 block text-[10px] font-bold uppercase tracking-widest text-[#7C3AED]">
                 Grade Level
               </span>
@@ -503,7 +503,7 @@ export function OralReadingNavRow({
                     setIsGradeDropdownOpen(!isGradeDropdownOpen);
                     setIsClassDropdownOpen(false);
                   }}
-                  className={`flex w-full items-center justify-between gap-1.5 rounded-xl border border-[#7C3AED] px-3 py-1.5 text-xs font-medium transition-all shadow-[0_4px_16px_rgba(124,58,237,0.18)] ${
+                  className={`flex min-h-10 w-full items-center justify-between gap-1.5 rounded-xl border border-[#7C3AED] px-3 py-2 text-sm font-medium transition-all shadow-[0_4px_16px_rgba(124,58,237,0.12)] md:min-h-0 md:py-1.5 md:text-xs ${
                     gradeLevel
                       ? "bg-[#EDE9FF] text-[#6B21D8]"
                       : "bg-[#F5F2FF] text-[#7C3AED] hover:bg-[#EDE9FF]"
@@ -562,7 +562,7 @@ export function OralReadingNavRow({
             </div>
 
             {/* Class Name — always pastel fill */}
-            <div className="flex w-40 flex-shrink-0 flex-col">
+            <div className="flex w-full flex-shrink-0 flex-col md:w-40">
               <span className="mb-0.5 block text-[10px] font-bold uppercase tracking-widest text-[#7C3AED]">
                 Class Name
               </span>
@@ -574,7 +574,7 @@ export function OralReadingNavRow({
                     setIsClassDropdownOpen(!isClassDropdownOpen);
                     setIsGradeDropdownOpen(false);
                   }}
-                  className={`flex w-full items-center justify-between gap-1.5 rounded-xl border border-[#7C3AED] px-3 py-1.5 text-xs font-medium transition-all shadow-[0_4px_16px_rgba(124,58,237,0.18)] ${
+                  className={`flex min-h-10 w-full items-center justify-between gap-1.5 rounded-xl border border-[#7C3AED] px-3 py-2 text-sm font-medium transition-all shadow-[0_4px_16px_rgba(124,58,237,0.12)] md:min-h-0 md:py-1.5 md:text-xs ${
                     selectedClass
                       ? "bg-[#EDE9FF] text-[#6B21D8]"
                       : "bg-[#F5F2FF] text-[#7C3AED] hover:bg-[#EDE9FF]"
@@ -640,8 +640,8 @@ export function OralReadingNavRow({
             </div>
 
             {/* Clear — signup raised style */}
-            <div className="flex flex-col justify-end">
-              <span className="select-none text-[10px] font-bold uppercase tracking-widest text-transparent">
+            <div className="col-span-2 flex flex-col justify-end md:col-span-1">
+              <span className="hidden select-none text-[10px] font-bold uppercase tracking-widest text-transparent md:block">
                 &nbsp;
               </span>
               <div className="relative">
@@ -650,7 +650,7 @@ export function OralReadingNavRow({
                   type="button"
                   data-tour-target="assessment-clear-button"
                   onClick={onClear}
-                  className="relative ml-1 inline-flex items-center gap-1.5 rounded-full border border-[#DC2626] bg-white px-4 py-1.5 text-xs font-medium text-[#DC2626] transition-transform hover:bg-[#DC2626] hover:text-white hover:-translate-y-0.5 active:translate-y-0"
+                  className="relative inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full border border-[#DC2626] bg-white px-4 py-2 text-xs font-medium text-[#DC2626] transition-transform hover:bg-[#DC2626] hover:text-white hover:-translate-y-0.5 active:translate-y-0 md:ml-1 md:min-h-0 md:w-auto md:py-1.5"
                 >
                   <X className="h-3 w-3" />
                   Clear

@@ -620,7 +620,7 @@ export function ReadinessCheckButton() {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-1.5 rounded-lg border border-[rgba(102,102,255,0.25)] bg-[rgba(102,102,255,0.12)] px-3 py-1.5 text-xs font-semibold text-[#6666FF] transition-colors hover:opacity-80"
+        className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-[rgba(102,102,255,0.25)] bg-[rgba(102,102,255,0.12)] px-3 py-2 text-xs font-semibold text-[#6666FF] transition-colors hover:opacity-80 sm:min-h-0 sm:w-auto sm:justify-start sm:rounded-lg sm:py-1.5"
       >
         <ShieldCheck className="h-3.5 w-3.5" />
         Readiness Check

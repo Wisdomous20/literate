@@ -21,18 +21,18 @@ export function DashboardHeader({
     <>
       <header
         data-tour-target="dashboard-header"
-        className="relative flex h-16 items-center justify-between overflow-hidden border-b-2 border-[#DED7FF] bg-white px-4 md:px-6"
+        className="relative flex min-h-16 items-center justify-between gap-3 overflow-hidden border-b-2 border-[#DED7FF] bg-white px-3 py-3 sm:px-4 md:px-6"
       >
-        <div className="flex items-center gap-2 md:gap-3">
+        <div className="flex min-w-0 items-center gap-2 md:gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#DED7FF] bg-[#F3F0FF] md:h-10 md:w-10">
             <LayoutDashboard className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />
           </div>
-          <h1 className="text-lg font-bold tracking-tight text-[#4F46E5] md:text-xl">
+          <h1 className="min-w-0 truncate text-base font-bold tracking-tight text-[#4F46E5] sm:text-lg md:text-xl">
             {title}
           </h1>
         </div>
 
-        <div className="flex items-center gap-2 md:gap-3">
+        <div className="flex shrink-0 items-center gap-2 md:gap-3">
           {action && <div>{action}</div>}
           <button
             type="button"
@@ -53,7 +53,7 @@ export function DashboardHeader({
             className="fixed inset-0 bg-black/30"
             onClick={() => setShowDrawer(false)}
           />
-          <aside className="relative ml-auto h-full w-full max-w-sm bg-white shadow-2xl flex flex-col">
+          <aside className="relative ml-auto flex h-full w-full max-w-sm flex-col bg-white shadow-2xl">
             <div className="flex items-center justify-between p-4 border-b border-[#E0E7FF]">
               <h2 className="text-lg font-semibold text-[#00306E]">
                 Recent Assessment
