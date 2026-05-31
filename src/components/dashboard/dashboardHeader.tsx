@@ -21,13 +21,13 @@ export function DashboardHeader({
     <>
       <header
         data-tour-target="dashboard-header"
-        className="flex h-16 md:h-17.5 items-center justify-between border-b-[3px] border-[#5D5DFB] bg-white px-4 md:px-6"
+        className="relative flex h-16 items-center justify-between overflow-hidden border-b-2 border-[#DED7FF] bg-white px-4 md:px-6"
       >
         <div className="flex items-center gap-2 md:gap-3">
-          <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg bg-[#5D5DFB]/10">
-            <LayoutDashboard className="h-4 w-4 md:h-5 md:w-5 text-[#5D5DFB]" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#DED7FF] bg-[#F3F0FF] md:h-10 md:w-10">
+            <LayoutDashboard className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />
           </div>
-          <h1 className="text-base md:text-lg font-semibold text-[#483efa]">
+          <h1 className="text-lg font-bold tracking-tight text-[#4F46E5] md:text-xl">
             {title}
           </h1>
         </div>
@@ -37,7 +37,7 @@ export function DashboardHeader({
           <button
             type="button"
             data-tour-target="recent-assessments-button"
-            className="flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-full border border-[#5D5DFB]/30 text-[#5D5DFB] transition-colors hover:bg-[#5D5DFB]/10"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#D6DDFB] bg-[#F1F5FF] text-[#6C4EEB] transition duration-200 hover:border-[#6C4EEB]/40 hover:bg-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#6C4EEB]/20 md:h-10 md:w-10"
             aria-label="History"
             onClick={() => setShowDrawer(true)}
           >

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import { WelcomeSection } from "@/components/dashboard/welcomeSection";
 import { ClassInventory } from "@/components/dashboard/classInventory";
@@ -23,9 +22,6 @@ export default function DashboardPage() {
     message: string;
     type: "success" | "error";
   } | null>(null);
-
-  const { data: session } = useSession();
-  const firstName = session?.user?.name?.split(" ")[0] || "Teacher";
 
   const showToast = (message: string, type: "success" | "error") => {
     setToast({ message, type });
@@ -65,10 +61,7 @@ export default function DashboardPage() {
       <main className="flex-1 p-4 md:p-6 lg:p-8">
         <div className="flex flex-col xl:flex-row gap-6">
           <div className="flex-1 space-y-6 min-w-0">
-            <WelcomeSection
-              teacherName={firstName}
-              schoolYear={selectedYear}
-            />
+            <WelcomeSection schoolYear={selectedYear} />
 
             <ClassInventory
               selectedYear={selectedYear}

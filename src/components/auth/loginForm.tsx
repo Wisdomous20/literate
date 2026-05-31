@@ -4,32 +4,10 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession, signIn } from "next-auth/react";
+import { Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-
-const EyeIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg
-    {...props}
-    fill="none"
-    stroke="#6666FF"
-    viewBox="0 0 24 24"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-    />
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-    />
-  </svg>
-);
 
 const REMEMBER_ME_KEY = "literate_remember_me";
 const REMEMBERED_EMAIL_KEY = "literate_remembered_email";
@@ -120,28 +98,42 @@ export function LoginForm() {
   };
 
   const inputClass =
-    "h-12 rounded-full bg-white border-l border-t border-r-[6px] border-b-[6px] border-[#6666FF] text-[#27348B] placeholder:text-[#6666FF]/50 focus-visible:ring-[#6666FF]/30 focus-visible:border-[#6666FF] disabled:opacity-60";
+    "h-12 rounded-[14px] border-[#D6DDFB] bg-[#F1F5FF] px-4 text-[#323743] shadow-none placeholder:text-[#8B91A3] transition-colors focus-visible:border-[#6C4EEB] focus-visible:bg-white focus-visible:ring-[#6C4EEB]/20 disabled:opacity-60";
+  const linkFocusClass =
+    "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#6C4EEB]/20";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-[#6666FF] mb-3 text-left">
-          Login to your account
+    <form onSubmit={handleSubmit} className="relative z-10 space-y-6">
+      <div>
+        <Link
+          href="/"
+          className={`mb-8 inline-flex items-center gap-2 text-sm font-semibold text-[#6C4EEB] transition-colors hover:text-[#5138D6] lg:hidden ${linkFocusClass}`}
+        >
+          Back to Home
+        </Link>
+        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-[#6C4EEB]">
+          Welcome back
+        </p>
+        <h1 className="mb-3 text-3xl font-bold tracking-tight text-[#323743] sm:text-4xl">
+          Log in to LiteRate
         </h1>
-        <p className="text-sm text-[#6666FF] text-left">
-          Please enter your details to continue.
+        <p className="text-sm leading-6 text-[#575E6B]">
+          Continue to your assessment workspace.
         </p>
       </div>
 
       {error && (
-        <div className="p-3 rounded-lg bg-red-500/20 border border-red-300/50 text-[#27348B] text-sm">
+        <div
+          className="rounded-[14px] border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+          role="alert"
+        >
           {error}
         </div>
       )}
 
-      <div className="space-y-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="email" className="text-[#27348B] font-semibold">
+      <div className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-[#323743]">
             Email
           </Label>
           <Input
@@ -153,11 +145,12 @@ export function LoginForm() {
             required
             disabled={isLoading}
             autoComplete="username"
+            placeholder="you@example.com"
           />
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="password" className="text-[#27348B] font-semibold">
+        <div className="space-y-2">
+          <Label htmlFor="password" className="text-[#323743]">
             Password
           </Label>
           <div className="relative">
@@ -173,39 +166,42 @@ export function LoginForm() {
             />
             <button
               type="button"
-              tabIndex={-1}
-              className="absolute inset-y-0 right-4 flex items-center text-[#6666FF]/70 hover:text-[#6666FF] focus:outline-none"
+              className="absolute inset-y-0 right-3 flex h-12 w-10 items-center justify-center rounded-lg text-[#6C4EEB]/70 transition-colors hover:text-[#6C4EEB] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#6C4EEB]/20"
               onClick={() => setShowPassword((prev) => !prev)}
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
-              <EyeIcon className="h-5 w-5" />
+              {showPassword ? (
+                <EyeOff className="h-5 w-5" aria-hidden="true" />
+              ) : (
+                <Eye className="h-5 w-5" aria-hidden="true" />
+              )}
             </button>
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2 cursor-pointer">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-[#575E6B]">
             <input
               type="checkbox"
-              className="rounded"
+              className="h-4 w-4 rounded border-[#DCD5FF] accent-[#6C4EEB]"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
               disabled={isLoading}
             />
-            <span className="text-sm text-[#27348B]">Remember me</span>
+            <span>Remember me</span>
           </label>
           <Link
             href="/forgot-password"
-            className="text-sm text-[#27348B] hover:underline font-medium"
+            className={`text-sm font-semibold text-[#6C4EEB] underline-offset-4 transition-colors hover:text-[#5138D6] hover:underline ${linkFocusClass}`}
           >
-            Forgot Password?
+            Forgot password?
           </Link>
         </div>
       </div>
 
       <Button
         type="submit"
-        className="w-full h-12 rounded-full bg-[#6666FF] hover:bg-[#5555ee] text-white font-bold disabled:opacity-60 flex items-center justify-center gap-2 border-l border-t border-r-[6px] border-b-[6px] border-[#4444CC]"
+        className="h-12 w-full rounded-[14px] border border-[#5D43DE] bg-[linear-gradient(135deg,#6C4EEB_0%,#7D62F1_56%,#9B78FF_100%)] text-base font-semibold text-white shadow-none transition duration-200 hover:border-[#5138D6] hover:bg-[linear-gradient(135deg,#5D43DE_0%,#6C4EEB_58%,#8F6CFA_100%)] focus-visible:ring-[#6C4EEB]/25 active:scale-[0.99] disabled:scale-100"
         disabled={isLoading}
       >
         {isLoading ? (
@@ -231,21 +227,23 @@ export function LoginForm() {
                 d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
               />
             </svg>
-            Logging you in...
+            Logging in...
           </>
         ) : (
-          "Login"
+          "Log in"
         )}
       </Button>
 
-      <div className="text-center space-y-1 mt-8">
-        <p className="text-sm text-[#27348B]">Don&apos;t have an account?</p>
-        <Link
-          href="/signup"
-          className="text-sm text-[#27348B] font-semibold hover:underline"
-        >
-          Register now!
-        </Link>
+      <div className="pt-2 text-center">
+        <p className="text-sm text-[#575E6B]">
+          Don&apos;t have an account?{" "}
+          <Link
+            href="/signup"
+            className={`font-semibold text-[#6C4EEB] underline-offset-4 transition-colors hover:text-[#5138D6] hover:underline ${linkFocusClass}`}
+          >
+            Register now
+          </Link>
+        </p>
       </div>
     </form>
   );
