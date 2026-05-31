@@ -1342,7 +1342,7 @@ export default function OralReadingTestPage() {
 
         {/* Countdown toggle + readiness check */}
         {!passageExpanded && (
-          <div className="shrink-0 flex items-center justify-between px-5 pb-4">
+          <div className="flex shrink-0 flex-col gap-3 px-5 pb-4 sm:flex-row sm:items-center sm:justify-between">
             <CountdownToggle
               countdownEnabled={countdownEnabled}
               countdownSeconds={countdownSeconds}

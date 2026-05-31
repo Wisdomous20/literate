@@ -13,13 +13,13 @@ const badges = [
 
 export default function AssessHeroSection() {
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden pt-20 pb-12 text-center">
+    <section className="relative flex min-h-[calc(100dvh-88px)] flex-col items-center justify-center overflow-hidden pb-12 pt-28 text-center sm:min-h-screen sm:pt-24">
 
 
-      <div className="px-6 md:px-12 max-w-4xl mx-auto">
+      <div className="mx-auto max-w-4xl px-6 md:px-12">
         {/* Eyebrow label */}
         <motion.div
-          className="inline-flex items-center gap-2 bg-[#F5F3FF] border border-[#B3A4F1] text-[#6C4EEB] text-sm font-semibold px-4 py-2 rounded-full mb-8"
+          className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#B3A4F1] bg-[#F5F3FF] px-4 py-2 text-sm font-semibold text-[#6C4EEB] sm:mb-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: EASE }}
@@ -30,7 +30,7 @@ export default function AssessHeroSection() {
 
         {/* Main headline */}
         <motion.h1
-          className="text-4xl sm:text-5xl lg:text-7xl font-bold text-[#323743] leading-[1.1] tracking-tight mb-6"
+          className="mb-5 text-4xl font-bold leading-[1.08] tracking-tight text-[#323743] sm:mb-6 sm:text-5xl lg:text-7xl"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.1, ease: EASE }}
@@ -45,7 +45,7 @@ export default function AssessHeroSection() {
 
         {/* Sub-copy */}
         <motion.p
-          className="text-[#575E6B] text-xl leading-relaxed mb-10 max-w-2xl mx-auto"
+          className="mx-auto mb-8 max-w-2xl text-base leading-7 text-[#575E6B] sm:mb-10 sm:text-xl sm:leading-relaxed"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.25, ease: EASE }}
@@ -57,7 +57,7 @@ export default function AssessHeroSection() {
 
         {/* Colored badge row */}
         <motion.div
-          className="flex flex-wrap gap-3 justify-center mb-12"
+          className="mb-10 flex flex-wrap justify-center gap-2.5 sm:mb-12 sm:gap-3"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.35, ease: EASE }}
@@ -79,7 +79,7 @@ export default function AssessHeroSection() {
 
         {/* CTA buttons */}
         <motion.div
-          className="flex flex-wrap gap-4 justify-center"
+          className="flex flex-col justify-center gap-4 sm:flex-row sm:flex-wrap"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.5, ease: EASE }}
@@ -88,7 +88,7 @@ export default function AssessHeroSection() {
             <div className="absolute inset-0 bg-[#B3A4F1] rounded-[10px] translate-y-1.5" />
             <Link
               href="/signup"
-              className="relative inline-flex items-center justify-center bg-[#6C4EEB] text-white font-medium text-lg px-10 py-4 rounded-[10px] hover:-translate-y-0.5 transition-transform active:translate-y-0"
+              className="relative inline-flex min-h-13 w-full items-center justify-center rounded-[10px] bg-[#6C4EEB] px-8 py-4 text-base font-medium text-white transition-transform hover:-translate-y-0.5 active:translate-y-0 sm:w-auto sm:px-10 sm:text-lg"
             >
               Get Started Free
             </Link>
@@ -97,7 +97,7 @@ export default function AssessHeroSection() {
             <div className="absolute inset-0 bg-[#E0E2E6] rounded-[10px] translate-y-1.5" />
             <a
               href="#video"
-              className="relative inline-flex items-center justify-center gap-2 bg-white border-2 border-[#6C4EEB] text-[#6C4EEB] font-medium text-lg px-8 py-4 rounded-[10px] hover:-translate-y-0.5 transition-transform active:translate-y-0"
+              className="relative inline-flex min-h-13 w-full items-center justify-center gap-2 rounded-[10px] border-2 border-[#6C4EEB] bg-white px-8 py-4 text-base font-medium text-[#6C4EEB] transition-transform hover:-translate-y-0.5 active:translate-y-0 sm:w-auto sm:text-lg"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z" />
@@ -110,7 +110,7 @@ export default function AssessHeroSection() {
 
       {/* Scroll chevron */}
       <motion.div
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 text-[#6C4EEB] opacity-70"
+        className="absolute bottom-5 left-1/2 hidden -translate-x-1/2 text-[#6C4EEB] opacity-70 sm:block"
         animate={{ y: [0, 10, 0] }}
         transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
       >

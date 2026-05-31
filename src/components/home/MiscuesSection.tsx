@@ -65,67 +65,75 @@ const miscues = [
 export default function MiscuesSection() {
 
   return (
-    <section className="h-screen flex flex-col justify-center relative overflow-hidden py-6">
+    <section className="relative flex min-h-screen flex-col justify-center overflow-hidden py-16 sm:py-20 lg:h-screen lg:py-6">
       {/* IMG_7 flipped, leftmost */}
-      <div className="absolute -top-16 left-0 -z-10 pointer-events-none">
+      <div className="absolute -top-16 left-0 -z-10 hidden pointer-events-none sm:block">
         <Image
           src="/assets/IMG_33_1.svg"
           alt=""
           width={924}
           height={924}
-          className="w-[700px] opacity-90 scale-x-[-1]"
+          className="w-[420px] opacity-50 scale-x-[-1] sm:w-[700px] sm:opacity-90"
         />
       </div>
       {/* IMG_22 flipped, leftmost - above IMG_33_1 */}
-      <div className="absolute -top-[200px] -left-40 -z-[5] pointer-events-none">
+      <div className="absolute -top-[200px] -left-40 -z-[5] hidden pointer-events-none sm:block">
         <Image
           src="/assets/IMG_22_3.svg"
           alt=""
           width={720}
           height={720}
-          className="w-[800px] opacity-100 scale-x-[-1]"
+          className="w-[500px] opacity-50 scale-x-[-1] sm:w-[800px] sm:opacity-100"
         />
       </div>
 
       {/* Header */}
       <AnimatedSection direction="up" delay={0.05}>
-        <div className="pl-[26%] pr-6 md:pr-12 text-center mb-4 -mt-24">
-          <h2 className="text-4xl md:text-5xl font-bold mb-2 tracking-[3.5px] leading-[1.2] text-[#323743] translate-x-16">
+        <div className="mb-8 px-5 text-center sm:px-6 md:px-12 lg:mb-4 lg:-mt-24 lg:pl-[26%] lg:pr-12">
+          <h2 className="mx-auto mb-3 max-w-[11ch] text-[2rem] font-bold leading-[1.08] text-[#323743] sm:max-w-none sm:text-4xl md:text-5xl lg:mb-2 lg:translate-x-16 lg:tracking-[3.5px]">
             Beyond Speed: Analyzing Oral <span className="text-[#6C4EEB]">Reading Miscues</span>
           </h2>
-          <p className="text-[#323743] text-xl leading-relaxed">
+          <p className="mx-auto max-w-[22rem] text-[0.95rem] leading-7 text-[#575E6B] sm:max-w-none sm:text-xl sm:leading-relaxed sm:text-[#323743]">
             We track the 8 critical reading miscues, giving you a deep qualitative understanding of student struggles.
           </p>
         </div>
       </AnimatedSection>
 
       {/* 4×2 compact grid — all 8 miscues visible */}
-      <AnimatedList className="px-6 md:px-12 grid grid-cols-2 md:grid-cols-4 gap-2" staggerDelay={0.08} baseDelay={0.05}>
+      <AnimatedList
+        className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-6 [scrollbar-width:none] sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-6 sm:pb-0 md:grid-cols-4 md:px-12 lg:gap-2 [&::-webkit-scrollbar]:hidden"
+        itemClassName="w-[calc(100vw-40px)] shrink-0 snap-center sm:w-auto sm:max-w-none"
+        carouselControls
+        carouselControlsClassName="sm:hidden"
+        carouselLabel="miscues"
+        staggerDelay={0.08}
+        baseDelay={0.05}
+      >
         {miscues.map((m) => (
-          <div key={m.name} className="relative group h-[148px]">
+          <div key={m.name} className="relative group min-h-[132px] lg:h-[148px]">
             <div
-              className="absolute inset-0 rounded-[10px] translate-y-1.5"
+              className="absolute inset-0 rounded-[12px] translate-y-1.5 sm:rounded-[10px]"
               style={{ background: m.color }}
             />
             <div
-              className="relative bg-white rounded-[10px] p-3 h-full transition-transform hover:-translate-y-1 active:translate-y-0"
+              className="relative bg-white rounded-[12px] p-4 h-full shadow-[0_14px_28px_rgba(83,50,232,0.08)] transition-transform hover:-translate-y-1 active:translate-y-0 sm:rounded-[10px] sm:p-3 sm:shadow-none"
               style={{ border: `2px solid ${m.borderColor}` }}
             >
-              <div className="flex items-center gap-2 mb-1.5">
+              <div className="flex items-center gap-2.5 mb-2 sm:gap-2 sm:mb-1.5">
                 <div
-                  className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center text-white font-black text-xs shadow-inner"
+                  className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center text-white font-black text-xs shadow-inner sm:w-7 sm:h-7"
                   style={{ background: m.color }}
                 >
                   {m.name[0]}
                 </div>
                 <h3
-                  className="text-xs font-bold leading-tight"
+                  className="text-sm font-bold leading-tight sm:text-xs"
                   style={{ color: m.color }}
                 >
                   {m.name}
                 </h3>
               </div>
-              <p className="text-[10px] leading-relaxed text-[#575E6B] line-clamp-3">
+              <p className="text-xs leading-5 text-[#575E6B] line-clamp-4 sm:text-[10px] sm:leading-relaxed sm:line-clamp-3">
                 {m.description}
               </p>
             </div>

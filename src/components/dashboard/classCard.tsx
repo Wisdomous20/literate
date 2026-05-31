@@ -126,8 +126,13 @@ export function ClassCard({
         >
           {/* Top section with folder icon and label */}
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[#e0e7ff]">
-              <Users className="h-4 w-4 text-[#7c3aed]" />
+            <div
+              className={cn(
+                "flex h-8 w-8 items-center justify-center rounded-md",
+                styles.iconBg,
+              )}
+            >
+              <Users className={cn("h-4 w-4", styles.iconColor)} />
             </div>
             <span className="text-xs font-semibold text-[#0C1A6D]">Class</span>
           </div>
@@ -151,7 +156,7 @@ export function ClassCard({
             type="button"
             onClick={handleMenuClick}
             aria-label="Open class options"
-            className="rounded-full p-1.5 transition-colors hover:bg-gray-100"
+            className="flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-gray-100"
           >
             <MoreVertical className="h-4 w-4 text-[#00306E]/50" />
           </button>

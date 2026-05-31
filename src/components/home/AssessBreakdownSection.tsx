@@ -47,21 +47,21 @@ const tests = [
 
 export default function AssessBreakdownSection() {
   return (
-    <section className="py-24 relative">
+    <section className="relative py-16 sm:py-24">
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#F5F3FF]/30 to-transparent -z-10 pointer-events-none" />
 
       <div className="px-6 md:px-12">
         <AnimatedSection direction="up" delay={0.05}>
-          <div className="text-center mb-16">
+          <div className="mb-10 text-center sm:mb-16">
             <p className="text-[#6C4EEB] text-sm font-semibold uppercase tracking-widest mb-3">
               What We Measure
             </p>
-            <h2 className="text-4xl lg:text-5xl font-bold text-[#323743] mb-4">
+            <h2 className="mb-4 text-3xl font-bold leading-tight text-[#323743] sm:text-4xl lg:text-5xl">
               Three Assessments,
               <br />
               <span className="text-[#6C4EEB]">Complete Picture</span>
             </h2>
-            <p className="text-[#575E6B] text-lg max-w-2xl mx-auto">
+            <p className="mx-auto max-w-2xl text-base leading-7 text-[#575E6B] sm:text-lg">
               Each assessment targets a distinct dimension of reading
               performance, mapped exactly to the Phil-IRI framework used by
               DepEd schools nationwide.
@@ -70,7 +70,10 @@ export default function AssessBreakdownSection() {
         </AnimatedSection>
 
         <AnimatedList
-          className="grid md:grid-cols-3 gap-8 items-stretch"
+          className="flex snap-x snap-mandatory items-stretch gap-5 overflow-x-auto px-0 pb-5 [scrollbar-width:none] md:grid md:grid-cols-3 md:gap-8 md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden"
+          itemClassName="w-[calc(100vw-36px)] shrink-0 snap-center md:w-auto md:max-w-none"
+          carouselControls
+          carouselLabel="assessments"
           staggerDelay={0.12}
           baseDelay={0.1}
         >
@@ -84,7 +87,7 @@ export default function AssessBreakdownSection() {
 
               {/* Card */}
               <div
-                className="relative bg-white rounded-[14px] p-8 h-full flex flex-col border-2 transition-transform hover:-translate-y-1 active:translate-y-0 shadow-sm"
+                className="relative flex h-full flex-col rounded-[14px] border-2 bg-white p-6 shadow-sm transition-transform hover:-translate-y-1 active:translate-y-0 sm:p-8"
                 style={{ borderColor: t.color }}
               >
                 {/* Icon */}

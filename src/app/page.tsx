@@ -14,7 +14,7 @@ export default function LandingPage() {
   return (
     <div className="relative min-h-screen font-sans text-[#323743]">
       {/* Full-page background */}
-      <div className="fixed inset-0 -z-10 opacity-[0.17] pointer-events-none">
+      <div className="pointer-events-none fixed inset-0 -z-10 hidden opacity-[0.12] sm:block">
         <Image
           src="/assets/IMG_2.svg"
           alt=""

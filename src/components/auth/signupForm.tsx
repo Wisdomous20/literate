@@ -1,9 +1,9 @@
 "use client";
 
-import React from "react";
-import { useState, useRef, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Eye, EyeOff, Mail } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -15,48 +15,14 @@ import {
   resendVerificationCodeAction,
 } from "@/app/actions/auth/verifyCode";
 
-const EyeIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg
-    {...props}
-    fill="none"
-    stroke="#6666FF"
-    viewBox="0 0 24 24"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-    />
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-    />
-  </svg>
-);
-
-const EyeOffIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg
-    {...props}
-    fill="none"
-    stroke="#6666FF"
-    viewBox="0 0 24 24"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.956 9.956 0 012.293-3.95m2.1-1.9A9.956 9.956 0 0112 5c4.477 0 8.268 2.943 9.542 7a9.956 9.956 0 01-4.043 5.197M15 12a3 3 0 11-6 0 3 3 0 016 0zm-6.364 6.364L19.07 4.93"
-    />
-  </svg>
-);
-
 const inputClass =
-  "h-12 rounded-full bg-white border-l border-t border-r-[6px] border-b-[6px] border-[#6666FF] text-[#27348B] placeholder:text-[#6666FF]/50 focus-visible:ring-[#6666FF]/30 focus-visible:border-[#6666FF] disabled:opacity-60";
+  "h-12 rounded-[14px] border-[#D6DDFB] bg-[#F1F5FF] px-4 text-[#323743] shadow-none placeholder:text-[#8B91A3] transition-colors focus-visible:border-[#6C4EEB] focus-visible:bg-white focus-visible:ring-[#6C4EEB]/20 disabled:opacity-60";
+const buttonClass =
+  "h-12 w-full rounded-[14px] border border-[#5D43DE] bg-[linear-gradient(135deg,#6C4EEB_0%,#7D62F1_56%,#9B78FF_100%)] text-base font-semibold text-white shadow-none transition duration-200 hover:border-[#5138D6] hover:bg-[linear-gradient(135deg,#5D43DE_0%,#6C4EEB_58%,#8F6CFA_100%)] focus-visible:ring-[#6C4EEB]/25 active:scale-[0.99] disabled:scale-100";
+const linkFocusClass =
+  "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#6C4EEB]/20";
+const iconButtonClass =
+  "absolute inset-y-0 right-3 flex h-12 w-10 items-center justify-center rounded-lg text-[#6C4EEB]/70 transition-colors hover:text-[#6C4EEB] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#6C4EEB]/20";
 
 export function SignupForm() {
   const router = useRouter();
@@ -71,7 +37,6 @@ export function SignupForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
   const [userId, setUserId] = useState<string | null>(null);
   const [codeDigits, setCodeDigits] = useState<string[]>([
     "",
@@ -102,6 +67,7 @@ export function SignupForm() {
     setError(null);
     setFieldErrors({});
     setIsLoading(true);
+
     const validationResult = registerUserFormSchema.safeParse({
       firstName,
       lastName,
@@ -109,19 +75,21 @@ export function SignupForm() {
       password,
       confirmPassword,
     });
+
     if (!validationResult.success) {
       setFieldErrors(getZodFieldErrors(validationResult.error));
       setIsLoading(false);
       return;
     }
+
     try {
-      const registerInput = {
+      const result = await registerUserAction({
         firstName: validationResult.data.firstName,
         lastName: validationResult.data.lastName,
         email: validationResult.data.email,
         password: validationResult.data.password,
-      };
-      const result = await registerUserAction(registerInput);
+      });
+
       if (!result.success) {
         setError(result.error || "Registration failed. Please try again.");
       } else {
@@ -136,47 +104,11 @@ export function SignupForm() {
     }
   };
 
-  const handleCodeChange = (index: number, value: string) => {
-    if (value && !/^\d$/.test(value)) return;
-    const newDigits = [...codeDigits];
-    newDigits[index] = value;
-    setCodeDigits(newDigits);
-    setVerifyError(null);
-    if (value && index < 5) inputRefs.current[index + 1]?.focus();
-    if (value && index === 5) {
-      const fullCode = newDigits.join("");
-      if (fullCode.length === 6) handleVerifyCode(fullCode);
-    }
-  };
-
-  const handleKeyDown = (
-    index: number,
-    e: React.KeyboardEvent<HTMLInputElement>,
-  ) => {
-    if (e.key === "Backspace" && !codeDigits[index] && index > 0)
-      inputRefs.current[index - 1]?.focus();
-  };
-
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const pasted = e.clipboardData
-      .getData("text")
-      .replace(/\D/g, "")
-      .slice(0, 6);
-    if (!pasted) return;
-    const newDigits = [...codeDigits];
-    for (let i = 0; i < 6; i++) newDigits[i] = pasted[i] || "";
-    setCodeDigits(newDigits);
-    setVerifyError(null);
-    const nextEmpty = newDigits.findIndex((d) => !d);
-    inputRefs.current[nextEmpty === -1 ? 5 : nextEmpty]?.focus();
-    if (pasted.length === 6) handleVerifyCode(pasted);
-  };
-
   const handleVerifyCode = async (code: string) => {
     if (!userId) return;
     setIsVerifying(true);
     setVerifyError(null);
+
     try {
       const result = await verifyCodeAction(userId, code);
       if (result.success) {
@@ -195,10 +127,52 @@ export function SignupForm() {
     }
   };
 
+  const handleCodeChange = (index: number, value: string) => {
+    if (value && !/^\d$/.test(value)) return;
+    const newDigits = [...codeDigits];
+    newDigits[index] = value;
+    setCodeDigits(newDigits);
+    setVerifyError(null);
+
+    if (value && index < 5) inputRefs.current[index + 1]?.focus();
+    if (value && index === 5) {
+      const fullCode = newDigits.join("");
+      if (fullCode.length === 6) handleVerifyCode(fullCode);
+    }
+  };
+
+  const handleKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (e.key === "Backspace" && !codeDigits[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
+    if (!pasted) return;
+
+    const newDigits = [...codeDigits];
+    for (let i = 0; i < 6; i++) newDigits[i] = pasted[i] || "";
+    setCodeDigits(newDigits);
+    setVerifyError(null);
+
+    const nextEmpty = newDigits.findIndex((digit) => !digit);
+    inputRefs.current[nextEmpty === -1 ? 5 : nextEmpty]?.focus();
+    if (pasted.length === 6) handleVerifyCode(pasted);
+  };
+
   const handleResendCode = async () => {
     if (!userId || resendCooldown > 0) return;
     setIsResending(true);
     setVerifyError(null);
+
     try {
       const result = await resendVerificationCodeAction(userId);
       if (result.success) {
@@ -215,35 +189,27 @@ export function SignupForm() {
     }
   };
 
-  // ── Verification Screen ──
   if (success) {
     return (
-      <div className="space-y-6">
-        <div className="space-y-4 text-center py-8">
-          <div className="flex justify-center mb-4">
-            <svg
-              className="w-16 h-16 text-[#6666FF]"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-              />
-            </svg>
+      <div className="relative z-10 space-y-6">
+        <div className="space-y-5 py-4 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[20px] bg-[#F1F5FF] text-[#6C4EEB]">
+            <Mail className="h-8 w-8" aria-hidden="true" />
           </div>
-          <h2 className="text-xl font-bold text-[#6666FF]">
-            Verify your email
-          </h2>
-          <p className="text-[#27348B]/80 text-sm">
-            We&apos;ve sent a 6-digit code to{" "}
-            <span className="font-semibold text-[#27348B]">{email}</span>
+          <div>
+            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-[#6C4EEB]">
+              Check your inbox
+            </p>
+            <h2 className="text-3xl font-bold tracking-tight text-[#323743]">
+              Verify your email
+            </h2>
+          </div>
+          <p className="text-sm leading-6 text-[#575E6B]">
+            We sent a 6-digit code to{" "}
+            <span className="font-semibold text-[#323743]">{email}</span>
           </p>
 
-          <div className="flex justify-center gap-2 pt-4" onPaste={handlePaste}>
+          <div className="flex justify-center gap-2 pt-3" onPaste={handlePaste}>
             {codeDigits.map((digit, index) => (
               <input
                 key={index}
@@ -260,84 +226,54 @@ export function SignupForm() {
                 title={`Digit ${index + 1} of 6`}
                 placeholder="•"
                 aria-label={`Digit ${index + 1} of 6`}
-                className={`w-12 h-14 text-center text-2xl font-bold border-l border-t border-r-[6px] border-b-[6px] rounded-lg outline-none transition-all bg-white text-[#27348B] placeholder:text-[#6666FF]/40 ${
-                  verifyError
-                    ? "border-red-400"
-                    : "border-[#6666FF] focus:border-[#4444CC]"
-                } ${isVerifying ? "opacity-50 cursor-not-allowed" : ""}`}
+                className={`h-14 w-12 rounded-[14px] border bg-[#F1F5FF] text-center text-2xl font-bold text-[#323743] outline-none transition-colors placeholder:text-[#8B91A3] focus:border-[#6C4EEB] focus:bg-white focus:ring-4 focus:ring-[#6C4EEB]/20 ${
+                  verifyError ? "border-red-300 bg-red-50" : "border-[#D6DDFB]"
+                } ${isVerifying ? "cursor-not-allowed opacity-50" : ""}`}
               />
             ))}
           </div>
 
-          {verifyError && (
-            <p className="text-sm text-red-500 mt-2">{verifyError}</p>
-          )}
+          {verifyError && <p className="text-sm text-red-600">{verifyError}</p>}
           {isVerifying && (
-            <p className="text-sm text-[#6666FF]/60 mt-2">Verifying...</p>
+            <p className="text-sm text-[#6C4EEB]/70">Verifying...</p>
           )}
 
-          <div className="pt-2">
-            <Button
-              onClick={() => handleVerifyCode(codeDigits.join(""))}
-              disabled={isVerifying || codeDigits.join("").length !== 6}
-              className="w-full h-12 rounded-full bg-[#6666FF] hover:bg-[#5555ee] text-white font-bold disabled:opacity-60 flex items-center justify-center gap-2 border-l border-t border-r-[6px] border-b-[6px] border-[#4444CC]"
-            >
-              {isVerifying ? (
-                <>
-                  <svg
-                    className="animate-spin h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                    />
-                  </svg>
-                  Verifying...
-                </>
-              ) : (
-                "Verify Email"
-              )}
-            </Button>
-          </div>
+          <Button
+            onClick={() => handleVerifyCode(codeDigits.join(""))}
+            disabled={isVerifying || codeDigits.join("").length !== 6}
+            className={buttonClass}
+          >
+            {isVerifying ? (
+              <>
+                <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/35 border-t-white" />
+                Verifying...
+              </>
+            ) : (
+              "Verify email"
+            )}
+          </Button>
 
-          <div className="pt-2">
-            <p className="text-sm text-[#27348B]/80">
-              Didn&apos;t receive the code?{" "}
-              {resendCooldown > 0 ? (
-                <span className="text-[#27348B]/50">
-                  Resend in {resendCooldown}s
-                </span>
-              ) : (
-                <button
-                  onClick={handleResendCode}
-                  disabled={isResending}
-                  className="text-[#6666FF] font-semibold hover:underline disabled:opacity-50"
-                >
-                  {isResending ? "Sending..." : "Resend code"}
-                </button>
-              )}
-            </p>
-          </div>
+          <p className="text-sm text-[#575E6B]">
+            Didn&apos;t receive the code?{" "}
+            {resendCooldown > 0 ? (
+              <span className="text-[#8B91A3]">Resend in {resendCooldown}s</span>
+            ) : (
+              <button
+                onClick={handleResendCode}
+                disabled={isResending}
+                className={`font-semibold text-[#6C4EEB] underline-offset-4 hover:underline disabled:opacity-50 ${linkFocusClass}`}
+              >
+                {isResending ? "Sending..." : "Resend code"}
+              </button>
+            )}
+          </p>
         </div>
 
-        <p className="text-center text-sm text-[#27348B]">
+        <p className="text-center text-sm text-[#575E6B]">
           Already verified?{" "}
           <Link
             href="/login"
-            className="text-[#6666FF] font-semibold hover:underline"
+            className={`font-semibold text-[#6C4EEB] underline-offset-4 hover:underline ${linkFocusClass}`}
           >
             Log in
           </Link>
@@ -346,26 +282,37 @@ export function SignupForm() {
     );
   }
 
-  // ── Signup Form ──
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-[#6666FF] mb-3 text-left">
+    <form onSubmit={handleSubmit} className="relative z-10 space-y-5">
+      <div>
+        <Link
+          href="/"
+          className={`mb-8 inline-flex items-center gap-2 text-sm font-semibold text-[#6C4EEB] transition-colors hover:text-[#5138D6] lg:hidden ${linkFocusClass}`}
+        >
+          Back to Home
+        </Link>
+        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-[#6C4EEB]">
+          Join LiteRate
+        </p>
+        <h1 className="mb-3 text-3xl font-bold tracking-tight text-[#323743] sm:text-4xl">
           Create an account
         </h1>
-        <p className="text-sm text-[#6666FF] text-left">
+        <p className="text-sm leading-6 text-[#575E6B]">
           Fill in your details to get started.
         </p>
       </div>
 
       {error && (
-        <div className="p-3 rounded-lg bg-red-500/20 border border-red-300/50 text-[#27348B] text-sm">
+        <div
+          className="rounded-[14px] border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+          role="alert"
+        >
           {error}
         </div>
       )}
 
-      <div className="space-y-1.5">
-        <Label htmlFor="email" className="text-[#27348B] font-semibold">
+      <div className="space-y-2">
+        <Label htmlFor="email" className="text-[#323743]">
           Email
         </Label>
         <Input
@@ -374,51 +321,58 @@ export function SignupForm() {
           placeholder="juandelacruz@email.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className={`${inputClass} ${fieldErrors.email ? "border-red-400" : ""}`}
+          className={`${inputClass} ${fieldErrors.email ? "border-red-300 bg-red-50" : ""}`}
           disabled={isLoading}
+          autoComplete="email"
         />
         {fieldErrors.email && (
-          <p className="text-xs text-red-500">{fieldErrors.email}</p>
+          <p className="text-xs font-medium text-red-600">{fieldErrors.email}</p>
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="firstName" className="text-[#27348B] font-semibold">
-            First Name
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="firstName" className="text-[#323743]">
+            First name
           </Label>
           <Input
             id="firstName"
             placeholder="Juan"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
-            className={`${inputClass} ${fieldErrors.firstName ? "border-red-400" : ""}`}
+            className={`${inputClass} ${fieldErrors.firstName ? "border-red-300 bg-red-50" : ""}`}
             disabled={isLoading}
+            autoComplete="given-name"
           />
           {fieldErrors.firstName && (
-            <p className="text-xs text-red-500">{fieldErrors.firstName}</p>
+            <p className="text-xs font-medium text-red-600">
+              {fieldErrors.firstName}
+            </p>
           )}
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="lastName" className="text-[#27348B] font-semibold">
-            Last Name
+        <div className="space-y-2">
+          <Label htmlFor="lastName" className="text-[#323743]">
+            Last name
           </Label>
           <Input
             id="lastName"
             placeholder="Dela Cruz"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
-            className={`${inputClass} ${fieldErrors.lastName ? "border-red-400" : ""}`}
+            className={`${inputClass} ${fieldErrors.lastName ? "border-red-300 bg-red-50" : ""}`}
             disabled={isLoading}
+            autoComplete="family-name"
           />
           {fieldErrors.lastName && (
-            <p className="text-xs text-red-500">{fieldErrors.lastName}</p>
+            <p className="text-xs font-medium text-red-600">
+              {fieldErrors.lastName}
+            </p>
           )}
         </div>
       </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="password" className="text-[#27348B] font-semibold">
+      <div className="space-y-2">
+        <Label htmlFor="password" className="text-[#323743]">
           Password
         </Label>
         <div className="relative">
@@ -428,33 +382,33 @@ export function SignupForm() {
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className={`${inputClass} pr-11 ${fieldErrors.password ? "border-red-400" : ""}`}
+            className={`${inputClass} pr-11 ${fieldErrors.password ? "border-red-300 bg-red-50" : ""}`}
             disabled={isLoading}
+            autoComplete="new-password"
           />
           <button
             type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6666FF]/70 hover:text-[#6666FF]"
-            tabIndex={-1}
+            onClick={() => setShowPassword((value) => !value)}
+            className={iconButtonClass}
+            aria-label={showPassword ? "Hide password" : "Show password"}
           >
             {showPassword ? (
-              <EyeOffIcon className="w-5 h-5" />
+              <EyeOff className="h-5 w-5" aria-hidden="true" />
             ) : (
-              <EyeIcon className="w-5 h-5" />
+              <Eye className="h-5 w-5" aria-hidden="true" />
             )}
           </button>
         </div>
         {fieldErrors.password && (
-          <p className="text-xs text-red-500">{fieldErrors.password}</p>
+          <p className="text-xs font-medium text-red-600">
+            {fieldErrors.password}
+          </p>
         )}
       </div>
 
-      <div className="space-y-1.5">
-        <Label
-          htmlFor="confirmPassword"
-          className="text-[#27348B] font-semibold"
-        >
-          Confirm Password
+      <div className="space-y-2">
+        <Label htmlFor="confirmPassword" className="text-[#323743]">
+          Confirm password
         </Label>
         <div className="relative">
           <Input
@@ -463,70 +417,53 @@ export function SignupForm() {
             placeholder="••••••••"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className={`${inputClass} pr-11 ${fieldErrors.confirmPassword ? "border-red-400" : ""}`}
+            className={`${inputClass} pr-11 ${fieldErrors.confirmPassword ? "border-red-300 bg-red-50" : ""}`}
             disabled={isLoading}
+            autoComplete="new-password"
           />
           <button
             type="button"
-            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6666FF]/70 hover:text-[#6666FF]"
-            tabIndex={-1}
+            onClick={() => setShowConfirmPassword((value) => !value)}
+            className={iconButtonClass}
+            aria-label={
+              showConfirmPassword ? "Hide confirm password" : "Show confirm password"
+            }
           >
             {showConfirmPassword ? (
-              <EyeOffIcon className="w-5 h-5" />
+              <EyeOff className="h-5 w-5" aria-hidden="true" />
             ) : (
-              <EyeIcon className="w-5 h-5" />
+              <Eye className="h-5 w-5" aria-hidden="true" />
             )}
           </button>
         </div>
         {fieldErrors.confirmPassword && (
-          <p className="text-xs text-red-500">{fieldErrors.confirmPassword}</p>
+          <p className="text-xs font-medium text-red-600">
+            {fieldErrors.confirmPassword}
+          </p>
         )}
       </div>
 
-      <Button
-        type="submit"
-        className="w-full h-12 rounded-full bg-[#6666FF] hover:bg-[#5555ee] text-white font-bold disabled:opacity-60 flex items-center justify-center gap-2 border-l border-t border-r-[6px] border-b-[6px] border-[#4444CC]"
-        disabled={isLoading}
-      >
+      <Button type="submit" className={buttonClass} disabled={isLoading}>
         {isLoading ? (
           <>
-            <svg
-              className="animate-spin h-5 w-5 text-white"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-              />
-            </svg>
-            Creating Account...
+            <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/35 border-t-white" />
+            Creating account...
           </>
         ) : (
           "Register"
         )}
       </Button>
 
-      <div className="text-center space-y-1 pt-1">
-        <p className="text-sm text-[#27348B]">Already have an account?</p>
-        <Link
-          href="/login"
-          className="text-sm text-[#27348B] font-semibold hover:underline"
-        >
-          Login now!
-        </Link>
+      <div className="pt-1 text-center">
+        <p className="text-sm text-[#575E6B]">
+          Already have an account?{" "}
+          <Link
+            href="/login"
+            className={`font-semibold text-[#6C4EEB] underline-offset-4 transition-colors hover:text-[#5138D6] hover:underline ${linkFocusClass}`}
+          >
+            Log in
+          </Link>
+        </p>
       </div>
     </form>
   );

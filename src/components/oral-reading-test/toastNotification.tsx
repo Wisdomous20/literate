@@ -15,7 +15,7 @@ export function ToastNotification({
 }: ToastNotificationProps) {
   return (
     <div
-      className={`fixed top-6 right-6 z-50 flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium shadow-lg transition-all duration-300 ${
+      className={`fixed left-4 right-4 top-18 z-50 flex items-start gap-2 rounded-lg px-4 py-3 text-sm font-medium shadow-lg transition-all duration-300 sm:left-auto sm:right-6 sm:top-6 sm:w-full sm:max-w-sm ${
         type === "success"
           ? "border border-green-200 bg-green-50 text-green-800"
           : "border border-red-200 bg-red-50 text-red-800"

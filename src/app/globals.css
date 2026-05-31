@@ -179,6 +179,103 @@ body {
   background-position: center;
 }
 
+.auth-mascot-clean {
+  filter: drop-shadow(0 22px 34px rgba(92, 64, 184, 0.14));
+  -webkit-mask-image: radial-gradient(
+    ellipse 58% 66% at 51% 47%,
+    #000 60%,
+    rgba(0, 0, 0, 0.82) 68%,
+    rgba(0, 0, 0, 0.18) 79%,
+    transparent 90%
+  );
+  mask-image: radial-gradient(
+    ellipse 58% 66% at 51% 47%,
+    #000 60%,
+    rgba(0, 0, 0, 0.82) 68%,
+    rgba(0, 0, 0, 0.18) 79%,
+    transparent 90%
+  );
+}
+
+.auth-orb {
+  will-change: transform;
+  animation: authOrbFloat 9s ease-in-out infinite alternate;
+}
+
+.auth-orb-medium {
+  animation-name: authOrbDrift;
+  animation-duration: 12s;
+  animation-delay: -4s;
+}
+
+.auth-orb-slow {
+  animation-name: authOrbFloatWide;
+  animation-duration: 16s;
+  animation-delay: -2s;
+}
+
+.auth-orb-slow-reverse {
+  animation-name: authOrbDrift;
+  animation-duration: 19s;
+  animation-direction: alternate-reverse;
+}
+
+.auth-orb-fast {
+  animation-duration: 8s;
+  animation-delay: -1s;
+}
+
+@keyframes authOrbFloat {
+  0% {
+    opacity: 0.72;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translate3d(28px, -24px, 0) scale(1.08);
+  }
+  100% {
+    opacity: 0.78;
+    transform: translate3d(-22px, 30px, 0) scale(0.96);
+  }
+}
+
+@keyframes authOrbFloatWide {
+  0% {
+    opacity: 0.7;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  45% {
+    opacity: 0.92;
+    transform: translate3d(44px, 24px, 0) scale(1.08);
+  }
+  100% {
+    opacity: 0.76;
+    transform: translate3d(-34px, -28px, 0) scale(0.97);
+  }
+}
+
+@keyframes authOrbDrift {
+  0% {
+    opacity: 0.68;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    opacity: 0.88;
+    transform: translate3d(-30px, 26px, 0) scale(1.06);
+  }
+  100% {
+    opacity: 0.76;
+    transform: translate3d(26px, -20px, 0) scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-orb {
+    animation: none;
+  }
+}
+
 .welcome-ellipse-bg {
   background: #6666FF;
   clip-path: ellipse(100% 82% at 100% 50%);

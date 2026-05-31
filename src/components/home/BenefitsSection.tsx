@@ -9,26 +9,26 @@ const benefits = [
 
 export default function BenefitsSection() {
   return (
-    <section className="py-24 relative overflow-hidden">
+    <section className="relative overflow-hidden py-16 sm:py-24">
       {/* Decorative image top-right */}
       <Image
         src="/assets/IMG_24.png"
         alt=""
         width={900}
         height={900}
-        className="absolute -right-16 top-0 -z-10 w-[900px] opacity-30 hover:opacity-60 hover:scale-105 transition-all duration-300"
+        className="absolute -right-28 top-0 -z-10 w-[520px] opacity-20 transition-all duration-300 hover:scale-105 hover:opacity-40 sm:-right-16 sm:w-[900px] sm:opacity-30 sm:hover:opacity-60"
       />
 
-      <div className="px-6 md:px-12 grid lg:grid-cols-2 gap-16 items-center">
+      <div className="grid items-center gap-12 px-6 md:px-12 lg:grid-cols-2 lg:gap-16">
         <AnimatedSection direction="left">
-          <h2 className="text-4xl lg:text-5xl font-bold leading-tight mb-12">
+          <h2 className="mb-8 text-3xl font-bold leading-tight sm:text-4xl lg:mb-12 lg:text-5xl">
             Less Time on reading assessment,
             <br />
             More Time on{" "}
             <span className="text-[#5332E8] font-[Inter]">Growth</span>.
           </h2>
 
-          <ul className="space-y-8">
+          <ul className="space-y-5 sm:space-y-8">
             {benefits.map((b) => (
               <li key={b} className="flex items-center gap-4">
                 <Image
@@ -38,7 +38,7 @@ export default function BenefitsSection() {
                   height={24}
                   className="w-6 h-6 shrink-0"
                 />
-                <span className="text-lg font-bold">{b}</span>
+                <span className="text-base font-bold sm:text-lg">{b}</span>
               </li>
             ))}
           </ul>
@@ -56,7 +56,7 @@ export default function BenefitsSection() {
           />
 
           {/* Testimonial Card 1 - top right */}
-          <div className="absolute -top-10 -right-10 z-10 w-80">
+          <div className="relative z-10 mt-4 w-full sm:absolute sm:-right-10 sm:-top-10 sm:mt-0 sm:w-80">
             <div className="absolute inset-0 bg-[#B3A4F1] rounded-[10px] translate-y-2" />
             <div className="relative bg-white p-6 rounded-[12px] shadow-xl hover:-translate-y-1 transition-transform active:translate-y-0">
               <div className="flex justify-between items-center mb-4">
@@ -84,7 +84,7 @@ export default function BenefitsSection() {
           </div>
 
           {/* Testimonial Card 2 - bottom left */}
-          <div className="absolute -bottom-10 -left-10 z-10 w-80">
+          <div className="relative z-10 mt-4 w-full sm:absolute sm:-bottom-10 sm:-left-10 sm:mt-0 sm:w-80">
             <div className="absolute inset-0 bg-[#B3A4F1] rounded-[10px] translate-y-2" />
             <div className="relative bg-white p-6 rounded-[12px] shadow-xl hover:-translate-y-1 transition-transform active:translate-y-0">
               <div className="flex justify-between items-center mb-4">

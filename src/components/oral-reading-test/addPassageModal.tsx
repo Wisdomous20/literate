@@ -84,13 +84,13 @@ function FilterDropdown({
   const isFiltered = options[0] !== value;
 
   return (
-    <div className="relative flex-1">
+    <div className="relative min-w-0 flex-1">
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         aria-label={label}
         title={label}
-        className={`flex w-full items-center gap-2 rounded-[10px] border-t border-l border-r-4 border-b-4 px-3 py-2 text-sm font-medium shadow-[0px_1px_20px_rgba(108,164,239,0.37)] transition-colors duration-150 ${
+        className={`flex min-h-11 w-full items-center gap-2 rounded-[10px] border border-[#C4B5FD] px-3 py-2 text-sm font-medium shadow-[0px_1px_12px_rgba(108,164,239,0.16)] transition-colors duration-150 md:border-t md:border-l md:border-r-4 md:border-b-4 md:shadow-[0px_1px_20px_rgba(108,164,239,0.37)] ${
           isFiltered
             ? "border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#EEEEFF] text-[#31318A]"
             : "border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#EFFDFF] text-[#00306E]"
@@ -212,16 +212,16 @@ export function AddPassageModal({
         onClick={onClose}
       />
 
-      <div className="relative z-10 flex w-205 max-h-[85vh] flex-col overflow-hidden rounded-3xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#ffffff] shadow-[0px_1px_20px_rgba(108,164,239,0.37)]">
+      <div className="relative z-10 flex h-[100dvh] w-full flex-col overflow-hidden bg-white shadow-[0px_1px_20px_rgba(108,164,239,0.37)] sm:h-auto sm:max-h-[90dvh] sm:w-[min(52rem,calc(100vw-2rem))] sm:rounded-3xl sm:border-t sm:border-l sm:border-r-4 sm:border-b-4 sm:border-t-[#A855F7] sm:border-l-[#A855F7] sm:border-r-[#6653F9] sm:border-b-[#6653F9]">
         {" "}
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between px-8 pb-4 pt-6">
-          <h2 className="font-[Poppins,sans-serif] text-[25px] font-bold text-[#5D5DFB]">
+        <div className="flex shrink-0 items-center justify-between gap-3 px-4 pb-3 pt-4 sm:px-8 sm:pb-4 sm:pt-6">
+          <h2 className="font-[Poppins,sans-serif] text-xl font-bold text-[#5D5DFB] sm:text-[25px]">
             Select a Passage
           </h2>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center overflow-hidden rounded-lg border border-[#54A4FF]">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <div className="hidden items-center overflow-hidden rounded-lg border border-[#54A4FF] sm:flex">
               <button
                 type="button"
                 onClick={() => setViewMode("list")}
@@ -264,14 +264,14 @@ export function AddPassageModal({
               onClick={onClose}
               title="Close modal"
               aria-label="Close modal"
-              className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-[#E4F4FF]"
+              className="flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-[#E4F4FF] sm:h-8 sm:w-8"
             >
               <X className="h-5 w-5 text-[#00306E]" />
             </button>
           </div>
         </div>
         {/* Scrollable content area */}
-        <div className="flex min-h-0 flex-1 flex-col px-8 pb-6">
+        <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 sm:px-8 sm:pb-6">
           {/* Search Bar */}
           <div className="relative mb-3 shrink-0">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5D5DFB]" />
@@ -280,7 +280,7 @@ export function AddPassageModal({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by title, content, grade level, language, or test type..."
-              className="w-full rounded-[10px] border border-[#54A4FF] bg-white py-2.5 pl-9 pr-9 text-sm text-[#00306E] shadow-[0px_1px_10px_rgba(108,164,239,0.2)] outline-none placeholder:text-[#00306E]/40 focus:border-[#6666FF] focus:shadow-[0px_1px_14px_rgba(102,102,255,0.25)]"
+              className="min-h-11 w-full rounded-[10px] border border-[#54A4FF] bg-white py-2.5 pl-9 pr-9 text-sm text-[#00306E] shadow-[0px_1px_10px_rgba(108,164,239,0.2)] outline-none placeholder:text-[#00306E]/40 focus:border-[#6666FF] focus:shadow-[0px_1px_14px_rgba(102,102,255,0.25)]"
             />
             {searchQuery && (
               <button
@@ -296,7 +296,7 @@ export function AddPassageModal({
           </div>
 
           {/* Filters */}
-          <div className="mb-4 flex shrink-0 gap-3">
+          <div className="mb-4 flex shrink-0 flex-col gap-2 md:flex-row md:gap-3">
             <FilterDropdown
               label="Passage Level"
               icon={BarChart3}
@@ -321,7 +321,7 @@ export function AddPassageModal({
           </div>
 
           {/* Results Count */}
-          <p className="mb-3 shrink-0 font-[Kanit,sans-serif] text-[20px] font-medium text-[rgba(34,34,139,0.81)]">
+          <p className="mb-3 shrink-0 text-sm font-semibold text-[rgba(34,34,139,0.81)] sm:text-base">
             Results: {filteredPassages.length}
           </p>
 
@@ -381,7 +381,7 @@ export function AddPassageModal({
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredPassages.map((passage) => (
                   <button
                     key={passage.id}
@@ -413,7 +413,7 @@ export function AddPassageModal({
               type="button"
               onClick={handleSelect}
               disabled={!selectedPassageId}
-              className="rounded-lg bg-[#5D5DFB] px-8 py-2.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
+              className="min-h-11 w-full rounded-lg bg-[#5D5DFB] px-8 py-2.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50 sm:w-auto"
             >
               Select Passage
             </button>
