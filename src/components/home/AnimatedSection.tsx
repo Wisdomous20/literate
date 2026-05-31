@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, Children, type ReactNode } from "react";
+import { Children, type ReactNode, useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
 
 interface AnimatedSectionProps {
@@ -72,8 +72,17 @@ export function AnimatedList({
   baseDelay = 0,
 }: AnimatedListProps) {
   const ref = useRef<HTMLDivElement | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
   const childArray = Children.toArray(children);
+
+  const updateActiveIndex = () => {
+    const node = ref.current;
+    if (!node || childArray.length === 0) return;
+
+    const itemWidth = node.scrollWidth / childArray.length;
+    setActiveIndex(Math.min(childArray.length - 1, Math.round(node.scrollLeft / itemWidth)));
+  };
 
   const scrollCarousel = (direction: "previous" | "next") => {
     const node = ref.current;
@@ -89,32 +98,37 @@ export function AnimatedList({
     <>
       {carouselControls && (
         <div
-          className={`mb-4 flex items-center justify-between gap-3 px-6 ${carouselControlsClassName}`}
+          className={`mb-4 flex items-center justify-between gap-3 px-5 ${carouselControlsClassName}`}
         >
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#6C4EEB]">
-            Swipe {carouselLabel}
-          </p>
-          <div className="flex items-center gap-2">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#6C4EEB]">
+              Swipe {carouselLabel}
+            </p>
+            <p className="mt-1 text-xs font-medium text-[#575E6B]">
+              {activeIndex + 1} of {childArray.length}
+            </p>
+          </div>
+          <div className="flex items-center gap-1.5 rounded-full border border-[#E4DFFF] bg-[#F8F6FF] p-1 shadow-[0_10px_24px_rgba(108,78,235,0.1)]">
             <button
               type="button"
               onClick={() => scrollCarousel("previous")}
-              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border-2 border-[#6C4EEB] bg-white text-lg font-black text-[#6C4EEB] shadow-sm transition-transform active:scale-95"
+              className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-full bg-white text-lg font-bold text-[#6C4EEB] shadow-[0_2px_8px_rgba(108,78,235,0.12)] transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-95"
               aria-label={`Previous ${carouselLabel}`}
             >
-              <span aria-hidden="true">‹</span>
+              <span aria-hidden="true">&lt;</span>
             </button>
             <button
               type="button"
               onClick={() => scrollCarousel("next")}
-              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border-2 border-[#6C4EEB] bg-[#6C4EEB] text-lg font-black text-white shadow-sm transition-transform active:scale-95"
+              className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-full bg-[#6C4EEB] text-lg font-bold text-white shadow-[0_6px_14px_rgba(108,78,235,0.24)] transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-95"
               aria-label={`Next ${carouselLabel}`}
             >
-              <span aria-hidden="true">›</span>
+              <span aria-hidden="true">&gt;</span>
             </button>
           </div>
         </div>
       )}
-      <div ref={ref} className={className}>
+      <div ref={ref} className={className} onScroll={updateActiveIndex}>
         {childArray.map((child, i) => (
           <motion.div
             key={i}
