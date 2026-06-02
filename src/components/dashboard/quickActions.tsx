@@ -64,7 +64,7 @@ export function QuickActions({ schoolYear, minimal }: QuickActionsProps) {
             No students below grade level
           </div>
         ) : (
-          assessments.map((item: RecentAssessmentItem, idx) => {
+          assessments.map((item: RecentAssessmentItem) => {
             const badge = classificationBadge[item.classificationLevel] ?? {
               bg: "bg-gray-50",
               text: "text-gray-500",
@@ -141,7 +141,7 @@ export function QuickActions({ schoolYear, minimal }: QuickActionsProps) {
             No students below grade level
           </div>
         ) : (
-          assessments.map((item: RecentAssessmentItem, idx) => {
+          assessments.map((item: RecentAssessmentItem) => {
             const badge = classificationBadge[item.classificationLevel] ?? {
               bg: "bg-gray-100",
               text: "text-gray-500",

@@ -523,7 +523,7 @@ export function Sidebar() {
 
       <aside
         className={cn(
-          "relative z-30 hidden h-dvh flex-col overflow-hidden bg-[#6e55fd] transition-all duration-300 md:flex",
+          "relative z-30 hidden h-dvh flex-col bg-[#6e55fd] transition-all duration-300 md:flex",
           collapsed ? "w-20 min-w-20" : "w-65 min-w-65",
         )}
       >
@@ -573,24 +573,22 @@ export function Sidebar() {
               </span>
             </div>
           )}
-
-          <button
-            type="button"
-            onClick={() => setCollapsed(!collapsed)}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className={cn(
-              "z-50 flex h-9 w-9 items-center justify-center rounded-full bg-[#5D5DFB] text-white shadow-lg ring-2 ring-[#5D5DFB] transition-all hover:bg-[#6652fb]",
-              collapsed ? "" : "",
-            )}
-          >
-            {collapsed ? (
-              <ChevronsRight className="h-6 w-6" />
-            ) : (
-              <ChevronsLeft className="h-6 w-6" />
-            )}
-          </button>
         </div>
+
+        {/* Collapse button — floats at the right edge, vertically centered */}
+        <button
+          type="button"
+          onClick={() => setCollapsed(!collapsed)}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="absolute right-0 top-1/2 z-50 flex h-9 w-9 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-xl border border-[#D6DDFB] bg-[#F1F5FF] text-[#6C4EEB] shadow-sm transition duration-200 hover:border-[#6C4EEB]/40 hover:bg-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#6C4EEB]/20"
+        >
+          {collapsed ? (
+            <ChevronsRight className="h-5 w-5" />
+          ) : (
+            <ChevronsLeft className="h-5 w-5" />
+          )}
+        </button>
 
         {!collapsed ? (
           <div className="px-8 pb-4 pt-2">

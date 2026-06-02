@@ -11,7 +11,7 @@ A reading proficiency assessment platform that helps educators evaluate and trac
 
 ## Overview
 
-**Literate** enables teachers to conduct structured reading assessments with real-time audio capture, AI-powered transcription, and automated miscue analysis. Students are assessed across oral reading, fluency, and comprehension — with results tracked per student and per class over time.
+**LiteRate** enables teachers to conduct structured reading assessments with real-time audio capture, AI-powered transcription, and automated miscue analysis. Students are assessed across oral reading, fluency, and comprehension — with results tracked per student and per class over time.
 
 ---
 

@@ -12,7 +12,6 @@ export default function SignupPage() {
       <div className="w-full max-w-5xl">
         <BrandPanel
           eyebrow="Get started"
-          title="Build a clearer reading picture for every class."
           description="Create your LiteRate account to organize students, run assessments, and keep progress visible."
         >
           <SignupForm />

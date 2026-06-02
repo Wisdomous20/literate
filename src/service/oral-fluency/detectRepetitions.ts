@@ -382,7 +382,6 @@ function detectLongInsertionRuns(
     // Use a wider window to account for omissions and other alignment gaps
     const searchStart = Math.max(0, runStart - runLength - 10)
     let bestMatchCount = 0
-    let bestMatchStart = -1
 
     for (let s = searchStart; s < runStart; s++) {
       let matchCount = 0
@@ -419,7 +418,6 @@ function detectLongInsertionRuns(
 
       if (matchCount > bestMatchCount) {
         bestMatchCount = matchCount
-        bestMatchStart = s
       }
     }
 
