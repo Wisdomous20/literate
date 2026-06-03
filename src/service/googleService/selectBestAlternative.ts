@@ -1,4 +1,3 @@
-import { TranscriptWord } from "@/types/oral-reading";
 import { normalizeWord, similarityRatio } from "@/utils/textUtils";
 import { protos } from "@google-cloud/speech";
 
@@ -130,11 +129,6 @@ function phoneticallyMatch(a: string, b: string): boolean {
 
 // ── Alternative Selection ─────────────────────────────────
 
-interface ScoredAlternative {
-  alternativeIndex: number;
-  words: protos.google.cloud.speech.v2.IWordInfo[];
-  score: number;
-}
 
 /**
  * Given multiple recognition alternatives for a single result and the

@@ -1,18 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Home } from "lucide-react";
 import React from "react";
 
 export function BrandPanel({
   children,
-  imageSrc = "/assets/IMG_6_5.svg",
+  imageSrc = "/Final Icon Logo.svg",
   eyebrow = "LiteRate",
-  title = "Reading assessment, ready when class starts.",
   description = "Sign in to manage classes, run assessments, and review student progress in one focused workspace.",
 }: {
   children: React.ReactNode;
   imageSrc?: string;
   eyebrow?: string;
-  title?: string;
   description?: string;
 }) {
   return (
@@ -25,20 +24,14 @@ export function BrandPanel({
 
         <Link
           href="/"
-          className="relative z-20 m-8 inline-flex w-fit items-center gap-3 rounded-[14px] bg-white px-4 py-3 text-sm font-semibold text-[#6C4EEB] shadow-[0_10px_30px_rgba(76,59,171,0.12)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(76,59,171,0.16)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#6C4EEB]/20"
+          className="relative z-20 mb-8 ml-5 mr-8 mt-5 inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#D6DDFB] bg-[#F1F5FF] text-[#6C4EEB] shadow-[0_10px_30px_rgba(76,59,171,0.12)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(76,59,171,0.16)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#6C4EEB]/20"
+          aria-label="Back to home"
         >
-          <Image
-            src="/Final%20Icon%20Logo.svg"
-            alt=""
-            width={28}
-            height={28}
-            className="h-7 w-7"
-          />
-          Back to Home
+          <Home size={22} strokeWidth={1.75} />
         </Link>
 
         <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-12 pb-12 text-center">
-          <div className="relative mb-8 aspect-square w-full max-w-[390px]">
+          <div className="relative mb-8 aspect-square w-full max-w-[260px]">
             <div className="auth-orb auth-orb-medium absolute inset-[15%] rounded-full bg-[radial-gradient(circle,#FFFFFF_0%,#EFE9FF_58%,rgba(255,255,255,0)_74%)]" />
             <Image
               src={imageSrc}
@@ -49,13 +42,10 @@ export function BrandPanel({
             />
           </div>
           <div className="max-w-sm">
-            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-[#6C4EEB]">
+            <p className="mb-3 text-6xl font-bold tracking-tight text-[#695ff7]">
               {eyebrow}
             </p>
-            <h2 className="text-3xl font-bold leading-tight text-[#323743]">
-              {title}
-            </h2>
-            <p className="mt-4 text-sm leading-6 text-[#575E6B]">
+            <p className="mt-4 text-base leading-7 text-[#575E6B]">
               {description}
             </p>
           </div>

@@ -38,7 +38,7 @@ export function WelcomeBox({ assessmentType }: WelcomeBoxProps) {
       </div>
 
    <div className="absolute -bottom-8 right-0 z-30">
-  <img
+  <Image
     src="/images/Class.png"
     alt="Bee mascot"
     width={180}

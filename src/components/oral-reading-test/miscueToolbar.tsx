@@ -136,6 +136,7 @@ export function MiscueToolbar({
 
   useEffect(() => {
     if (activeTool) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowAddTools(true);
     }
   }, [activeTool]);

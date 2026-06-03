@@ -6,6 +6,7 @@ import { ToastNotification } from "@/components/oral-reading-test/toastNotificat
 
 interface TestPageLayoutProps {
   title: string;
+  icon?: ReactNode;
   toast: { message: string; type: "success" | "error" } | null;
   onCloseToast: () => void;
   passageExpanded: boolean;
@@ -17,6 +18,7 @@ interface TestPageLayoutProps {
 
 export function TestPageLayout({
   title,
+  icon,
   toast,
   onCloseToast,
   passageExpanded,
@@ -27,7 +29,7 @@ export function TestPageLayout({
 }: TestPageLayoutProps) {
   return (
     <div className="flex min-h-full flex-col bg-white md:h-full md:min-h-0 md:overflow-hidden">
-      <DashboardHeader title={title} />
+      <DashboardHeader title={title} icon={icon} />
 
       {toast && (
         <ToastNotification

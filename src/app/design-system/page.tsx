@@ -913,8 +913,6 @@ function DetailedColorCard({
   name,
   purpose,
   usage,
-  do: doText,
-  dont: dontText,
   copyText,
   onCopy,
   isCopied,

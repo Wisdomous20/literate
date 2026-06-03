@@ -370,10 +370,6 @@ export default function ReadingComprehensionQuestionsPage() {
     }
   };
 
-  const handleGoBack = () => {
-    router.back();
-  };
-
   const totalQuestions = questions.length;
 
   useEffect(() => {

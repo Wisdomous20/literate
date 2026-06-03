@@ -34,6 +34,7 @@ export function AcceptInvitationForm() {
 
   useEffect(() => {
     if (!token) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDetails({ status: "not_found" });
       setLoadingDetails(false);
       return;

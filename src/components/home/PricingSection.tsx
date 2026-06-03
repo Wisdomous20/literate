@@ -1,9 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { AnimatedSection } from "./AnimatedSection";
-import { motion } from "framer-motion";
 
 const plans = [
   {

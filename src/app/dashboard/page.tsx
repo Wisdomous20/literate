@@ -6,7 +6,7 @@ import { WelcomeSection } from "@/components/dashboard/welcomeSection";
 import { ClassInventory } from "@/components/dashboard/classInventory";
 import { ClassificationChart } from "@/components/dashboard/classificationChart";
 import { WordOfTheDay } from "@/components/dashboard/wordOfTheDay";
-import { X, CheckCircle, XCircle } from "lucide-react";
+import { X, CheckCircle, XCircle, LayoutDashboard } from "lucide-react";
 
 function getCurrentSchoolYear(): string {
   const now = new Date();
@@ -56,7 +56,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <DashboardHeader title="My Dashboard" schoolYear={selectedYear} />
+      <DashboardHeader title="My Dashboard" schoolYear={selectedYear} icon={<LayoutDashboard className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />} />
 
       <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8">
         <div className="flex flex-col gap-4 md:gap-6 xl:flex-row">

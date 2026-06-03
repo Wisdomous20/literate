@@ -360,6 +360,7 @@ export function MiscueActionPopover({
   }, [onClose]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setWordValue(spokenWord ?? "");
     setIsEditingWord(false);
   }, [spokenWord, miscueType]);

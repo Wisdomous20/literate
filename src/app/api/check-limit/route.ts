@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { getDailyLimitStatus } from "@/service/assessment/checkDailyLimitService";
@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
  * Returns the current user's daily assessment usage and remaining limits.
  * Paid users get unlimited (Infinity serialized as -1 in JSON).
  */
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 

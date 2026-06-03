@@ -1,17 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { LayoutDashboard, History, X } from "lucide-react";
+import { History, X } from "lucide-react";
 import { QuickActions } from "./quickActions";
 
 interface DashboardHeaderProps {
   title: string;
+  icon?: React.ReactNode;
   action?: React.ReactNode;
   schoolYear?: string;
 }
 
 export function DashboardHeader({
   title,
+  icon,
   action,
   schoolYear = "",
 }: DashboardHeaderProps) {
@@ -24,9 +26,11 @@ export function DashboardHeader({
         className="relative flex min-h-16 items-center justify-between gap-3 overflow-hidden border-b-2 border-[#DED7FF] bg-white px-3 py-3 sm:px-4 md:px-6"
       >
         <div className="flex min-w-0 items-center gap-2 md:gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#DED7FF] bg-[#F3F0FF] md:h-10 md:w-10">
-            <LayoutDashboard className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />
-          </div>
+          {icon && (
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#DED7FF] bg-[#F3F0FF] md:h-10 md:w-10">
+              {icon}
+            </div>
+          )}
           <h1 className="min-w-0 truncate text-base font-bold tracking-tight text-[#4F46E5] sm:text-lg md:text-xl">
             {title}
           </h1>

@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Clock, Maximize2, Minimize2, ArrowRight } from "lucide-react";
+import { Clock, Maximize2, Minimize2, ArrowRight, BookOpen } from "lucide-react";
 
 import { TestPageLayout } from "@/components/assessment/testPageLayout";
 import { StudentSetupSection } from "@/components/assessment/studentSetupSection";
@@ -598,6 +598,7 @@ export default function ReadingComprehensionTestPage() {
   return (
     <TestPageLayout
       title="Reading Comprehension Test"
+      icon={<BookOpen className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />}
       toast={toast}
       onCloseToast={() => setToast(null)}
       passageExpanded={passageExpanded}
