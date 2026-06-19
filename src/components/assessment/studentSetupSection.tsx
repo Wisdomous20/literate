@@ -8,15 +8,15 @@ import { X } from "lucide-react";
 
 function LoadingSkeleton() {
   return (
-    <>
-      <div className="h-18 animate-pulse rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#EFFDFF]" />
-      <div className="flex gap-3">
-        <div className="h-10.5 flex-1 animate-pulse rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#D5E7FE]" />
-        <div className="h-10.5 flex-1 animate-pulse rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#D5E7FE]" />
-        <div className="h-10.5 flex-1 animate-pulse rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#D5E7FE]" />
-        <div className="h-10.5 w-35 shrink-0 animate-pulse rounded-2xl bg-[#2E2E68]/30" />
+    <div className="space-y-3" aria-hidden="true">
+      <div className="h-18 animate-pulse rounded-2xl border border-[#D9D1FF] bg-[linear-gradient(90deg,#F6F3FF_0%,#EEE8FF_45%,#F6F3FF_100%)]" />
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr_1fr_140px]">
+        <div className="h-10.5 animate-pulse rounded-xl border border-[#D9D1FF] bg-[linear-gradient(90deg,#F6F3FF_0%,#EEE8FF_45%,#F6F3FF_100%)]" />
+        <div className="h-10.5 animate-pulse rounded-xl border border-[#D9D1FF] bg-[linear-gradient(90deg,#F6F3FF_0%,#EEE8FF_45%,#F6F3FF_100%)]" />
+        <div className="h-10.5 animate-pulse rounded-xl border border-[#D9D1FF] bg-[linear-gradient(90deg,#F6F3FF_0%,#EEE8FF_45%,#F6F3FF_100%)]" />
+        <div className="h-10.5 animate-pulse rounded-xl bg-[#D2CCF6]/75" />
       </div>
-    </>
+    </div>
   );
 }
 

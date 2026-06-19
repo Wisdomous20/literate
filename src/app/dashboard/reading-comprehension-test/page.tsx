@@ -705,7 +705,7 @@ export default function ReadingComprehensionTestPage() {
             {showQuestions && hasPassage && (
               <div className="pointer-events-none absolute top-4.5 right-50 z-20">
                 <div className="relative">
-                  <div className="absolute inset-0 translate-y-1 rounded-full bg-[#B3A4F1]" />
+                  <div className="absolute inset-0 translate-y-1 rounded-full bg-[#B3A4F1]/55" />
                   <button
                     type="button"
                     onClick={() => {
@@ -833,8 +833,8 @@ export default function ReadingComprehensionTestPage() {
                   !studentName.trim() ||
                   !gradeLevel ||
                   !selectedClassName
-                    ? "bg-[#C4C4FF]"
-                    : "bg-[#B3A4F1]")
+                    ? "bg-[#C4C4FF]/70"
+                    : "bg-[#B3A4F1]/55")
                 }
               />
               <button

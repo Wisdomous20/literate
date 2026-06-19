@@ -11,7 +11,7 @@ export function WelcomeSection({
 }: WelcomeSectionProps) {
   return (
     <div className="relative min-h-38 overflow-hidden rounded-2xl border border-[#DED7FF] bg-[linear-gradient(135deg,#FFFFFF_0%,#F8F6FF_48%,#F1F5FF_100%)] shadow-[0_14px_40px_rgba(76,59,171,0.09)] font-poppins md:min-h-45">
-      <div className="pointer-events-none absolute left-[-135px] top-[-150px] h-[300px] w-[300px] rounded-full bg-[#CFC6FF]" />
+      <div className="pointer-events-none absolute left-[-135px] top-[-150px] h-[300px] w-[300px] rounded-full bg-[#CFC6FF]/30" />
       <div className="pointer-events-none absolute right-[25%] top-[-100px] h-[200px] w-[200px] rounded-full bg-[#FFE1F0]/70 blur-sm" />
       <div className="pointer-events-none absolute bottom-[-160px] right-[-115px] h-[320px] w-[320px] rounded-full bg-[#C8F4FF]/60 blur-md" />
 

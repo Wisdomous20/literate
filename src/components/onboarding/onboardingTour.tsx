@@ -459,32 +459,7 @@ export function OnboardingTour() {
           {targetRect ? (
             <>
               <div
-                className="absolute left-0 top-0 bg-[#08122B]/62"
-                style={{ right: 0, height: targetRect.top }}
-              />
-              <div
-                className="absolute left-0 bg-[#08122B]/62"
-                style={{
-                  top: targetRect.top,
-                  width: targetRect.left,
-                  height: targetRect.height,
-                }}
-              />
-              <div
-                className="absolute bg-[#08122B]/62"
-                style={{
-                  top: targetRect.top,
-                  left: targetRect.left + targetRect.width,
-                  right: 0,
-                  height: targetRect.height,
-                }}
-              />
-              <div
-                className="absolute left-0 bg-[#08122B]/62"
-                style={{ top: targetRect.top + targetRect.height, right: 0, bottom: 0 }}
-              />
-              <div
-                className="absolute rounded-3xl border-2 border-[#9B8CFF] shadow-[0_0_0_6px_rgba(102,102,255,0.24),0_20px_50px_rgba(0,0,0,0.28)]"
+                className="absolute rounded-3xl border-2 border-[#9B8CFF] shadow-[0_0_0_6px_rgba(102,102,255,0.24),0_0_0_9999px_rgba(8,18,43,0.62),0_20px_50px_rgba(0,0,0,0.28)]"
                 style={targetRect}
               />
             </>
@@ -586,13 +561,6 @@ export function OnboardingTour() {
               ))}
             </div>
           </section>
-
-          <button
-            type="button"
-            onClick={() => closeTour(false)}
-            className="pointer-events-auto fixed inset-0 -z-10 cursor-default"
-            aria-label="Close tour backdrop"
-          />
         </div>
       )}
     </>

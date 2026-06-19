@@ -246,7 +246,20 @@ export default function StudentInfoBar({
       (s) => String(s.level) === gradeLevel && s.className === selectedClass,
     );
   const showCreateStudent =
-    hasSearchQuery && !selectedStudentId && !isExactDuplicate;
+    hasSearchQuery &&
+    !selectedStudentId &&
+    !isExactDuplicate &&
+    !!gradeLevel &&
+    !!selectedClass;
+
+  const missingSelectionMessage =
+    !selectedClass && !gradeLevel
+      ? "Select class and grade level."
+      : !selectedClass
+        ? "Select class"
+        : !gradeLevel
+          ? "Select grade level"
+          : "";
 
   const handleCreateStudent = async () => {
     const trimmedName = studentName.trim();
@@ -296,7 +309,9 @@ export default function StudentInfoBar({
   const showSuggestions =
     isStudentInputFocused &&
     !isLoadingStudents &&
-    (displayStudents.length > 0 || showCreateStudent);
+    (displayStudents.length > 0 ||
+      showCreateStudent ||
+      !!missingSelectionMessage);
 
   return (
     <>
@@ -373,6 +388,11 @@ export default function StudentInfoBar({
                     </p>
                   )}
                 </div>
+              )}
+              {!showCreateStudent && missingSelectionMessage && (
+                <p className="px-3 py-2 text-xs font-medium text-amber-600">
+                  {missingSelectionMessage}
+                </p>
               )}
               {displayStudents.map((s) => (
                 <button
