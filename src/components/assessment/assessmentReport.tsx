@@ -35,7 +35,7 @@ interface AssessmentReportProps {
   onBack: () => void;
 }
 
-const RECORDS_PER_PAGE = 8;
+const RECORDS_PER_PAGE = 10;
 
 export function AssessmentReport({
   studentName,

@@ -1,7 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { History, X } from "lucide-react";
+import {
+  BookOpenCheck,
+  ChartNoAxesColumn,
+  FileBarChart2,
+  FileText,
+  History,
+  LayoutDashboard,
+  Settings,
+  Sparkles,
+  UserRound,
+  Users,
+  X,
+} from "lucide-react";
 import { QuickActions } from "./quickActions";
 
 interface DashboardHeaderProps {
@@ -19,6 +31,24 @@ export function DashboardHeader({
 }: DashboardHeaderProps) {
   const [showDrawer, setShowDrawer] = useState(false);
 
+  const defaultIconByTitle: Record<string, React.ReactNode> = {
+    "My Dashboard": <LayoutDashboard className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />,
+    "Oral Reading Test": <BookOpenCheck className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />,
+    "Reading Fluency Test": <Sparkles className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />,
+    "Reading Comprehension Test": <FileText className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />,
+    "Reading Level": <ChartNoAxesColumn className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />,
+    "Assessment Report": <FileBarChart2 className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />,
+    "Oral Fluency Test Report": <FileBarChart2 className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />,
+    "Reading Comprehension Test Report": <FileBarChart2 className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />,
+    Organization: <Users className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />,
+    Subscription: <UserRound className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />,
+    Settings: <Settings className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />,
+  };
+
+  const resolvedIcon = icon ?? defaultIconByTitle[title] ?? (
+    <FileText className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />
+  );
+
   return (
     <>
       <header
@@ -26,9 +56,9 @@ export function DashboardHeader({
         className="relative flex min-h-16 items-center justify-between gap-3 overflow-hidden border-b-2 border-[#DED7FF] bg-white px-3 py-3 sm:px-4 md:px-6"
       >
         <div className="flex min-w-0 items-center gap-2 md:gap-3">
-          {icon && (
+          {resolvedIcon && (
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#DED7FF] bg-[#F3F0FF] md:h-10 md:w-10">
-              {icon}
+              {resolvedIcon}
             </div>
           )}
           <h1 className="min-w-0 truncate text-base font-bold tracking-tight text-[#4F46E5] sm:text-lg md:text-xl">

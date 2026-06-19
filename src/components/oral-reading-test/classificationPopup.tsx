@@ -1,6 +1,7 @@
 "use client";
 
-import { X, Star, BookOpen, Flame } from "lucide-react";
+import Image from "next/image";
+import { X } from "lucide-react";
 
 interface ClassificationPopupProps {
   classificationLevel: string;
@@ -13,33 +14,37 @@ interface ClassificationPopupProps {
 const LEVEL_CONFIG: Record<
   string,
   {
-    icon: React.ReactNode;
+    iconSrc: string;
+    iconAlt: string;
     message: string;
-    bubble: string;
+    cloudBorder: string;
+    cloudBg: string;
     accent: string;
-    iconBg: string;
   }
 > = {
   INDEPENDENT: {
-    icon: <Star className="h-8 w-8 text-[#2e7d32]" strokeWidth={2} />,
+    iconSrc: "/Independent.svg",
+    iconAlt: "Independent bee logo",
     message: "Amazing! You can read this all on your own. Keep up the great work!",
-    bubble: "bg-[#e8f5e9] border-[#4CAF50]",
+    cloudBorder: "border-[#22C55E]",
+    cloudBg: "bg-[#F0FDF4]",
     accent: "text-[#2e7d32]",
-    iconBg: "bg-[#e8f5e9] border-[#4CAF50]",
   },
   INSTRUCTIONAL: {
-    icon: <BookOpen className="h-8 w-8 text-[#27348B]" strokeWidth={2} />,
+    iconSrc: "/Instructional.svg",
+    iconAlt: "Instructional bee logo",
     message: "Great effort! With a little guidance, you'll master this in no time.",
-    bubble: "bg-[#e8eaff] border-[#6666FF]",
+    cloudBorder: "border-[#3B82F6]",
+    cloudBg: "bg-[#EFF6FF]",
     accent: "text-[#27348B]",
-    iconBg: "bg-[#e8eaff] border-[#6666FF]",
   },
   FRUSTRATION: {
-    icon: <Flame className="h-8 w-8 text-[#e65100]" strokeWidth={2} />,
+    iconSrc: "/Frustrated.svg",
+    iconAlt: "Frustration bee logo",
     message: "Don't give up! Every reader grows one page at a time. You've got this!",
-    bubble: "bg-[#fff3e0] border-[#FF9800]",
-    accent: "text-[#e65100]",
-    iconBg: "bg-[#fff3e0] border-[#FF9800]",
+    cloudBorder: "border-[#EF4444]",
+    cloudBg: "bg-[#FEF2F2]",
+    accent: "text-[#B91C1C]",
   },
 };
 
@@ -60,53 +65,49 @@ export function ClassificationPopup({
       onClick={onClose}
     >
       <div
-        className={`relative mx-4 w-full max-w-xs rounded-2xl border-2 ${config.bubble} bg-white p-6 shadow-[0_8px_32px_rgba(0,0,0,0.15)]`}
+        className="relative mx-4 flex w-full max-w-md flex-col items-center"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close button */}
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-3 top-3 rounded-full p-1 text-[#6666FF]/60 hover:bg-[#e8eaff] hover:text-[#6666FF] transition-colors"
+          className="absolute -right-2 -top-2 z-20 rounded-full bg-white/95 p-1.5 text-[#6666FF]/70 shadow-[0_8px_18px_rgba(39,52,139,0.2)] transition-colors hover:text-[#6666FF]"
           aria-label="Close popup"
           title="Close popup"
         >
           <X className="h-4 w-4" />
         </button>
 
-        {/* Icon bubble */}
-        <div className="flex flex-col items-center gap-3">
-          <div className={`flex h-16 w-16 items-center justify-center rounded-full border-2 ${config.iconBg}`}>
-            {config.icon}
-          </div>
-
-          <div className="text-center">
+        <div className="relative flex w-full flex-col items-center">
+          <div
+            className={`relative w-full max-w-90 rounded-[42px] border-3 px-6 py-5 text-center shadow-[0_14px_34px_rgba(17,24,39,0.14)] ${config.cloudBg} ${config.cloudBorder}`}
+          >
             <p className="text-sm font-bold text-[#27348B]">
               Well done, {firstName}!
             </p>
-            <p className={`mt-1 text-xs font-semibold ${config.accent}`}>
-              {classificationLevel.charAt(0) + classificationLevel.slice(1).toLowerCase()} Level
+            <p className={`mt-1 text-xs font-extrabold uppercase tracking-[0.08em] ${config.accent}`}>
+              {classificationLevel.charAt(0) +
+                classificationLevel.slice(1).toLowerCase()} Level
             </p>
-          </div>
-
-          {/* Speech bubble message */}
-          <div className={`relative rounded-xl border ${config.bubble} px-4 py-3 text-center`}>
-            {/* Bubble tail */}
-            <div className={`absolute -top-2 left-1/2 -translate-x-1/2 h-3 w-3 rotate-45 border-t-2 border-l-2 ${config.bubble} bg-white`} />
-            <p className="text-xs text-[#27348B]/80 leading-relaxed">
+            <p className="mt-2 text-sm leading-relaxed text-[#27348B]/85">
               {config.message}
             </p>
+
+            <div
+              className={`absolute -bottom-4 left-1/2 h-7 w-7 -translate-x-1/2 rotate-45 rounded-[6px] border-r-3 border-b-3 ${config.cloudBorder} ${config.cloudBg}`}
+            />
+          </div>
+
+          <div className="relative mt-4 rounded-full bg-white/85 p-2 shadow-[0_16px_30px_rgba(39,52,139,0.2)]">
+            <Image
+              src={config.iconSrc}
+              alt={config.iconAlt}
+              width={138}
+              height={138}
+              className="h-28 w-28 object-contain sm:h-32 sm:w-32"
+            />
           </div>
         </div>
-
-        {/* Dismiss button */}
-        <button
-          type="button"
-          onClick={onClose}
-          className="mt-4 w-full rounded-full bg-[#6666FF] hover:bg-[#5555ee] text-white font-bold py-2.5 text-sm transition-colors"
-        >
-          Got it!
-        </button>
       </div>
     </div>
   );

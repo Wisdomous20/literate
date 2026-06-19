@@ -35,13 +35,17 @@ export function AssessmentFilterTabs({
             {idx > 0 && <div className="w-px h-5 bg-[#6666FF]/20 shrink-0 self-center" />}
             <button
               onClick={() => onFilterChange(option.value)}
-              className="relative flex-1 flex flex-col items-center gap-1 transition-all whitespace-nowrap px-2 py-2"
+              className={`relative flex-1 flex flex-col items-center gap-1 transition-all whitespace-nowrap px-2 py-2 ${
+                selectedType === option.value
+                  ? "opacity-100"
+                  : "opacity-55 hover:opacity-80"
+              }`}
             >
               <span
-                className={`text-xs font-normal transition-colors ${
+                className={`text-xs transition-colors ${
                   selectedType === option.value
-                    ? "text-[#6666FF]"
-                    : "text-black/70 hover:text-black"
+                    ? "font-bold text-[#6666FF]"
+                    : "font-normal text-black/70 hover:text-black"
                 }`}
               >
                 {option.label}
@@ -70,13 +74,17 @@ export function AssessmentFilterTabs({
           <button
             key={option.value}
             onClick={() => onFilterChange(option.value)}
-            className="relative flex flex-col items-center gap-2 transition-all whitespace-nowrap"
+            className={`relative flex flex-col items-center gap-2 transition-all whitespace-nowrap ${
+              selectedType === option.value
+                ? "opacity-100"
+                : "opacity-55 hover:opacity-80"
+            }`}
           >
             <span
-              className={`text-sm font-semibold transition-colors ${
+              className={`text-sm transition-colors ${
                 selectedType === option.value
-                  ? "text-[#6666FF]"
-                  : "text-[#00306E]/60 hover:text-[#00306E]"
+                  ? "font-bold text-[#6666FF]"
+                  : "font-semibold text-[#00306E]/60 hover:text-[#00306E]"
               }`}
             >
               {option.label}
