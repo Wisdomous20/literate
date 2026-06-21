@@ -21,33 +21,10 @@ export default function AudioPlaybackCard({
   const [duration, setDuration] = useState(0);
 
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const onPlay = () => setIsPlaying(true);
-    const onPause = () => setIsPlaying(false);
-    const onTimeUpdate = () => setCurrentTime(audio.currentTime);
-    const onLoadedMetadata = () => setDuration(audio.duration);
-    const onEnded = () => {
-      setIsPlaying(false);
-      setCurrentTime(0);
-      audio.currentTime = 0;
-    };
-
-    audio.addEventListener("play", onPlay);
-    audio.addEventListener("pause", onPause);
-    audio.addEventListener("timeupdate", onTimeUpdate);
-    audio.addEventListener("loadedmetadata", onLoadedMetadata);
-    audio.addEventListener("ended", onEnded);
-
-    return () => {
-      audio.removeEventListener("play", onPlay);
-      audio.removeEventListener("pause", onPause);
-      audio.removeEventListener("timeupdate", onTimeUpdate);
-      audio.removeEventListener("loadedmetadata", onLoadedMetadata);
-      audio.removeEventListener("ended", onEnded);
-    };
-  }, [audioSrc, audioRef]);
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+  }, [audioSrc]);
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
@@ -142,7 +119,34 @@ export default function AudioPlaybackCard({
 
   return (
     <div className="bg-white border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] shadow-[0_1px_20px_rgba(108,164,239,0.37)] rounded-[10px] px-5 py-3">
-      {audioSrc && <audio ref={audioRef} src={audioSrc} preload="metadata" />}
+      {audioSrc && (
+        <audio
+          ref={audioRef}
+          src={audioSrc}
+          preload="metadata"
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          onTimeUpdate={(e) =>
+            setCurrentTime((e.target as HTMLAudioElement).currentTime)
+          }
+          onLoadedMetadata={(e) => {
+            const nextDuration = (e.target as HTMLAudioElement).duration;
+            setDuration(Number.isFinite(nextDuration) ? nextDuration : 0);
+          }}
+          onDurationChange={(e) => {
+            const nextDuration = (e.target as HTMLAudioElement).duration;
+            if (Number.isFinite(nextDuration)) {
+              setDuration(nextDuration);
+            }
+          }}
+          onEnded={(e) => {
+            const audio = e.target as HTMLAudioElement;
+            setIsPlaying(false);
+            setCurrentTime(0);
+            audio.currentTime = 0;
+          }}
+        />
+      )}
 
       {/* Header */}
       <div className="flex items-center gap-2 mb-2">

@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import {
   Edit2,
   Trash2,
+  Archive,
   X,
   ChevronLeft,
   ChevronRight,
@@ -24,7 +25,9 @@ interface StudentTableProps {
     name: string,
     gradeLevel: string,
   ) => Promise<void>;
+  onArchiveStudent?: (studentId: string) => Promise<void>;
   assessmentType?: string;
+  viewMode?: "card" | "table";
 }
 
 const gradeLevels = [
@@ -57,6 +60,8 @@ export function StudentTable({
   studentAssessments,
   onDeleteStudent,
   onUpdateStudent,
+  onArchiveStudent,
+  viewMode = "card",
 }: StudentTableProps) {
   const params = useParams();
   const router = useRouter();
@@ -68,7 +73,9 @@ export function StudentTable({
   const [editGradeLevel, setEditGradeLevel] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isArchiving, setIsArchiving] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [clickedStudentId, setClickedStudentId] = useState<string | null>(null);
 
   const cardsPerPage = 6;
 
@@ -121,14 +128,28 @@ export function StudentTable({
     }
   };
 
+  const handleArchive = async (e: React.MouseEvent, studentId: string) => {
+    e.stopPropagation();
+    if (!onArchiveStudent) return;
+    try {
+      setIsArchiving(studentId);
+      await onArchiveStudent(studentId);
+    } finally {
+      setIsArchiving(null);
+    }
+  };
+
   const handleCardClick = (student: StudentTableItem) => {
     const assessments = studentAssessments[student.id] || [];
     if (assessments.length === 0) return;
-    router.push(
-      `/dashboard/class/${classRoomId}/report/${student.id}?assessmentType=${encodeURIComponent(
-        student.assessmentType,
-      )}`,
-    );
+    setClickedStudentId(student.id);
+    window.setTimeout(() => {
+      router.push(
+        `/dashboard/class/${classRoomId}/report/${student.id}?assessmentType=${encodeURIComponent(
+          student.assessmentType,
+        )}`,
+      );
+    }, 120);
   };
 
   return (
@@ -139,6 +160,123 @@ export function StudentTable({
           <span className="text-sm font-medium text-[#00306E]/50">
             No students found
           </span>
+        </div>
+      ) : viewMode === "table" ? (
+        <div className="overflow-x-auto rounded-xl border border-[#DDE3FF]">
+          <table className="min-w-full bg-white">
+            <thead className="bg-[#F5F7FF]">
+              <tr>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-[#3B2F7F]">Student</th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-[#3B2F7F]">Grade</th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-[#3B2F7F]">Assessment Type</th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-[#3B2F7F]">Last Assessment</th>
+                <th className="px-4 py-2 text-right text-xs font-semibold text-[#3B2F7F]">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedStudents.map((student) => {
+                const hasAssessment =
+                  (studentAssessments[student.id] || []).length > 0;
+                const isEditingRow = editingId === student.id;
+                return (
+                  <tr
+                    key={student.id}
+                    onClick={() => !isEditingRow && hasAssessment && handleCardClick(student)}
+                    className={`${hasAssessment && !isEditingRow ? "cursor-pointer hover:bg-[#F9FAFF]" : "bg-[#FCFCFF]"} ${clickedStudentId === student.id ? "scale-[1.01] bg-[#EEF4FF] shadow-[inset_0_0_0_1px_rgba(102,102,255,0.2)]" : ""} border-t border-[#EEF1FF] transition-all duration-150`}
+                  >
+                    <td className="px-4 py-3 text-sm font-semibold text-[#00306E]">
+                      {isEditingRow ? (
+                        <input
+                          type="text"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          aria-label="Student name"
+                          placeholder="Student name"
+                          className="w-full rounded border border-[#6666FF]/30 px-2 py-1 text-xs"
+                        />
+                      ) : (
+                        student.name
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-[#00306E]/80">
+                      {isEditingRow ? (
+                        <select
+                          value={editGradeLevel}
+                          onChange={(e) => setEditGradeLevel(e.target.value)}
+                          aria-label="Grade level"
+                          title="Grade level"
+                          className="rounded border border-[#6666FF]/30 px-2 py-1 text-xs"
+                        >
+                          {gradeLevels.map((grade) => (
+                            <option key={grade} value={grade}>
+                              {grade}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        student.gradeLevel
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-[#00306E]/80">{getAssessmentTypeLabel(student.assessmentType)}</td>
+                    <td className="px-4 py-3 text-sm text-[#00306E]/80">{student.lastAssessment ?? "-"}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end gap-2">
+                        {isEditingRow ? (
+                          <>
+                            <button
+                              onClick={(e) => handleSaveEdit(e, student.id)}
+                              disabled={isUpdating}
+                              className="inline-flex items-center gap-1 rounded-md border border-[#10B981]/40 px-2 py-1 text-[11px] font-bold text-[#059669] hover:bg-[#ECFDF5] disabled:opacity-50"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={handleCancelEdit}
+                              className="inline-flex items-center gap-1 rounded-md border border-[#94A3B8]/40 px-2 py-1 text-[11px] font-bold text-[#475569] hover:bg-[#F8FAFC]"
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={(e) => handleEdit(e, student)}
+                            className="inline-flex items-center gap-1 rounded-md border border-[#6666FF]/40 px-2 py-1 text-[11px] font-bold text-[#6666FF] hover:bg-[#F0F4FF]"
+                          >
+                            <Edit2 className="h-3 w-3" />
+                            Edit
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => handleArchive(e, student.id)}
+                          disabled={!onArchiveStudent || isArchiving === student.id}
+                          className="inline-flex items-center gap-1 rounded-md border border-[#D97706]/40 px-2 py-1 text-[11px] font-bold text-[#D97706] hover:bg-[#FFF7ED] disabled:opacity-50"
+                        >
+                          <Archive className="h-3 w-3" />
+                          {isArchiving === student.id ? "Archiving..." : "Archive"}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (
+                              typeof window !== "undefined" &&
+                              !window.confirm(`Delete ${student.name}?`)
+                            ) {
+                              return;
+                            }
+                            void handleDelete(e, student.id);
+                          }}
+                          className="inline-flex items-center gap-1 rounded-md border border-[#E84C3D]/40 px-2 py-1 text-[11px] font-bold text-[#E84C3D] hover:bg-[#FFF0EE]"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       ) : (
         <div className="grid gap-4 grid-cols-3 w-full flex-1">
@@ -285,6 +423,14 @@ export function StudentTable({
                       >
                         <Edit2 className="h-3 w-3" />
                         Edit
+                      </button>
+                      <button
+                        onClick={(e) => handleArchive(e, student.id)}
+                        disabled={!onArchiveStudent || isArchiving === student.id}
+                        className="flex-1 flex items-center justify-center gap-1 rounded-lg bg-white border border-[#D97706]/40 px-2 py-2 text-xs font-bold text-[#D97706] transition-all hover:bg-[#FFF7ED] hover:border-[#D97706] active:scale-95 disabled:opacity-50"
+                      >
+                        <Archive className="h-3 w-3" />
+                        {isArchiving === student.id ? "..." : "Archive"}
                       </button>
                       <button
                         onClick={(e) => {

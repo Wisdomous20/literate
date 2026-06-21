@@ -260,7 +260,7 @@ export default function ReadingComprehensionReportPage() {
               </div>
               <div className="min-w-0">
                 <ComprehensionBreakdownReport
-                  score={`${totalCorrect}`}
+                  score={`${totalCorrect}/${totalItems}`}
                   literal={literalCorrect}
                   inferential={inferentialCorrect}
                   critical={criticalCorrect}

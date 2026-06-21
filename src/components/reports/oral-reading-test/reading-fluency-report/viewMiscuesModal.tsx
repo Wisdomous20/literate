@@ -168,36 +168,33 @@ export default function ViewMiscuesModal({
   const [audioCurrentTime, setAudioCurrentTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
 
-  useEffect(() => {
-    const audio = internalAudioRef.current;
-    if (!audio) return;
-    const onPlay = () => setAudioPlaying(true);
-    const onPause = () => setAudioPlaying(false);
-    const onTimeUpdate = () => setAudioCurrentTime(audio.currentTime);
-    const onLoaded = () => setAudioDuration(audio.duration);
-    const onEnded = () => { setAudioPlaying(false); setAudioCurrentTime(0); audio.currentTime = 0; };
-    audio.addEventListener("play", onPlay);
-    audio.addEventListener("pause", onPause);
-    audio.addEventListener("timeupdate", onTimeUpdate);
-    audio.addEventListener("loadedmetadata", onLoaded);
-    audio.addEventListener("ended", onEnded);
-    return () => {
-      audio.removeEventListener("play", onPlay);
-      audio.removeEventListener("pause", onPause);
-      audio.removeEventListener("timeupdate", onTimeUpdate);
-      audio.removeEventListener("loadedmetadata", onLoaded);
-      audio.removeEventListener("ended", onEnded);
-    };
-  }, [audioSrc]);
+  const handleSeekAudio = useCallback(
+    (nextTime: number) => {
+      const audio = internalAudioRef.current;
+      if (!audio || Number.isNaN(nextTime)) return;
+      audio.currentTime = Math.max(0, Math.min(nextTime, audioDuration || nextTime));
+      setAudioCurrentTime(audio.currentTime);
+    },
+    [audioDuration],
+  );
 
   const effectiveJumpToTime = useMemo(() => {
     if (audioSrc) {
       return (timestamp: number) => {
-        seekAudioToTimestamp(internalAudioRef.current, timestamp);
+        const audio = internalAudioRef.current;
+        if (!audio) return;
+        const didSeek = seekAudioToTimestamp(audio, timestamp);
+        if (didSeek) {
+          setAudioCurrentTime(audio.currentTime);
+          setAudioDuration(
+            Number.isFinite(audio.duration) ? audio.duration : audioDuration,
+          );
+          setAudioPlaying(!audio.paused);
+        }
       };
     }
     return onJumpToTime;
-  }, [audioSrc, onJumpToTime]);
+  }, [audioSrc, onJumpToTime, audioDuration]);
 
   const resolvedMiscues = useMemo(
     () => hydrateMiscueTimestamps(miscues, alignedWords),
@@ -428,19 +425,21 @@ export default function ViewMiscuesModal({
 
   const openMiscuePopup = useCallback((anchorEl: HTMLElement, miscue: MiscueResult) => {
     const rect = anchorEl.getBoundingClientRect();
-    const container = containerRef.current;
-    if (!container) return;
-    const containerRect = container.getBoundingClientRect();
-    const xPos =
-      rect.left - containerRect.left + rect.width / 2 + container.scrollLeft;
-    const yAbove = rect.top - containerRect.top + container.scrollTop - 4;
-    const yBelow = rect.bottom - containerRect.top + container.scrollTop + 4;
-    const spaceAbove = rect.top - containerRect.top;
-    const flip = spaceAbove < 95;
-
+    const viewportPadding = 12;
     const popupHalfWidth = 112;
-    const spaceLeft = rect.left - containerRect.left + rect.width / 2;
-    const spaceRight = containerRect.right - rect.left - rect.width / 2;
+    const targetCenterX = rect.left + rect.width / 2;
+    const xPos = Math.max(
+      viewportPadding + popupHalfWidth,
+      Math.min(targetCenterX, window.innerWidth - viewportPadding - popupHalfWidth),
+    );
+
+    const yAbove = rect.top - 8;
+    const yBelow = rect.bottom + 8;
+    const estimatedPopupHeight = 260;
+    const flip = rect.top < estimatedPopupHeight;
+
+    const spaceLeft = targetCenterX;
+    const spaceRight = window.innerWidth - targetCenterX;
     let hAlign: "center" | "left" | "right" = "center";
     if (spaceLeft < popupHalfWidth) {
       hAlign = "left";
@@ -629,7 +628,7 @@ export default function ViewMiscuesModal({
                 )}
                 {onDeleteMiscue && (
                   <div className="flex items-center gap-2">
-                    {onUpdateMiscueType && (
+                    {(onUpdateMiscueType || onUpdateSpokenWord) && (
                       <button
                         type="button"
                         onClick={(e) => openMiscuePopup(e.currentTarget, miscue)}
@@ -770,7 +769,34 @@ export default function ViewMiscuesModal({
           </div>
           {audioSrc && (
             <div className="flex items-center gap-2 rounded-full border border-[#DAE6FF] bg-[#F8FBFF] px-3 py-1.5">
-              {audioSrc && <audio ref={internalAudioRef} src={audioSrc} preload="metadata" />}
+              {audioSrc && (
+                <audio
+                  ref={internalAudioRef}
+                  src={audioSrc}
+                  preload="metadata"
+                  onPlay={() => setAudioPlaying(true)}
+                  onPause={() => setAudioPlaying(false)}
+                  onTimeUpdate={(e) =>
+                    setAudioCurrentTime((e.target as HTMLAudioElement).currentTime)
+                  }
+                  onLoadedMetadata={(e) => {
+                    const nextDuration = (e.target as HTMLAudioElement).duration;
+                    setAudioDuration(Number.isFinite(nextDuration) ? nextDuration : 0);
+                  }}
+                  onDurationChange={(e) => {
+                    const nextDuration = (e.target as HTMLAudioElement).duration;
+                    if (Number.isFinite(nextDuration)) {
+                      setAudioDuration(nextDuration);
+                    }
+                  }}
+                  onEnded={(e) => {
+                    const audio = e.target as HTMLAudioElement;
+                    setAudioPlaying(false);
+                    setAudioCurrentTime(0);
+                    audio.currentTime = 0;
+                  }}
+                />
+              )}
               <Mic className="h-3.5 w-3.5 shrink-0 text-[#6666FF]" />
               <span className="text-xs font-semibold text-[#31318A]">Playback Audio</span>
               <button
@@ -790,6 +816,17 @@ export default function ViewMiscuesModal({
               <span className="min-w-[72px] text-center text-xs font-medium tabular-nums text-[#31318A]/70">
                 {formatAudioClock(audioCurrentTime)} / {formatAudioClock(audioDuration, "nearest")}
               </span>
+              <input
+                type="range"
+                min={0}
+                max={audioDuration > 0 ? audioDuration : 0}
+                step={0.01}
+                value={Math.min(audioCurrentTime, audioDuration || audioCurrentTime)}
+                onChange={(e) => handleSeekAudio(Number(e.target.value))}
+                className="h-1.5 w-28 cursor-pointer accent-[#6666FF]"
+                aria-label="Seek playback"
+                disabled={audioDuration <= 0}
+              />
             </div>
           )}
         </div>
@@ -870,7 +907,7 @@ export default function ViewMiscuesModal({
           )}
 
           {/* Word detail popup */}
-          {activeTab === "passage" && popup &&
+          {popup &&
             (() => {
               const cfg = getMiscueConfig(popup.miscue.miscueType);
               const arrowAlign =
@@ -886,7 +923,7 @@ export default function ViewMiscuesModal({
               return (
                 <div
                   ref={popupRef}
-                  className={`absolute z-30 flex ${popup.flipped ? "flex-col-reverse" : "flex-col"}`}
+                  className={`fixed z-70 flex ${popup.flipped ? "flex-col-reverse" : "flex-col"}`}
                 >
                   {popup.flipped && (
                     <div
@@ -895,36 +932,64 @@ export default function ViewMiscuesModal({
                   )}
 
                   {onDeleteMiscue || onUpdateMiscueType ? (
-                    <MiscueActionPopover
-                      miscueType={popup.miscue.miscueType}
-                      spokenWord={
-                        popup.miscue.miscueType === "REPETITION"
-                          ? getRepetitionWord(popup.miscue)
-                          : popup.miscue.spokenWord
-                      }
-                      isLoading={actionLoading}
-                      onDelete={async () => {
-                        if (!onDeleteMiscue) return;
-                        setActionLoading(true);
-                        try {
-                          await onDeleteMiscue(popup.miscue);
-                          setPopup(null);
-                        } finally {
-                          setActionLoading(false);
+                    <div className="flex flex-col gap-1.5">
+                      <MiscueActionPopover
+                        miscueType={popup.miscue.miscueType}
+                        spokenWord={
+                          popup.miscue.miscueType === "REPETITION"
+                            ? getRepetitionWord(popup.miscue)
+                            : popup.miscue.spokenWord
                         }
-                      }}
-                      onChangeType={async (newType) => {
-                        if (!onUpdateMiscueType) return;
-                        setActionLoading(true);
-                        try {
-                          await onUpdateMiscueType(popup.miscue, newType);
-                          setPopup(null);
-                        } finally {
-                          setActionLoading(false);
+                        isLoading={actionLoading}
+                        onDelete={async () => {
+                          if (!onDeleteMiscue) return;
+                          setActionLoading(true);
+                          try {
+                            await onDeleteMiscue(popup.miscue);
+                            setPopup(null);
+                          } finally {
+                            setActionLoading(false);
+                          }
+                        }}
+                        onChangeType={async (newType) => {
+                          if (!onUpdateMiscueType) return;
+                          setActionLoading(true);
+                          try {
+                            await onUpdateMiscueType(popup.miscue, newType);
+                            setPopup(null);
+                          } finally {
+                            setActionLoading(false);
+                          }
+                        }}
+                        onUpdateSpokenWord={
+                          onUpdateSpokenWord
+                            ? async (newSpokenWord: string) => {
+                                setActionLoading(true);
+                                try {
+                                  await onUpdateSpokenWord(popup.miscue, newSpokenWord);
+                                  setPopup(null);
+                                } finally {
+                                  setActionLoading(false);
+                                }
+                              }
+                            : undefined
                         }
-                      }}
-                      onClose={() => setPopup(null)}
-                    />
+                        onClose={() => setPopup(null)}
+                      />
+                      {hasTimestamp && effectiveJumpToTime && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            effectiveJumpToTime(popup.miscue.timestamp!);
+                            setPopup(null);
+                          }}
+                          className="flex w-full items-center justify-center gap-1.5 rounded-md bg-[#6666FF] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:brightness-110"
+                        >
+                          <Play className="h-3 w-3" />
+                          Jump to Word ({formatMiscueTimestamp(popup.miscue.timestamp!)})
+                        </button>
+                      )}
+                    </div>
                   ) : (
                     <div
                       className={`rounded-lg border bg-white px-3 py-2 shadow-[0_4px_16px_rgba(0,0,0,0.12)] ${cfg.popupBorderClass}`}

@@ -57,7 +57,7 @@ export default function AssessmentReportPage() {
         })
         .sort(
           (a, b) =>
-            new Date(a.dateTaken).getTime() - new Date(b.dateTaken).getTime(),
+            new Date(b.dateTaken).getTime() - new Date(a.dateTaken).getTime(),
         )
         .map((a, idx) => ({
           attempt: idx + 1,
