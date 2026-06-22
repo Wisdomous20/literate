@@ -18,6 +18,10 @@ describe("classifyComprehensionLevel", () => {
     expect(classifyComprehensionLevel(70)).toBe("INSTRUCTIONAL");
   });
 
+  it("returns INSTRUCTIONAL when percentage is exactly 75", () => {
+    expect(classifyComprehensionLevel(75)).toBe("INSTRUCTIONAL");
+  });
+
   it("returns FRUSTRATION when percentage is below 59", () => {
     expect(classifyComprehensionLevel(58)).toBe("FRUSTRATION");
   });
