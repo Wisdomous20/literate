@@ -26,10 +26,16 @@ const assessmentTypeFilterValues = [
 
 const testTypeFilterValues = ["PRE", "POST"] as const;
 
+const gradeFilterSchema = z.union([
+  z.literal("ALL"),
+  z.coerce.number().int().min(0).max(12),
+]);
+
 export const classificationDistributionQuerySchema = z.object({
   schoolYear: requiredString("schoolYear"),
   assessmentType: z.enum(assessmentTypeFilterValues).optional().default("ALL"),
   testType: z.enum(testTypeFilterValues).optional().default("PRE"),
+  grade: gradeFilterSchema.optional().default("ALL"),
 });
 
 export const assessmentIdSchema = z.object({

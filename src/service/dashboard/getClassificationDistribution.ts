@@ -7,6 +7,7 @@ export type AssessmentTypeFilter =
   | "COMPREHENSION";
 
 export type TestTypeFilter = "PRE" | "POST";
+export type GradeFilter = "ALL" | number;
 
 export interface ClassificationDistribution {
   independent: number;
@@ -36,11 +37,12 @@ export async function getClassificationDistribution(
   userId: string,
   schoolYear: string,
   assessmentType: AssessmentTypeFilter,
-  testType: TestTypeFilter
+  testType: TestTypeFilter,
+  grade: GradeFilter = "ALL"
 ): Promise<ClassificationDistribution> {
   const passageTestType = TEST_TYPE_MAP[testType];
 
-  const classroomScope = {
+  const assessmentScope = {
     student: {
       classRoom: {
         userId,
@@ -48,58 +50,48 @@ export async function getClassificationDistribution(
         archived: false,
       },
       archived: false,
+      ...(grade === "ALL" ? {} : { level: grade }),
     },
     passage: { testType: passageTestType },
-  } as const;
+    ...(assessmentType === "ALL" ? {} : { type: assessmentType }),
+  };
+
+  const assessments = await prisma.assessment.findMany({
+    where: assessmentScope,
+    orderBy: [{ dateTaken: "desc" }, { id: "desc" }],
+    select: {
+      id: true,
+      studentId: true,
+      type: true,
+      oralReadingResult: { select: { classificationLevel: true } },
+      oralFluency: { select: { classificationLevel: true, deletedAt: true } },
+      comprehension: { select: { classificationLevel: true } },
+    },
+  });
+
+  const latestAssessmentByStudent = new Map<string, (typeof assessments)[number]>();
+  for (const assessment of assessments) {
+    if (!latestAssessmentByStudent.has(assessment.studentId)) {
+      latestAssessmentByStudent.set(assessment.studentId, assessment);
+    }
+  }
 
   const dist = emptyDistribution();
-  const includeOralReading =
-    assessmentType === "ALL" || assessmentType === "ORAL_READING";
-  const includeFluency =
-    assessmentType === "ALL" || assessmentType === "READING_FLUENCY";
-  const includeComprehension =
-    assessmentType === "ALL" || assessmentType === "COMPREHENSION";
-
-  const tasks: Promise<unknown>[] = [];
-
-  if (includeOralReading) {
-    tasks.push(
-      prisma.oralReadingResult
-        .findMany({
-          where: { assessment: classroomScope },
-          select: { classificationLevel: true },
-        })
-        .then((rows) => rows.forEach((r) => addLevel(dist, r.classificationLevel)))
-    );
+  for (const assessment of latestAssessmentByStudent.values()) {
+    switch (assessment.type) {
+      case "ORAL_READING":
+        addLevel(dist, assessment.oralReadingResult?.classificationLevel);
+        break;
+      case "READING_FLUENCY":
+        if (assessment.oralFluency?.deletedAt === null) {
+          addLevel(dist, assessment.oralFluency.classificationLevel);
+        }
+        break;
+      case "COMPREHENSION":
+        addLevel(dist, assessment.comprehension?.classificationLevel);
+        break;
+    }
   }
-
-  if (includeFluency) {
-    tasks.push(
-      prisma.oralFluencySession
-        .findMany({
-          where: {
-            deletedAt: null,
-            classificationLevel: { not: null },
-            assessment: classroomScope,
-          },
-          select: { classificationLevel: true },
-        })
-        .then((rows) => rows.forEach((r) => addLevel(dist, r.classificationLevel)))
-    );
-  }
-
-  if (includeComprehension) {
-    tasks.push(
-      prisma.comprehensionTest
-        .findMany({
-          where: { assessment: classroomScope },
-          select: { classificationLevel: true },
-        })
-        .then((rows) => rows.forEach((r) => addLevel(dist, r.classificationLevel)))
-    );
-  }
-
-  await Promise.all(tasks);
 
   return dist;
 }

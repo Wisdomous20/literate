@@ -6,6 +6,7 @@ import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import {
   getClassificationDistribution,
   type AssessmentTypeFilter,
+  type GradeFilter,
   type TestTypeFilter,
 } from "@/service/dashboard/getClassificationDistribution";
 
@@ -23,6 +24,7 @@ export async function GET(request: NextRequest) {
       schoolYear: searchParams.get("schoolYear"),
       assessmentType: searchParams.get("assessmentType") ?? undefined,
       testType: searchParams.get("testType") ?? undefined,
+      grade: searchParams.get("grade") ?? undefined,
     });
     if (!validationResult.success) {
       return NextResponse.json(
@@ -30,13 +32,14 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
-    const { schoolYear, assessmentType, testType } = validationResult.data;
+    const { schoolYear, assessmentType, testType, grade } = validationResult.data;
 
     const distribution = await getClassificationDistribution(
       session.user.id,
       schoolYear,
       assessmentType as AssessmentTypeFilter,
-      testType as TestTypeFilter
+      testType as TestTypeFilter,
+      grade as GradeFilter
     );
 
     return NextResponse.json(distribution);
