@@ -108,9 +108,7 @@ export default function AssessmentSummaryPage() {
     }
   };
 
-  const handleExportPdf = () => {
-    alert("Export to PDF coming soon!");
-  };
+  const handleExportPdf = () => {};
 
   if (isLoading) return <div>Loading...</div>;
   if (!found) return <div>No data found.</div>;

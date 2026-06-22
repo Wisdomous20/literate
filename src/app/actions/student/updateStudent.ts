@@ -10,7 +10,8 @@ import { revalidatePath } from "next/cache";
 export async function updateStudent(
   studentId: string,
   name?: string,
-  level?: number
+  level?: number,
+  archived?: boolean,
 ) {
   const session = await getServerSession(authOptions);
 
@@ -23,6 +24,7 @@ export async function updateStudent(
     studentId,
     name,
     level,
+    archived,
   });
 
   if (!validationResult.success) {

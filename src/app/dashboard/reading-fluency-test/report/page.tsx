@@ -42,18 +42,6 @@ import type {
 const STORAGE_KEY = "reading-fluency-session";
 const AUDIO_STORAGE_KEY = "reading-fluency-audio";
 
-function base64ToBlob(base64: string): Blob {
-  const [meta, data] = base64.split(",");
-  const mimeMatch = meta.match(/:(.*?);/);
-  const mime = mimeMatch ? mimeMatch[1] : "audio/webm";
-  const binary = atob(data);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return new Blob([bytes], { type: mime });
-}
-
 interface SessionState {
   studentName: string;
   gradeLevel: string;
@@ -199,18 +187,11 @@ export default function OralReadingReportPage() {
     try {
       const audioBase64 = sessionStorage.getItem(AUDIO_STORAGE_KEY);
       if (!audioBase64) return null;
-      const blob = base64ToBlob(audioBase64);
-      return URL.createObjectURL(blob);
+      return audioBase64;
     } catch {
       return null;
     }
   }, [isClient]);
-
-  useEffect(() => {
-    return () => {
-      if (audioSrc) URL.revokeObjectURL(audioSrc);
-    };
-  }, [audioSrc]);
 
   const studentName = session.studentName || "—";
   const gradeLevel = useMemo(
@@ -745,6 +726,7 @@ export default function OralReadingReportPage() {
         miscues={analysis?.miscues || []}
         alignedWords={analysis?.alignedWords}
         passageLevel={session.selectedLevel}
+        audioSrc={audioSrc}
         onJumpToTime={handleJumpToMiscueTime}
         onDeleteMiscue={reportSessionId ? handleDeleteMiscue : undefined}
         onUpdateMiscueType={reportSessionId ? handleUpdateMiscueType : undefined}

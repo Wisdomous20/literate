@@ -68,11 +68,18 @@ export const updateStudentSchema = z
     studentId: idString("Student ID"),
     name: optionalTrimmedString(),
     level: z.coerce.number().int().positive().optional(),
+    archived: optionalBoolean(),
   })
-  .refine((data) => data.name !== undefined || data.level !== undefined, {
+  .refine(
+    (data) =>
+      data.name !== undefined ||
+      data.level !== undefined ||
+      data.archived !== undefined,
+    {
     message: "Nothing to update",
     path: ["studentId"],
-  });
+    },
+  );
 
 export const deleteStudentSchema = z.object({
   userId: idString("User ID"),

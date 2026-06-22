@@ -6,25 +6,25 @@ export type RGB = [number, number, number];
 /*  Shared color palette used by all PDF reports                       */
 /* ------------------------------------------------------------------ */
 export const PDF_COLORS = {
-  cardBg: [239, 253, 255] as RGB,
-  cardBorder: [84, 164, 255] as RGB,
-  headerBar: [41, 124, 236] as RGB,
-  textDark: [0, 48, 110] as RGB,
-  textHeading: [0, 51, 102] as RGB,
-  labelDark: [12, 21, 52] as RGB,
-  purple: [49, 49, 138] as RGB,
-  deepPurple: [46, 46, 163] as RGB,
-  divider: [18, 48, 220] as RGB,
-  dividerLight: [180, 190, 230] as RGB,
-  fieldBg: [240, 247, 255] as RGB,
-  fieldBorder: [130, 150, 220] as RGB,
-  passageFieldBg: [244, 246, 249] as RGB,
-  passageFieldBorder: [230, 233, 240] as RGB,
-  iconBoxBg: [245, 245, 255] as RGB,
-  iconBoxBorder: [218, 230, 255] as RGB,
+  cardBg: [248, 248, 248] as RGB,
+  cardBorder: [96, 96, 96] as RGB,
+  headerBar: [45, 45, 45] as RGB,
+  textDark: [25, 25, 25] as RGB,
+  textHeading: [20, 20, 20] as RGB,
+  labelDark: [40, 40, 40] as RGB,
+  purple: [35, 35, 35] as RGB,
+  deepPurple: [15, 15, 15] as RGB,
+  divider: [80, 80, 80] as RGB,
+  dividerLight: [170, 170, 170] as RGB,
+  fieldBg: [245, 245, 245] as RGB,
+  fieldBorder: [150, 150, 150] as RGB,
+  passageFieldBg: [244, 244, 244] as RGB,
+  passageFieldBorder: [205, 205, 205] as RGB,
+  iconBoxBg: [238, 238, 238] as RGB,
+  iconBoxBorder: [165, 165, 165] as RGB,
   white: [255, 255, 255] as RGB,
-  summaryBg1: [230, 230, 250] as RGB,
-  summaryBg2: [235, 235, 248] as RGB,
+  summaryBg1: [236, 236, 236] as RGB,
+  summaryBg2: [228, 228, 228] as RGB,
 };
 
 /* ------------------------------------------------------------------ */
@@ -33,19 +33,19 @@ export const PDF_COLORS = {
 
 export function classificationBg(level: string): RGB {
   switch (level?.toLowerCase()) {
-    case "independent":  return [199, 238, 204];
-    case "instructional": return [207, 228, 255];
-    case "frustration":  return [254, 231, 241];
-    default:             return [240, 240, 251];
+    case "independent":  return [230, 230, 230];
+    case "instructional": return [225, 225, 225];
+    case "frustration":  return [220, 220, 220];
+    default:             return [232, 232, 232];
   }
 }
 
 export function classificationTextColor(level: string): RGB {
   switch (level?.toLowerCase()) {
-    case "independent":  return [22, 163, 74];
-    case "instructional": return [37, 99, 235];
-    case "frustration":  return [220, 38, 38];
-    default:             return [46, 46, 163];
+    case "independent":  return [20, 20, 20];
+    case "instructional": return [30, 30, 30];
+    case "frustration":  return [10, 10, 10];
+    default:             return [46, 46, 46];
   }
 }
 

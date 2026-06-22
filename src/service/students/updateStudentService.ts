@@ -5,6 +5,7 @@ interface UpdateStudentInput {
   studentId: string;
   name?: string;
   level?: number;
+  archived?: boolean;
 }
 
 interface UpdateStudentResult {
@@ -22,7 +23,7 @@ interface UpdateStudentResult {
 export async function updateStudentService(
   input: UpdateStudentInput
 ): Promise<UpdateStudentResult> {
-  const { userId, studentId, name, level } = input;
+  const { userId, studentId, name, level, archived } = input;
 
   if (!userId) {
     return {
@@ -48,7 +49,7 @@ export async function updateStudentService(
     };
   }
 
-  if (name === undefined && level === undefined) {
+  if (name === undefined && level === undefined && archived === undefined) {
     return {
       success: false,
       error: "Nothing to update",
@@ -74,9 +75,10 @@ export async function updateStudentService(
       };
     }
 
-    const updateData: { name?: string; level?: number } = {};
+    const updateData: { name?: string; level?: number; archived?: boolean } = {};
     if (name !== undefined) updateData.name = name.trim();
     if (level !== undefined) updateData.level = level;
+    if (archived !== undefined) updateData.archived = archived;
 
     const student = await prisma.student.update({
       where: { id: studentId },

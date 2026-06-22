@@ -2,6 +2,7 @@
 
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
+import type { ReactNode } from "react";
 
 interface ClassData {
   id: string;
@@ -14,12 +15,14 @@ interface ClassInfoBoxProps {
   totalStudents: number;
   onCreateStudent: () => void;
   isCompact?: boolean;
+  headerActions?: ReactNode;
 }
 
 export function ClassInfoBox({
   classData,
   totalStudents,
   isCompact = false,
+  headerActions,
 }: ClassInfoBoxProps) {
   const router = useRouter();
 
@@ -33,7 +36,7 @@ export function ClassInfoBox({
           <div className="relative">
             <div className="absolute inset-0 rounded-full translate-y-1 bg-[#E0E0FF]" />
             <button
-              onClick={() => router.back()}
+              onClick={() => router.push("/dashboard")}
               title="Go back"
               aria-label="Go back"
               className="relative flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold shadow transition-transform bg-white text-[#6666FF] border border-[#6666FF]/40 hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
@@ -53,9 +56,10 @@ export function ClassInfoBox({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <span className="text-xs font-semibold text-[#00306E]/60 uppercase tracking-tighter">Total Students:</span>
           <span className="text-xl font-bold text-[#6666FF]">{totalStudents}</span>
+          {headerActions}
         </div>
       </div>
     );
@@ -68,7 +72,7 @@ export function ClassInfoBox({
           <div className="relative">
             <div className="absolute inset-0 rounded-full translate-y-1 bg-[#E0E0FF]" />
             <button
-              onClick={() => router.back()}
+              onClick={() => router.push("/dashboard")}
               title="Go back"
               aria-label="Go back"
               className="relative flex items-center gap-1.5 rounded-full border border-[#6666FF]/40 px-4 py-2 text-xs font-semibold shadow-sm transition-transform bg-white text-[#6666FF] hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
@@ -88,9 +92,10 @@ export function ClassInfoBox({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <span className="text-xs font-semibold text-[#00306E]/60 uppercase tracking-tighter">Total Students:</span>
           <span className="text-xl font-bold text-[#6666FF]">{totalStudents}</span>
+          {headerActions}
         </div>
       </div>
     </div>

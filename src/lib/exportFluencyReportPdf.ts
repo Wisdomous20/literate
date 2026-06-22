@@ -131,11 +131,11 @@ export function buildFluencyReportData(input: FluencyExportInput): FluencyReport
 
 const C = {
   ...PDF_COLORS,
-  checkFill: [93, 93, 251] as RGB,       // #5D5DFB
-  obsBg: [240, 240, 252] as RGB,
-  rateColor: [22, 45, 176] as RGB,       // #162DB0
-  timeColor: [26, 102, 115] as RGB,      // #1A6673
-  classColor: [206, 51, 12] as RGB,      // #CE330C
+  checkFill: [102, 102, 255] as RGB,
+  obsBg: [242, 245, 255] as RGB,
+  rateColor: [30, 95, 180] as RGB,
+  timeColor: [102, 102, 255] as RGB,
+  classColor: [124, 58, 237] as RGB,
 };
 
 /* per‑miscue colours */
@@ -145,14 +145,14 @@ const MISCUE_CFG: {
   color: RGB;
   bg: RGB;
 }[] = [
-  { key: "mispronunciation", label: "Mispronunciation", color: [196, 16, 72], bg: [254, 225, 237] },
-  { key: "omission", label: "Omission", color: [75, 59, 163], bg: [210, 206, 246] },
-  { key: "substitution", label: "Substitution", color: [26, 95, 180], bg: [198, 222, 255] },
-  { key: "transposition", label: "Transposition", color: [139, 0, 139], bg: [234, 176, 234] },
-  { key: "reversal", label: "Reversal", color: [110, 64, 35], bg: [219, 203, 191] },
-  { key: "insertion", label: "Insertion", color: [30, 122, 53], bg: [186, 234, 192] },
-  { key: "repetition", label: "Repetition", color: [184, 92, 0], bg: [255, 225, 188] },
-  { key: "selfCorrection", label: "Self-Correction", color: [138, 109, 0], bg: [252, 241, 188] },
+  { key: "mispronunciation", label: "Mispronunciation", color: [196, 16, 72], bg: [253, 232, 241] },
+  { key: "omission", label: "Omission", color: [75, 59, 163], bg: [236, 232, 252] },
+  { key: "substitution", label: "Substitution", color: [26, 95, 180], bg: [227, 241, 255] },
+  { key: "transposition", label: "Transposition", color: [139, 0, 139], bg: [246, 230, 246] },
+  { key: "reversal", label: "Reversal", color: [110, 64, 35], bg: [244, 235, 227] },
+  { key: "insertion", label: "Insertion", color: [30, 122, 53], bg: [230, 248, 234] },
+  { key: "repetition", label: "Repetition", color: [184, 92, 0], bg: [255, 241, 227] },
+  { key: "selfCorrection", label: "Self-Correction", color: [138, 109, 0], bg: [255, 247, 214] },
 ];
 
 /* ------------------------------------------------------------------ */

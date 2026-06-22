@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   Loader2,
   CheckCircle,
@@ -10,6 +10,9 @@ import {
   AArrowDown,
   X,
   Plus,
+  LayoutGrid,
+  Table,
+  Archive,
 } from "lucide-react";
 import { ClassListsHeader } from "@/components/class-lists/classListsHeader";
 import {
@@ -64,6 +67,7 @@ function getAssessmentClassification(
 
 export default function ClassListsPage() {
   const params = useParams();
+  const router = useRouter();
   const classRoomId = params.id as string;
   const queryClient = useQueryClient();
 
@@ -74,6 +78,7 @@ export default function ClassListsPage() {
   >("dateDesc");
   const [assessmentType, setAssessmentType] =
     useState<AssessmentTypeFilter>("ALL");
+  const [viewMode, setViewMode] = useState<"card" | "table">("card");
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
@@ -175,6 +180,24 @@ export default function ClassListsPage() {
       }
     } catch (err) {
       console.error("Failed to update student:", err);
+      showToast("Something went wrong. Please try again.", "error");
+    }
+  };
+
+  const handleArchiveStudent = async (studentId: string) => {
+    try {
+      const result = await updateStudent(studentId, undefined, undefined, true);
+      if (result.success) {
+        showToast("Student archived successfully!", "success");
+        queryClient.invalidateQueries({ queryKey: ["class", classRoomId] });
+        queryClient.invalidateQueries({
+          queryKey: ["assessment-summaries", classRoomId],
+        });
+      } else {
+        showToast("Failed to archive student.", "error");
+      }
+    } catch (err) {
+      console.error("Failed to archive student:", err);
       showToast("Something went wrong. Please try again.", "error");
     }
   };
@@ -309,7 +332,7 @@ export default function ClassListsPage() {
   });
 
   const sortLabels: Record<typeof sortOption, string> = {
-    dateDesc: "Newest to Latest",
+    dateDesc: "Newest to Oldest",
     nameAsc: "Alphabetically (A-Z)",
     nameDesc: "Alphabetically (Z-A)",
     gradeAsc: "Grade (Low-High)",
@@ -352,6 +375,49 @@ export default function ClassListsPage() {
               totalStudents={students.length}
               onCreateStudent={() => setIsModalOpen(true)}
               isCompact={true}
+              headerActions={
+                <>
+                  <div className="inline-flex shrink-0 rounded-lg border border-[#6666FF]/30 bg-[#F8F9FF] p-1">
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("card")}
+                      className={`inline-flex items-center rounded-md p-2 text-xs font-semibold transition-colors ${
+                        viewMode === "card"
+                          ? "bg-white text-[#3B2F7F] shadow-sm"
+                          : "text-[#6666FF]"
+                      }`}
+                      title="Card list view"
+                      aria-label="Card list view"
+                    >
+                      <LayoutGrid className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("table")}
+                      className={`inline-flex items-center rounded-md p-2 text-xs font-semibold transition-colors ${
+                        viewMode === "table"
+                          ? "bg-white text-[#3B2F7F] shadow-sm"
+                          : "text-[#6666FF]"
+                      }`}
+                      title="Table list view"
+                      aria-label="Table list view"
+                    >
+                      <Table className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      router.push(`/dashboard/class/${classRoomId}/archive`)
+                    }
+                    className="inline-flex items-center rounded-lg border border-[#6666FF]/30 bg-[#F8F9FF] p-2 text-[#6666FF] transition-colors hover:bg-[#EEF0FF]"
+                    title="Archived students"
+                    aria-label="Archived students"
+                  >
+                    <Archive className="h-3.5 w-3.5" />
+                  </button>
+                </>
+              }
             />
           </div>
 
@@ -415,6 +481,8 @@ export default function ClassListsPage() {
               studentAssessments={studentAssessments}
               onDeleteStudent={handleDeleteStudent}
               onUpdateStudent={handleUpdateStudent}
+              onArchiveStudent={handleArchiveStudent}
+              viewMode={viewMode}
             />
           </div>
         </div>

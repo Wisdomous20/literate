@@ -95,25 +95,54 @@ function generatePDF(
   const pageWidth = doc.internal.pageSize.getWidth();
   const margins = 15;
   const contentWidth = pageWidth - 2 * margins;
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  const BRAND_PRIMARY: [number, number, number] = [64, 102, 255];
+  const BRAND_DEEP: [number, number, number] = [41, 62, 166];
+  const BRAND_LIGHT: [number, number, number] = [239, 244, 255];
+  const TEXT_DARK: [number, number, number] = [26, 32, 44];
+
+  const levelColor = (() => {
+    switch (oralReadingLevel.level?.toLowerCase()) {
+      case "independent":
+        return [22, 163, 74] as [number, number, number];
+      case "instructional":
+        return [37, 99, 235] as [number, number, number];
+      case "frustration":
+        return [220, 38, 38] as [number, number, number];
+      default:
+        return BRAND_PRIMARY;
+    }
+  })();
 
   doc.setFont("helvetica");
 
+  doc.setFillColor(...BRAND_PRIMARY);
+  doc.roundedRect(margins, yPosition - 10, contentWidth, 14, 2, 2, "F");
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
+  doc.setTextColor(255, 255, 255);
   doc.text("ASSESSMENT REPORT", margins, yPosition);
-  yPosition += 10;
+  yPosition += 12;
 
-  doc.setDrawColor(0);
+  doc.setDrawColor(...BRAND_PRIMARY);
+  doc.setLineWidth(0.6);
   doc.line(margins, yPosition, pageWidth - margins, yPosition);
   yPosition += 8;
 
+  doc.setFillColor(...BRAND_LIGHT);
+  doc.setDrawColor(199, 210, 254);
+  doc.roundedRect(margins, yPosition - 2, contentWidth, 31, 2, 2, "FD");
+
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
+  doc.setTextColor(...BRAND_DEEP);
   doc.text("Student Information", margins, yPosition);
   yPosition += 7;
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
+  doc.setTextColor(...TEXT_DARK);
   doc.text(`Name: ${studentName}`, margins + 5, yPosition);
   yPosition += 6;
   doc.text(`Grade Level: ${studentGrade}`, margins + 5, yPosition);
@@ -125,9 +154,13 @@ function generatePDF(
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
+  doc.setTextColor(...BRAND_DEEP);
   doc.text("Final Reading Level Classification", margins, yPosition);
   yPosition += 7;
 
+  doc.setFillColor(...levelColor);
+  doc.roundedRect(margins + 5, yPosition - 4, 72, 7, 1.6, 1.6, "F");
+  doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.text(`Classification: ${oralReadingLevel.level}`, margins + 5, yPosition);
@@ -135,6 +168,7 @@ function generatePDF(
 
   const description = getClassificationSubtext(oralReadingLevel.level);
   const descriptionLines = doc.splitTextToSize(description, contentWidth - 5);
+  doc.setTextColor(...TEXT_DARK);
   doc.text(descriptionLines, margins + 5, yPosition);
   yPosition += descriptionLines.length * 5 + 5;
 
@@ -148,6 +182,12 @@ function generatePDF(
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
+    doc.setFillColor(248, 250, 255);
+    doc.setDrawColor(214, 224, 255);
+    doc.roundedRect(margins, yPosition - 4, contentWidth, 33, 2, 2, "FD");
+    doc.setFillColor(...BRAND_PRIMARY);
+    doc.rect(margins, yPosition - 4, 2.2, 33, "F");
+
     const reportTitle =
       card.title === "Oral Reading Fluency Test"
         ? "Oral Fluency Test Report"
@@ -155,15 +195,17 @@ function generatePDF(
           ? "Reading Comprehension Test Report"
           : card.title;
 
+    doc.setTextColor(...BRAND_DEEP);
     doc.text(`Report ${index + 1}: ${reportTitle}`, margins, yPosition);
     yPosition += 7;
 
-    doc.setDrawColor(200);
+    doc.setDrawColor(199, 210, 254);
     doc.line(margins, yPosition, pageWidth - margins, yPosition);
     yPosition += 6;
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
+    doc.setTextColor(...TEXT_DARK);
     doc.text(`Assessment Type: ${card.title}`, margins + 5, yPosition);
     yPosition += 6;
     doc.text(`Classification Level: ${card.level}`, margins + 5, yPosition);
@@ -186,13 +228,13 @@ function generatePDF(
       performanceText = "Needs improvement";
     }
     doc.text(`Performance: ${performanceText}`, margins + 5, yPosition);
-    yPosition += 10;
+    yPosition += 12;
   });
 
-  yPosition = doc.internal.pageSize.getHeight() - 15;
+  yPosition = pageHeight - 15;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.setTextColor(128);
+  doc.setTextColor(90, 103, 126);
   doc.text(`Generated on ${new Date().toLocaleString()}`, margins, yPosition);
   doc.text(`Page 1 of 1`, pageWidth - margins - 20, yPosition);
 
