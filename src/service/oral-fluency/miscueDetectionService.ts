@@ -12,7 +12,9 @@ export function detectMiscues(
 ): MiscueResult[] {
   const miscues: MiscueResult[] = [];
   const repetitionIndices = detectRepetitions(alignedWords);
-  const selfCorrectedIndices = detectSelfCorrections(alignedWords, repetitionIndices);
+  // A wrong attempt followed by the expected word is a self-correction even
+  // when both words are similar enough to resemble a repetition.
+  const selfCorrectedIndices = detectSelfCorrections(alignedWords, new Set());
   const handledTranspositions = new Set<number>();
   const { indices: transposedIndices, pairs: transpositionPairs } = detectTranspositions(alignedWords);
 
@@ -75,7 +77,8 @@ export function detectMiscues(
 
     // Check repetition FIRST, before anything else — this prevents repetitions
     // from being misclassified as insertions
-    if (repetitionIndices.has(i)) {
+    // An identified self-correction is excluded so it can retain its own type.
+    if (repetitionIndices.has(i) && !selfCorrectedIndices.has(i)) {
       miscues.push({
         miscueType: "REPETITION",
         expectedWord: aligned.expected ?? "",
@@ -88,7 +91,7 @@ export function detectMiscues(
     }
 
     // Skip insertions that are part of a detected repeated phrase
-    if (suppressedInsertions.has(i)) {
+    if (suppressedInsertions.has(i) && !selfCorrectedIndices.has(i)) {
       miscues.push({
         miscueType: "REPETITION",
         expectedWord: aligned.expected ?? "",

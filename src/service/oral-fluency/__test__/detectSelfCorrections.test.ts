@@ -35,7 +35,7 @@ describe("detectSelfCorrections", () => {
     expect(result.has(0)).toBe(true);
   });
 
-  it("does not flag INSERTION → EXACT when the pause is below 200ms", () => {
+  it("detects an immediate INSERTION followed by EXACT as a self-correction", () => {
     const words = [
       insertion("bat", 0, 0.3),
       exact("cat", 0.4, 0.7), // gap = 0.1s — too short
@@ -43,7 +43,7 @@ describe("detectSelfCorrections", () => {
 
     const result = detectSelfCorrections(words, new Set());
 
-    expect(result.size).toBe(0);
+    expect(result.has(0)).toBe(true);
   });
 
   it("does not flag INSERTION → EXACT when the gap exceeds the 2.0s correction window", () => {

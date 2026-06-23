@@ -1,11 +1,8 @@
 import { AlignedWord } from "@/types/oral-reading"
 import { normalizeWord, similarityRatio } from "@/utils/textUtils";
 
-// Minimum pause (in seconds) between the insertion (wrong attempt) and the
-// following correct word for the pair to qualify as a self-correction.
-// Reference: MPI reading-miscue protocol (pure.mpg.de item 64752), p.14.
-const MIN_PAUSE_FOR_CORRECTION = 0.2
 const MAX_PAUSE_FOR_CORRECTION = 2.0
+const MIN_SELF_CORRECTION_SIMILARITY = 0.5
 
 function getGap(current: AlignedWord, next: AlignedWord): number | null {
   if (current.endTimestamp == null || next.timestamp == null) return null;
@@ -30,9 +27,20 @@ export default function detectSelfCorrections(
     if (current.match !== "INSERTION" || next.match !== "EXACT") continue;
     if (!current.spoken || !next.expected) continue;
 
+    // If the inserted token exactly repeats the preceding spoken or expected
+    // word, it is a repetition rather than an attempt to correct the next one.
+    const previous = alignedWords[i - 1];
+    const normalizedCurrent = normalizeWord(current.spoken);
+    if (
+      normalizedCurrent === normalizeWord(previous?.expected ?? "") ||
+      normalizedCurrent === normalizeWord(previous?.spoken ?? "")
+    ) {
+      continue;
+    }
+
     const gap = getGap(current, next);
     if (gap === null) continue;
-    if (gap < MIN_PAUSE_FOR_CORRECTION || gap > MAX_PAUSE_FOR_CORRECTION) continue;
+    if (gap < 0 || gap > MAX_PAUSE_FOR_CORRECTION) continue;
 
     // If the insertion is nearly identical to the following correct word, it's
     // a stutter/repetition rather than a self-correction.
@@ -41,6 +49,10 @@ export default function detectSelfCorrections(
       normalizeWord(next.expected)
     );
     if (sim > 0.8) continue;
+
+    // A self-correction must be related to its target. A dissimilar extra
+    // word is an insertion even if the student immediately continues reading.
+    if (sim < MIN_SELF_CORRECTION_SIMILARITY) continue;
 
     indices.add(i);
   }

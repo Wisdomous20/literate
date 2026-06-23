@@ -48,6 +48,82 @@ describe("detectMiscues", () => {
     expect(result[0].spokenWord).toBe("big");
   });
 
+  it("classifies a wrong word immediately followed by the expected word as SELF_CORRECTION", () => {
+    const words: AlignedWord[] = [
+      exact("it", 0),
+      exact("can", 1),
+      {
+        expected: null,
+        spoken: "shit",
+        expectedIndex: null,
+        spokenIndex: 2,
+        timestamp: 1,
+        endTimestamp: 1.3,
+        confidence: null,
+        match: "INSERTION",
+      },
+      {
+        expected: "sit",
+        spoken: "sit",
+        expectedIndex: 2,
+        spokenIndex: 3,
+        timestamp: 1.3,
+        endTimestamp: 1.6,
+        confidence: null,
+        match: "EXACT",
+      },
+    ];
+
+    const result = detectMiscues(words, "english");
+
+    expect(result).toEqual([
+      expect.objectContaining({
+        miscueType: "SELF_CORRECTION",
+        expectedWord: "sit",
+        spokenWord: "shit",
+        isSelfCorrected: true,
+      }),
+    ]);
+  });
+
+  it("classifies a phonetically dissimilar word before the expected word as INSERTION", () => {
+    const words: AlignedWord[] = [
+      exact("it", 0),
+      exact("can", 1),
+      {
+        expected: null,
+        spoken: "bark",
+        expectedIndex: null,
+        spokenIndex: 2,
+        timestamp: 1,
+        endTimestamp: 1.3,
+        confidence: null,
+        match: "INSERTION",
+      },
+      {
+        expected: "sit",
+        spoken: "sit",
+        expectedIndex: 2,
+        spokenIndex: 3,
+        timestamp: 1.3,
+        endTimestamp: 1.6,
+        confidence: null,
+        match: "EXACT",
+      },
+    ];
+
+    const result = detectMiscues(words, "english");
+
+    expect(result).toEqual([
+      expect.objectContaining({
+        miscueType: "INSERTION",
+        expectedWord: "",
+        spokenWord: "bark",
+        isSelfCorrected: false,
+      }),
+    ]);
+  });
+
   it("classifies a high-similarity mismatch as MISPRONUNCIATION", () => {
     // "kat" vs "cat" — edit distance 1, len 3, sim ≈ 0.67 ≥ 0.5 threshold
     const words = [mismatch("cat", "kat", 0)];

@@ -10,6 +10,7 @@ import { downloadTrustedAudio } from "../downloadTrustedAudio";
 
 const audioObjectPath = "oral-fluency/123e4567-e89b-12d3-a456-426614174000.wav";
 const legacyUrl = `https://storage.googleapis.com/${GCS_BUCKET}/oral-fluency/legacy-recording.wav`;
+const expiredLegacySignedUrl = `${legacyUrl}?GoogleAccessId=legacy%40example.com&Expires=1&Signature=expired`;
 
 function audioFile(
   metadata: { contentType?: string; size?: string | number },
@@ -48,12 +49,23 @@ describe("audio object path policy", () => {
     expect(resolveStoredAudioObjectPath(legacyUrl)).toBe(
       "oral-fluency/legacy-recording.wav",
     );
+    expect(resolveStoredAudioObjectPath(expiredLegacySignedUrl)).toBe(
+      "oral-fluency/legacy-recording.wav",
+    );
     expect(
       transcriptionRequestSchema.safeParse({
         assessmentId: "assessment-1",
-        audioUrl: legacyUrl,
+        audioUrl: expiredLegacySignedUrl,
       }).success,
     ).toBe(false);
+  });
+
+  it("does not resolve signed URLs outside the configured bucket", () => {
+    expect(
+      resolveStoredAudioObjectPath(
+        "https://storage.googleapis.com/another-bucket/oral-fluency/recording.wav?Expires=1",
+      ),
+    ).toBeNull();
   });
 });
 
