@@ -278,12 +278,10 @@ export default function StudentAssessmentPage() {
         const { uploadAudio } = await import("@/utils/uploadAudio");
 
         const wavBlob = await convertToWav(audioBlob);
-        const uploadedAudioUrl = await uploadAudio(
-          wavBlob,
-          data.student.id,
-          data.passage.id,
-          { assessmentId: data.assessmentId, assessmentToken: token },
-        );
+        const uploadedAudioUrl = await uploadAudio(wavBlob, {
+          assessmentId: data.assessmentId,
+          assessmentToken: token,
+        });
 
         if (!uploadedAudioUrl) {
           setSubmitError("Audio upload failed. Please try again.");

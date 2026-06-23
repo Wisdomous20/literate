@@ -27,7 +27,6 @@ export async function POST(request: NextRequest) {
 
     const validationResult = uploadAudioSchema.safeParse({
       file: formData.get("file"),
-      filePath: formData.get("filePath"),
     });
 
     if (!validationResult.success) {
@@ -46,7 +45,10 @@ export async function POST(request: NextRequest) {
       return serviceErrorResponse(result, "Failed to upload audio");
     }
 
-    return NextResponse.json({ success: true, url: result.url });
+    return NextResponse.json({
+      success: true,
+      audioObjectPath: result.audioObjectPath,
+    });
   } catch (error) {
     console.error("Audio upload route error:", error);
     return NextResponse.json(

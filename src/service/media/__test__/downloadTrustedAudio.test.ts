@@ -1,86 +1,98 @@
+import { Readable } from "node:stream";
 import { describe, expect, it, vi } from "vitest";
+import {
+  isUploadedAudioObjectPath,
+  resolveStoredAudioObjectPath,
+} from "@/lib/media/audioObjectPath";
 import { GCS_BUCKET } from "@/lib/media/storageBucket";
-import { isTrustedAudioUrl } from "@/lib/media/trustedAudioUrl";
 import { transcriptionRequestSchema } from "@/lib/validation/media";
 import { downloadTrustedAudio } from "../downloadTrustedAudio";
 
-const trustedUrl = `https://storage.googleapis.com/${GCS_BUCKET}/oral-fluency/recording.wav`;
+const audioObjectPath = "oral-fluency/123e4567-e89b-12d3-a456-426614174000.wav";
+const legacyUrl = `https://storage.googleapis.com/${GCS_BUCKET}/oral-fluency/legacy-recording.wav`;
 
-describe("trusted audio URL policy", () => {
-  it("accepts an audio object in the configured GCS bucket", () => {
-    expect(isTrustedAudioUrl(trustedUrl)).toBe(true);
+function audioFile(
+  metadata: { contentType?: string; size?: string | number },
+  chunks: Buffer[] = [Buffer.from([1, 2, 3])],
+) {
+  return {
+    getMetadata: vi.fn().mockResolvedValue([metadata]),
+    createReadStream: vi.fn(() => Readable.from(chunks)),
+  };
+}
+
+describe("audio object path policy", () => {
+  it("accepts opaque server-generated object paths", () => {
+    expect(isUploadedAudioObjectPath(audioObjectPath)).toBe(true);
   });
 
   it.each([
-    "http://storage.googleapis.com/cpuliterate-v2/oral-fluency/recording.wav",
-    "https://storage.googleapis.com/another-bucket/oral-fluency/recording.wav",
-    `https://storage.googleapis.com/${GCS_BUCKET}/other/recording.wav`,
-    "https://169.254.169.254/latest/meta-data",
+    "oral-fluency/student-passage-123.wav",
+    "oral-fluency/../../other.wav",
+    "https://storage.googleapis.com/cpuliterate-v2/oral-fluency/recording.wav",
     "https://example.com/recording.wav",
-  ])("rejects an untrusted audio URL: %s", (url) => {
-    expect(isTrustedAudioUrl(url)).toBe(false);
+  ])("rejects a client-supplied audio location: %s", (value) => {
+    expect(isUploadedAudioObjectPath(value)).toBe(false);
   });
 
-  it("rejects an external URL at the transcription request boundary", () => {
+  it("accepts only opaque paths at the transcription request boundary", () => {
     const result = transcriptionRequestSchema.safeParse({
       assessmentId: "assessment-1",
-      audioUrl: "https://example.com/recording.wav",
+      audioUrl: audioObjectPath,
     });
 
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
+  });
+
+  it("keeps legacy records readable without accepting them in new requests", () => {
+    expect(resolveStoredAudioObjectPath(legacyUrl)).toBe(
+      "oral-fluency/legacy-recording.wav",
+    );
+    expect(
+      transcriptionRequestSchema.safeParse({
+        assessmentId: "assessment-1",
+        audioUrl: legacyUrl,
+      }).success,
+    ).toBe(false);
   });
 });
 
 describe("downloadTrustedAudio", () => {
-  it("does not send a request for an untrusted URL", async () => {
-    const fetchImpl = vi.fn();
+  it("does not access storage for an untrusted location", async () => {
+    const getFile = vi.fn();
 
     await expect(
-      downloadTrustedAudio("https://example.com/audio.wav", { fetchImpl }),
+      downloadTrustedAudio("https://example.com/audio.wav", { getFile }),
     ).rejects.toThrow("not an approved storage object");
-    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(getFile).not.toHaveBeenCalled();
   });
 
-  it("downloads a bounded audio response without following redirects", async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(
-      new Response(new Uint8Array([1, 2, 3]), {
-        headers: {
-          "content-type": "audio/wav",
-          "content-length": "3",
-        },
-      }),
-    );
+  it("downloads a bounded audio object from its private GCS path", async () => {
+    const file = audioFile({ contentType: "audio/wav", size: "3" });
+    const getFile = vi.fn(() => file);
 
-    await expect(downloadTrustedAudio(trustedUrl, { fetchImpl })).resolves.toEqual(
+    await expect(downloadTrustedAudio(audioObjectPath, { getFile })).resolves.toEqual(
       Buffer.from([1, 2, 3]),
     );
-    expect(fetchImpl).toHaveBeenCalledWith(
-      trustedUrl,
-      expect.objectContaining({ redirect: "error", signal: expect.any(AbortSignal) }),
-    );
+    expect(getFile).toHaveBeenCalledWith(audioObjectPath);
+    expect(file.createReadStream).toHaveBeenCalledOnce();
   });
 
-  it("rejects non-audio responses", async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(
-      new Response("not audio", {
-        headers: { "content-type": "text/html" },
-      }),
-    );
+  it("rejects non-audio stored objects", async () => {
+    const getFile = vi.fn(() => audioFile({ contentType: "text/html", size: "3" }));
 
-    await expect(downloadTrustedAudio(trustedUrl, { fetchImpl })).rejects.toThrow(
+    await expect(downloadTrustedAudio(audioObjectPath, { getFile })).rejects.toThrow(
       "not an audio file",
     );
   });
 
-  it("enforces the streamed size limit when content-length is absent", async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(
-      new Response(new Uint8Array([1, 2, 3, 4]), {
-        headers: { "content-type": "audio/wav" },
-      }),
+  it("enforces the streamed size limit when metadata is absent", async () => {
+    const getFile = vi.fn(() =>
+      audioFile({ contentType: "audio/wav" }, [Buffer.from([1, 2, 3, 4])]),
     );
 
     await expect(
-      downloadTrustedAudio(trustedUrl, { fetchImpl, maxBytes: 3 }),
+      downloadTrustedAudio(audioObjectPath, { getFile, maxBytes: 3 }),
     ).rejects.toThrow("exceeds the maximum download size");
   });
 });

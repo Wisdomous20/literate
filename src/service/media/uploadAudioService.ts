@@ -1,13 +1,13 @@
 import { storage, GCS_BUCKET } from "@/lib/gcs";
+import { createAudioObjectPath } from "@/lib/media/audioObjectPath";
 
 export interface UploadAudioInput {
   file: File;
-  filePath: string;
 }
 
 export interface UploadAudioResult {
   success: boolean;
-  url?: string;
+  audioObjectPath?: string;
   error?: string;
   code?: "VALIDATION_ERROR" | "INTERNAL_ERROR";
 }
@@ -15,36 +15,32 @@ export interface UploadAudioResult {
 export async function uploadAudioService(
   input: UploadAudioInput,
 ): Promise<UploadAudioResult> {
-  if (!input.file || !input.filePath) {
+  if (!input.file) {
     return {
       success: false,
-      error: "file and filePath are required.",
+      error: "file is required.",
       code: "VALIDATION_ERROR",
     };
   }
 
   try {
-    console.log(
-      `[GCS] Uploading: ${input.filePath}, size: ${input.file.size}, type: ${input.file.type}`,
-    );
-
     const arrayBuffer = await input.file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    const gcsFile = storage.bucket(GCS_BUCKET).file(input.filePath);
+    const audioObjectPath = createAudioObjectPath(input.file.type);
+    const gcsFile = storage.bucket(GCS_BUCKET).file(audioObjectPath);
 
     await gcsFile.save(buffer, {
       resumable: false,
       contentType: input.file.type || "audio/wav",
+      preconditionOpts: { ifGenerationMatch: 0 },
       metadata: {
-        cacheControl: "public, max-age=31536000",
+        cacheControl: "private, no-store",
       },
     });
 
-    console.log(`[GCS] Upload successful: ${input.filePath}`);
-
     return {
       success: true,
-      url: `https://storage.googleapis.com/${GCS_BUCKET}/${input.filePath}`,
+      audioObjectPath,
     };
   } catch (error) {
     console.error("GCS upload error:", error);
