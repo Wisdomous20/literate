@@ -3,6 +3,70 @@ import { protos } from "@google-cloud/speech";
 import correctWithPassage from "./correctWithPassage";
 import { normalizeWord, similarityRatio } from "@/utils/textUtils";
 
+const FALLBACK_WORD_DURATION_SECONDS = 0.2;
+
+function hasUsableWordTiming(word: TranscriptWord) {
+  return (
+    Number.isFinite(word.start) &&
+    Number.isFinite(word.end) &&
+    word.start >= 0 &&
+    word.end > word.start
+  );
+}
+
+/**
+ * Chirp can omit word offsets, which arrives in the REST response as a zero
+ * start/end pair. Interpolate those gaps so downstream miscues can seek audio
+ * instead of incorrectly pointing every affected word at the recording start.
+ */
+function repairMissingWordTimings(
+  words: TranscriptWord[],
+  audioDuration: number,
+): TranscriptWord[] {
+  const repaired = words.map((word) => ({ ...word }));
+  const latestKnownEnd = repaired.reduce(
+    (latest, word) =>
+      hasUsableWordTiming(word) ? Math.max(latest, word.end) : latest,
+    0,
+  );
+  const totalDuration = Math.max(audioDuration, latestKnownEnd);
+
+  let index = 0;
+  while (index < repaired.length) {
+    if (hasUsableWordTiming(repaired[index])) {
+      index += 1;
+      continue;
+    }
+
+    const runStart = index;
+    while (index < repaired.length && !hasUsableWordTiming(repaired[index])) {
+      index += 1;
+    }
+
+    const runEnd = index;
+    const priorEnd = runStart > 0 ? repaired[runStart - 1].end : 0;
+    const nextStart = runEnd < repaired.length ? repaired[runEnd].start : null;
+    const minimumEnd =
+      priorEnd + (runEnd - runStart) * FALLBACK_WORD_DURATION_SECONDS;
+    const availableEnd =
+      nextStart !== null && nextStart > priorEnd
+        ? nextStart
+        : Math.max(totalDuration, minimumEnd);
+    const wordDuration = (availableEnd - priorEnd) / (runEnd - runStart);
+
+    for (let offset = 0; offset < runEnd - runStart; offset += 1) {
+      const start = priorEnd + wordDuration * offset;
+      repaired[runStart + offset] = {
+        ...repaired[runStart + offset],
+        start,
+        end: start + wordDuration,
+      };
+    }
+  }
+
+  return repaired;
+}
+
 /**
  * Convert Google Speech-to-Text V2 results into our TranscriptResponse format.
  *
@@ -18,6 +82,9 @@ export default function convertToTranscriptResponse(
   passageText?: string,
   language = "english",
 ): TranscriptResponse {
+  const fallbackAudioDuration = isWav
+    ? Math.max(0, (audioBuffer.length - 44) / 48000)
+    : 0;
   const passageWords = passageText
     ? passageText.split(/\s+/).filter((w) => w.length > 0).map(normalizeWord)
     : [];
@@ -52,6 +119,12 @@ export default function convertToTranscriptResponse(
   if (passageText && allWords.length > 0) {
     allWords = correctWithPassage(allWords, passageText, 0.55, language);
   }
+
+  allWords = repairMissingWordTimings(allWords, fallbackAudioDuration);
+  maxEndTime = allWords.reduce(
+    (latest, word) => Math.max(latest, word.end),
+    0,
+  );
 
   const fullText = allWords.map((w) => w.word).join(" ").trim();
 

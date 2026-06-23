@@ -1,4 +1,4 @@
-import { editDistance } from "./textUtils";
+import { editDistance, normalizeWord } from "./textUtils";
 
 /**
  * Post-correction pass that fixes obvious STT noise by matching against
@@ -17,7 +17,7 @@ export function postCorrectTranscription(
 ): { word: string; start: number; end: number; correctedFrom?: string }[] {
   const passageSet = new Set(normalizedPassageWords);
 
-  return transcribed.map((w) => {
+  return transcribed.map((w, index) => {
     // Already matches a passage word — keep it
     if (passageSet.has(w.word)) return w;
 
@@ -29,6 +29,13 @@ export function postCorrectTranscription(
     );
 
     if (candidates.length !== 1) return w;
+
+    // Keep a wrong attempt when the reader immediately supplies the exact
+    // expected word, so the alignment layer can record a self-correction.
+    const nextSpokenWord = transcribed[index + 1]?.word;
+    if (nextSpokenWord && normalizeWord(nextSpokenWord) === candidates[0]) {
+      return w;
+    }
 
     return { ...w, word: candidates[0], correctedFrom: w.word };
   });

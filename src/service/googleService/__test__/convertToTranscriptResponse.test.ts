@@ -108,6 +108,46 @@ describe("convertToTranscriptResponse", () => {
     expect(response.duration).toBe(1.8);
   });
 
+  it("interpolates missing word offsets so later insertions can seek playback", () => {
+    const results = [
+      makeResult([
+        makeWordInfo("bark", 0, 0),
+        makeWordInfo("sit", 0, 0),
+      ]),
+    ];
+
+    const response = convertToTranscriptResponse(
+      results,
+      ONE_SECOND_WAV,
+      true,
+      undefined,
+    );
+
+    expect(response.words).toEqual([
+      { word: "bark", start: 0, end: 0.5 },
+      { word: "sit", start: 0.5, end: 1 },
+    ]);
+  });
+
+  it("interpolates a missing offset between timed words", () => {
+    const results = [
+      makeResult([
+        makeWordInfo("it", 0, 0.2),
+        makeWordInfo("can", 0, 0),
+        makeWordInfo("sit", 0.8, 1),
+      ]),
+    ];
+
+    const response = convertToTranscriptResponse(
+      results,
+      ONE_SECOND_WAV,
+      true,
+      undefined,
+    );
+
+    expect(response.words[1]).toEqual({ word: "can", start: 0.2, end: 0.8 });
+  });
+
   it("calls correctWithPassage when passage text is provided", () => {
     const results = [makeResult([makeWordInfo("tge", 0, 1)])];
 

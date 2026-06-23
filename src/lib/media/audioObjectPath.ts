@@ -47,6 +47,9 @@ export function isUploadedAudioObjectPath(value: string): boolean {
  * Resolves the database's legacy `audioUrl` field to a private GCS object path.
  * New records contain opaque server-generated paths; the URL branch only supports
  * existing, previously stored objects during the migration to private storage.
+ * Legacy signed-URL query parameters are deliberately ignored after the configured
+ * bucket and object name have been validated because the server reads the object
+ * through its own credentials.
  */
 export function resolveStoredAudioObjectPath(value: string): string | null {
   if (isUploadedAudioObjectPath(value)) return value;
@@ -61,7 +64,6 @@ export function resolveStoredAudioObjectPath(value: string): string | null {
       url.port !== "" ||
       url.username !== "" ||
       url.password !== "" ||
-      url.search !== "" ||
       url.hash !== "" ||
       !url.pathname.startsWith(prefix)
     ) {
