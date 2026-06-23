@@ -6,8 +6,7 @@ import {
   verifyCodeInputSchema,
 } from "@/lib/validation/auth";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
-import { generateVerificationToken } from "@/service/auth/generateVerificationToken";
-import { sendUserVerificationEmail } from "@/service/notification/sendUserVerificationEmail";
+import { sendEmailVerificationCode } from "@/service/auth/sendEmailVerificationCode";
 import { prisma } from "@/lib/prisma";
 
 interface VerifyCodeResult {
@@ -77,21 +76,14 @@ export async function resendVerificationCodeAction(
       return { success: false, error: "Email is already verified." };
     }
 
-    // Generate new 6-digit code
-    const tokenResult = await generateVerificationToken(validatedUserId);
-
-    if (!tokenResult.success || !tokenResult.token) {
-      return { success: false, error: "Failed to generate verification code." };
-    }
-
-    // Send email
-    await sendUserVerificationEmail({
-      to: user.email,
+    const result = await sendEmailVerificationCode({
+      userId: validatedUserId,
+      email: user.email,
       userName: user.firstName || "User",
-      verificationCode: tokenResult.token,
+      purpose: "ACCOUNT_VERIFICATION",
     });
 
-    return { success: true };
+    return result;
   } catch (error) {
     console.error("Failed to resend verification code:", error);
     return { success: false, error: "Failed to send verification code. Please try again." };

@@ -13,8 +13,7 @@ const mockBcryptHash = vi.hoisted(() => vi.fn());
 
 const mockValidateVerificationToken = vi.hoisted(() => vi.fn());
 const mockDeleteVerificationToken = vi.hoisted(() => vi.fn());
-const mockGenerateVerificationToken = vi.hoisted(() => vi.fn());
-const mockSendPasswordChangeVerificationEmail = vi.hoisted(() => vi.fn());
+const mockSendEmailVerificationCode = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));
 vi.mock("bcrypt", () => ({
@@ -23,10 +22,9 @@ vi.mock("bcrypt", () => ({
 vi.mock("@/service/auth/generateVerificationToken", () => ({
   validateVerificationToken: mockValidateVerificationToken,
   deleteVerificationToken: mockDeleteVerificationToken,
-  generateVerificationToken: mockGenerateVerificationToken,
 }));
-vi.mock("@/service/notification/sendPasswordChangeVerificationEmail", () => ({
-  sendPasswordChangeVerificationEmail: mockSendPasswordChangeVerificationEmail,
+vi.mock("@/service/auth/sendEmailVerificationCode", () => ({
+  sendEmailVerificationCode: mockSendEmailVerificationCode,
 }));
 
 import { loginUser } from "../login";
@@ -385,19 +383,22 @@ describe("requestPasswordChangeService", () => {
     expect(result.error).toBe("Current password is incorrect");
   });
 
-  it("returns failure when token generation fails", async () => {
+  it("returns failure when the verification email cannot be sent", async () => {
     mockPrisma.user.findUnique.mockResolvedValue({
       password: "hashed_password",
       email: "juan@example.com",
       firstName: "Juan",
     });
     mockBcryptCompare.mockResolvedValue(true);
-    mockGenerateVerificationToken.mockResolvedValue({ success: false });
+    mockSendEmailVerificationCode.mockResolvedValue({
+      success: false,
+      error: "We could not send the verification code. Please try again.",
+    });
 
     const result = await requestPasswordChangeService("user-1", "secret123");
 
     expect(result.success).toBe(false);
-    expect(result.error).toBe("Failed to generate verification code");
+    expect(result.error).toBe("We could not send the verification code. Please try again.");
   });
 
   it("sends verification email and returns success on valid password", async () => {
@@ -407,15 +408,17 @@ describe("requestPasswordChangeService", () => {
       firstName: "Juan",
     });
     mockBcryptCompare.mockResolvedValue(true);
-    mockGenerateVerificationToken.mockResolvedValue({ success: true, token: "123456" });
-    mockSendPasswordChangeVerificationEmail.mockResolvedValue(undefined);
+    mockSendEmailVerificationCode.mockResolvedValue({ success: true });
 
     const result = await requestPasswordChangeService("user-1", "secret123");
 
     expect(result.success).toBe(true);
-    expect(mockSendPasswordChangeVerificationEmail).toHaveBeenCalledWith(
-      expect.objectContaining({ to: "juan@example.com", verificationCode: "123456" }),
-    );
+    expect(mockSendEmailVerificationCode).toHaveBeenCalledWith({
+      userId: "user-1",
+      email: "juan@example.com",
+      userName: "Juan",
+      purpose: "PASSWORD_CHANGE",
+    });
   });
 });
 

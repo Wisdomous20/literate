@@ -87,6 +87,13 @@ export async function loginUser(input: LoginUserInput): Promise<LoginResult> {
         success: false,
         error: "Please verify your email before logging in",
         code: "EMAIL_NOT_VERIFIED",
+        user: {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          name: `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || null,
+          email: user.email,
+        },
       };
     }
 
