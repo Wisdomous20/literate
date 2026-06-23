@@ -5,12 +5,20 @@ import {
   requiredString,
 } from "@/lib/validation/common";
 import { MiscueType, OralFluencyBehaviorType } from "@/generated/prisma/enums";
+import {
+  isSupportedAudioContentType,
+  isUploadedAudioObjectPath,
+} from "@/lib/media/audioObjectPath";
 
 const MAX_AUDIO_UPLOAD_BYTES = 50 * 1024 * 1024;
-const AUDIO_FILE_EXTENSIONS = /\.(wav|webm|m4a|mp3|ogg)$/i;
 
 const audioUrlString = requiredString("audioUrl").pipe(
-  z.string().url("audioUrl must be a valid URL"),
+  z
+    .string()
+    .refine(
+      isUploadedAudioObjectPath,
+      "audioUrl must be a server-generated audio object path.",
+    ),
 );
 
 const audioFileNameSchema = z.preprocess(
@@ -24,25 +32,12 @@ const audioFileSchema = fileSchema("Audio file")
     "Audio file must be 50MB or smaller",
   )
   .refine(
-    (file) => file.type.startsWith("audio/"),
-    "Audio file must be an audio MIME type",
+    (file) => isSupportedAudioContentType(file.type),
+    "Audio file type must be WAV, WebM, M4A, MP3, or OGG",
   );
 
 export const uploadAudioSchema = z.object({
   file: audioFileSchema,
-  filePath: requiredString("filePath")
-    .refine(
-      (path) => path.startsWith("oral-fluency/"),
-      "filePath must be within oral-fluency/",
-    )
-    .refine(
-      (path) => !path.includes("..") && !path.includes("\\"),
-      "filePath contains invalid path segments",
-    )
-    .refine(
-      (path) => AUDIO_FILE_EXTENSIONS.test(path),
-      "filePath must end with a supported audio extension",
-    ),
 });
 
 export const createAudioAssessmentSchema = z.object({

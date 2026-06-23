@@ -29,9 +29,27 @@ const languageTypes = [
   { label: "Filipino", value: "FILIPINO" },
 ] as const;
 
+const gradeLevels = [
+  { label: "All Grades", value: "ALL" },
+  { label: "Kindergarten", value: "0" },
+  { label: "Grade 1", value: "1" },
+  { label: "Grade 2", value: "2" },
+  { label: "Grade 3", value: "3" },
+  { label: "Grade 4", value: "4" },
+  { label: "Grade 5", value: "5" },
+  { label: "Grade 6", value: "6" },
+  { label: "Grade 7", value: "7" },
+  { label: "Grade 8", value: "8" },
+  { label: "Grade 9", value: "9" },
+  { label: "Grade 10", value: "10" },
+  { label: "Grade 11", value: "11" },
+  { label: "Grade 12", value: "12" },
+] as const;
+
 type AssessmentTypeValue = (typeof assessmentTypes)[number]["value"];
 type TestTypeValue = (typeof testTypes)[number]["value"];
 type LanguageValue = (typeof languageTypes)[number]["value"];
+type GradeValue = (typeof gradeLevels)[number]["value"];
 
 interface DistributionResponse {
   independent: number;
@@ -68,9 +86,11 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
   const [selectedType, setSelectedType] = useState<AssessmentTypeValue>("ALL");
   const [selectedTestType, setSelectedTestType] = useState<TestTypeValue>("PRE");
   const [selectedLanguage, setSelectedLanguage] = useState<LanguageValue>("ALL");
+  const [selectedGrade, setSelectedGrade] = useState<GradeValue>("ALL");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isTestDropdownOpen, setIsTestDropdownOpen] = useState(false);
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
+  const [isGradeDropdownOpen, setIsGradeDropdownOpen] = useState(false);
 
   const [distribution, setDistribution] = useState<DistributionResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -79,6 +99,7 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const testDropdownRef = useRef<HTMLDivElement>(null);
   const languageDropdownRef = useRef<HTMLDivElement>(null);
+  const gradeDropdownRef = useRef<HTMLDivElement>(null);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const [chartWidth, setChartWidth] = useState(0);
 
@@ -102,6 +123,12 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
       ) {
         setIsLanguageDropdownOpen(false);
       }
+      if (
+        gradeDropdownRef.current &&
+        !gradeDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsGradeDropdownOpen(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -117,6 +144,7 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
         assessmentType: selectedType,
         testType: selectedTestType,
         ...(selectedLanguage !== "ALL" && { language: selectedLanguage }),
+        ...(selectedGrade !== "ALL" && { grade: selectedGrade }),
       });
       try {
         const res = await fetch(`/api/dashboard/classification-distribution?${params.toString()}`);
@@ -133,7 +161,7 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
     return () => {
       cancelled = true;
     };
-  }, [schoolYear, selectedType, selectedTestType, selectedLanguage]);
+  }, [schoolYear, selectedType, selectedTestType, selectedLanguage, selectedGrade]);
 
   useEffect(() => {
     const node = chartContainerRef.current;
@@ -176,6 +204,8 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
     testTypes.find((t) => t.value === selectedTestType)?.label || "Pre-Test";
   const selectedLanguageLabel =
     languageTypes.find((t) => t.value === selectedLanguage)?.label || "Language";
+  const selectedGradeLabel =
+    gradeLevels.find((grade) => grade.value === selectedGrade)?.label || "All Grades";
 
   return (
     <div className="flex h-full flex-col rounded-3xl border-l border-t border-r-[6px] border-b-[6px] border-[#5D5DFB] bg-white p-4 shadow-[0px_0px_20px_1px_rgba(84,164,255,0.35)] md:p-6">
@@ -301,6 +331,46 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
                         )}
                       >
                         {type.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="relative" ref={gradeDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsGradeDropdownOpen(!isGradeDropdownOpen)}
+                  className={cn(
+                    "flex min-h-11 w-full items-center justify-center gap-1 rounded-full border border-dashed px-3 py-2 text-xs font-medium transition-colors sm:w-auto sm:min-h-8 sm:px-2 sm:py-1 sm:text-[11px]",
+                    selectedGrade !== "ALL"
+                      ? "bg-[#5D5DFB] text-white border-[#5D5DFB]"
+                      : "bg-white text-[#5D5DFB] border-[#5D5DFB] hover:bg-[#E4F4FF]"
+                  )}
+                  aria-haspopup="listbox"
+                  aria-expanded={isGradeDropdownOpen}
+                  aria-label="Select grade level"
+                >
+                  <span className="truncate">{selectedGradeLabel}</span>
+                  <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform", isGradeDropdownOpen && "rotate-180")} />
+                </button>
+                {isGradeDropdownOpen && (
+                  <div className="absolute left-0 top-full z-10 mt-1 max-h-64 w-full min-w-32 overflow-y-auto rounded-lg border border-[#5D5DFB]/30 bg-white py-1 shadow-lg">
+                    {gradeLevels.map((grade) => (
+                      <button
+                        key={grade.value}
+                        type="button"
+                        onClick={() => {
+                          setSelectedGrade(grade.value);
+                          setIsGradeDropdownOpen(false);
+                        }}
+                        className={cn(
+                          "w-full px-4 py-2 text-left text-xs transition-colors hover:bg-[#E4F4FF]",
+                          selectedGrade === grade.value
+                            ? "font-semibold text-[#5D5DFB] bg-[#E4F4FF]"
+                            : "text-[#00306E]"
+                        )}
+                      >
+                        {grade.label}
                       </button>
                     ))}
                   </div>

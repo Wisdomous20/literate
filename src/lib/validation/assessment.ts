@@ -26,10 +26,16 @@ const assessmentTypeFilterValues = [
 
 const testTypeFilterValues = ["PRE", "POST"] as const;
 
+const gradeFilterSchema = z.union([
+  z.literal("ALL"),
+  z.coerce.number().int().min(0).max(12),
+]);
+
 export const classificationDistributionQuerySchema = z.object({
   schoolYear: requiredString("schoolYear"),
   assessmentType: z.enum(assessmentTypeFilterValues).optional().default("ALL"),
   testType: z.enum(testTypeFilterValues).optional().default("PRE"),
+  grade: gradeFilterSchema.optional().default("ALL"),
 });
 
 export const assessmentIdSchema = z.object({
@@ -72,9 +78,28 @@ const comprehensionAnswerSchema = z.object({
 });
 
 export const comprehensionSubmitSchema = z.object({
-  studentId: idString("studentId"),
-  passageId: idString("passageId"),
+  studentId: idString("studentId").optional(),
+  passageId: idString("passageId").optional(),
+  assessmentId: idString("assessmentId").optional(),
   answers: z.array(comprehensionAnswerSchema),
+}).superRefine((data, ctx) => {
+  if (data.assessmentId) return;
+
+  if (!data.studentId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["studentId"],
+      message: "studentId is required when assessmentId is not provided.",
+    });
+  }
+
+  if (!data.passageId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["passageId"],
+      message: "passageId is required when assessmentId is not provided.",
+    });
+  }
 });
 
 export const oralReadingComprehensionSubmitSchema = z.object({

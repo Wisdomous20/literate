@@ -99,6 +99,16 @@ model Subscription {
   updatedAt          DateTime           @updatedAt
 }
 
+model WebhookDelivery {
+  id          String    @id
+  event       String
+  receivedAt  DateTime  @default(now())
+  processedAt DateTime?
+
+  @@index([receivedAt])
+  @@map("webhook_deliveries")
+}
+
 model Account {
   id                String  @id @default(cuid())
   userId            String

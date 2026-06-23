@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   BookOpenCheck,
   ChartNoAxesColumn,
   FileBarChart2,
   FileText,
+  HelpCircle,
   History,
   LayoutDashboard,
   Settings,
@@ -14,6 +16,10 @@ import {
   Users,
   X,
 } from "lucide-react";
+import {
+  getCurrentSurface,
+  OPEN_ONBOARDING_GUIDE_EVENT,
+} from "@/components/onboarding/onboardingGuide";
 import { QuickActions } from "./quickActions";
 
 interface DashboardHeaderProps {
@@ -30,6 +36,8 @@ export function DashboardHeader({
   schoolYear = "",
 }: DashboardHeaderProps) {
   const [showDrawer, setShowDrawer] = useState(false);
+  const pathname = usePathname();
+  const hasGuide = Boolean(getCurrentSurface(pathname));
 
   const defaultIconByTitle: Record<string, React.ReactNode> = {
     "My Dashboard": <LayoutDashboard className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />,
@@ -68,6 +76,19 @@ export function DashboardHeader({
 
         <div className="flex shrink-0 items-center gap-2 md:gap-3">
           {action && <div>{action}</div>}
+          {hasGuide && (
+            <button
+              type="button"
+              className="flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[#D6DDFB] bg-[#F1F5FF] px-3 text-xs font-semibold text-[#6C4EEB] transition duration-200 hover:border-[#6C4EEB]/40 hover:bg-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#6C4EEB]/20 md:h-10 md:px-3.5 md:text-sm"
+              aria-label="Open guide"
+              onClick={() =>
+                window.dispatchEvent(new Event(OPEN_ONBOARDING_GUIDE_EVENT))
+              }
+            >
+              <HelpCircle className="h-4 w-4" />
+              <span>Guide</span>
+            </button>
+          )}
           <button
             type="button"
             data-tour-target="recent-assessments-button"

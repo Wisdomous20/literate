@@ -9,7 +9,6 @@ import {
   ChevronLeft,
   ChevronRight,
   GraduationCap,
-  HelpCircle,
   LayoutDashboard,
   ListChecks,
   MousePointerClick,
@@ -39,6 +38,7 @@ export type OnboardingSurface = {
 };
 
 export const STORAGE_VERSION = "v3";
+export const OPEN_ONBOARDING_GUIDE_EVENT = "literater:open-onboarding-guide";
 
 export const onboardingSurfaces: OnboardingSurface[] = [
   {
@@ -431,6 +431,17 @@ export function OnboardingGuide() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen]);
 
+  useEffect(() => {
+    const openGuide = () => {
+      if (!surface || !userId) return;
+      setActiveStepIndex(0);
+      setIsOpen(true);
+    };
+
+    window.addEventListener(OPEN_ONBOARDING_GUIDE_EVENT, openGuide);
+    return () => window.removeEventListener(OPEN_ONBOARDING_GUIDE_EVENT, openGuide);
+  }, [surface, userId]);
+
   if (!surface || !userId) return null;
 
   const Icon = surface.icon;
@@ -465,19 +476,6 @@ export function OnboardingGuide() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => {
-          setActiveStepIndex(0);
-          setIsOpen(true);
-        }}
-        className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full border border-[#D9E2FF] bg-white px-4 py-2.5 text-sm font-bold text-[#31318A] shadow-[0_12px_30px_rgba(49,49,138,0.18)] transition-all hover:-translate-y-0.5 hover:border-[#6666FF] hover:text-[#5555EE] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#C4C4FF]/70"
-        aria-label={`Open onboarding guide for ${surface.title}`}
-      >
-        <HelpCircle className="h-4 w-4" />
-        Guide
-      </button>
-
       {isOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 py-6">
           <div className="absolute inset-0 bg-[#08122B]/55 backdrop-blur-sm" />

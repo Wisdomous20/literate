@@ -6,6 +6,7 @@ import { createShareableLinkService } from "@/service/assessment-link/createShar
 import type { AssessmentType } from "@/generated/prisma/enums";
 import { createShareableLinkSchema } from "@/lib/validation/org";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
+import { buildApplicationUrl } from "@/lib/applicationUrl";
 
 export async function createShareableLink(input: {
   studentId: string;
@@ -41,11 +42,11 @@ export async function createShareableLink(input: {
     };
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-
   return {
     success: true,
-    url: `${baseUrl}/assess/${result.link.token}`,
+    url: buildApplicationUrl(
+      `assess/${encodeURIComponent(result.link.token)}`,
+    ),
     link: result.link,
   };
 }

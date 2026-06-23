@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { createOralReadingService } from "@/service/oral-reading/createOralReadingService";
+import { downloadTrustedAudio } from "@/service/media/downloadTrustedAudio";
 import { analyzeOralFluency } from "./analysisService";
 import type {
   AlignedWord,
@@ -350,16 +351,6 @@ function shouldFallbackToRetranscription(
   );
 }
 
-async function downloadAudio(audioUrl: string): Promise<Buffer> {
-  const response = await fetch(audioUrl);
-  if (!response.ok) {
-    throw new Error(`Failed to download audio: ${response.status}`);
-  }
-
-  const arrayBuffer = await response.arrayBuffer();
-  return Buffer.from(arrayBuffer);
-}
-
 async function persistTranscriptCleanup({
   sessionId,
   session,
@@ -636,7 +627,7 @@ export async function recheckAllMiscuesService(
       };
     }
 
-    const audioBuffer = await downloadAudio(session.audioUrl);
+    const audioBuffer = await downloadTrustedAudio(session.audioUrl);
     const fullAnalysis = await analyzeOralFluency(
       audioBuffer,
       "recording.wav",

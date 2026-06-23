@@ -482,7 +482,11 @@ export default function ReadingFluencyReportPage() {
                   assessmentType={assessmentTypeLabel}
                 />
                 <AudioPlaybackCard
-                  audioSrc={assessment.oralFluency?.audioUrl}
+                  audioSrc={
+                    sessionId
+                      ? `/api/audio/${encodeURIComponent(sessionId)}`
+                      : undefined
+                  }
                   audioRef={audioRef}
                 />
               </div>
@@ -511,7 +515,11 @@ export default function ReadingFluencyReportPage() {
         passageLevel={
           passage?.level ? `Grade ${passage.level}` : undefined
         }
-        audioSrc={assessment.oralFluency?.audioUrl}
+        audioSrc={
+          sessionId
+            ? `/api/audio/${encodeURIComponent(sessionId)}`
+            : undefined
+        }
         onJumpToTime={handleJumpToMiscueTime}
         onDeleteMiscue={sessionId ? handleDeleteMiscue : undefined}
         onUpdateMiscueType={sessionId ? handleUpdateMiscueType : undefined}

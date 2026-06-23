@@ -1,11 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
 import {
-  generateVerificationToken,
   validateVerificationToken,
   deleteVerificationToken,
 } from "@/service/auth/generateVerificationToken";
-import { sendPasswordChangeVerificationEmail } from "@/service/notification/sendPasswordChangeVerificationEmail";
+import { sendEmailVerificationCode } from "@/service/auth/sendEmailVerificationCode";
 
 // Step 1: Verify current password and send code
 export async function requestPasswordChangeService(
@@ -30,19 +29,16 @@ export async function requestPasswordChangeService(
     return { success: false, error: "Current password is incorrect" };
   }
 
-  const tokenResult = await generateVerificationToken(userId);
-
-  if (!tokenResult.success || !tokenResult.token) {
-    return { success: false, error: "Failed to generate verification code" };
-  }
-
-  await sendPasswordChangeVerificationEmail({
-    to: user.email,
+  const emailResult = await sendEmailVerificationCode({
+    userId,
+    email: user.email,
     userName: user.firstName || "User",
-    verificationCode: tokenResult.token,
+    purpose: "PASSWORD_CHANGE",
   });
 
-  return { success: true };
+  return emailResult.success
+    ? { success: true }
+    : { success: false, error: emailResult.error };
 }
 
 // Step 2: Verify code and change password

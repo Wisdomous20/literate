@@ -11,6 +11,7 @@ import {
   readTranscriptionPayload,
 } from "@/app/api/_utils/audioRequestPayload";
 import { serviceErrorResponse } from "@/app/api/_utils/serviceErrorResponse";
+import { hasAssessmentAccess } from "@/lib/auth/assessmentAuthorization";
 
 export const maxDuration = 10;
 
@@ -28,6 +29,15 @@ export async function POST(request: NextRequest) {
 
     const { assessmentId, audioUrl, fileName = "recording.wav" } =
       validationResult.data;
+
+    if (
+      !(await hasAssessmentAccess(
+        assessmentId,
+        request.headers.get("x-assessment-token"),
+      ))
+    ) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const result = await enqueueTranscriptionService({
       assessmentId,
@@ -72,6 +82,15 @@ export async function GET(request: NextRequest) {
       { error: getFirstZodErrorMessage(validationResult.error) },
       { status: 400 },
     );
+  }
+
+  if (
+    !(await hasAssessmentAccess(
+      validationResult.data.assessmentId,
+      request.headers.get("x-assessment-token"),
+    ))
+  ) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const result = await getTranscriptionStatusService(

@@ -1,4 +1,4 @@
-import transporter, { EMAIL_FROM } from "@/service/notification/emailTransporter";
+import { EMAIL_FROM, sendEmail } from "@/service/notification/emailTransporter";
 
 interface SendOrgInvitationEmailParams {
   to: string;
@@ -52,7 +52,7 @@ export async function sendOrgInvitationEmail({
     </div>
   `;
 
-  await transporter.sendMail({
+  await sendEmail({
     from: EMAIL_FROM,
     to,
     subject: `Invitation to join ${organizationName} on Literate`,

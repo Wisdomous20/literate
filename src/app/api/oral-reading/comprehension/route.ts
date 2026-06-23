@@ -7,6 +7,7 @@ import { createOralReadingService } from "@/service/oral-reading/createOralReadi
 import { Tags } from "@/generated/prisma/enums";
 import { oralReadingComprehensionSubmitSchema } from "@/lib/validation/assessment";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
+import { hasAssessmentAccess } from "@/lib/auth/assessmentAuthorization";
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,6 +22,15 @@ export async function POST(request: NextRequest) {
     }
 
     const { assessmentId, answers } = validationResult.data;
+
+    if (
+      !(await hasAssessmentAccess(
+        assessmentId,
+        request.headers.get("x-assessment-token"),
+      ))
+    ) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     // 1. Get assessment + passage + quiz
     const assessment = await prisma.assessment.findUnique({

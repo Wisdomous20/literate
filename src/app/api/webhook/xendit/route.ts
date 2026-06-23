@@ -1,32 +1,51 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { xenditWebhookSchema } from "@/lib/validation/subscription";
-import { getFirstZodErrorMessage } from "@/lib/validation/common";
+import {
+  createXenditWebhookDeliveryId,
+  verifyXenditWebhookToken,
+} from "@/lib/xenditWebhookSecurity";
+import {
+  claimXenditWebhookDelivery,
+  completeXenditWebhookDelivery,
+  releaseXenditWebhookDelivery,
+} from "@/service/subscription/xenditWebhookDeliveryService";
 
 export const dynamic = "force-dynamic";
 
-function verifyWebhookToken(req: NextRequest): boolean {
-  const token = req.headers.get("x-callback-token")?.trim();
-  return token === process.env.XENDIT_WEBHOOK_TOKEN?.trim();
-}
-
 export async function POST(req: NextRequest) {
-  if (!verifyWebhookToken(req)) {
+  if (!verifyXenditWebhookToken(req.headers.get("x-callback-token"))) {
     return NextResponse.json({ error: "Invalid token" }, { status: 401 });
   }
 
-  const body = await req.json();
+  let body: unknown;
+  let rawBody: string;
+  try {
+    rawBody = await req.text();
+    body = JSON.parse(rawBody);
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+
   const validationResult = xenditWebhookSchema.safeParse(body);
 
   if (!validationResult.success) {
-    return NextResponse.json(
-      { error: getFirstZodErrorMessage(validationResult.error) },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Invalid webhook payload" }, { status: 400 });
   }
 
   const payload = validationResult.data;
   const event = payload.event;
+  const deliveryId = createXenditWebhookDeliveryId(rawBody);
+
+  try {
+    const claimResult = await claimXenditWebhookDelivery(deliveryId, event);
+    if (claimResult === "duplicate") {
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+  } catch (error) {
+    console.error("[Xendit Webhook] Delivery claim failed:", error);
+    return NextResponse.json({ error: "Failed" }, { status: 500 });
+  }
 
   console.log(`[Xendit Webhook] ${event}`);
 
@@ -37,7 +56,11 @@ export async function POST(req: NextRequest) {
         const metadata = payload.data.metadata;
 
         if (planId) {
-          const maxMembers = parseInt(metadata?.maxMembers || "1", 10);
+          const requestedMaxMembers = Number(metadata?.maxMembers);
+          const maxMembers =
+            Number.isSafeInteger(requestedMaxMembers) && requestedMaxMembers > 0
+              ? requestedMaxMembers
+              : 1;
           const userId = metadata?.userId;
           const planType = metadata?.planType;
 
@@ -160,7 +183,10 @@ export async function POST(req: NextRequest) {
         break;
       }
     }
+
+    await completeXenditWebhookDelivery(deliveryId);
   } catch (error) {
+    await releaseXenditWebhookDelivery(deliveryId).catch(() => undefined);
     console.error("[Xendit Webhook] Error:", error);
     return NextResponse.json({ error: "Failed" }, { status: 500 });
   }

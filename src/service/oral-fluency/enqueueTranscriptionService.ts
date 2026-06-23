@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { transcriptionQueue } from "@/lib/queues";
 import type { TranscriptionJobData } from "@/lib/queues";
+import { isUploadedAudioObjectPath } from "@/lib/media/audioObjectPath";
 
 export interface EnqueueTranscriptionInput {
   assessmentId: string;
@@ -34,6 +35,14 @@ export async function enqueueTranscriptionService(
     return {
       success: false,
       error: "assessmentId and audioUrl are required.",
+      code: "VALIDATION_ERROR",
+    };
+  }
+
+  if (!isUploadedAudioObjectPath(audioUrl)) {
+    return {
+      success: false,
+      error: "audioUrl must be a server-generated audio object path.",
       code: "VALIDATION_ERROR",
     };
   }

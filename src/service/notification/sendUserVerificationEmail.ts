@@ -1,4 +1,4 @@
-import transporter, { EMAIL_FROM } from "@/service/notification/emailTransporter";
+import { EMAIL_FROM, sendEmail } from "@/service/notification/emailTransporter";
 
 interface SendUserVerificationEmailParams {
   to: string;
@@ -12,7 +12,7 @@ export async function sendUserVerificationEmail({
   userName,
   verificationCode,
   color = '#4F46E5',
-}: SendUserVerificationEmailParams): Promise<void> {
+}: SendUserVerificationEmailParams) {
   const html = `
     <!DOCTYPE html>
     <html>
@@ -77,7 +77,7 @@ export async function sendUserVerificationEmail({
     </html>
   `;
 
-  await transporter.sendMail({
+  return sendEmail({
     from: EMAIL_FROM,
     to,
     subject: 'Your Verification Code - Literate',

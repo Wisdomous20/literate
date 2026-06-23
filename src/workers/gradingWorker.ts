@@ -2,6 +2,7 @@ import { Worker, Job } from "bullmq";
 import { getRedis } from "@/lib/redis";
 import { prisma } from "@/lib/prisma";
 import { gradeEssayAnswer } from "@/service/comprehension-test/gradeEssayService";
+import classifyComprehensionLevel from "@/service/comprehension-test/classifyComprehensionLevel";
 import { createOralReadingService } from "@/service/oral-reading/createOralReadingService";
 import type { GradingJobData } from "@/lib/queues";
 
@@ -85,7 +86,7 @@ async function processGrading(job: Job<GradingJobData>) {
   // 4. Recalculate score and level
   const totalItems = test.totalItems;
   const pct = totalItems > 0 ? (correctCount / totalItems) * 100 : 0;
-  const level = pct >= 75 ? "INDEPENDENT" : pct >= 50 ? "INSTRUCTIONAL" : "FRUSTRATION";
+  const level = classifyComprehensionLevel(pct);
 
   await prisma.comprehensionTest.update({
     where: { id: comprehensionTestId },

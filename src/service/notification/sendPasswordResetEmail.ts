@@ -1,4 +1,4 @@
-import transporter, { EMAIL_FROM } from "@/service/notification/emailTransporter";
+import { EMAIL_FROM, sendEmail } from "@/service/notification/emailTransporter";
 
 export async function sendPasswordResetEmail(
   email: string,
@@ -6,7 +6,7 @@ export async function sendPasswordResetEmail(
 ): Promise<void> {
   const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
 
-  await transporter.sendMail({
+  await sendEmail({
     from: EMAIL_FROM,
     to: email,
     subject: "Reset Your Password",

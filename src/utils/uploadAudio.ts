@@ -1,7 +1,6 @@
 export async function uploadAudio(
   audioBlob: Blob,
-  studentId: string,
-  passageId: string
+  options?: { assessmentId?: string; assessmentToken?: string },
 ): Promise<string | null> {
   try {
     const timestamp = Date.now();
@@ -10,15 +9,16 @@ export async function uploadAudio(
     const ext = isWav ? "wav" : "webm";
     const contentType = isWav ? "audio/wav" : "audio/webm";
 
-    const filePath = `oral-fluency/${studentId}-${passageId}-${timestamp}.${ext}`;
-
     const formData = new FormData();
     formData.append("file", new File([audioBlob], `${timestamp}.${ext}`, { type: contentType }));
-    formData.append("filePath", filePath);
+    if (options?.assessmentId) formData.append("assessmentId", options.assessmentId);
 
     const response = await fetch("/api/upload-audio", {
       method: "POST",
       body: formData,
+      headers: options?.assessmentToken
+        ? { "x-assessment-token": options.assessmentToken }
+        : undefined,
     });
 
     const result = await response.json();
@@ -28,7 +28,7 @@ export async function uploadAudio(
       return null;
     }
 
-    return result.url ?? null;
+    return result.audioObjectPath ?? null;
   } catch (error) {
     console.error("Upload error:", error);
     return null;

@@ -47,6 +47,7 @@ export function SignupForm() {
     "",
   ]);
   const [verifyError, setVerifyError] = useState<string | null>(null);
+  const [initialEmailSent, setInitialEmailSent] = useState(true);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -91,11 +92,23 @@ export function SignupForm() {
       });
 
       if (!result.success) {
-        setError(result.error || "Registration failed. Please try again.");
+        setError(
+          ("error" in result && result.error) ||
+            "Registration failed. Please try again.",
+        );
       } else {
+        const emailSent =
+          "emailSent" in result && result.emailSent === true;
         setUserId(result.user?.id || null);
         setSuccess(true);
-        setResendCooldown(60);
+        setInitialEmailSent(emailSent);
+        setVerifyError(
+          emailSent
+            ? null
+            : ("emailError" in result && result.emailError) ||
+              "We could not send the verification code. Please resend it.",
+        );
+        setResendCooldown(emailSent ? 60 : 0);
       }
     } catch {
       setError("An unexpected error occurred. Please try again.");
@@ -176,6 +189,7 @@ export function SignupForm() {
     try {
       const result = await resendVerificationCodeAction(userId);
       if (result.success) {
+        setInitialEmailSent(true);
         setResendCooldown(60);
         setCodeDigits(["", "", "", "", "", ""]);
         inputRefs.current[0]?.focus();
@@ -198,15 +212,18 @@ export function SignupForm() {
           </div>
           <div>
             <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-[#6C4EEB]">
-              Check your inbox
+              {initialEmailSent ? "Check your inbox" : "Email delivery needed"}
             </p>
             <h2 className="text-3xl font-bold tracking-tight text-[#323743]">
               Verify your email
             </h2>
           </div>
           <p className="text-sm leading-6 text-[#575E6B]">
-            We sent a 6-digit code to{" "}
+            {initialEmailSent
+              ? "We sent a 6-digit code to "
+              : "We could not send a code to "}
             <span className="font-semibold text-[#323743]">{email}</span>
+            {!initialEmailSent && ". Use Resend code to try again."}
           </p>
 
           <div className="flex justify-center gap-2 pt-3" onPaste={handlePaste}>

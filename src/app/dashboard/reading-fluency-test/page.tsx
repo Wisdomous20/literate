@@ -600,7 +600,7 @@ export default function ReadingFluencyTestPage() {
       const { uploadAudio } = await import("@/utils/uploadAudio");
       const wavBlob = await convertToWav(recordedAudioBlob);
 
-      const AudioUrl = await uploadAudio(wavBlob, studentId, selectedPassage);
+      const AudioUrl = await uploadAudio(wavBlob);
 
       if (!AudioUrl) {
         console.error("Audio upload failed");

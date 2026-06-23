@@ -29,6 +29,7 @@ const mockPrisma = vi.hoisted(() => ({
 const mockCreateOralReadingService = vi.hoisted(() => vi.fn());
 const mockInitPhoneticDict = vi.hoisted(() => vi.fn());
 const mockAnalyzeOralFluency = vi.hoisted(() => vi.fn());
+const mockDownloadTrustedAudio = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));
 vi.mock("@/service/oral-reading/createOralReadingService", () => ({
@@ -36,6 +37,9 @@ vi.mock("@/service/oral-reading/createOralReadingService", () => ({
 }));
 vi.mock("../analysisService", () => ({
   analyzeOralFluency: mockAnalyzeOralFluency,
+}));
+vi.mock("@/service/media/downloadTrustedAudio", () => ({
+  downloadTrustedAudio: mockDownloadTrustedAudio,
 }));
 vi.mock("@/utils/phoneticUtils", () => ({
   initPhoneticDict: mockInitPhoneticDict,
@@ -127,6 +131,7 @@ describe("recheckAllMiscuesService", () => {
     mockTx.wordTimestamp.deleteMany.mockResolvedValue({});
     mockTx.wordTimestamp.createMany.mockResolvedValue({});
     mockAnalyzeOralFluency.mockReset();
+    mockDownloadTrustedAudio.mockResolvedValue(Buffer.from([1, 2, 3]));
   });
 
   it("returns VALIDATION_ERROR when sessionId is empty", async () => {
@@ -315,32 +320,25 @@ describe("recheckAllMiscuesService", () => {
       ],
     });
 
-    const originalFetch = global.fetch;
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      arrayBuffer: async () => new ArrayBuffer(16),
-    }) as typeof fetch;
+    const result = await recheckAllMiscuesService("s-1", "teacher-1");
 
-    try {
-      const result = await recheckAllMiscuesService("s-1", "teacher-1");
-
-      expect(result.success).toBe(true);
-      expect(result.summary).toEqual({
-        checked: 1,
-        removed: 1,
-        changed: 0,
-        kept: 0,
-        added: 0,
-        reranTranscription: true,
-      });
-      expect(mockAnalyzeOralFluency).toHaveBeenCalledOnce();
-      expect(mockTx.oralFluencyMiscue.deleteMany).toHaveBeenCalledWith({
-        where: { sessionId: "s-1" },
-      });
-      expect(result.analysis?.transcript).toBe("the cat");
-      expect(result.analysis?.totalMiscues).toBe(0);
-    } finally {
-      global.fetch = originalFetch;
-    }
+    expect(result.success).toBe(true);
+    expect(result.summary).toEqual({
+      checked: 1,
+      removed: 1,
+      changed: 0,
+      kept: 0,
+      added: 0,
+      reranTranscription: true,
+    });
+    expect(mockDownloadTrustedAudio).toHaveBeenCalledWith(
+      "https://example.com/audio.wav",
+    );
+    expect(mockAnalyzeOralFluency).toHaveBeenCalledOnce();
+    expect(mockTx.oralFluencyMiscue.deleteMany).toHaveBeenCalledWith({
+      where: { sessionId: "s-1" },
+    });
+    expect(result.analysis?.transcript).toBe("the cat");
+    expect(result.analysis?.totalMiscues).toBe(0);
   });
 });

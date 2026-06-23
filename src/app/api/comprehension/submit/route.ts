@@ -7,6 +7,10 @@ import classifyComprehensionLevel from "@/service/comprehension-test/classifyCom
 import { Tags } from "@/generated/prisma/enums";
 import { comprehensionSubmitSchema } from "@/lib/validation/assessment";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
+import {
+  hasAssessmentAccess,
+  hasStudentAccess,
+} from "@/lib/auth/assessmentAuthorization";
 
 
 
@@ -24,27 +28,67 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { studentId, passageId, answers } = validationResult.data;
+    const { studentId, passageId, assessmentId: existingAssessmentId, answers } =
+      validationResult.data;
+    let assessmentId: string;
+    let resolvedPassageId: string;
 
-    // 1. Create assessment
-    const assessmentResult = await createAssessmentService({
-      studentId,
-      passageId,
-      type: "COMPREHENSION",
-    });
+    if (existingAssessmentId) {
+      if (
+        !(await hasAssessmentAccess(
+          existingAssessmentId,
+          request.headers.get("x-assessment-token"),
+        ))
+      ) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
 
-    if (!assessmentResult.success || !assessmentResult.assessment) {
-      return NextResponse.json(
-        { error: assessmentResult.error || "Failed to create assessment" },
-        { status: 400 },
-      );
+      const assessment = await prisma.assessment.findFirst({
+        where: { id: existingAssessmentId, type: "COMPREHENSION" },
+        select: { id: true, studentId: true, passageId: true },
+      });
+
+      if (!assessment) {
+        return NextResponse.json({ error: "Assessment not found" }, { status: 404 });
+      }
+
+      if (
+        (studentId && studentId !== assessment.studentId) ||
+        (passageId && passageId !== assessment.passageId)
+      ) {
+        return NextResponse.json(
+          { error: "Assessment does not match the submitted student or passage" },
+          { status: 400 },
+        );
+      }
+
+      assessmentId = assessment.id;
+      resolvedPassageId = assessment.passageId;
+    } else {
+      if (!studentId || !passageId || !(await hasStudentAccess(studentId))) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const assessmentResult = await createAssessmentService({
+        studentId,
+        passageId,
+        type: "COMPREHENSION",
+      });
+
+      if (!assessmentResult.success || !assessmentResult.assessment) {
+        return NextResponse.json(
+          { error: assessmentResult.error || "Failed to create assessment" },
+          { status: 400 },
+        );
+      }
+
+      assessmentId = assessmentResult.assessment.id;
+      resolvedPassageId = assessmentResult.assessment.passageId;
     }
-
-    const assessmentId = assessmentResult.assessment.id;
 
     // 2. Get quiz + questions
     const passage = await prisma.passage.findUnique({
-      where: { id: passageId },
+      where: { id: resolvedPassageId },
       include: {
         quiz: {
           include: {

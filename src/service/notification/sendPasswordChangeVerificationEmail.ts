@@ -1,4 +1,4 @@
-import transporter, { EMAIL_FROM } from "@/service/notification/emailTransporter";
+import { EMAIL_FROM, sendEmail } from "@/service/notification/emailTransporter";
 
 interface SendPasswordChangeVerificationEmailParams {
   to: string;
@@ -10,7 +10,7 @@ export async function sendPasswordChangeVerificationEmail({
   to,
   userName,
   verificationCode,
-}: SendPasswordChangeVerificationEmailParams): Promise<void> {
+}: SendPasswordChangeVerificationEmailParams) {
   const html = `
     <!DOCTYPE html>
     <html>
@@ -75,7 +75,7 @@ export async function sendPasswordChangeVerificationEmail({
     </html>
   `;
 
-  await transporter.sendMail({
+  return sendEmail({
     from: EMAIL_FROM,
     to,
     subject: "Password Change Verification Code - Literate",

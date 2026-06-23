@@ -221,7 +221,10 @@ export default function StudentAssessmentPage() {
 
       const response = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-assessment-token": token,
+        },
         body: JSON.stringify(body),
       });
       const result = await response.json();
@@ -246,7 +249,7 @@ export default function StudentAssessmentPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [answers, data, markLinkAsUsed, questions]);
+  }, [answers, data, markLinkAsUsed, questions, token]);
 
   const handleFullScreenDone = useCallback(
     async (
@@ -275,11 +278,10 @@ export default function StudentAssessmentPage() {
         const { uploadAudio } = await import("@/utils/uploadAudio");
 
         const wavBlob = await convertToWav(audioBlob);
-        const uploadedAudioUrl = await uploadAudio(
-          wavBlob,
-          data.student.id,
-          data.passage.id,
-        );
+        const uploadedAudioUrl = await uploadAudio(wavBlob, {
+          assessmentId: data.assessmentId,
+          assessmentToken: token,
+        });
 
         if (!uploadedAudioUrl) {
           setSubmitError("Audio upload failed. Please try again.");
@@ -296,6 +298,7 @@ export default function StudentAssessmentPage() {
 
         const response = await fetch("/api/oral-reading/transcribe", {
           method: "POST",
+          headers: { "x-assessment-token": token },
           body: formData,
         });
         const result = await response.json();
@@ -324,6 +327,7 @@ export default function StudentAssessmentPage() {
             try {
               const statusResponse = await fetch(
                 `/api/oral-reading/transcribe?assessmentId=${targetAssessmentId}`,
+                { headers: { "x-assessment-token": token } },
               );
               const status = await statusResponse.json();
 
@@ -394,7 +398,7 @@ export default function StudentAssessmentPage() {
         setIsTranscribing(false);
       }
     },
-    [data, markLinkAsUsed, questions.length],
+    [data, markLinkAsUsed, questions.length, token],
   );
 
   if (isLoading) {

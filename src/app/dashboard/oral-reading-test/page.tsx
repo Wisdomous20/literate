@@ -197,8 +197,6 @@ export default function OralReadingTestPage() {
   const startTranscriptionInBackground = async (
     assessmentId: string,
     audioBlob: Blob,
-    studentId: string,
-    passageId: string,
   ) => {
     setIsTranscribing(true);
     try {
@@ -208,7 +206,7 @@ export default function OralReadingTestPage() {
       const { convertToWav } = await import("@/utils/convertToWav");
 
       const wavBlob = await convertToWav(audioBlob);
-      const audioUrl = await uploadAudio(wavBlob, studentId, passageId);
+      const audioUrl = await uploadAudio(wavBlob, { assessmentId });
 
       if (!audioUrl) {
         console.error("Background audio upload failed");
@@ -821,12 +819,7 @@ export default function OralReadingTestPage() {
             });
 
             if (audioBlob) {
-              startTranscriptionInBackground(
-                assessmentId,
-                audioBlob,
-                studentId,
-                selectedPassage,
-              );
+              startTranscriptionInBackground(assessmentId, audioBlob);
             }
           } else {
             console.error("Failed to create assessment:", result.error);
@@ -944,7 +937,9 @@ export default function OralReadingTestPage() {
       const { uploadAudio } = await import("@/utils/uploadAudio");
       const wavBlob = await convertToWav(recordedAudioBlob);
 
-      const AudioUrl = await uploadAudio(wavBlob, studentId, selectedPassage);
+      const AudioUrl = await uploadAudio(wavBlob, {
+        assessmentId: existingAssessmentId,
+      });
 
       if (!AudioUrl) {
         console.error("Audio upload failed");
