@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { sessionIdQuerySchema } from "@/lib/validation/media";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
+import { hasSessionAccess } from "@/lib/auth/assessmentAuthorization";
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,6 +19,10 @@ export async function GET(request: NextRequest) {
     }
 
     const { id } = validationResult.data
+
+    if (!(await hasSessionAccess(id))) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
 
     const session = await prisma.oralFluencySession.findUnique({
       where: { id },
