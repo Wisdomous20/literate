@@ -3,20 +3,9 @@ import { getRedis } from "@/lib/redis";
 import { prisma } from "@/lib/prisma";
 import { analyzeOralFluency } from "@/service/oral-fluency/analysisService";
 import { createOralReadingService } from "@/service/oral-reading/createOralReadingService";
+import { downloadTrustedAudio } from "@/service/media/downloadTrustedAudio";
 import type { TranscriptionJobData } from "@/lib/queues";
 import type { OralFluencyAnalysis } from "@/types/oral-reading";
-
-async function downloadAudio(audioUrl: string): Promise<Buffer> {
-  console.log(`[Worker:transcription] Downloading from: ${audioUrl.substring(0, 150)}...`);
-  const response = await fetch(audioUrl);
-  if (!response.ok) {
-    console.log(`[Worker:transcription] Download failed: ${response.status} ${response.statusText}`);
-    throw new Error(`Failed to download audio: ${response.status}`);
-  }
-  const arrayBuffer = await response.arrayBuffer();
-  return Buffer.from(arrayBuffer);
-}
-
 
 async function processTranscription(job: Job<TranscriptionJobData>) {
   const { assessmentId, audioUrl, fileName } = job.data;
@@ -38,7 +27,7 @@ async function processTranscription(job: Job<TranscriptionJobData>) {
     data: { status: "PROCESSING" },
   });
 
-  const audioBuffer = await downloadAudio(audioUrl);
+  const audioBuffer = await downloadTrustedAudio(audioUrl);
 
   const analysis: OralFluencyAnalysis = await analyzeOralFluency(
     audioBuffer,

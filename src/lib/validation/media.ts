@@ -5,12 +5,19 @@ import {
   requiredString,
 } from "@/lib/validation/common";
 import { MiscueType, OralFluencyBehaviorType } from "@/generated/prisma/enums";
+import { isTrustedAudioUrl } from "@/lib/media/trustedAudioUrl";
 
 const MAX_AUDIO_UPLOAD_BYTES = 50 * 1024 * 1024;
 const AUDIO_FILE_EXTENSIONS = /\.(wav|webm|m4a|mp3|ogg)$/i;
 
 const audioUrlString = requiredString("audioUrl").pipe(
-  z.string().url("audioUrl must be a valid URL"),
+  z
+    .string()
+    .url("audioUrl must be a valid URL")
+    .refine(
+      isTrustedAudioUrl,
+      "audioUrl must point to an approved audio object.",
+    ),
 );
 
 const audioFileNameSchema = z.preprocess(
