@@ -2,7 +2,6 @@ import { EMAIL_FROM, sendEmail } from "@/service/notification/emailTransporter";
 
 interface SendOrgInvitationEmailParams {
   to: string;
-  inviteeFirstName: string;
   organizationName: string;
   invitedByName: string;
   acceptUrl: string;
@@ -11,7 +10,6 @@ interface SendOrgInvitationEmailParams {
 
 export async function sendOrgInvitationEmail({
   to,
-  inviteeFirstName,
   organizationName,
   invitedByName,
   acceptUrl,
@@ -26,7 +24,7 @@ export async function sendOrgInvitationEmail({
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 24px; color: #18181b;">
       <h2 style="color: #31318A; margin: 0 0 12px;">You're invited to join ${organizationName}</h2>
       <p style="margin: 0 0 16px; line-height: 1.6;">
-        Hi ${inviteeFirstName},
+        Hello,
       </p>
       <p style="margin: 0 0 16px; line-height: 1.6;">
         ${invitedByName} has invited you to join <strong>${organizationName}</strong> on Literate.

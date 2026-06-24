@@ -37,7 +37,9 @@ export function LoginForm() {
   const [loginSuccess, setLoginSuccess] = useState(false);
   const callbackUrl = searchParams.get("callbackUrl");
   const safeCallbackUrl =
-    callbackUrl === "/dashboard" || callbackUrl?.startsWith("/dashboard/")
+    callbackUrl === "/dashboard" ||
+    callbackUrl?.startsWith("/dashboard/") ||
+    callbackUrl?.startsWith("/accept-invitation?token=")
     ? callbackUrl
     : "/dashboard";
 

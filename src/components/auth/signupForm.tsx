@@ -54,7 +54,9 @@ export function SignupForm() {
   const [resendCooldown, setResendCooldown] = useState(0);
   const callbackUrl = searchParams.get("callbackUrl");
   const safeCallbackUrl =
-    callbackUrl === "/dashboard" || callbackUrl?.startsWith("/dashboard/")
+    callbackUrl === "/dashboard" ||
+    callbackUrl?.startsWith("/dashboard/") ||
+    callbackUrl?.startsWith("/accept-invitation?token=")
     ? callbackUrl
     : "/dashboard";
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);

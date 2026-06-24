@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { countPendingOrgInvitations } from "@/service/org/orgInvitationRedisService";
 
 export interface AdminManagementSnapshot {
   overview: {
@@ -66,7 +67,6 @@ interface AdminManagementSnapshotResult {
 
 export async function getAdminManagementSnapshotService(): Promise<AdminManagementSnapshotResult> {
   try {
-    const now = new Date();
     const [users, organizations, memberships, passages] = await Promise.all([
       prisma.user.findMany({
         select: {
@@ -113,16 +113,6 @@ export async function getAdminManagementSnapshotService(): Promise<AdminManageme
                   isDisabled: true,
                 },
               },
-            },
-          },
-          invitations: {
-            where: {
-              acceptedAt: null,
-              revokedAt: null,
-              expiresAt: { gt: now },
-            },
-            select: {
-              id: true,
             },
           },
         },
@@ -198,10 +188,11 @@ export async function getAdminManagementSnapshotService(): Promise<AdminManageme
           membershipCount: user._count.orgMemberships,
           createdAt: user.createdAt,
         })),
-        organizations: organizations.map((organization) => {
+        organizations: await Promise.all(organizations.map(async (organization) => {
           const activeMemberCount = organization.members.filter(
             (member) => !member.user.isDisabled
           ).length;
+          const pendingInvitations = await countPendingOrgInvitations(organization.id);
 
           return {
             id: organization.id,
@@ -220,10 +211,10 @@ export async function getAdminManagementSnapshotService(): Promise<AdminManageme
             activeMemberCount,
             subscriptionPlan: organization.subscription?.planType ?? null,
             maxMembers: organization.subscription?.maxMembers ?? null,
-            pendingInvitations: organization.invitations.length,
+            pendingInvitations,
             createdAt: organization.createdAt,
           };
-        }),
+        })),
         memberships: memberships.map((membership) => ({
           membershipId: membership.id,
           joinedAt: membership.joinedAt,

@@ -22,14 +22,12 @@ model User {
   password           String?
   isVerified         Boolean              @default(false)
   isDisabled         Boolean              @default(false)
-  accounts           Account[]
   classRoom          ClassRoom[]
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
   subscription       Subscription?
   ownedOrganizations Organization[]       @relation("OrgOwner")
   orgMemberships     OrganizationMember[]
-  invitesSent        OrganizationInvitation[] @relation("OrgInvitesSent")
 
   @@map("users")
 }
@@ -41,31 +39,10 @@ model Organization {
   owner        User                     @relation("OrgOwner", fields: [ownerId], references: [id])
   members      OrganizationMember[]
   subscription Subscription?            @relation("OrgSubscription")
-  invitations  OrganizationInvitation[]
   createdAt    DateTime                 @default(now())
   updatedAt    DateTime                 @updatedAt
 
   @@index([ownerId])
-}
-
-model OrganizationInvitation {
-  id             String       @id @default(cuid())
-  token          String       @unique
-  email          String
-  firstName      String
-  lastName       String
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  invitedById    String
-  invitedBy      User         @relation("OrgInvitesSent", fields: [invitedById], references: [id])
-  expiresAt      DateTime
-  acceptedAt     DateTime?
-  revokedAt      DateTime?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-
-  @@index([organizationId])
-  @@index([email])
 }
 
 model OrganizationMember {
@@ -107,27 +84,6 @@ model WebhookDelivery {
 
   @@index([receivedAt])
   @@map("webhook_deliveries")
-}
-
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-  @@index([userId])
-  @@map("accounts")
 }
 
 model ClassRoom {

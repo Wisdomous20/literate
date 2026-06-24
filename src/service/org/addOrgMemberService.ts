@@ -1,27 +1,25 @@
-import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
+import {
+  createOrgInvitation,
+  discardOrgInvitation,
+} from "@/service/org/orgInvitationRedisService";
 import { sendOrgInvitationEmail } from "@/service/notification/sendOrgInvitationEmail";
 
 interface AddMemberInput {
   email: string;
-  firstName: string;
-  lastName: string;
   organizationId: string;
   requestedByUserId: string;
 }
 
-const INVITATION_TTL_DAYS = 7;
-const INVITATION_TTL_MS = INVITATION_TTL_DAYS * 24 * 60 * 60 * 1000;
-
 export async function addOrgMemberService(input: AddMemberInput) {
-  const { email, firstName, lastName, organizationId, requestedByUserId } = input;
+  const normalizedEmail = input.email.toLowerCase().trim();
 
-  const normalizedEmail = email.toLowerCase().trim();
-  const trimmedFirstName = firstName.trim();
-  const trimmedLastName = lastName.trim();
+  if (!normalizedEmail) {
+    return { success: false, error: "Email is required" };
+  }
 
   const org = await prisma.organization.findUnique({
-    where: { id: organizationId },
+    where: { id: input.organizationId },
     include: {
       subscription: true,
       owner: { select: { firstName: true, lastName: true } },
@@ -33,28 +31,10 @@ export async function addOrgMemberService(input: AddMemberInput) {
     },
   });
 
-  if (!org || org.ownerId !== requestedByUserId) {
-    return { success: false, error: "Only the organization owner can add members" };
-  }
-
-  const now = new Date();
-
-  const pendingInvitations = await prisma.organizationInvitation.count({
-    where: {
-      organizationId,
-      acceptedAt: null,
-      revokedAt: null,
-      expiresAt: { gt: now },
-    },
-  });
-
-  const activeCount = org._count.members;
-  const maxMembers = org.subscription?.maxMembers || 1;
-
-  if (activeCount + pendingInvitations >= maxMembers) {
+  if (!org || org.ownerId !== input.requestedByUserId) {
     return {
       success: false,
-      error: `Seat limit reached (${activeCount} active, ${pendingInvitations} pending out of ${maxMembers}). Revoke an invitation, disable a member, or upgrade your plan.`,
+      error: "Only the organization owner can add members",
     };
   }
 
@@ -65,48 +45,47 @@ export async function addOrgMemberService(input: AddMemberInput) {
 
   if (existingUser) {
     const existingMembership = await prisma.organizationMember.findUnique({
-      where: { userId_organizationId: { userId: existingUser.id, organizationId } },
+      where: {
+        userId_organizationId: {
+          userId: existingUser.id,
+          organizationId: input.organizationId,
+        },
+      },
     });
 
     if (existingMembership) {
-      return { success: false, error: "This user is already a member of your organization" };
+      return {
+        success: false,
+        error: "This user is already a member of your organization",
+      };
     }
   }
 
-  const existingInvitation = await prisma.organizationInvitation.findFirst({
-    where: {
-      organizationId,
-      email: normalizedEmail,
-      acceptedAt: null,
-      revokedAt: null,
-      expiresAt: { gt: now },
-    },
+  const maxMembers = org.subscription?.maxMembers || 1;
+  const invitationResult = await createOrgInvitation({
+    email: normalizedEmail,
+    organizationId: input.organizationId,
+    invitedById: input.requestedByUserId,
+    activeMemberCount: org._count.members,
+    maxMembers,
   });
 
-  if (existingInvitation) {
+  if (invitationResult.status === "duplicate") {
     return {
       success: false,
-      error: "An invitation for this email is already pending. Revoke it before sending a new one.",
+      error: "An invitation for this email is already pending.",
     };
   }
 
-  const token = crypto.randomBytes(32).toString("hex");
-  const expiresAt = new Date(now.getTime() + INVITATION_TTL_MS);
-
-  const invitation = await prisma.organizationInvitation.create({
-    data: {
-      token,
-      email: normalizedEmail,
-      firstName: trimmedFirstName,
-      lastName: trimmedLastName,
-      organizationId,
-      invitedById: requestedByUserId,
-      expiresAt,
-    },
-  });
+  if (invitationResult.status === "seat_limit") {
+    return {
+      success: false,
+      error: `Seat limit reached (${org._count.members} active out of ${maxMembers}). Upgrade your plan or wait for a pending invitation to expire.`,
+    };
+  }
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const acceptUrl = `${baseUrl}/accept-invitation?token=${token}`;
+  const acceptUrl = `${baseUrl}/accept-invitation?token=${invitationResult.token}`;
   const invitedByName =
     [org.owner?.firstName, org.owner?.lastName].filter(Boolean).join(" ").trim() ||
     "Your organization admin";
@@ -114,27 +93,30 @@ export async function addOrgMemberService(input: AddMemberInput) {
   try {
     await sendOrgInvitationEmail({
       to: normalizedEmail,
-      inviteeFirstName: trimmedFirstName,
       organizationName: org.name,
       invitedByName,
       acceptUrl,
-      expiresAt,
+      expiresAt: invitationResult.expiresAt,
     });
-  } catch (err) {
-    // The invitation is useless without the email, so roll back so the owner can retry cleanly.
-    await prisma.organizationInvitation.delete({ where: { id: invitation.id } });
-    console.error("Failed to send invitation email:", err);
-    return { success: false, error: "Could not send invitation email. Please try again." };
+  } catch (error) {
+    await discardOrgInvitation(invitationResult.token, {
+      email: normalizedEmail,
+      organizationId: input.organizationId,
+      invitedById: input.requestedByUserId,
+      expiresAt: invitationResult.expiresAt.toISOString(),
+    }).catch(() => undefined);
+    console.error("Failed to send organization invitation email:", error);
+    return {
+      success: false,
+      error: "Could not send invitation email. Please try again.",
+    };
   }
 
   return {
     success: true,
     invitation: {
-      id: invitation.id,
-      email: invitation.email,
-      firstName: invitation.firstName,
-      lastName: invitation.lastName,
-      expiresAt: invitation.expiresAt,
+      email: normalizedEmail,
+      expiresAt: invitationResult.expiresAt,
     },
   };
 }

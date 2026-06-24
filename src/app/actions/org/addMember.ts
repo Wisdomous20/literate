@@ -9,8 +9,6 @@ import { getFirstZodErrorMessage } from "@/lib/validation/common";
 
 export async function addMemberAction(input: {
   email: string;
-  firstName: string;
-  lastName: string;
 }) {
   const session = await getServerSession(authOptions);
 

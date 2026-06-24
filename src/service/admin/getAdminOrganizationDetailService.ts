@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { countPendingOrgInvitations } from "@/service/org/orgInvitationRedisService";
 
 interface AdminOrganizationDetailResult {
   success: boolean;
@@ -32,8 +33,6 @@ export async function getAdminOrganizationDetailService(
   organizationId: string
 ): Promise<AdminOrganizationDetailResult> {
   try {
-    const now = new Date();
-
     const organization = await prisma.organization.findUnique({
       where: { id: organizationId },
       select: {
@@ -52,16 +51,6 @@ export async function getAdminOrganizationDetailService(
           select: {
             planType: true,
             maxMembers: true,
-          },
-        },
-        invitations: {
-          where: {
-            acceptedAt: null,
-            revokedAt: null,
-            expiresAt: { gt: now },
-          },
-          select: {
-            id: true,
           },
         },
         members: {
@@ -119,7 +108,7 @@ export async function getAdminOrganizationDetailService(
         maxMembers: organization.subscription?.maxMembers ?? null,
         activeMemberCount: members.filter((member) => !member.isDisabled).length,
         totalMemberCount: members.length,
-        pendingInvitations: organization.invitations.length,
+        pendingInvitations: await countPendingOrgInvitations(organization.id),
         createdAt: organization.createdAt,
         members,
       },

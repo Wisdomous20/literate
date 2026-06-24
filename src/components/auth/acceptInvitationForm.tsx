@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -22,12 +23,15 @@ const statusMessages: Record<string, string> = {
 export function AcceptInvitationForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { status: sessionStatus } = useSession();
   const token = searchParams.get("token");
 
   const [details, setDetails] = useState<InvitationDetails | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(true);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -51,13 +55,17 @@ export function AcceptInvitationForm() {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [token, sessionStatus]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!token || !details || details.status !== "valid" || submitting) return;
 
     if (!details.userExists) {
+      if (!firstName.trim() || !lastName.trim()) {
+        setError("First and last name are required");
+        return;
+      }
       if (password.length < MIN_PASSWORD_LENGTH) {
         setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
         return;
@@ -74,6 +82,8 @@ export function AcceptInvitationForm() {
     const res = await acceptInvitationAction({
       token,
       password: details.userExists ? undefined : password,
+      firstName: details.userExists ? undefined : firstName.trim(),
+      lastName: details.userExists ? undefined : lastName.trim(),
     });
 
     setSubmitting(false);
@@ -149,7 +159,9 @@ export function AcceptInvitationForm() {
     );
   }
 
-  const greetingName = details.firstName || "there";
+  const loginUrl = `/login?callbackUrl=${encodeURIComponent(
+    `/accept-invitation?token=${token}`,
+  )}`;
 
   return (
     <Card>
@@ -159,7 +171,7 @@ export function AcceptInvitationForm() {
             Join {details.organizationName}
           </h1>
           <p className="text-[#040029]/70">
-            Hi {greetingName}, {details.invitedByName} invited you to join{" "}
+            {details.invitedByName} invited you to join{" "}
             <span className="font-semibold">{details.organizationName}</span> on Literate.
           </p>
           <p className="text-xs text-[#040029]/60">
@@ -173,13 +185,51 @@ export function AcceptInvitationForm() {
           </div>
         )}
 
-        {details.userExists ? (
+        {details.requiresLogin ? (
+          <div className="space-y-3 rounded-xl border border-[#CBD4FF] bg-[#F4F6FF] p-4 text-sm text-[#040029]/75">
+            <p>
+              Sign in with <span className="font-semibold">{details.email}</span>{" "}
+              to accept this invitation.
+            </p>
+            <Link href={loginUrl} className="font-semibold text-[#162db0] hover:underline">
+              Sign in to accept
+            </Link>
+          </div>
+        ) : details.userExists ? (
           <p className="text-sm text-[#040029]/70">
             You already have a Literate account with this email. Click accept to add it to
             this organization &mdash; you&apos;ll still sign in with your existing password.
           </p>
         ) : (
           <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="first-name" className="text-[#040029] font-semibold">
+                  First name
+                </Label>
+                <Input
+                  id="first-name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="h-12 rounded-xl border-[#54a4ff] bg-[#f4fcfd] focus-visible:border-[#54a4ff] focus-visible:ring-[#54a4ff]/30"
+                  required
+                  disabled={submitting}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="last-name" className="text-[#040029] font-semibold">
+                  Last name
+                </Label>
+                <Input
+                  id="last-name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="h-12 rounded-xl border-[#54a4ff] bg-[#f4fcfd] focus-visible:border-[#54a4ff] focus-visible:ring-[#54a4ff]/30"
+                  required
+                  disabled={submitting}
+                />
+              </div>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="password" className="text-[#040029] font-semibold">
                 Create a password
@@ -214,7 +264,7 @@ export function AcceptInvitationForm() {
           </div>
         )}
 
-        <div className="flex justify-center">
+        {!details.requiresLogin && <div className="flex justify-center">
           <Button
             type="submit"
             className="w-64 h-12 rounded-full bg-[#2e2e68] hover:bg-[#2e2e68]/90 text-white font-medium disabled:opacity-60 flex items-center justify-center"
@@ -231,7 +281,7 @@ export function AcceptInvitationForm() {
               "Create account & join"
             )}
           </Button>
-        </div>
+        </div>}
       </form>
     </Card>
   );
