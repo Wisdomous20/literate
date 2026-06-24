@@ -5,6 +5,15 @@ import { Providers } from "@/components/providers/Providers";
 export const metadata: Metadata = {
   title: "LiteRate",
   description: "Reading Proficiency Assessment Platform",
+  icons: {
+    icon: [
+      {
+        url: "/Final%20Icon%20Logo.svg",
+        type: "image/svg+xml",
+      },
+    ],
+    apple: "/Final%20Icon%20Logo.svg",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
