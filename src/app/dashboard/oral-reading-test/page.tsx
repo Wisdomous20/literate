@@ -19,6 +19,7 @@ import { CountdownToggle } from "@/components/oral-reading-test/countdownToggle"
 import { OralReadingNavRow } from "@/components/oral-reading-test/oralReadingNavRow";
 import { ReadinessCheckButton } from "@/components/oral-reading-test/readinessCheck";
 import { useClassList } from "@/lib/hooks/useClassList";
+import { useTranscriptionStatus } from "@/lib/hooks/useTranscriptionStatus";
 import { useQueryClient } from "@tanstack/react-query";
 import { createStudent } from "@/app/actions/student/createStudent";
 import type { OralFluencyAnalysis, MiscueResult } from "@/types/oral-reading";
@@ -189,12 +190,21 @@ export default function OralReadingTestPage() {
   const [showClassificationPopup, setShowClassificationPopup] = useState(false);
   const [showMiscuesModal, setShowMiscuesModal] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const lastHandledTranscriptionStatusRef = useRef<
+    "COMPLETED" | "FAILED" | null
+  >(null);
+  const transcriptionStatus = useTranscriptionStatus(assessmentId || null, {
+    enabled: hasRecording && !!assessmentId && !analysisResult,
+  });
 
   // Derived: true while transcription is running and results haven't arrived yet
   const isAnalyzingFluency =
     isSubmitting ||
     isTranscribing ||
-    (hasRecording && !analysisResult && !!assessmentId);
+    (hasRecording &&
+      !analysisResult &&
+      !!assessmentId &&
+      transcriptionStatus.data?.status !== "FAILED");
 
   const startTranscriptionInBackground = async (
     assessmentId: string,
@@ -232,76 +242,54 @@ export default function OralReadingTestPage() {
         return;
       }
 
-      console.log("Transcription queued, polling for results...");
+      console.log("Transcription queued. Waiting for worker status updates...");
 
       if (result.sessionId) {
         setSessionId(result.sessionId);
       }
 
-      const pollForResults = (): Promise<void> => {
-        return new Promise((resolve) => {
-          const interval = setInterval(async () => {
-            try {
-              const statusRes = await fetch(
-                `/api/oral-reading/transcribe?assessmentId=${assessmentId}`,
-              );
-              const statusData = await statusRes.json();
-
-              console.log(`[Poll] Status: ${statusData.status}`);
-
-              if (statusData.status === "COMPLETED" && statusData.analysis) {
-                clearInterval(interval);
-
-                console.log("Transcription completed!");
-                setAnalysisResult(statusData.analysis as OralFluencyAnalysis);
-                setRecheckSummaryText(null);
-
-                if (statusData.sessionId) {
-                  setSessionId(statusData.sessionId);
-                }
-
-                try {
-                  const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
-                  if (sessionRaw) {
-                    const session = JSON.parse(sessionRaw);
-                    session.analysisResult = statusData.analysis;
-                    session.sessionId = statusData.sessionId;
-                    sessionStorage.setItem(
-                      STORAGE_KEY,
-                      JSON.stringify(session),
-                    );
-                    console.log("Session updated with fluency results");
-                  }
-                } catch (err) {
-                  console.error("Failed to update session storage:", err);
-                }
-
-                resolve();
-              } else if (statusData.status === "FAILED") {
-                clearInterval(interval);
-                console.error("Transcription failed");
-                resolve();
-              }
-            } catch (err) {
-              console.error("Polling error:", err);
-            }
-          }, 1500);
-
-          setTimeout(() => {
-            clearInterval(interval);
-            console.warn("Polling timed out after 2 minutes");
-            resolve();
-          }, 120000);
-        });
-      };
-
-      await pollForResults();
     } catch (err) {
       console.error("Background transcription error:", err);
     } finally {
       setIsTranscribing(false);
     }
   };
+
+  useEffect(() => {
+    const status = transcriptionStatus.data?.status;
+    if (!status || status === lastHandledTranscriptionStatusRef.current) return;
+
+    if (status === "FAILED") {
+      lastHandledTranscriptionStatusRef.current = status;
+      setToast({
+        message: "Transcription failed. Please try the recording again.",
+        type: "error",
+      });
+      return;
+    }
+
+    const analysis = transcriptionStatus.data?.analysis;
+    if (status === "COMPLETED" && analysis) {
+      lastHandledTranscriptionStatusRef.current = status;
+      setAnalysisResult(analysis as OralFluencyAnalysis);
+      setRecheckSummaryText(null);
+      setSessionId(transcriptionStatus.data?.sessionId ?? "");
+
+      try {
+        const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
+        if (sessionRaw) {
+          const session = JSON.parse(sessionRaw);
+          session.analysisResult = analysis;
+          session.sessionId = transcriptionStatus.data?.sessionId;
+          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+        }
+      } catch (error) {
+        console.error("Failed to persist completed transcription:", error);
+      }
+
+      setToast({ message: "Transcription complete!", type: "success" });
+    }
+  }, [transcriptionStatus.data]);
 
   const handleJumpToTime = useCallback((timestamp: number) => {
     const audio = audioRef.current;
