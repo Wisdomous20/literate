@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 export interface UpdateBehaviorsInput {
   sessionId: string;
   behaviorTypes: OralFluencyBehaviorType[];
+  otherObservations?: string;
 }
 
 export interface UpdateBehaviorsResult {
@@ -14,6 +15,7 @@ export interface UpdateBehaviorsResult {
     id: string;
     behaviorType: OralFluencyBehaviorType;
   }[];
+  otherObservations?: string | null;
 }
 
 export async function updateBehaviorsService(
@@ -30,6 +32,7 @@ export async function updateBehaviorsService(
   }
 
   const behaviorTypes = [...new Set(input.behaviorTypes)];
+  const otherObservations = input.otherObservations?.trim() || null;
 
   const session = await prisma.oralFluencySession.findUnique({
     where: { id: sessionId },
@@ -46,6 +49,11 @@ export async function updateBehaviorsService(
 
   try {
     const behaviors = await prisma.$transaction(async (tx) => {
+      await tx.oralFluencySession.update({
+        where: { id: sessionId },
+        data: { otherObservations },
+      });
+
       await tx.oralFluencyBehavior.deleteMany({
         where: { sessionId },
       });
@@ -66,7 +74,7 @@ export async function updateBehaviorsService(
       });
     });
 
-    return { success: true, behaviors };
+    return { success: true, behaviors, otherObservations };
   } catch (err) {
     console.error("updateBehaviorsService error:", err);
     return {

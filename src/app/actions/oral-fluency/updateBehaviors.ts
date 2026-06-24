@@ -26,5 +26,6 @@ export async function updateBehaviorsAction(input: UpdateBehaviorsInput) {
   return {
     success: true,
     behaviors: result.behaviors,
+    otherObservations: result.otherObservations,
   };
 }

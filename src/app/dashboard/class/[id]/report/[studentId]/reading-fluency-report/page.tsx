@@ -145,6 +145,9 @@ export default function ReadingFluencyReportPage() {
   const [localBehaviors, setLocalBehaviors] = useState<
     OralFluencyBehaviorData[] | null
   >(null);
+  const [localOtherObservations, setLocalOtherObservations] = useState<
+    string | null
+  >(null);
 
   const { data: allAssessments = [], isLoading } =
     useAssessmentsByStudent(studentId);
@@ -286,11 +289,12 @@ export default function ReadingFluencyReportPage() {
   );
 
   const handleSaveBehaviors = useCallback(
-    async (behaviorTypes: BehaviorType[]) => {
+    async (behaviorTypes: BehaviorType[], otherObservations: string) => {
       if (!sessionId) return;
       const result = await updateBehaviorsAction({
         sessionId,
         behaviorTypes,
+        otherObservations,
       });
       if (!result.success) return;
 
@@ -300,6 +304,7 @@ export default function ReadingFluencyReportPage() {
           behaviorType,
         })),
       );
+      setLocalOtherObservations(result.otherObservations ?? null);
       invalidateAssessments();
     },
     [sessionId, invalidateAssessments],
@@ -493,6 +498,9 @@ export default function ReadingFluencyReportPage() {
 
               <BehaviorChecklist
                 behaviors={behaviorItems}
+                otherObservations={
+                  localOtherObservations ?? assessment.oralFluency?.otherObservations ?? ""
+                }
                 onSave={sessionId ? handleSaveBehaviors : undefined}
               />
 

@@ -231,11 +231,12 @@ export default function OralReadingReportPage() {
   const behaviorItems = useMemo(() => buildBehaviorItems(analysis), [analysis]);
 
   const handleSaveBehaviors = useCallback(
-    async (behaviorTypes: BehaviorType[]) => {
+    async (behaviorTypes: BehaviorType[], otherObservations: string) => {
       if (!session.sessionId) return;
       const result = await updateBehaviorsAction({
         sessionId: session.sessionId,
         behaviorTypes,
+        otherObservations,
       });
       if (!result.success) return;
 
