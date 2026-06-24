@@ -12,7 +12,6 @@ import {
   AudioPlayer,
 } from "@/components/oral-reading-test/readingTimer";
 import { MiscueAnalysis } from "@/components/oral-reading-test/miscueAnalysis";
-import ViewMiscuesModal from "@/components/reports/oral-reading-test/reading-fluency-report/viewMiscuesModal";
 import { FullScreenPassage } from "@/components/oral-reading-test/fullScreenPassage";
 import { AddPassageModal } from "@/components/oral-reading-test/addPassageModal";
 import { CountdownToggle } from "@/components/oral-reading-test/countdownToggle";
@@ -188,7 +187,6 @@ export default function OralReadingTestPage() {
   const [passageExpanded, setPassageExpanded] = useState(false);
   const [showMiscues, setShowMiscues] = useState(true);
   const [showClassificationPopup, setShowClassificationPopup] = useState(false);
-  const [showMiscuesModal, setShowMiscuesModal] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const lastHandledTranscriptionStatusRef = useRef<
     "COMPLETED" | "FAILED" | null
@@ -210,6 +208,7 @@ export default function OralReadingTestPage() {
     assessmentId: string,
     audioBlob: Blob,
   ) => {
+    lastHandledTranscriptionStatusRef.current = null;
     setIsTranscribing(true);
     try {
       console.log("Starting transcription in background...");
@@ -841,6 +840,7 @@ export default function OralReadingTestPage() {
   }, []);
 
   const handleTryAgain = useCallback(() => {
+    lastHandledTranscriptionStatusRef.current = null;
     setHasRecording(false);
     setRecordedSeconds(0);
     setAnalysisResult(null);
@@ -854,6 +854,7 @@ export default function OralReadingTestPage() {
   }, [recordedAudioURL]);
 
   const handleStartNew = useCallback(() => {
+    lastHandledTranscriptionStatusRef.current = null;
     if (recordedAudioURL) {
       URL.revokeObjectURL(recordedAudioURL);
     }
@@ -1072,20 +1073,6 @@ export default function OralReadingTestPage() {
               onClose={() => setShowClassificationPopup(false)}
             />
           )}
-          <ViewMiscuesModal
-            open={showMiscuesModal}
-            onClose={() => setShowMiscuesModal(false)}
-            passageContent={passageContent}
-            miscues={editMiscues.isEditing ? editMiscues.editedMiscues : analysisResult?.miscues ?? []}
-            alignedWords={analysisResult?.alignedWords}
-            passageLevel={selectedLevel}
-            audioSrc={recordedAudioURL}
-            onJumpToTime={handleJumpToTime}
-            onDeleteMiscue={sessionId ? handleDeleteMiscue : undefined}
-            onUpdateMiscueType={sessionId ? handleUpdateMiscueType : undefined}
-            onUpdateSpokenWord={sessionId ? handleUpdateSpokenWord : undefined}
-            editMiscues={editMiscues}
-          />
         </>
       }
       sidebar={
@@ -1115,7 +1102,6 @@ export default function OralReadingTestPage() {
           highlightedTypes={highlightedTypes}
           onToggleHighlight={toggleHighlightType}
           onResetHighlight={resetHighlightTypes}
-          onViewMiscues={() => setShowMiscuesModal(true)}
           onRecheckMiscues={
             sessionId && analysisResult ? handleRecheckMiscues : undefined
           }
@@ -1259,6 +1245,8 @@ export default function OralReadingTestPage() {
             onDeleteMiscue={sessionId ? handleDeleteMiscue : undefined}
             onUpdateMiscueType={sessionId ? handleUpdateMiscueType : undefined}
             onUpdateSpokenWord={sessionId ? handleUpdateSpokenWord : undefined}
+            onRecheckMiscues={sessionId && analysisResult ? handleRecheckMiscues : undefined}
+            isRechecking={isRecheckingMiscues}
           />
 
           {/* Word count (bottom-left) + miscue toggle (right) */}

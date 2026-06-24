@@ -19,6 +19,7 @@ import { OralReadingNavRow } from "@/components/oral-reading-test/oralReadingNav
 import { ReadinessCheckButton } from "@/components/oral-reading-test/readinessCheck";
 import { useClassList } from "@/lib/hooks/useClassList";
 import { useTranscriptionStatus } from "@/lib/hooks/useTranscriptionStatus";
+import { useEditMiscues } from "@/components/oral-reading-test/useEditMiscues";
 import { useQueryClient } from "@tanstack/react-query";
 import { createStudent } from "@/app/actions/student/createStudent";
 import { recheckAllMiscuesAction } from "@/app/actions/oral-fluency/recheckAllMiscues";
@@ -217,8 +218,51 @@ export default function ReadingFluencyTestPage() {
     setHighlightedTypes(new Set());
   }, []);
 
+  const totalWords = useMemo(
+    () => passageContent.split(/\s+/).filter(Boolean).length,
+    [passageContent],
+  );
+
+  const editMiscues = useEditMiscues({
+    originalMiscues: activeAnalysisResult?.miscues ?? [],
+    totalWords,
+    sessionId: sessionId || undefined,
+    onSave: (editedMiscues, metrics) => {
+      setAnalysisResult((previous) => {
+        const base = previous ?? activeAnalysisResult;
+        if (!base) return previous;
+        const updated = {
+          ...base,
+          miscues: editedMiscues,
+          totalMiscues: metrics.totalMiscues,
+          oralFluencyScore: metrics.oralFluencyScore,
+          classificationLevel: metrics.classificationLevel as typeof base.classificationLevel,
+        };
+
+        try {
+          const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
+          if (sessionRaw) {
+            const session = JSON.parse(sessionRaw);
+            session.analysisResult = updated;
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+          }
+        } catch {}
+
+        return updated;
+      });
+    },
+  });
+
   const handleRecheckMiscues = useCallback(async () => {
     if (!sessionId || !activeAnalysisResult) return;
+
+    if (
+      editMiscues.hasUnsavedChanges &&
+      typeof window !== "undefined" &&
+      !window.confirm("Rechecking will replace your unsaved miscue edits. Continue?")
+    ) {
+      return;
+    }
 
     setIsRecheckingMiscues(true);
     setRecheckSummaryText(null);
@@ -235,6 +279,8 @@ export default function ReadingFluencyTestPage() {
 
       const updatedAnalysis = result.analysis as OralFluencyAnalysis;
       setAnalysisResult(updatedAnalysis);
+      editMiscues.applyExternalMiscues(updatedAnalysis.miscues);
+      if (editMiscues.isEditing) editMiscues.cancelEdit();
       setHighlightedTypes(new Set());
 
       try {
@@ -252,7 +298,7 @@ export default function ReadingFluencyTestPage() {
     } finally {
       setIsRecheckingMiscues(false);
     }
-  }, [activeAnalysisResult, sessionId]);
+  }, [activeAnalysisResult, editMiscues, sessionId]);
 
   const filteredMiscues = useMemo(() => {
     if (!activeAnalysisResult?.miscues) return undefined;
@@ -842,7 +888,13 @@ export default function ReadingFluencyTestPage() {
         >
           <PassageDisplay
             content={passageContent}
-            miscues={showMiscues ? filteredMiscues : undefined}
+            miscues={
+              editMiscues.isEditing
+                ? editMiscues.editedMiscues
+                : showMiscues
+                  ? filteredMiscues
+                  : undefined
+            }
             alignedWords={
               showMiscues ? activeAnalysisResult?.alignedWords : undefined
             }
@@ -850,6 +902,9 @@ export default function ReadingFluencyTestPage() {
             expanded={passageExpanded}
             onToggleExpand={() => setPassageExpanded((prev) => !prev)}
             passageLevel={selectedLevel}
+            editMode={activeAnalysisResult ? editMiscues : undefined}
+            onRecheckMiscues={sessionId && activeAnalysisResult ? handleRecheckMiscues : undefined}
+            isRechecking={isRecheckingMiscues}
           />
 
           {!passageExpanded && hasPassage && (

@@ -122,6 +122,21 @@ export const transcriptionWorker = new Worker<TranscriptionJobData>(
 transcriptionWorker.on("completed", (job) =>
   console.log(`[Worker:transcription] Job ${job.id} done`)
 );
-transcriptionWorker.on("failed", (job, err) =>
-  console.error(`[Worker:transcription] Job ${job?.id} failed:`, err.message)
-);
+transcriptionWorker.on("failed", async (job, err) => {
+  console.error(`[Worker:transcription] Job ${job?.id} failed:`, err.message);
+
+  const attempts = job?.opts.attempts ?? 1;
+  if (!job || job.attemptsMade < attempts) return;
+
+  await prisma.oralFluencySession
+    .update({
+      where: { assessmentId: job.data.assessmentId },
+      data: { status: "FAILED" },
+    })
+    .catch((updateError) => {
+      console.error(
+        `[Worker:transcription] Could not mark ${job.data.assessmentId} as failed:`,
+        updateError,
+      );
+    });
+});
