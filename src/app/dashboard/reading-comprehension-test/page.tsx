@@ -873,7 +873,7 @@ export default function ReadingComprehensionTestPage() {
         {!passageExpanded && showQuestions && (
           <div
             ref={questionsRef}
-            className="flex-1 min-h-0 flex flex-col gap-4 px-5 pb-4 pt-2 overflow-hidden"
+            className="flex min-h-0 flex-1 flex-col gap-3 px-5 pb-3 pt-2 overflow-hidden"
           >
             <ComprehensionInfoBar
               totalQuestions={questions.length}
@@ -918,7 +918,7 @@ export default function ReadingComprehensionTestPage() {
             {!isLoadingQuestions && !questionsLoadError && (
               <>
                 <div className="oral-reading-scroll flex-1 min-h-0 overflow-y-auto pr-2">
-                  <div className="space-y-6">
+                  <div className="space-y-3 pb-1">
                     {questions.map((question) => (
                       <QuestionCard
                         key={question.id}
@@ -934,7 +934,7 @@ export default function ReadingComprehensionTestPage() {
                 </div>
 
                 {/* Static submit area — always visible below scroll */}
-                <div className="shrink-0 border-t border-[#E5DEFF] bg-white pt-2 pb-1">
+                <div className="shrink-0 border-t border-[#E5DEFF] bg-white py-2">
                   <ComprehensionSubmitArea
                     isSubmitting={isSubmitting}
                     isSubmitted={isSubmitted}

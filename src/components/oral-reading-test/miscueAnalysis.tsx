@@ -214,15 +214,17 @@ export function MiscueAnalysis({
         <span className="text-[10px] font-bold uppercase tracking-widest text-[#6666FF]">
           Miscue Analysis
         </span>
-        <button
-          type="button"
-          title="Download as PDF"
-          onClick={() => onExportPdf?.()}
-          disabled={disabled || !onExportPdf}
-          className="rounded p-0.5 text-[#6666FF] transition-colors hover:bg-[rgba(102,102,255,0.1)] disabled:pointer-events-none disabled:opacity-40"
-        >
-          <Download className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            title="Download as PDF"
+            onClick={() => onExportPdf?.()}
+            disabled={disabled || !onExportPdf}
+            className="rounded p-0.5 text-[#6666FF] transition-colors hover:bg-[rgba(102,102,255,0.1)] disabled:pointer-events-none disabled:opacity-40"
+          >
+            <Download className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       {isAnalyzing ? (

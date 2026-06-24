@@ -18,13 +18,13 @@ export function ComprehensionInfoBar({
   isSubmitted,
 }: ComprehensionInfoBarProps) {
   return (
-    <div className="shrink-0 rounded-xl border border-[#C9C8FF] bg-white px-4 py-2">
+    <div className="shrink-0 rounded-xl border border-[#DED9FF] bg-[#FCFBFF] px-4 py-2.5">
       <div className="flex items-center justify-between gap-3">
         <div className="leading-tight">
-          <h2 className="text-[18px] font-bold text-[#00306E]">
+          <h2 className="text-base font-bold text-[#00306E]">
             Questions 1-{totalQuestions}
           </h2>
-          <p className="mt-0.5 text-[13px] font-medium text-[#88A0C4]">
+          <p className="mt-0.5 text-xs font-medium text-[#69738A]">
             Choose the correct answer
           </p>
         </div>
@@ -34,7 +34,7 @@ export function ComprehensionInfoBar({
           onClick={onTogglePause}
           disabled={isSubmitted}
           className={
-            "flex h-8 items-center gap-2 rounded-full border border-[#C9C8FF] bg-[#F5F8FF] px-4 text-[#0F3B79] " +
+            "flex h-8 items-center gap-1.5 rounded-full border border-[#D7D5E8] bg-white px-3 text-[#0F3B79] " +
             "shadow-[0_1px_4px_rgba(15,59,121,0.12)] transition " +
             (isSubmitted ? "cursor-default opacity-70" : "hover:bg-[#EEF3FF]")
           }
@@ -47,7 +47,7 @@ export function ComprehensionInfoBar({
           />
           <span
             className={
-              "text-[18px] font-bold tabular-nums leading-none " +
+              "text-sm font-bold tabular-nums leading-none " +
               (isPaused ? "text-[#E53E3E]" : "text-[#0F3B79]")
             }
           >

@@ -77,6 +77,22 @@ export function hline(doc: jsPDF, x: number, y: number, w: number, color: RGB, l
   doc.line(x, y, x + w, y);
 }
 
+/**
+ * Returns a single-line value that fits within the supplied PDF width.
+ * Fixed-height form fields must never receive wrapped text, because jsPDF
+ * would otherwise paint the second line outside of the field.
+ */
+export function truncatePdfText(doc: jsPDF, value: string, maxWidth: number): string {
+  if (doc.getTextWidth(value) <= maxWidth) return value;
+
+  const ellipsis = "...";
+  let end = value.length;
+  while (end > 0 && doc.getTextWidth(`${value.slice(0, end)}${ellipsis}`) > maxWidth) {
+    end -= 1;
+  }
+  return end > 0 ? `${value.slice(0, end)}${ellipsis}` : ellipsis;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Mini-icon drawers (all drawn inside a 7×7 mm box at (bx, by))     */
 /* ------------------------------------------------------------------ */

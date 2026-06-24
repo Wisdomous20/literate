@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { SignupForm } from "@/components/auth/signupForm";
 import { BrandPanel } from "@/components/auth/brandPanel";
 
@@ -14,7 +15,9 @@ export default function SignupPage() {
           eyebrow="Get started"
           description="Create your LiteRate account to organize students, run assessments, and keep progress visible."
         >
-          <SignupForm />
+          <Suspense fallback={null}>
+            <SignupForm />
+          </Suspense>
         </BrandPanel>
       </div>
     </main>

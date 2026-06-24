@@ -14,7 +14,9 @@ import {
   Minimize2,
   Play,
   ChevronDown,
+  Loader2,
   Pencil,
+  RefreshCw,
 } from "lucide-react";
 import type { MiscueResult, AlignedWord } from "@/types/oral-reading";
 import { formatMiscueTimestamp } from "@/lib/audioPlayback";
@@ -214,6 +216,8 @@ interface PassageDisplayProps {
     miscue: MiscueResult,
     newSpokenWord: string,
   ) => Promise<void>;
+  onRecheckMiscues?: () => void;
+  isRechecking?: boolean;
 }
 
 export function getPassageTextStyle(passageLevel?: string): CSSProperties {
@@ -261,6 +265,8 @@ export function PassageDisplay({
   onDeleteMiscue,
   onUpdateMiscueType,
   onUpdateSpokenWord,
+  onRecheckMiscues,
+  isRechecking = false,
 }: PassageDisplayProps) {
   // const passageTextStyle = getPassageTextStyle(passageLevel);
   const [popup, setPopup] = useState<PopupState | null>(null);
@@ -435,8 +441,8 @@ export function PassageDisplay({
 
         if (aw.match === "INSERTION" && aw.spokenIndex != null) {
           const miscue = bySpokenIdx.get(aw.spokenIndex);
-          if (miscue && lastExpectedIndex >= 0) {
-            let placement = lastExpectedIndex;
+          if (miscue) {
+            let placement = Math.max(lastExpectedIndex, 0);
 
             if (miscue.miscueType === "REPETITION" && miscue.spokenWord) {
               const spokenNorm = normalizeWord(miscue.spokenWord);
@@ -461,6 +467,18 @@ export function PassageDisplay({
             bySpokenIdx.delete(aw.spokenIndex);
           }
         }
+      }
+
+      // Keep insertions interactive even when alignment cannot associate them
+      // with a preceding expected word (for example, at the start of a passage).
+      for (const miscue of bySpokenIdx.values()) {
+        const placement = Math.min(
+          Math.max(miscue.wordIndex - 1, 0),
+          Math.max(passageWordEntries.length - 1, 0),
+        );
+        const list = map.get(placement) || [];
+        list.push({ spokenWord: miscue.spokenWord!, miscue });
+        map.set(placement, list);
       }
 
       return map.size > 0 ? map : null;
@@ -735,9 +753,13 @@ export function PassageDisplay({
                   ? "cursor-pointer hover:brightness-90"
                   : "cursor-help"
             }`}
-            onClick={(e) =>
-              isEditing ? handleEditClick(e) : openPopup(e, miscue)
-            }
+            onClick={(e) => {
+              if (isEditing) {
+                handleEditClick(e);
+              } else {
+                openPopup(e, miscue);
+              }
+            }}
             onContextMenu={isEditing ? handleEditContextMenu : undefined}
           >
             {token}
@@ -812,14 +834,16 @@ export function PassageDisplay({
               <span key={`uins-${i}-${j}`}>
                 {" "}
                 <span
-                  title={`INSERTION — inserted: "${ins.spokenWord}"`}
+                  title={`INSERTION — inserted: "${ins.spokenWord}"${ins.timestamp != null ? " (click to jump)" : ""}`}
                   className={`relative inline-block rounded-sm px-0.5 font-semibold italic transition-all ${colors.bgClass} ${colors.textClass} border-b-2 border-dashed ${colors.borderBottomClass.replace("border-b-2 ", "")} ${
-                    isEditing
+                    isEditing || (ins.timestamp != null && onJumpToTime)
                       ? "cursor-pointer hover:brightness-90"
                       : "cursor-help"
                   }`}
                   onClick={(e) => {
                     if (isEditing && !editMode?.activeTool) {
+                      openPopup(e, ins);
+                    } else if (!isEditing) {
                       openPopup(e, ins);
                     }
                   }}
@@ -925,31 +949,45 @@ export function PassageDisplay({
         </div>
       )}
 
-      {content && onToggleExpand && (
-        <button
-          type="button"
-          onClick={onToggleExpand}
-          className={`absolute right-4 z-20 flex h-7 w-7 items-center justify-center rounded-md bg-[rgba(84,164,255,0.15)] transition-colors hover:opacity-80 md:right-5 ${collapsible && !collapsed ? "top-12 md:top-13" : "top-4 md:top-5"}`}
-          title={expanded ? "Collapse passage" : "Expand passage"}
+      {content && (onToggleExpand || (editMode && !isEditing && hasMiscues) || (onRecheckMiscues && !isEditing)) && (
+        <div
+          className={`absolute right-4 z-20 flex items-center gap-1 md:right-5 ${collapsible && !collapsed ? "top-12 md:top-13" : "top-4 md:top-5"}`}
         >
-          {expanded ? (
-            <Minimize2 className="h-3.5 w-3.5 text-[#1A5FB4]" />
-          ) : (
-            <Maximize2 className="h-3.5 w-3.5 text-[#1A5FB4]" />
+          {onRecheckMiscues && !isEditing && (
+            <button
+              type="button"
+              onClick={onRecheckMiscues}
+              disabled={isRechecking}
+              className="flex h-7 w-7 items-center justify-center rounded-md bg-[rgba(84,164,255,0.15)] text-[#1A5FB4] transition-colors hover:bg-[rgba(84,164,255,0.25)] disabled:cursor-wait disabled:opacity-60"
+              title={isRechecking ? "Rechecking miscues" : "Recheck all miscues"}
+              aria-label={isRechecking ? "Rechecking miscues" : "Recheck all miscues"}
+            >
+              {isRechecking ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            </button>
           )}
-        </button>
-      )}
-
-      {/* Edit pencil button */}
-      {editMode && !isEditing && content && hasMiscues && (
-        <button
-          type="button"
-          onClick={editMode.enterEditMode}
-          className={`absolute right-13 z-20 flex h-7 w-7 items-center justify-center rounded-md bg-[rgba(84,164,255,0.15)] transition-colors hover:opacity-80 md:right-14 ${collapsible && !collapsed ? "top-12 md:top-13" : "top-4 md:top-5"}`}
-          title="Edit miscues"
-        >
-          <Pencil className="h-3.5 w-3.5 text-[#1A5FB4]" />
-        </button>
+          {editMode && !isEditing && hasMiscues && (
+            <button
+              type="button"
+              onClick={editMode.enterEditMode}
+              className="flex h-7 w-7 items-center justify-center rounded-md bg-[rgba(84,164,255,0.15)] text-[#1A5FB4] transition-colors hover:bg-[rgba(84,164,255,0.25)]"
+              title="Edit miscues"
+              aria-label="Edit miscues"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          )}
+          {onToggleExpand && (
+            <button
+              type="button"
+              onClick={onToggleExpand}
+              className="flex h-7 w-7 items-center justify-center rounded-md bg-[rgba(84,164,255,0.15)] text-[#1A5FB4] transition-colors hover:bg-[rgba(84,164,255,0.25)]"
+              title={expanded ? "Collapse passage" : "Expand passage"}
+              aria-label={expanded ? "Collapse passage" : "Expand passage"}
+            >
+              {expanded ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+            </button>
+          )}
+        </div>
       )}
 
       {/* Edit toolbar */}
@@ -1001,8 +1039,7 @@ export function PassageDisplay({
             const hasTimestamp =
               popup.miscue.timestamp !== null &&
               popup.miscue.timestamp !== undefined;
-            const hasActions =
-              isEditing || !!(onDeleteMiscue || onUpdateMiscueType || onUpdateSpokenWord);
+            const hasActions = isEditing;
 
             return (
               <div

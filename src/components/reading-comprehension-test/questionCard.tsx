@@ -58,11 +58,11 @@ export function QuestionCard({
   const highlight =
     highlightedTag && tagKey === highlightedTag ? TAG_HIGHLIGHT[tagKey] : null;
 
-  const tagClass = highlight ? "" : "bg-white border-[#E0E0FF] shadow-sm";
+  const tagClass = highlight ? "" : "border-[#DED9FF] bg-white shadow-sm";
 
   return (
     <div
-      className={`rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] px-8 py-6 transition-all duration-300 ${typeof tagClass === "string" ? tagClass : ""}`}
+      className={`rounded-xl border p-4 transition-colors duration-200 sm:p-5 ${typeof tagClass === "string" ? tagClass : ""}`}
       style={
         highlight
           ? {
@@ -74,20 +74,20 @@ export function QuestionCard({
       }
     >
       {/* Question Header */}
-      <div className="mb-2 flex items-start gap-3">
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#2030CC] border-b-[#2030CC] bg-[#3939f4]">
+      <div className="mb-3 flex items-start gap-3">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#6666FF] shadow-sm">
           <span className="text-xs font-semibold text-white">
             {question.questionNumber}
           </span>
         </div>
-        <h3 className="text-[15px] font-semibold leading-8.75 text-[#00306E]">
+        <h3 className="pt-0.5 text-sm font-semibold leading-6 text-[#00306E] sm:text-[15px]">
           {question.questionText}
         </h3>
       </div>
 
       {/* Multiple Choice Options */}
       {question.type === "MULTIPLE_CHOICE" && question.options && (
-        <div className="space-y-1 ml-10">
+        <div className="ml-10 space-y-1">
           {question.options.map((option, index) => {
             const label = OPTION_LABELS[index];
             const isSelected = answer === option;
@@ -97,17 +97,17 @@ export function QuestionCard({
                 key={index}
                 onClick={() => onSelectOption(question.id, option)}
                 disabled={isSubmitted}
-                className={`flex items-center gap-3 w-full text-left py-1 px-2 rounded-lg transition-all duration-200 ${
+                className={`flex min-h-10 w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6666FF]/40 ${
                   isSelected
-                    ? "bg-[#162DB0]/10 shadow-[0px_0px_10px_rgba(255,176,32,0.3)]"
+                      ? "bg-[#EDEAFF]"
                     : "hover:bg-[#162DB0]/5"
                 } ${isSubmitted ? "cursor-default" : ""}`}
               >
                 <div
                   className={`shrink-0 w-7 h-6.5 rounded-full flex items-center justify-center transition-all duration-200 ${
                     isSelected
-                      ? "bg-[#6666FF] border-2 border-[#753eeb] shadow-[0px_0px_8px_rgba(255,176,32,0.5)]"
-                      : "bg-[rgba(185,188,207,0.36)]"
+                  ? "border border-[#5D5DFB] bg-[#6666FF]"
+                      : "border border-[#D7D5E8] bg-[#F4F3FA]"
                   }`}
                 >
                   <span
@@ -118,7 +118,7 @@ export function QuestionCard({
                     {label}
                   </span>
                 </div>
-                <span className="text-[#00306E] text-[15px]">{option}</span>
+                <span className="text-sm text-[#00306E]">{option}</span>
               </button>
             );
           })}
@@ -133,7 +133,7 @@ export function QuestionCard({
             onChange={(e) => onEssayChange(question.id, e.target.value)}
             disabled={isSubmitted}
             placeholder="Type your answer here..."
-            className="w-full min-h-12.5 bg-[rgba(108,164,239,0.09)] rounded-md border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] px-4 py-3 text-[#00306E] text-[15px] placeholder:text-[#00306E]/40 outline-none resize-y disabled:opacity-60"
+            className="min-h-24 w-full resize-y rounded-lg border border-[#D7D5E8] bg-[#FAFAFF] px-3 py-2.5 text-sm text-[#00306E] placeholder:text-[#00306E]/40 outline-none transition-colors focus:border-[#6666FF] focus:ring-2 focus:ring-[#6666FF]/15 disabled:cursor-default disabled:opacity-60"
           />
         </div>
       )}

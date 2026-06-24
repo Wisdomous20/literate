@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Check, Loader2, AlertCircle, X } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import { subscribeAction } from "@/app/actions/subscription/subscribe";
@@ -75,7 +76,22 @@ const PLANS: Plan[] = [
 ];
 
 export default function SubscriptionPage() {
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  return (
+    <Suspense fallback={null}>
+      <SubscriptionPageContent />
+    </Suspense>
+  );
+}
+
+function SubscriptionPageContent() {
+  const searchParams = useSearchParams();
+  const requestedPlan = searchParams.get("plan");
+  const requestedPlanId = PLANS.find(
+    (plan) => plan.planKey === requestedPlan,
+  )?.id;
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(
+    () => requestedPlanId ?? null,
+  );
   const [memberCount, setMemberCount] = useState<number>(PAMILYA_MIN_MEMBERS);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

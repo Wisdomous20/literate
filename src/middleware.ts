@@ -18,7 +18,12 @@ export async function middleware(request: NextRequest) {
 
   // Not logged in → redirect to login
   if (isProtectedRoute && !token) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set(
+      "callbackUrl",
+      `${request.nextUrl.pathname}${request.nextUrl.search}`,
+    );
+    return NextResponse.redirect(loginUrl);
   }
 
   // Already logged in → redirect away from auth pages

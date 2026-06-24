@@ -18,7 +18,7 @@ export interface BehaviorItem {
 interface BehaviorChecklistProps {
   behaviors: BehaviorItem[];
   otherObservations?: string;
-  onSave?: (behaviorTypes: BehaviorType[]) => Promise<void> | void;
+  onSave?: (behaviorTypes: BehaviorType[], otherObservations: string) => Promise<void> | void;
 }
 
 const defaultBehaviors: BehaviorItem[] = [
@@ -90,7 +90,7 @@ export default function BehaviorChecklist({
     }
     setIsSaving(true);
     try {
-      await onSave(selectedBehaviorTypes());
+      await onSave(selectedBehaviorTypes(), observations);
       setSavedChecked([...checkedItems]);
       setSavedObservations(observations);
       setIsEditMode(false);

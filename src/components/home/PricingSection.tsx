@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { AnimatedSection } from "./AnimatedSection";
+import type { PlanKey } from "@/config/plans";
 
 const plans = [
   {
@@ -13,6 +14,7 @@ const plans = [
     highlight: false,
     cta: "Start Free",
     users: "",
+    planKey: null,
   },
   {
     name: "SOLO",
@@ -26,6 +28,7 @@ const plans = [
     highlight: false,
     cta: "Get Started",
     users: "1 user",
+    planKey: "SOLO" as PlanKey,
   },
   {
     name: "KASALO",
@@ -39,6 +42,7 @@ const plans = [
     highlight: true,
     cta: "Get Started",
     users: "10 users",
+    planKey: "KASALO" as PlanKey,
   },
   {
     name: "PANALO",
@@ -52,6 +56,7 @@ const plans = [
     highlight: false,
     cta: "Get Started",
     users: "20 users",
+    planKey: "PANALO" as PlanKey,
   },
   {
     name: "KAPAMILYA",
@@ -64,8 +69,9 @@ const plans = [
       "Volume pricing",
     ],
     highlight: false,
-    cta: "Contact Us",
+    cta: "Choose Plan",
     users: "20+ users",
+    planKey: "PAMILYA" as PlanKey,
   },
 ];
 
@@ -202,7 +208,11 @@ export default function PricingSection() {
                     }`}
                   />
                   <Link
-                    href={plan.name === "KAPAMILYA" ? "#" : "/signup"}
+                    href={
+                      plan.planKey
+                        ? `/dashboard/subscription?plan=${plan.planKey}`
+                        : "/signup"
+                    }
                     className={`relative block text-center font-medium text-sm px-4 py-3 rounded-[10px] transition-transform hover:-translate-y-0.5 active:translate-y-0 ${
                       plan.highlight
                         ? "bg-white text-[#6C4EEB] border border-white"

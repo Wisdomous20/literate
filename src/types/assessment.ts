@@ -64,6 +64,7 @@ export interface OralFluencyData {
   duration?: number | null;
   oralFluencyScore?: number | null;
   classificationLevel?: LevelClassification | null;
+  otherObservations?: string | null;
   miscues: OralFluencyMiscue[];
   behaviors: OralFluencyBehaviorData[];
 }

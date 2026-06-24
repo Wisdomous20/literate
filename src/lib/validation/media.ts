@@ -140,4 +140,5 @@ export const updateMiscueSchema = z
 export const updateBehaviorsSchema = z.object({
   sessionId: idString("sessionId"),
   behaviorTypes: z.array(z.nativeEnum(OralFluencyBehaviorType)),
+  otherObservations: z.string().trim().max(5000).optional(),
 });

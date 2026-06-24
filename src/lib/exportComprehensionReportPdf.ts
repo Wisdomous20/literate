@@ -7,6 +7,7 @@ import {
   getLevelColor,
   rrect,
   hline,
+  truncatePdfText,
   drawFileTextIcon,
   drawClipboardCheckIcon,
 } from "./pdfHelpers";
@@ -102,7 +103,7 @@ export function exportComprehensionReportPdf(
     doc.setFont("helvetica", "normal");
     doc.setFontSize(6);
     doc.setTextColor(...C.textDark);
-    doc.text(f.value, ML + 7, fy + 4, { maxWidth: siW - 14 });
+    doc.text(truncatePdfText(doc, f.value, siW - 14), ML + 7, fy + 4);
     fy += 9;
   }
 
@@ -179,7 +180,7 @@ export function exportComprehensionReportPdf(
     doc.setFont("helvetica", "normal");
     doc.setFontSize(5.5);
     doc.setTextColor(...C.textDark);
-    doc.text(f.value, ML + 7, py + 4, { maxWidth: passW - 14 });
+    doc.text(truncatePdfText(doc, f.value, passW - 14), ML + 7, py + 4);
     py += 9;
   }
 
@@ -238,7 +239,7 @@ export function exportComprehensionReportPdf(
     doc.text(row.label, brkX + 5, by + 4.2);
     doc.setFontSize(7);
     doc.setTextColor(...(row.valueColor ?? C.deepPurple));
-    doc.text(row.value, brkX + brkW - 5, by + 4.5, { align: "right" });
+    doc.text(truncatePdfText(doc, row.value, brkW - 38), brkX + brkW - 5, by + 4.5, { align: "right" });
     by += 7.5;
   }
 

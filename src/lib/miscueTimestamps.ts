@@ -27,6 +27,33 @@ function pickNearestTimestamp(
   return ranked[0].timestamp ?? null;
 }
 
+function deriveOmissionTimestamp(
+  miscue: MiscueResult,
+  alignedWords: AlignedWord[],
+): number | null {
+  const preceding = alignedWords
+    .filter(
+      (word) =>
+        word.expectedIndex !== null &&
+        word.expectedIndex < miscue.wordIndex &&
+        isUsableTimestamp(word.endTimestamp),
+    )
+    .sort((left, right) => (right.expectedIndex ?? -1) - (left.expectedIndex ?? -1));
+  if (preceding[0]?.endTimestamp !== null && preceding[0]?.endTimestamp !== undefined) {
+    return preceding[0].endTimestamp;
+  }
+
+  const following = alignedWords
+    .filter(
+      (word) =>
+        word.expectedIndex !== null &&
+        word.expectedIndex > miscue.wordIndex &&
+        isUsableTimestamp(word.timestamp),
+    )
+    .sort((left, right) => (left.expectedIndex ?? Infinity) - (right.expectedIndex ?? Infinity));
+  return following[0]?.timestamp ?? null;
+}
+
 function deriveTimestampFromAlignedWords(
   miscue: MiscueResult,
   alignedWords: AlignedWord[],
@@ -49,6 +76,11 @@ function deriveTimestampFromAlignedWords(
     return exactSpokenMatches[0].timestamp ?? null;
   }
 
+  if (miscue.miscueType === "OMISSION") {
+    const omissionTimestamp = deriveOmissionTimestamp(miscue, alignedWords);
+    if (omissionTimestamp !== null) return omissionTimestamp;
+  }
+
   const normalizedExpected = normalizeWord(miscue.expectedWord);
   const normalizedSpoken = normalizeWord(miscue.spokenWord ?? "");
 
@@ -68,7 +100,9 @@ function deriveTimestampFromAlignedWords(
     if (expectedTimestamp !== null) return expectedTimestamp;
   }
 
-  return null;
+  // Edited or otherwise incomplete miscues can lose their direct alignment.
+  // Keep their playback control useful by anchoring it to the nearest timed word.
+  return pickNearestTimestamp(alignedWords, miscue);
 }
 
 export function hydrateMiscueTimestamps(

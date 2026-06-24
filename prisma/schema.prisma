@@ -210,6 +210,7 @@ model OralFluencySession {
   duration            Float?
   oralFluencyScore    Float?
   classificationLevel LevelClassification?
+  otherObservations   String?              @db.Text
 
   status    OralFluencyStatus @default(PENDING)
   createdAt DateTime          @default(now())

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { LoginForm } from "@/components/auth/loginForm";
 import { BrandPanel } from "@/components/auth/brandPanel";
 
@@ -11,7 +12,9 @@ export default function LoginPage() {
 
       <div className="w-full max-w-5xl">
         <BrandPanel>
-          <LoginForm />
+          <Suspense fallback={null}>
+            <LoginForm />
+          </Suspense>
         </BrandPanel>
       </div>
     </main>
