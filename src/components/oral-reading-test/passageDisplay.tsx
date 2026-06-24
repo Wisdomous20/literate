@@ -435,8 +435,8 @@ export function PassageDisplay({
 
         if (aw.match === "INSERTION" && aw.spokenIndex != null) {
           const miscue = bySpokenIdx.get(aw.spokenIndex);
-          if (miscue && lastExpectedIndex >= 0) {
-            let placement = lastExpectedIndex;
+          if (miscue) {
+            let placement = Math.max(lastExpectedIndex, 0);
 
             if (miscue.miscueType === "REPETITION" && miscue.spokenWord) {
               const spokenNorm = normalizeWord(miscue.spokenWord);
@@ -461,6 +461,18 @@ export function PassageDisplay({
             bySpokenIdx.delete(aw.spokenIndex);
           }
         }
+      }
+
+      // Keep insertions interactive even when alignment cannot associate them
+      // with a preceding expected word (for example, at the start of a passage).
+      for (const miscue of bySpokenIdx.values()) {
+        const placement = Math.min(
+          Math.max(miscue.wordIndex - 1, 0),
+          Math.max(passageWordEntries.length - 1, 0),
+        );
+        const list = map.get(placement) || [];
+        list.push({ spokenWord: miscue.spokenWord!, miscue });
+        map.set(placement, list);
       }
 
       return map.size > 0 ? map : null;
@@ -812,14 +824,16 @@ export function PassageDisplay({
               <span key={`uins-${i}-${j}`}>
                 {" "}
                 <span
-                  title={`INSERTION — inserted: "${ins.spokenWord}"`}
+                  title={`INSERTION — inserted: "${ins.spokenWord}"${ins.timestamp != null ? " (click to jump)" : ""}`}
                   className={`relative inline-block rounded-sm px-0.5 font-semibold italic transition-all ${colors.bgClass} ${colors.textClass} border-b-2 border-dashed ${colors.borderBottomClass.replace("border-b-2 ", "")} ${
-                    isEditing
+                    isEditing || (ins.timestamp != null && onJumpToTime)
                       ? "cursor-pointer hover:brightness-90"
                       : "cursor-help"
                   }`}
                   onClick={(e) => {
                     if (isEditing && !editMode?.activeTool) {
+                      openPopup(e, ins);
+                    } else if (!isEditing) {
                       openPopup(e, ins);
                     }
                   }}

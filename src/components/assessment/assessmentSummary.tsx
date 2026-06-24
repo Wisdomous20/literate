@@ -83,19 +83,21 @@ function getClassificationSubtext(level: string): string {
   }
 }
 
-function generatePDF(
+export function generateAssessmentSummaryPdf(
   studentName: string,
   studentGrade: string,
+  studentClass: string | undefined,
   assessmentTypeLabel: string,
   oralReadingLevel: OralReadingLevel,
   assessmentCards: AssessmentCard[],
 ) {
-  const doc = new jsPDF();
-  let yPosition = 20;
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  let yPosition = 18;
   const pageWidth = doc.internal.pageSize.getWidth();
   const margins = 15;
   const contentWidth = pageWidth - 2 * margins;
   const pageHeight = doc.internal.pageSize.getHeight();
+  const footerY = pageHeight - 12;
 
   const BRAND_PRIMARY: [number, number, number] = [64, 102, 255];
   const BRAND_DEEP: [number, number, number] = [41, 62, 166];
@@ -115,130 +117,146 @@ function generatePDF(
     }
   })();
 
-  doc.setFont("helvetica");
+  const drawHeader = (continued = false) => {
+    doc.setFillColor(...BRAND_PRIMARY);
+    doc.roundedRect(margins, 10, contentWidth, 14, 2, 2, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(continued ? 13 : 16);
+    doc.setTextColor(255, 255, 255);
+    doc.text(continued ? "ASSESSMENT REPORT (CONTINUED)" : "ASSESSMENT REPORT", margins + 5, 19);
+    yPosition = 31;
+  };
 
-  doc.setFillColor(...BRAND_PRIMARY);
-  doc.roundedRect(margins, yPosition - 10, contentWidth, 14, 2, 2, "F");
-  doc.setFontSize(18);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(255, 255, 255);
-  doc.text("ASSESSMENT REPORT", margins, yPosition);
-  yPosition += 12;
+  const startNewPage = () => {
+    doc.addPage();
+    drawHeader(true);
+  };
 
-  doc.setDrawColor(...BRAND_PRIMARY);
-  doc.setLineWidth(0.6);
-  doc.line(margins, yPosition, pageWidth - margins, yPosition);
-  yPosition += 8;
+  const ensureSpace = (height: number) => {
+    if (yPosition + height > footerY - 4) startNewPage();
+  };
 
+  const drawLabelValue = (label: string, value: string) => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(...BRAND_DEEP);
+    doc.text(`${label}:`, margins + 5, yPosition);
+    const labelWidth = doc.getTextWidth(`${label}: `);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...TEXT_DARK);
+    const lines = doc.splitTextToSize(value || "-", contentWidth - labelWidth - 15) as string[];
+    doc.text(lines, margins + 5 + labelWidth, yPosition);
+    yPosition += Math.max(6, lines.length * 4.5);
+  };
+
+  drawHeader();
+
+  const studentRows = [
+    ["Name", studentName],
+    ["Grade Level", studentGrade],
+    ...(studentClass ? [["Class", studentClass]] : []),
+    ["Assessment Type", assessmentTypeLabel],
+    ["Date", new Date().toLocaleDateString()],
+  ];
+  const studentHeight = 10 + studentRows.reduce((height, [label, value]) => {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    return height + Math.max(6, (doc.splitTextToSize(value || "-", contentWidth - doc.getTextWidth(`${label}: `) - 15) as string[]).length * 4.5);
+  }, 0) + 3;
+  ensureSpace(studentHeight);
+  const studentTop = yPosition;
   doc.setFillColor(...BRAND_LIGHT);
   doc.setDrawColor(199, 210, 254);
-  doc.roundedRect(margins, yPosition - 2, contentWidth, 31, 2, 2, "FD");
-
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...BRAND_DEEP);
-  doc.text("Student Information", margins, yPosition);
+  doc.roundedRect(margins, studentTop, contentWidth, studentHeight, 2, 2, "FD");
   yPosition += 7;
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(...TEXT_DARK);
-  doc.text(`Name: ${studentName}`, margins + 5, yPosition);
-  yPosition += 6;
-  doc.text(`Grade Level: ${studentGrade}`, margins + 5, yPosition);
-  yPosition += 6;
-  doc.text(`Assessment Type: ${assessmentTypeLabel}`, margins + 5, yPosition);
-  yPosition += 6;
-  doc.text(`Date: ${new Date().toLocaleDateString()}`, margins + 5, yPosition);
-  yPosition += 10;
-
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(...BRAND_DEEP);
-  doc.text("Final Reading Level Classification", margins, yPosition);
-  yPosition += 7;
-
-  doc.setFillColor(...levelColor);
-  doc.roundedRect(margins + 5, yPosition - 4, 72, 7, 1.6, 1.6, "F");
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.text(`Classification: ${oralReadingLevel.level}`, margins + 5, yPosition);
+  doc.text("Student Information", margins + 5, yPosition);
   yPosition += 6;
+  studentRows.forEach(([label, value]) => drawLabelValue(label, value));
+  yPosition = studentTop + studentHeight + 8;
 
   const description = getClassificationSubtext(oralReadingLevel.level);
-  const descriptionLines = doc.splitTextToSize(description, contentWidth - 5);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  const descriptionLines = doc.splitTextToSize(description, contentWidth - 18) as string[];
+  const classificationHeight = 22 + descriptionLines.length * 4.5;
+  ensureSpace(classificationHeight);
+  doc.setFillColor(248, 250, 255);
+  doc.setDrawColor(214, 224, 255);
+  doc.roundedRect(margins, yPosition, contentWidth, classificationHeight, 2, 2, "FD");
+  yPosition += 7;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(...BRAND_DEEP);
+  doc.text("Final Reading Level Classification", margins + 5, yPosition);
+  yPosition += 7;
+  const classificationText = `Classification: ${oralReadingLevel.level || "-"}`;
+  doc.setFillColor(...levelColor);
+  doc.roundedRect(margins + 5, yPosition - 4.5, contentWidth - 10, 7, 1.6, 1.6, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.text(classificationText, margins + 8, yPosition);
+  yPosition += 7;
+  doc.setFont("helvetica", "normal");
   doc.setTextColor(...TEXT_DARK);
   doc.text(descriptionLines, margins + 5, yPosition);
-  yPosition += descriptionLines.length * 5 + 5;
+  yPosition += descriptionLines.length * 4.5 + 8;
 
-  const reportsToInclude = assessmentCards.slice(0, 2);
+  assessmentCards.forEach((card, index) => {
+    const reportTitle = card.title === "Oral Reading Fluency Test"
+      ? "Oral Fluency Test Report"
+      : card.title === "Reading Comprehension Test"
+        ? "Reading Comprehension Test Report"
+        : card.title;
+    const performanceText = card.percentage >= 90
+      ? "Excellent performance"
+      : card.percentage >= 75
+        ? "Good performance"
+        : card.percentage >= 60
+          ? "Satisfactory performance"
+          : "Needs improvement";
+    const cardRows = [
+      ["Assessment", reportTitle],
+      ["Classification Level", card.level || "-"],
+      ["Performance Score", `${Math.round(card.percentage)}%`],
+      ["Performance", performanceText],
+    ];
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    const cardHeight = 12 + cardRows.reduce((height, [label, value]) =>
+      height + Math.max(6, (doc.splitTextToSize(value, contentWidth - doc.getTextWidth(`${label}: `) - 15) as string[]).length * 4.5), 0) + 3;
+    ensureSpace(cardHeight);
 
-  reportsToInclude.forEach((card, index) => {
-    if (yPosition > 240) {
-      doc.addPage();
-      yPosition = 20;
-    }
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
     doc.setFillColor(248, 250, 255);
     doc.setDrawColor(214, 224, 255);
-    doc.roundedRect(margins, yPosition - 4, contentWidth, 33, 2, 2, "FD");
+    doc.roundedRect(margins, yPosition, contentWidth, cardHeight, 2, 2, "FD");
     doc.setFillColor(...BRAND_PRIMARY);
-    doc.rect(margins, yPosition - 4, 2.2, 33, "F");
-
-    const reportTitle =
-      card.title === "Oral Reading Fluency Test"
-        ? "Oral Fluency Test Report"
-        : card.title === "Reading Comprehension Test"
-          ? "Reading Comprehension Test Report"
-          : card.title;
-
-    doc.setTextColor(...BRAND_DEEP);
-    doc.text(`Report ${index + 1}: ${reportTitle}`, margins, yPosition);
+    doc.rect(margins, yPosition, 2.2, cardHeight, "F");
     yPosition += 7;
-
-    doc.setDrawColor(199, 210, 254);
-    doc.line(margins, yPosition, pageWidth - margins, yPosition);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(...BRAND_DEEP);
+    doc.text(`Report ${index + 1}`, margins + 5, yPosition);
     yPosition += 6;
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(...TEXT_DARK);
-    doc.text(`Assessment Type: ${card.title}`, margins + 5, yPosition);
+    cardRows.forEach(([label, value]) => drawLabelValue(label, value));
     yPosition += 6;
-    doc.text(`Classification Level: ${card.level}`, margins + 5, yPosition);
-    yPosition += 6;
-    doc.text(
-      `Performance Score: ${Math.round(card.percentage)}%`,
-      margins + 5,
-      yPosition,
-    );
-    yPosition += 6;
-
-    let performanceText = "";
-    if (card.percentage >= 90) {
-      performanceText = "Excellent performance";
-    } else if (card.percentage >= 75) {
-      performanceText = "Good performance";
-    } else if (card.percentage >= 60) {
-      performanceText = "Satisfactory performance";
-    } else {
-      performanceText = "Needs improvement";
-    }
-    doc.text(`Performance: ${performanceText}`, margins + 5, yPosition);
-    yPosition += 12;
   });
 
-  yPosition = pageHeight - 15;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(90, 103, 126);
-  doc.text(`Generated on ${new Date().toLocaleString()}`, margins, yPosition);
-  doc.text(`Page 1 of 1`, pageWidth - margins - 20, yPosition);
+  const totalPages = doc.getNumberOfPages();
+  for (let page = 1; page <= totalPages; page += 1) {
+    doc.setPage(page);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(90, 103, 126);
+    doc.text(`Generated on ${new Date().toLocaleString()}`, margins, footerY);
+    doc.text(`Page ${page} of ${totalPages}`, pageWidth - margins, footerY, { align: "right" });
+  }
 
-  doc.save(`${studentName}-assessment-report.pdf`);
+  const safeFilename = studentName.trim().replace(/[^a-z0-9-_]+/gi, "-").replace(/^-+|-+$/g, "") || "student";
+  doc.save(`${safeFilename}-assessment-report.pdf`);
 }
 
 export function AssessmentSummary({
@@ -254,9 +272,10 @@ export function AssessmentSummary({
   onBack,
 }: AssessmentSummaryProps) {
   const handleExportPdf = () => {
-    generatePDF(
+    generateAssessmentSummaryPdf(
       studentName,
       studentGrade,
+      studentClass,
       assessmentTypeLabel,
       oralReadingLevel,
       assessmentCards,

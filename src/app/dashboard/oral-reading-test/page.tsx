@@ -12,6 +12,7 @@ import {
   AudioPlayer,
 } from "@/components/oral-reading-test/readingTimer";
 import { MiscueAnalysis } from "@/components/oral-reading-test/miscueAnalysis";
+import ViewMiscuesModal from "@/components/reports/oral-reading-test/reading-fluency-report/viewMiscuesModal";
 import { FullScreenPassage } from "@/components/oral-reading-test/fullScreenPassage";
 import { AddPassageModal } from "@/components/oral-reading-test/addPassageModal";
 import { CountdownToggle } from "@/components/oral-reading-test/countdownToggle";
@@ -186,6 +187,7 @@ export default function OralReadingTestPage() {
   const [passageExpanded, setPassageExpanded] = useState(false);
   const [showMiscues, setShowMiscues] = useState(true);
   const [showClassificationPopup, setShowClassificationPopup] = useState(false);
+  const [showMiscuesModal, setShowMiscuesModal] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   // Derived: true while transcription is running and results haven't arrived yet
@@ -1074,13 +1076,29 @@ export default function OralReadingTestPage() {
       onCloseToast={() => setToast(null)}
       passageExpanded={passageExpanded}
       overlay={
-        showClassificationPopup && analysisResult?.classificationLevel ? (
-          <ClassificationPopup
-            classificationLevel={analysisResult.classificationLevel}
-            studentName={studentName}
-            onClose={() => setShowClassificationPopup(false)}
+        <>
+          {showClassificationPopup && analysisResult?.classificationLevel && (
+            <ClassificationPopup
+              classificationLevel={analysisResult.classificationLevel}
+              studentName={studentName}
+              onClose={() => setShowClassificationPopup(false)}
+            />
+          )}
+          <ViewMiscuesModal
+            open={showMiscuesModal}
+            onClose={() => setShowMiscuesModal(false)}
+            passageContent={passageContent}
+            miscues={editMiscues.isEditing ? editMiscues.editedMiscues : analysisResult?.miscues ?? []}
+            alignedWords={analysisResult?.alignedWords}
+            passageLevel={selectedLevel}
+            audioSrc={recordedAudioURL}
+            onJumpToTime={handleJumpToTime}
+            onDeleteMiscue={sessionId ? handleDeleteMiscue : undefined}
+            onUpdateMiscueType={sessionId ? handleUpdateMiscueType : undefined}
+            onUpdateSpokenWord={sessionId ? handleUpdateSpokenWord : undefined}
+            editMiscues={editMiscues}
           />
-        ) : undefined
+        </>
       }
       sidebar={
         <MiscueAnalysis
@@ -1109,6 +1127,7 @@ export default function OralReadingTestPage() {
           highlightedTypes={highlightedTypes}
           onToggleHighlight={toggleHighlightType}
           onResetHighlight={resetHighlightTypes}
+          onViewMiscues={() => setShowMiscuesModal(true)}
           onRecheckMiscues={
             sessionId && analysisResult ? handleRecheckMiscues : undefined
           }
