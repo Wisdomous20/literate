@@ -11,6 +11,7 @@ import {
   BarChart3,
   ClipboardList,
   Search,
+  Repeat2,
   type LucideIcon,
 } from "lucide-react";
 import { usePassageList } from "@/lib/hooks/usePassageList";
@@ -92,8 +93,8 @@ function FilterDropdown({
         title={label}
         className={`flex min-h-11 w-full items-center gap-2 rounded-[10px] border border-[#C4B5FD] px-3 py-2 text-sm font-medium shadow-[0px_1px_12px_rgba(108,164,239,0.16)] transition-colors duration-150 md:border-t md:border-l md:border-r-4 md:border-b-4 md:shadow-[0px_1px_20px_rgba(108,164,239,0.37)] ${
           isFiltered
-            ? "border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#EEEEFF] text-[#31318A]"
-            : "border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#EFFDFF] text-[#00306E]"
+            ? "border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#EEE8FF] text-[#31318A]"
+            : "border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-[#F5F0FF] text-[#00306E]"
         }`}
       >
         <Icon className="h-4 w-4 shrink-0 text-[#5D5DFB]" />
@@ -415,7 +416,9 @@ export function AddPassageModal({
               disabled={!selectedPassageId}
               className="min-h-11 w-full rounded-lg bg-[#5D5DFB] px-8 py-2.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50 sm:w-auto"
             >
-              Select Passage
+              <span className="inline-flex items-center gap-2">
+                Select Passage
+              </span>
             </button>
           </div>
         </div>

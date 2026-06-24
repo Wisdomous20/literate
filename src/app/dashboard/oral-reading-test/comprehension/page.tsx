@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
-  ChevronDown,
   Clock,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
@@ -162,7 +161,6 @@ export default function OralReadingComprehensionPage() {
     useState<ComprehensionResult | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const [showScrollButton, setShowScrollButton] = useState(true);
   const [highlightedTag, setHighlightedTag] = useState<
     "literal" | "inferential" | "critical" | null
   >(null);
@@ -334,26 +332,6 @@ export default function OralReadingComprehensionPage() {
 
   const togglePause = () => {
     if (!isSubmitted) setIsPaused((prev) => !prev);
-  };
-
-  // Track scroll position to show/hide scroll-down button
-  useEffect(() => {
-    const container = contentRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = container;
-      const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100;
-      setShowScrollButton(!isNearBottom);
-    };
-
-    container.addEventListener("scroll", handleScroll);
-    handleScroll(); // initial check
-    return () => container.removeEventListener("scroll", handleScroll);
-  }, [questions]);
-
-  const scrollDown = () => {
-    contentRef.current?.scrollBy({ top: 300, behavior: "smooth" });
   };
 
   const formattedTime = `${String(Math.floor(elapsedSeconds / 60)).padStart(2, "0")}:${String(elapsedSeconds % 60).padStart(2, "0")}`;
@@ -821,17 +799,6 @@ export default function OralReadingComprehensionPage() {
           </div>
         </div>
       </main>
-
-      {/* Scroll Down Button */}
-      {showScrollButton && (
-        <button
-          onClick={scrollDown}
-          className="absolute bottom-6 right-10 z-10 flex h-10 w-10 animate-bounce items-center justify-center rounded-full bg-[#6666FF] text-white transition-all hover:bg-[#5555EE] shadow-[0_0_16px_rgba(102,102,255,0.5)]"
-          aria-label="Scroll down"
-        >
-          <ChevronDown className="h-5 w-5" />
-        </button>
-      )}
     </div>
   );
 }

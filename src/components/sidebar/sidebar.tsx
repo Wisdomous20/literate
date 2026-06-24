@@ -15,9 +15,9 @@ import { cn } from "@/lib/utils";
 import { hasActiveAccessAction } from "@/app/actions/subscription/hasActiveAccess";
 import {
   LayoutDashboard,
-  BookOpenCheck,
-  Sparkles,
-  FileText,
+  Mic,
+  Gauge,
+  BookOpen,
   Settings,
   LogOut,
   ChevronsLeft,
@@ -45,17 +45,17 @@ const menuItems = [
   {
     label: "Oral Reading Test",
     href: "/dashboard/oral-reading-test",
-    icon: BookOpenCheck,
+    icon: Mic,
   },
   {
     label: "Reading Fluency Test",
     href: "/dashboard/reading-fluency-test",
-    icon: Sparkles,
+    icon: Gauge,
   },
   {
     label: "Reading Comprehension Test",
     href: "/dashboard/reading-comprehension-test",
-    icon: FileText,
+    icon: BookOpen,
   },
 ];
 

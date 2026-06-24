@@ -149,7 +149,7 @@ export function StudentTable({
           <table className="min-w-full bg-white">
             <thead className="bg-[#F5F7FF]">
               <tr>
-                <th className="px-4 py-2 text-center text-xs font-semibold text-[#3B2F7F]">Student</th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-[#3B2F7F]">Student</th>
                 <th className="px-4 py-2 text-center text-xs font-semibold text-[#3B2F7F]">Grade</th>
                 <th className="px-4 py-2 text-center text-xs font-semibold text-[#3B2F7F]">Assessment Type</th>
                 <th className="px-4 py-2 text-center text-xs font-semibold text-[#3B2F7F]">Last Assessment</th>
@@ -167,7 +167,7 @@ export function StudentTable({
                     onClick={() => !isEditingRow && hasAssessment && handleCardClick(student)}
                     className={`${hasAssessment && !isEditingRow ? "cursor-pointer hover:bg-[#F9FAFF]" : "bg-[#FCFCFF]"} ${clickedStudentId === student.id ? "scale-[1.01] bg-[#EEF4FF] shadow-[inset_0_0_0_1px_rgba(102,102,255,0.2)]" : ""} border-t border-[#EEF1FF] transition-all duration-150`}
                   >
-                    <td className="px-4 py-3 text-center text-sm font-semibold text-[#00306E]">
+                    <td className="px-4 py-3 text-left text-sm font-semibold text-[#00306E]">
                       {isEditingRow ? (
                         <input
                           type="text"
@@ -175,7 +175,7 @@ export function StudentTable({
                           onChange={(e) => setEditName(e.target.value)}
                           aria-label="Student name"
                           placeholder="Student name"
-                          className="w-full rounded border border-[#6666FF]/30 px-2 py-1 text-xs"
+                          className="w-full rounded border border-[#6666FF]/30 px-2 py-1 text-left text-xs"
                         />
                       ) : (
                         student.name

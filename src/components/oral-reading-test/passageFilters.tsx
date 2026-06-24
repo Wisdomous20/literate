@@ -7,7 +7,7 @@ import {
   Link2,
   BookOpen,
   Plus,
-  RefreshCw,
+  Repeat2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -129,7 +129,7 @@ export function PassageFilters({
     `}
           >
             {hasPassage ? (
-              <RefreshCw className="h-3.5 w-3.5 shrink-0" />
+              <Repeat2 className="h-3.5 w-3.5 shrink-0" />
             ) : (
               <Plus className="h-3.5 w-3.5 shrink-0" />
             )}

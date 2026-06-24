@@ -3,15 +3,16 @@
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import {
-  BookOpenCheck,
+  BookOpen,
   ChartNoAxesColumn,
   FileBarChart2,
   FileText,
+  Gauge,
   HelpCircle,
   History,
   LayoutDashboard,
+  Mic,
   Settings,
-  Sparkles,
   UserRound,
   Users,
   X,
@@ -41,9 +42,9 @@ export function DashboardHeader({
 
   const defaultIconByTitle: Record<string, React.ReactNode> = {
     "My Dashboard": <LayoutDashboard className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />,
-    "Oral Reading Test": <BookOpenCheck className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />,
-    "Reading Fluency Test": <Sparkles className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />,
-    "Reading Comprehension Test": <FileText className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />,
+    "Oral Reading Test": <Mic className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />,
+    "Reading Fluency Test": <Gauge className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />,
+    "Reading Comprehension Test": <BookOpen className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />,
     "Reading Level": <ChartNoAxesColumn className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />,
     "Assessment Report": <FileBarChart2 className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />,
     "Oral Fluency Test Report": <FileBarChart2 className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />,
@@ -65,7 +66,7 @@ export function DashboardHeader({
       >
         <div className="flex min-w-0 items-center gap-2 md:gap-3">
           {resolvedIcon && (
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#DED7FF] bg-[#F3F0FF] md:h-10 md:w-10">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center md:h-10 md:w-10">
               {resolvedIcon}
             </div>
           )}

@@ -3,9 +3,8 @@
 import { useState, useMemo, useRef, useEffect, useCallback, Fragment } from "react";
 import { X, Play, Pause, Trash2, Loader2, Mic } from "lucide-react";
 import type { MiscueResult, AlignedWord } from "@/types/oral-reading";
-import { getPassageTextStyle } from "@/components/oral-reading-test/passageDisplay";
+import { PassageDisplay, getPassageTextStyle } from "@/components/oral-reading-test/passageDisplay";
 import type { EditModeCallbacks } from "@/components/oral-reading-test/passageDisplay";
-import { MiscueActionPopover } from "@/components/oral-reading-test/miscueEditPopover";
 import { formatMiscueTimestamp, seekAudioToTimestamp } from "@/lib/audioPlayback";
 import { hydrateMiscueTimestamps } from "@/lib/miscueTimestamps";
 import { normalizeWord } from "@/utils/textUtils";
@@ -156,7 +155,7 @@ export default function ViewMiscuesModal({
   const [highlightedTypes, setHighlightedTypes] = useState<Set<string>>(
     new Set(),
   );
-  const [activeTab, setActiveTab] = useState<"passage" | "list">("passage");
+  const [activeTab, setActiveTab] = useState<"passage" | "list" | "edit">("passage");
   const [showMiscues, setShowMiscues] = useState(true);
   const [popup, setPopup] = useState<PopupState | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -737,6 +736,25 @@ export default function ViewMiscuesModal({
             >
               Miscued Words
             </button>
+            {editMiscues && (
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("edit");
+                  setPopup(null);
+                  if (!editMiscues.isEditing) {
+                    editMiscues.enterEditMode();
+                  }
+                }}
+                className={`min-w-[118px] rounded-md px-3 py-2 text-xs font-semibold transition-colors ${
+                  activeTab === "edit"
+                    ? "bg-white text-[#00306E] shadow-sm"
+                    : "text-[#31318A]/70 hover:text-[#00306E]"
+                }`}
+              >
+                Edit Miscues
+              </button>
+            )}
           </div>
           {audioSrc && (
             <div className="flex items-center gap-2 rounded-full border border-[#DAE6FF] bg-[#F8FBFF] px-3 py-1.5">
@@ -840,6 +858,17 @@ export default function ViewMiscuesModal({
                 </div>
               </div>
             </>
+          ) : activeTab === "edit" && editMiscues ? (
+            <div className="rounded-xl border border-[#DAE6FF] bg-white p-4 shadow-[0px_1px_20px_rgba(108,164,239,0.18)]">
+              <PassageDisplay
+                content={passageContent}
+                miscues={editMiscues.isEditing ? editMiscues.editedMiscues : resolvedMiscues}
+                alignedWords={alignedWords}
+                passageLevel={passageLevel}
+                editMode={editMiscues}
+                onJumpToTime={effectiveJumpToTime}
+              />
+            </div>
           ) : (
             renderMiscueList()
           )}
@@ -869,109 +898,43 @@ export default function ViewMiscuesModal({
                     />
                   )}
 
-                  {onDeleteMiscue || onUpdateMiscueType ? (
-                    <div className="flex flex-col gap-1.5">
-                      <MiscueActionPopover
-                        miscueType={popup.miscue.miscueType}
-                        spokenWord={
-                          popup.miscue.miscueType === "REPETITION"
+                  <div
+                    className={`rounded-lg border bg-white px-3 py-2 shadow-[0_4px_16px_rgba(0,0,0,0.12)] ${cfg.popupBorderClass}`}
+                  >
+                    <div className="space-y-1 text-center">
+                      <span
+                        className={`text-[10px] font-bold uppercase tracking-wide ${cfg.textClass}`}
+                      >
+                        {popup.miscue.miscueType.replace(/_/g, " ")}
+                      </span>
+                      {(popup.miscue.spokenWord || popup.miscue.miscueType === "REPETITION") && (
+                        <div className="text-[10px] text-[#31318A]/70">
+                          Spoken: &ldquo;{popup.miscue.miscueType === "REPETITION"
                             ? getRepetitionWord(popup.miscue)
-                            : popup.miscue.spokenWord
-                        }
-                        isLoading={actionLoading}
-                        onDelete={async () => {
-                          if (!onDeleteMiscue) return;
-                          setActionLoading(true);
-                          try {
-                            await onDeleteMiscue(popup.miscue);
-                            setPopup(null);
-                          } finally {
-                            setActionLoading(false);
-                          }
-                        }}
-                        onChangeType={async (newType) => {
-                          if (!onUpdateMiscueType) return;
-                          setActionLoading(true);
-                          try {
-                            await onUpdateMiscueType(popup.miscue, newType);
-                            setPopup(null);
-                          } finally {
-                            setActionLoading(false);
-                          }
-                        }}
-                        onUpdateSpokenWord={
-                          onUpdateSpokenWord
-                            ? async (newSpokenWord: string) => {
-                                setActionLoading(true);
-                                try {
-                                  await onUpdateSpokenWord(popup.miscue, newSpokenWord);
-                                  setPopup(null);
-                                } finally {
-                                  setActionLoading(false);
-                                }
-                              }
-                            : undefined
-                        }
-                        onClose={() => setPopup(null)}
-                      />
-                      {hasTimestamp && effectiveJumpToTime && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            effectiveJumpToTime(popup.miscue.timestamp!);
-                            setPopup(null);
-                          }}
-                          className="flex w-full items-center justify-center gap-1.5 rounded-md bg-[#6666FF] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:brightness-110"
-                        >
-                          <Play className="h-3 w-3" />
-                          Jump to Word ({formatMiscueTimestamp(popup.miscue.timestamp!)})
-                        </button>
+                            : popup.miscue.spokenWord}&rdquo;
+                        </div>
+                      )}
+                      {hasTimestamp && !effectiveJumpToTime && (
+                        <div className="flex items-center justify-center gap-1 text-[10px] text-[#31318A]/50">
+                          <Play className="h-2.5 w-2.5" />
+                          {formatMiscueTimestamp(popup.miscue.timestamp!)}
+                        </div>
                       )}
                     </div>
-                  ) : (
-                    <div
-                      className={`rounded-lg border bg-white px-3 py-2 shadow-[0_4px_16px_rgba(0,0,0,0.12)] ${cfg.popupBorderClass}`}
-                    >
-                      <div className="mb-1 text-center">
-                        <span
-                          className={`text-[10px] font-bold uppercase tracking-wide ${cfg.textClass}`}
-                        >
-                          {popup.miscue.miscueType.replace(/_/g, " ")}
-                        </span>
-                        {popup.miscue.miscueType === "REPETITION" &&
-                          getRepetitionWord(popup.miscue) && (
-                          <div className="text-[10px] text-[#31318A]/70">
-                            Repeated word: &ldquo;{getRepetitionWord(popup.miscue)}&rdquo;
-                          </div>
-                        )}
-                        {popup.miscue.miscueType !== "REPETITION" &&
-                          popup.miscue.spokenWord && (
-                          <div className="text-[10px] text-[#31318A]/70">
-                            Spoken: &ldquo;{popup.miscue.spokenWord}&rdquo;
-                          </div>
-                        )}
-                        {hasTimestamp && !effectiveJumpToTime && (
-                          <div className="mt-1 flex items-center justify-center gap-1 text-[10px] text-[#31318A]/50">
-                            <Play className="h-2.5 w-2.5" />
-                            {formatMiscueTimestamp(popup.miscue.timestamp!)}
-                          </div>
-                        )}
-                      </div>
-                      {hasTimestamp && effectiveJumpToTime && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            effectiveJumpToTime(popup.miscue.timestamp!);
-                            setPopup(null);
-                          }}
-                          className="flex w-full items-center justify-center gap-1.5 rounded-md bg-[#6666FF] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:brightness-110"
-                        >
-                          <Play className="h-3 w-3" />
-                          Jump to Word ({formatMiscueTimestamp(popup.miscue.timestamp!)})
-                        </button>
-                      )}
-                    </div>
-                  )}
+                    {hasTimestamp && effectiveJumpToTime && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          effectiveJumpToTime(popup.miscue.timestamp!);
+                          setPopup(null);
+                        }}
+                        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md bg-[#6666FF] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:brightness-110"
+                      >
+                        <Play className="h-3 w-3" />
+                        Jump to Word ({formatMiscueTimestamp(popup.miscue.timestamp!)})
+                      </button>
+                    )}
+                  </div>
 
                   {!popup.flipped && (
                     <div
