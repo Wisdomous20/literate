@@ -6,6 +6,7 @@ import {
   classificationTextColor,
   rrect,
   hline,
+  truncatePdfText,
   drawFileTextIcon,
   drawClockIcon,
   drawClipboardCheckIcon,
@@ -228,7 +229,7 @@ export function exportFluencyReportPdf(
     doc.setFont("helvetica", "normal");
     doc.setFontSize(6);
     doc.setTextColor(...C.textDark);
-    doc.text(f.value, ML + 7, fy + 4.5, { maxWidth: siW - 14 });
+    doc.text(truncatePdfText(doc, f.value, siW - 14), ML + 7, fy + 4.5);
     fy += 12;
   }
 
@@ -268,14 +269,14 @@ export function exportFluencyReportPdf(
     doc.setFont("helvetica", m.italic ? "bolditalic" : "bold");
     doc.setFontSize(m.smallValue ? 13 : 22);
     doc.setTextColor(...m.accent);
-    doc.text(m.value, cx + mcW / 2, y + 40, { align: "center" });
+    doc.text(truncatePdfText(doc, m.value, mcW - 8), cx + mcW / 2, y + 40, { align: "center" });
 
     // subtitle
     if (m.sub) {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(6);
       doc.setTextColor(...C.rateColor);
-      doc.text(m.sub, cx + mcW / 2, y + 48, { align: "center" });
+      doc.text(truncatePdfText(doc, m.sub, mcW - 8), cx + mcW / 2, y + 48, { align: "center" });
     }
   });
 
@@ -322,7 +323,7 @@ export function exportFluencyReportPdf(
     doc.setFont("helvetica", "normal");
     doc.setFontSize(5.5);
     doc.setTextColor(...C.textDark);
-    doc.text(f.value, c1X + 7, py + 4, { maxWidth: colW - 14 });
+    doc.text(truncatePdfText(doc, f.value, colW - 14), c1X + 7, py + 4);
     py += 9.5;
   }
 
@@ -356,10 +357,10 @@ export function exportFluencyReportPdf(
     doc.setFont("helvetica", "bold");
     doc.setFontSize(5);
     doc.setTextColor(...C.purple);
-    doc.text(b.label, cbX + cbS + 2, by + 2, { maxWidth: colW - cbS - 10 });
+    doc.text(truncatePdfText(doc, b.label, colW - cbS - 10), cbX + cbS + 2, by + 2);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(4);
-    doc.text(b.description, cbX + cbS + 2, by + 5.5, { maxWidth: colW - cbS - 10 });
+    doc.text(truncatePdfText(doc, b.description, colW - cbS - 10), cbX + cbS + 2, by + 5.5);
 
     by += 9;
     if (i < data.behaviors.length - 1) {
@@ -380,7 +381,7 @@ export function exportFluencyReportPdf(
     doc.setFont("helvetica", "normal");
     doc.setFontSize(5);
     doc.setTextColor(...C.purple);
-    doc.text(data.otherObservations, c2X + 5, by + 4, { maxWidth: colW - 10 });
+    doc.text(truncatePdfText(doc, data.otherObservations, colW - 10), c2X + 5, by + 4);
   }
 
   /* ── Miscue Analysis ── */
@@ -428,7 +429,7 @@ export function exportFluencyReportPdf(
     doc.text(row.label, c3X + 5, my + 4.2);
     doc.setFontSize(7);
     doc.setTextColor(...(row.valueColor ?? C.deepPurple));
-    doc.text(row.value, c3X + colW - 5, my + 4.5, { align: "right" });
+    doc.text(truncatePdfText(doc, row.value, colW - 38), c3X + colW - 5, my + 4.5, { align: "right" });
     my += 7.5;
   }
 
