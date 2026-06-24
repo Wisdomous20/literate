@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession, signIn } from "next-auth/react";
 import { Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -33,14 +33,20 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loginSuccess, setLoginSuccess] = useState(false);
+  const callbackUrl = searchParams.get("callbackUrl");
+  const safeCallbackUrl =
+    callbackUrl === "/dashboard" || callbackUrl?.startsWith("/dashboard/")
+    ? callbackUrl
+    : "/dashboard";
 
   useEffect(() => {
     if (loginSuccess && session?.user?.role) {
       if (session.user.role === "ADMIN") router.push("/admin");
-      else router.push("/dashboard");
+      else router.push(safeCallbackUrl);
     }
-  }, [session, loginSuccess, router]);
+  }, [session, loginSuccess, router, safeCallbackUrl]);
 
   const validateForm = () => {
     if (!email) {
@@ -238,7 +244,7 @@ export function LoginForm() {
         <p className="text-sm text-[#575E6B]">
           Don&apos;t have an account?{" "}
           <Link
-            href="/signup"
+            href={`/signup?callbackUrl=${encodeURIComponent(safeCallbackUrl)}`}
             className={`font-semibold text-[#6C4EEB] underline-offset-4 transition-colors hover:text-[#5138D6] hover:underline ${linkFocusClass}`}
           >
             Register now

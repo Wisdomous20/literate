@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Mail } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ const iconButtonClass =
 
 export function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -51,6 +52,11 @@ export function SignupForm() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const callbackUrl = searchParams.get("callbackUrl");
+  const safeCallbackUrl =
+    callbackUrl === "/dashboard" || callbackUrl?.startsWith("/dashboard/")
+    ? callbackUrl
+    : "/dashboard";
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -125,7 +131,9 @@ export function SignupForm() {
     try {
       const result = await verifyCodeAction(userId, code);
       if (result.success) {
-        router.push("/login?verified=true");
+        router.push(
+          `/login?verified=true&callbackUrl=${encodeURIComponent(safeCallbackUrl)}`,
+        );
       } else {
         setVerifyError(result.error || "Verification failed.");
         setCodeDigits(["", "", "", "", "", ""]);
@@ -289,7 +297,7 @@ export function SignupForm() {
         <p className="text-center text-sm text-[#575E6B]">
           Already verified?{" "}
           <Link
-            href="/login"
+            href={`/login?callbackUrl=${encodeURIComponent(safeCallbackUrl)}`}
             className={`font-semibold text-[#6C4EEB] underline-offset-4 hover:underline ${linkFocusClass}`}
           >
             Log in
@@ -475,7 +483,7 @@ export function SignupForm() {
         <p className="text-sm text-[#575E6B]">
           Already have an account?{" "}
           <Link
-            href="/login"
+            href={`/login?callbackUrl=${encodeURIComponent(safeCallbackUrl)}`}
             className={`font-semibold text-[#6C4EEB] underline-offset-4 transition-colors hover:text-[#5138D6] hover:underline ${linkFocusClass}`}
           >
             Log in
