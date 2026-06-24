@@ -215,13 +215,13 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
             Classification Distribution
           </h3>
           <div className="mt-2 flex flex-row flex-wrap items-center gap-2">
-            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
+            <div className="flex w-full flex-col gap-2 sm:w-full sm:flex-row sm:flex-nowrap sm:items-center">
               <div className="relative" ref={dropdownRef}>
                 <button
                   type="button"
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   className={cn(
-                    "flex min-h-11 w-full items-center justify-center gap-1 rounded-full border border-dashed px-3 py-2 text-xs font-medium transition-colors sm:w-auto sm:min-h-8 sm:px-2 sm:py-1 sm:text-[11px]",
+                    "flex min-h-11 w-full items-center justify-center gap-1 rounded-full border border-dashed px-3 py-2 text-xs font-medium transition-colors sm:min-h-8 sm:flex-1 sm:px-2 sm:py-1 sm:text-[11px]",
                     selectedType !== "ALL"
                       ? "bg-[#5D5DFB] text-white border-[#5D5DFB]"
                       : "bg-white text-[#5D5DFB] border-[#5D5DFB] hover:bg-[#E4F4FF]"
@@ -261,7 +261,7 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
                   type="button"
                   onClick={() => setIsTestDropdownOpen(!isTestDropdownOpen)}
                   className={cn(
-                    "flex min-h-11 w-full items-center justify-center gap-1 rounded-full border border-dashed px-3 py-2 text-xs font-medium transition-colors sm:w-auto sm:min-h-8 sm:px-2 sm:py-1 sm:text-[11px]",
+                    "flex min-h-11 w-full items-center justify-center gap-1 rounded-full border border-dashed px-3 py-2 text-xs font-medium transition-colors sm:min-h-8 sm:flex-1 sm:px-2 sm:py-1 sm:text-[11px]",
                     selectedTestType !== "PRE"
                       ? "bg-[#5D5DFB] text-white border-[#5D5DFB]"
                       : "bg-white text-[#5D5DFB] border-[#5D5DFB] hover:bg-[#E4F4FF]"
@@ -301,7 +301,7 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
                   type="button"
                   onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
                   className={cn(
-                    "flex min-h-11 w-full items-center justify-center gap-1 rounded-full border border-dashed px-3 py-2 text-xs font-medium transition-colors sm:w-auto sm:min-h-8 sm:px-2 sm:py-1 sm:text-[11px]",
+                    "flex min-h-11 w-full items-center justify-center gap-1 rounded-full border border-dashed px-3 py-2 text-xs font-medium transition-colors sm:min-h-8 sm:flex-1 sm:px-2 sm:py-1 sm:text-[11px]",
                     selectedLanguage !== "ALL"
                       ? "bg-[#5D5DFB] text-white border-[#5D5DFB]"
                       : "bg-white text-[#5D5DFB] border-[#5D5DFB] hover:bg-[#E4F4FF]"
@@ -341,7 +341,7 @@ export function ClassificationChart({ schoolYear }: ClassificationChartProps) {
                   type="button"
                   onClick={() => setIsGradeDropdownOpen(!isGradeDropdownOpen)}
                   className={cn(
-                    "flex min-h-11 w-full items-center justify-center gap-1 rounded-full border border-dashed px-3 py-2 text-xs font-medium transition-colors sm:w-auto sm:min-h-8 sm:px-2 sm:py-1 sm:text-[11px]",
+                    "flex min-h-11 w-full items-center justify-center gap-1 rounded-full border border-dashed px-3 py-2 text-xs font-medium transition-colors sm:min-h-8 sm:flex-1 sm:px-2 sm:py-1 sm:text-[11px]",
                     selectedGrade !== "ALL"
                       ? "bg-[#5D5DFB] text-white border-[#5D5DFB]"
                       : "bg-white text-[#5D5DFB] border-[#5D5DFB] hover:bg-[#E4F4FF]"

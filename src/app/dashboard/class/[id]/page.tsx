@@ -479,7 +479,6 @@ export default function ClassListsPage() {
               students={sortedStudents}
               totalStudents={students.length}
               studentAssessments={studentAssessments}
-              onDeleteStudent={handleDeleteStudent}
               onUpdateStudent={handleUpdateStudent}
               onArchiveStudent={handleArchiveStudent}
               viewMode={viewMode}

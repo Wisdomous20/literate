@@ -18,7 +18,7 @@ export function ComprehensionSubmitArea({
   onTryAgain,
 }: ComprehensionSubmitAreaProps) {
   return (
-    <div className="flex flex-col items-center gap-2 py-1">
+    <div className="flex flex-col items-center gap-1.5 py-0.5">
       {submitError && (
         <p className="text-red-600 text-sm font-medium">{submitError}</p>
       )}
@@ -27,7 +27,7 @@ export function ComprehensionSubmitArea({
           <button
             type="button"
             onClick={onTryAgain}
-            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-[#6666FF] bg-white px-4 text-xs font-semibold text-[#6666FF] transition-colors hover:bg-[#F3F0FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6666FF]/40"
+            className="inline-flex h-9 min-w-36 items-center justify-center gap-1.5 rounded-full border border-[#6666FF] bg-white px-5 text-sm font-semibold text-[#6666FF] transition-colors hover:bg-[#F3F0FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6666FF]/40"
           >
               <RotateCcw className="h-3.5 w-3.5" />
               Try Again
@@ -35,7 +35,7 @@ export function ComprehensionSubmitArea({
         ) : (
           <button
             disabled
-            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-[#6666FF]/50 px-4 text-xs font-semibold text-white"
+            className="inline-flex h-9 min-w-36 items-center justify-center gap-1.5 rounded-full bg-[#6666FF]/50 px-5 text-sm font-semibold text-white"
           >
             Submitted
           </button>
@@ -47,7 +47,7 @@ export function ComprehensionSubmitArea({
             type="button"
             onClick={onSubmit}
             disabled={isSubmitting}
-            className="relative inline-flex h-9 min-w-32 items-center justify-center gap-1.5 rounded-full bg-[#6666FF] px-4 text-xs font-semibold text-white transition-transform hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6666FF]/40 disabled:cursor-not-allowed disabled:opacity-60"
+            className="relative inline-flex h-10 min-w-44 items-center justify-center gap-1.5 rounded-full bg-[#6666FF] px-6 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6666FF]/40 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? (
               "Submitting..."

@@ -48,19 +48,22 @@ export default function AssessmentReportPage() {
 
   const seen = new Set<string>();
   const assessments = assessmentTypeParam
-    ? allAssessments
-        .filter((a) => {
-          if (a.type !== assessmentTypeParam) return false;
-          if (seen.has(a.id)) return false;
-          seen.add(a.id);
-          return true;
-        })
-        .sort(
-          (a, b) =>
-            new Date(b.dateTaken).getTime() - new Date(a.dateTaken).getTime(),
-        )
-        .map((a, idx) => ({
-          attempt: idx + 1,
+    ? (() => {
+        const filteredAssessments = allAssessments
+          .filter((a) => {
+            if (a.type !== assessmentTypeParam) return false;
+            if (seen.has(a.id)) return false;
+            seen.add(a.id);
+            return true;
+          })
+          .sort(
+            (a, b) =>
+              new Date(b.dateTaken).getTime() -
+              new Date(a.dateTaken).getTime(),
+          );
+
+        return filteredAssessments.map((a, idx) => ({
+          attempt: filteredAssessments.length - idx,
           assessmentType: assessmentTypeLabels[a.type] ?? a.type,
           testType: formatTestType(a.passage?.testType),
           assessmentDate: a.dateTaken
@@ -74,7 +77,8 @@ export default function AssessmentReportPage() {
           id: a.id,
           type: a.type,
           language: a.passage?.language ?? "—",
-        }))
+        }));
+      })()
     : [];
 
   const handleRowClick = (assessment: { id: string; type: string }) => {

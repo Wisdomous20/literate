@@ -7,6 +7,7 @@ import {
   Link2,
   BookOpen,
   Plus,
+  RefreshCw,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -35,8 +36,8 @@ function FilterChip({
     <div
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
         active
-          ? "bg-[#EDE9FF] text-[#5D5DFB]"
-          : "bg-[#F5F3FF]/60 text-[#9090B4]"
+          ? "bg-[#F1E8FF] text-[#7C3AED]"
+          : "bg-[#F8F2FF] text-[#A78BCA]"
       }`}
     >
       <Icon className="h-3.5 w-3.5 shrink-0 opacity-80" />
@@ -127,7 +128,11 @@ export function PassageFilters({
       }
     `}
           >
-            <Plus className="h-3.5 w-3.5 shrink-0" />
+            {hasPassage ? (
+              <RefreshCw className="h-3.5 w-3.5 shrink-0" />
+            ) : (
+              <Plus className="h-3.5 w-3.5 shrink-0" />
+            )}
             {hasPassage ? "Change Passage" : "Add Passage"}
           </button>
         </div>

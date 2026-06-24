@@ -22,7 +22,7 @@ export function ComprehensionSubmitArea({
   canViewReadingLevel = false,
 }: ComprehensionSubmitAreaProps) {
   return (
-    <div className="mt-8 mb-8 flex flex-col items-center gap-2">
+    <div className="my-4 flex flex-col items-center gap-1.5">
       {submitError && (
         <p className="text-sm font-medium text-red-600">{submitError}</p>
       )}

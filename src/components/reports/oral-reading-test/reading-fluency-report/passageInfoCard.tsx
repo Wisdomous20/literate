@@ -12,8 +12,8 @@ function PassageField({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-1">
       <span className="text-xs font-semibold text-[#0C1534]">{label}</span>
-      <div className="px-4 py-1 bg-[rgba(93,114,142,0.09)] border border-[rgba(18,48,220,0.03)] rounded-full">
-        <span className="text-[10px] font-medium text-[#00306E]">{value}</span>
+      <div className="rounded-full border border-[rgba(18,48,220,0.3)] bg-[rgba(108,164,239,0.09)] px-4 py-1.5">
+        <span className="text-xs font-medium text-[#00306E]">{value}</span>
       </div>
     </div>
   );

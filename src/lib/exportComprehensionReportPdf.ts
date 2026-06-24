@@ -34,9 +34,9 @@ export interface ComprehensionReportData {
 
 const C = {
   ...PDF_COLORS,
-  accentTeal: [35, 35, 35] as RGB,
-  accentRed: [15, 15, 15] as RGB,
-  titlePurple: [45, 45, 45] as RGB,
+  accentTeal: [17, 24, 39] as RGB,
+  accentRed: [17, 24, 39] as RGB,
+  titlePurple: [17, 24, 39] as RGB,
 };
 
 /* Breakdown colours */
@@ -46,9 +46,9 @@ const BREAKDOWN_CFG: {
   color: RGB;
   bg: RGB;
 }[] = [
-  { key: "literal", label: "Literal", color: [35, 35, 35], bg: [228, 228, 228] },
-  { key: "inferential", label: "Inferential", color: [55, 55, 55], bg: [220, 220, 220] },
-  { key: "critical", label: "Critical", color: [20, 20, 20], bg: [212, 212, 212] },
+  { key: "literal", label: "Literal", color: [17, 24, 39], bg: [245, 243, 255] },
+  { key: "inferential", label: "Inferential", color: [17, 24, 39], bg: [237, 233, 254] },
+  { key: "critical", label: "Critical", color: [17, 24, 39], bg: [221, 214, 254] },
 ];
 
 

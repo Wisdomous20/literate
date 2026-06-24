@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Edit2,
-  Trash2,
   Archive,
   X,
   ChevronLeft,
@@ -19,7 +18,6 @@ interface StudentTableProps {
   students: StudentTableItem[];
   totalStudents: number;
   studentAssessments: Record<string, AssessmentSummaryData[]>;
-  onDeleteStudent?: (studentId: string) => Promise<void>;
   onUpdateStudent?: (
     studentId: string,
     name: string,
@@ -58,7 +56,6 @@ const getAssessmentTypeLabel = (type?: string) => {
 export function StudentTable({
   students,
   studentAssessments,
-  onDeleteStudent,
   onUpdateStudent,
   onArchiveStudent,
   viewMode = "card",
@@ -72,9 +69,7 @@ export function StudentTable({
   const [editName, setEditName] = useState("");
   const [editGradeLevel, setEditGradeLevel] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isArchiving, setIsArchiving] = useState<string | null>(null);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [clickedStudentId, setClickedStudentId] = useState<string | null>(null);
 
   const cardsPerPage = 6;
@@ -116,18 +111,6 @@ export function StudentTable({
     }
   };
 
-  const handleDelete = async (e: React.MouseEvent, studentId: string) => {
-    e.stopPropagation();
-    if (!onDeleteStudent) return;
-    try {
-      setIsDeleting(studentId);
-      await onDeleteStudent(studentId);
-      setDeleteConfirmId(null);
-    } finally {
-      setIsDeleting(null);
-    }
-  };
-
   const handleArchive = async (e: React.MouseEvent, studentId: string) => {
     e.stopPropagation();
     if (!onArchiveStudent) return;
@@ -166,11 +149,11 @@ export function StudentTable({
           <table className="min-w-full bg-white">
             <thead className="bg-[#F5F7FF]">
               <tr>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-[#3B2F7F]">Student</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-[#3B2F7F]">Grade</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-[#3B2F7F]">Assessment Type</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-[#3B2F7F]">Last Assessment</th>
-                <th className="px-4 py-2 text-right text-xs font-semibold text-[#3B2F7F]">Actions</th>
+                <th className="px-4 py-2 text-center text-xs font-semibold text-[#3B2F7F]">Student</th>
+                <th className="px-4 py-2 text-center text-xs font-semibold text-[#3B2F7F]">Grade</th>
+                <th className="px-4 py-2 text-center text-xs font-semibold text-[#3B2F7F]">Assessment Type</th>
+                <th className="px-4 py-2 text-center text-xs font-semibold text-[#3B2F7F]">Last Assessment</th>
+                <th className="px-4 py-2 text-center text-xs font-semibold text-[#3B2F7F]">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -184,7 +167,7 @@ export function StudentTable({
                     onClick={() => !isEditingRow && hasAssessment && handleCardClick(student)}
                     className={`${hasAssessment && !isEditingRow ? "cursor-pointer hover:bg-[#F9FAFF]" : "bg-[#FCFCFF]"} ${clickedStudentId === student.id ? "scale-[1.01] bg-[#EEF4FF] shadow-[inset_0_0_0_1px_rgba(102,102,255,0.2)]" : ""} border-t border-[#EEF1FF] transition-all duration-150`}
                   >
-                    <td className="px-4 py-3 text-sm font-semibold text-[#00306E]">
+                    <td className="px-4 py-3 text-center text-sm font-semibold text-[#00306E]">
                       {isEditingRow ? (
                         <input
                           type="text"
@@ -198,7 +181,7 @@ export function StudentTable({
                         student.name
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm text-[#00306E]/80">
+                    <td className="px-4 py-3 text-center text-sm text-[#00306E]/80">
                       {isEditingRow ? (
                         <select
                           value={editGradeLevel}
@@ -217,10 +200,10 @@ export function StudentTable({
                         student.gradeLevel
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm text-[#00306E]/80">{getAssessmentTypeLabel(student.assessmentType)}</td>
-                    <td className="px-4 py-3 text-sm text-[#00306E]/80">{student.lastAssessment ?? "-"}</td>
+                    <td className="px-4 py-3 text-center text-sm text-[#00306E]/80">{getAssessmentTypeLabel(student.assessmentType)}</td>
+                    <td className="px-4 py-3 text-center text-sm text-[#00306E]/80">{student.lastAssessment ?? "-"}</td>
                     <td className="px-4 py-3">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-center gap-2">
                         {isEditingRow ? (
                           <>
                             <button
@@ -253,22 +236,6 @@ export function StudentTable({
                         >
                           <Archive className="h-3 w-3" />
                           {isArchiving === student.id ? "Archiving..." : "Archive"}
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (
-                              typeof window !== "undefined" &&
-                              !window.confirm(`Delete ${student.name}?`)
-                            ) {
-                              return;
-                            }
-                            void handleDelete(e, student.id);
-                          }}
-                          className="inline-flex items-center gap-1 rounded-md border border-[#E84C3D]/40 px-2 py-1 text-[11px] font-bold text-[#E84C3D] hover:bg-[#FFF0EE]"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                          Delete
                         </button>
                       </div>
                     </td>
@@ -317,7 +284,7 @@ export function StudentTable({
               >
                 {editingId === student.id ? (
                   // Edit Mode
-                  <div className="h-full flex flex-col gap-3">
+                  <div className="flex h-full min-h-[190px] flex-col gap-3">
                     <input
                       type="text"
                       value={editName}
@@ -338,7 +305,7 @@ export function StudentTable({
                         </option>
                       ))}
                     </select>
-                    <div className="flex gap-2 justify-center pt-2">
+                    <div className="mt-auto flex gap-2 justify-center pt-2">
                       <button
                         onClick={(e) => handleSaveEdit(e, student.id)}
                         disabled={isUpdating}
@@ -432,42 +399,8 @@ export function StudentTable({
                         <Archive className="h-3 w-3" />
                         {isArchiving === student.id ? "..." : "Archive"}
                       </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteConfirmId(student.id);
-                        }}
-                        className="flex-1 flex items-center justify-center gap-1 rounded-lg bg-white border border-[#E84C3D]/40 px-2 py-2 text-xs font-bold text-[#E84C3D] transition-all hover:bg-[#FFF0EE] hover:border-[#E84C3D] active:scale-95"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                        Delete
-                      </button>
                     </div>
                   </>
-                )}
-
-                {/* Delete Confirmation */}
-                {deleteConfirmId === student.id && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-2xl bg-black/40 p-4 backdrop-blur-sm">
-                    <span className="text-sm font-bold text-white text-center">
-                      Delete {student.name}?
-                    </span>
-                    <div className="flex gap-2 w-full">
-                      <button
-                        onClick={(e) => handleDelete(e, student.id)}
-                        disabled={isDeleting === student.id}
-                        className="flex-1 rounded-lg bg-[#E84C3D] px-2 py-1 text-xs font-bold text-white transition-all hover:bg-[#D93D30] disabled:opacity-50"
-                      >
-                        Delete
-                      </button>
-                      <button
-                        onClick={() => setDeleteConfirmId(null)}
-                        className="flex-1 rounded-lg bg-white/90 px-2 py-1 text-xs font-bold text-[#00306E] transition-all hover:bg-white"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
                 )}
               </div>
             );

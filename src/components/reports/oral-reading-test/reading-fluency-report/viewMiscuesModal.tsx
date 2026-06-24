@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect, useCallback, Fragment } from "react";
-import { X, Play, Pause, Trash2, Pencil, Loader2, Mic } from "lucide-react";
+import { X, Play, Pause, Trash2, Loader2, Mic } from "lucide-react";
 import type { MiscueResult, AlignedWord } from "@/types/oral-reading";
 import { getPassageTextStyle } from "@/components/oral-reading-test/passageDisplay";
-import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay";
 import type { EditModeCallbacks } from "@/components/oral-reading-test/passageDisplay";
 import { MiscueActionPopover } from "@/components/oral-reading-test/miscueEditPopover";
 import { formatMiscueTimestamp, seekAudioToTimestamp } from "@/lib/audioPlayback";
@@ -157,7 +156,7 @@ export default function ViewMiscuesModal({
   const [highlightedTypes, setHighlightedTypes] = useState<Set<string>>(
     new Set(),
   );
-  const [activeTab, setActiveTab] = useState<"passage" | "list" | "edit">("passage");
+  const [activeTab, setActiveTab] = useState<"passage" | "list">("passage");
   const [showMiscues, setShowMiscues] = useState(true);
   const [popup, setPopup] = useState<PopupState | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -628,18 +627,6 @@ export default function ViewMiscuesModal({
                 )}
                 {onDeleteMiscue && (
                   <div className="flex items-center gap-2">
-                    {(onUpdateMiscueType || onUpdateSpokenWord) && (
-                      <button
-                        type="button"
-                        onClick={(e) => openMiscuePopup(e.currentTarget, miscue)}
-                        className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#D7E6FF] bg-[#F8FBFF] px-2.5 text-[#1A5FB4] transition-colors hover:bg-[#EDF5FF]"
-                        aria-label={`Edit ${config.label.toLowerCase()} miscue`}
-                        title="Edit miscue"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                        <span className="text-[11px] font-semibold">Edit</span>
-                      </button>
-                    )}
                     <button
                       type="button"
                       onClick={async () => {
@@ -750,22 +737,6 @@ export default function ViewMiscuesModal({
             >
               Miscued Words
             </button>
-            {editMiscues && (
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab("edit");
-                  setPopup(null);
-                }}
-                className={`min-w-[118px] rounded-md px-3 py-2 text-xs font-semibold transition-colors ${
-                  activeTab === "edit"
-                    ? "bg-white text-[#00306E] shadow-sm"
-                    : "text-[#31318A]/70 hover:text-[#00306E]"
-                }`}
-              >
-                Edit Miscues
-              </button>
-            )}
           </div>
           {audioSrc && (
             <div className="flex items-center gap-2 rounded-full border border-[#DAE6FF] bg-[#F8FBFF] px-3 py-1.5">
@@ -836,42 +807,9 @@ export default function ViewMiscuesModal({
           ref={containerRef}
           className="oral-reading-scroll relative flex-1 overflow-auto px-6 py-5"
         >
-          {activeTab === "edit" && editMiscues ? (
-            <div className="flex h-full flex-col">
-              <div className="flex-1 overflow-auto">
-                <PassageDisplay
-                  content={passageContent}
-                  miscues={
-                    editMiscues.isEditing
-                      ? editMiscues.editedMiscues
-                      : miscues
-                  }
-                  alignedWords={alignedWords}
-                  passageLevel={passageLevel}
-                  expanded
-                  resizable={false}
-                  editMode={editMiscues}
-                  onJumpToTime={effectiveJumpToTime}
-                  onDeleteMiscue={onDeleteMiscue}
-                  onUpdateMiscueType={onUpdateMiscueType}
-                  onUpdateSpokenWord={onUpdateSpokenWord}
-                />
-              </div>
-              {!editMiscues.isEditing && (
-                <div className="mt-4 flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => editMiscues.enterEditMode()}
-                    className="rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-semibold text-white hover:bg-[#5555EE]"
-                  >
-                    Start Editing
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : activeTab === "passage" ? (
+          {activeTab === "passage" ? (
             <>
-              <div className="rounded-xl border border-[#54A4FF] bg-[#EFFDFF] p-5 shadow-[0px_1px_20px_rgba(108,164,239,0.37)]">
+              <div className="rounded-xl border border-[#DAE6FF] bg-white p-5 shadow-[0px_1px_20px_rgba(108,164,239,0.18)]">
                 <p
                   className="whitespace-pre-wrap text-center leading-relaxed text-[#00306E]"
                   style={passageLevel ? passageTextStyle : undefined}

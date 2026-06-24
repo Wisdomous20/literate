@@ -15,9 +15,9 @@ import { cn } from "@/lib/utils";
 import { hasActiveAccessAction } from "@/app/actions/subscription/hasActiveAccess";
 import {
   LayoutDashboard,
+  BookOpenCheck,
+  Sparkles,
   FileText,
-  BookOpen,
-  ClipboardList,
   Settings,
   LogOut,
   ChevronsLeft,
@@ -45,17 +45,17 @@ const menuItems = [
   {
     label: "Oral Reading Test",
     href: "/dashboard/oral-reading-test",
-    icon: FileText,
+    icon: BookOpenCheck,
   },
   {
     label: "Reading Fluency Test",
     href: "/dashboard/reading-fluency-test",
-    icon: BookOpen,
+    icon: Sparkles,
   },
   {
     label: "Reading Comprehension Test",
     href: "/dashboard/reading-comprehension-test",
-    icon: ClipboardList,
+    icon: FileText,
   },
 ];
 
@@ -242,11 +242,15 @@ export function Sidebar() {
   const firstName = session?.user?.name?.split(" ")[0] || "User";
   const schoolYear = getCurrentSchoolYear();
   const isOrgAdmin = session?.user?.role === "ORG_ADMIN";
-  const routeActiveHref = [
+  const routeActiveHref = [...[
     ...menuItems,
     ...generalItems,
     ...(isOrgAdmin ? orgAdminItems : []),
-  ].find((item) => pathname === item.href)?.href;
+  ]]
+    .sort((a, b) => b.href.length - a.href.length)
+    .find((item) =>
+      pathname === item.href || pathname.startsWith(`${item.href}/`),
+    )?.href;
   const activeHref = optimisticHref ?? routeActiveHref;
 
   useEffect(() => {

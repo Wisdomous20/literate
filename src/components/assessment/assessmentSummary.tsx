@@ -99,10 +99,10 @@ export function generateAssessmentSummaryPdf(
   const pageHeight = doc.internal.pageSize.getHeight();
   const footerY = pageHeight - 12;
 
-  const BRAND_PRIMARY: [number, number, number] = [64, 102, 255];
-  const BRAND_DEEP: [number, number, number] = [41, 62, 166];
-  const BRAND_LIGHT: [number, number, number] = [239, 244, 255];
-  const TEXT_DARK: [number, number, number] = [26, 32, 44];
+  const BRAND_PRIMARY: [number, number, number] = [124, 58, 237];
+  const BRAND_DEEP: [number, number, number] = [17, 24, 39];
+  const BRAND_LIGHT: [number, number, number] = [255, 255, 255];
+  const TEXT_DARK: [number, number, number] = [17, 24, 39];
 
   const levelColor = (() => {
     switch (oralReadingLevel.level?.toLowerCase()) {
@@ -166,7 +166,7 @@ export function generateAssessmentSummaryPdf(
   ensureSpace(studentHeight);
   const studentTop = yPosition;
   doc.setFillColor(...BRAND_LIGHT);
-  doc.setDrawColor(199, 210, 254);
+  doc.setDrawColor(196, 181, 253);
   doc.roundedRect(margins, studentTop, contentWidth, studentHeight, 2, 2, "FD");
   yPosition += 7;
   doc.setFont("helvetica", "bold");
@@ -183,8 +183,8 @@ export function generateAssessmentSummaryPdf(
   const descriptionLines = doc.splitTextToSize(description, contentWidth - 18) as string[];
   const classificationHeight = 22 + descriptionLines.length * 4.5;
   ensureSpace(classificationHeight);
-  doc.setFillColor(248, 250, 255);
-  doc.setDrawColor(214, 224, 255);
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(196, 181, 253);
   doc.roundedRect(margins, yPosition, contentWidth, classificationHeight, 2, 2, "FD");
   yPosition += 7;
   doc.setFont("helvetica", "bold");
@@ -230,8 +230,8 @@ export function generateAssessmentSummaryPdf(
       height + Math.max(6, (doc.splitTextToSize(value, contentWidth - doc.getTextWidth(`${label}: `) - 15) as string[]).length * 4.5), 0) + 3;
     ensureSpace(cardHeight);
 
-    doc.setFillColor(248, 250, 255);
-    doc.setDrawColor(214, 224, 255);
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(196, 181, 253);
     doc.roundedRect(margins, yPosition, contentWidth, cardHeight, 2, 2, "FD");
     doc.setFillColor(...BRAND_PRIMARY);
     doc.rect(margins, yPosition, 2.2, cardHeight, "F");

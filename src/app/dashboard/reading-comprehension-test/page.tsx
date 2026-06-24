@@ -703,7 +703,7 @@ export default function ReadingComprehensionTestPage() {
             />
 
             {showQuestions && hasPassage && (
-              <div className="pointer-events-none absolute top-4.5 right-50 z-20">
+              <div className="pointer-events-none absolute right-5 top-4.5 z-20">
                 <div className="relative">
                   <div className="absolute inset-0 translate-y-1 rounded-full bg-[#B3A4F1]/55" />
                   <button
@@ -713,7 +713,7 @@ export default function ReadingComprehensionTestPage() {
                         return !prev;
                       });
                     }}
-                    className="pointer-events-auto relative inline-flex items-center justify-center gap-1.5 rounded-full border border-[#6666FF] bg-white px-5 py-2 text-xs font-semibold text-[#6666FF] shadow transition-transform hover:bg-[#6666FF] hover:text-white hover:-translate-y-0.5 active:translate-y-0"
+                    className="pointer-events-auto relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#6666FF] bg-white text-[#6666FF] shadow transition-transform hover:bg-[#6666FF] hover:text-white hover:-translate-y-0.5 active:translate-y-0"
                     title={
                       passageExpanded
                         ? "Exit full passage view"
@@ -726,13 +726,10 @@ export default function ReadingComprehensionTestPage() {
                     }
                   >
                     {passageExpanded ? (
-                      <Minimize2 className="h-3.5 w-3.5 shrink-0" />
+                      <Minimize2 className="h-4 w-4 shrink-0" />
                     ) : (
-                      <Maximize2 className="h-3.5 w-3.5 shrink-0" />
+                      <Maximize2 className="h-4 w-4 shrink-0" />
                     )}
-                    {passageExpanded
-                      ? "Exit Full Passage"
-                      : "View Full Passage"}
                   </button>
                 </div>
               </div>
@@ -762,12 +759,11 @@ export default function ReadingComprehensionTestPage() {
                     <button
                       type="button"
                       onClick={() => setPassageExpanded(false)}
-                      className="absolute top-2 right-2 z-10 inline-flex items-center gap-1 rounded-full border border-[#6666FF] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#6666FF] shadow transition-transform hover:bg-[#6666FF] hover:text-white hover:-translate-y-0.5 active:translate-y-0"
+                      className="absolute right-3 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[#6666FF] bg-white text-[#6666FF] shadow transition-transform hover:bg-[#6666FF] hover:text-white hover:-translate-y-1/2 hover:scale-105 active:scale-95"
                       title="Exit full passage view"
                       aria-label="Exit full passage view"
                     >
-                      <Minimize2 className="h-3 w-3 shrink-0" />
-                      Exit Full Passage
+                      <Minimize2 className="h-4 w-4 shrink-0" />
                     </button>
                   )}
                   <PassageDisplay
@@ -784,12 +780,11 @@ export default function ReadingComprehensionTestPage() {
                   <button
                     type="button"
                     onClick={() => setPassageExpanded(false)}
-                    className="absolute top-2 right-2 z-10 inline-flex items-center gap-1 rounded-full border border-[#6666FF] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#6666FF] shadow transition-transform hover:bg-[#6666FF] hover:text-white hover:-translate-y-0.5 active:translate-y-0"
+                    className="absolute right-3 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[#6666FF] bg-white text-[#6666FF] shadow transition-transform hover:bg-[#6666FF] hover:text-white hover:-translate-y-1/2 hover:scale-105 active:scale-95"
                     title="Exit full passage view"
                     aria-label="Exit full passage view"
                   >
-                    <Minimize2 className="h-3 w-3 shrink-0" />
-                    Exit Full Passage
+                    <Minimize2 className="h-4 w-4 shrink-0" />
                   </button>
                   <PassageDisplay
                     content={passageContent}

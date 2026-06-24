@@ -133,7 +133,7 @@ export function QuestionCard({
             onChange={(e) => onEssayChange(question.id, e.target.value)}
             disabled={isSubmitted}
             placeholder="Type your answer here..."
-            className="w-full min-h-12.5 bg-[rgba(108,164,239,0.09)] rounded-md border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] px-4 py-3 text-[#00306E] text-[15px] placeholder:text-[#00306E]/40 outline-none resize-y disabled:opacity-60"
+            className="min-h-12.5 w-full resize-none rounded-md bg-white px-4 py-3 text-[15px] text-[#00306E] placeholder:text-[#00306E]/40 outline-none disabled:opacity-60"
           />
         </div>
       )}
