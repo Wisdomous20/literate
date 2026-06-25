@@ -203,7 +203,7 @@ export default function ReadingComprehensionReportPage() {
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b-[3px] border-[#5D5DFB] bg-white px-4 md:px-6 py-4">
+      <div className="sticky top-0 z-20 flex items-center gap-3 border-b-[3px] border-[#5D5DFB] bg-white px-4 py-4 md:px-6">
         <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg bg-[#5D5DFB]/10 shrink-0">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5 text-[#5D5DFB]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
         </div>
@@ -240,11 +240,11 @@ export default function ReadingComprehensionReportPage() {
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <div className="relative">
-                  <div className="absolute inset-0 rounded-full translate-y-1 bg-[#1e3a8a]/30" />
+                  <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
                   <button
                     type="button"
                     onClick={handleExportPdf}
-                    className="relative inline-flex items-center gap-1.5 rounded-full bg-[#1e3a8a] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-transform hover:bg-[#1d4ed8] hover:-translate-y-0.5 active:translate-y-0"
+                    className="relative inline-flex items-center gap-1.5 rounded-full bg-[#6666FF] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-transform hover:bg-[#5555EE] hover:-translate-y-0.5 active:translate-y-0"
                   >
                     <Download className="h-3.5 w-3.5" />
                     Export to PDF

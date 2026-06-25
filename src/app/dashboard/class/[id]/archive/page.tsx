@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ArchiveRestore, CheckCircle, Search, X, XCircle } from "lucide-react";
@@ -21,6 +21,7 @@ export default function ArchivedStudentsPage() {
   const classRoomId = params.id as string;
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [restoringId, setRestoringId] = useState<string | null>(null);
   const [toast, setToast] = useState<{
     message: string;
@@ -34,6 +35,7 @@ export default function ArchivedStudentsPage() {
     error,
   } = useArchivedStudentsByClassId(classRoomId);
 
+  const studentsPerPage = 10;
   const filteredStudents = useMemo(
     () =>
       archivedStudents.filter((student) =>
@@ -41,6 +43,18 @@ export default function ArchivedStudentsPage() {
       ),
     [archivedStudents, searchQuery],
   );
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredStudents.length / studentsPerPage),
+  );
+  const paginatedStudents = filteredStudents.slice(
+    (currentPage - 1) * studentsPerPage,
+    currentPage * studentsPerPage,
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, archivedStudents.length]);
 
   const showToast = (message: string, type: "success" | "error") => {
     setToast({ message, type });
@@ -96,7 +110,7 @@ export default function ArchivedStudentsPage() {
         </div>
       )}
 
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 py-5 md:px-6 md:py-6">
+      <main className="flex w-full flex-1 flex-col gap-4 px-4 py-5 md:px-6 md:py-6 xl:px-8">
         <div className="rounded-2xl border border-[#9999FF]/25 bg-white p-4 shadow-[0_4px_16px_rgba(102,102,255,0.08)] md:p-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -158,7 +172,7 @@ export default function ArchivedStudentsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredStudents.map((student) => (
+                  {paginatedStudents.map((student) => (
                     <tr key={student.id} className="border-t border-[#EEF1FF]">
                       <td className="px-4 py-3 text-sm font-semibold text-[#00306E]">{student.name}</td>
                       <td className="px-4 py-3 text-sm text-[#00306E]/80">{levelToGrade(student.level)}</td>
@@ -179,6 +193,31 @@ export default function ArchivedStudentsPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+          {filteredStudents.length > studentsPerPage && (
+            <div className="mt-4 flex items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="rounded-lg border border-[#6666FF]/25 bg-white px-3 py-2 text-xs font-bold text-[#6666FF] transition-all hover:bg-[#F8F9FF] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Prev
+              </button>
+              <span className="text-xs font-semibold text-[#3B2F7F]">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                }
+                disabled={currentPage === totalPages}
+                className="rounded-lg border border-[#6666FF]/25 bg-white px-3 py-2 text-xs font-bold text-[#6666FF] transition-all hover:bg-[#F8F9FF] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Next
+              </button>
             </div>
           )}
         </div>

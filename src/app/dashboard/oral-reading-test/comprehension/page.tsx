@@ -685,7 +685,7 @@ export default function OralReadingComprehensionPage() {
                 {/* Timer */}
                 <button
                   onClick={togglePause}
-                  className={`flex items-center gap-2 rounded-full border px-4 py-2 transition-all cursor-pointer select-none shrink-0 ${
+                  className={`flex min-h-11 flex-col items-start justify-center rounded-2xl border px-4 py-1.5 transition-all cursor-pointer select-none shrink-0 ${
                     isPaused
                       ? "border-[#E53E3E] bg-red-50 shadow-[0_0_12px_rgba(229,62,62,0.2)]"
                       : "border-[#D0D0FF] bg-[#F5F5FF] shadow-sm"
@@ -694,19 +694,24 @@ export default function OralReadingComprehensionPage() {
                     isPaused ? "Click to resume timer" : "Click to pause timer"
                   }
                 >
-                  <Clock
-                    className={`w-5 h-5 ${isPaused ? "text-[#E53E3E]" : "text-[#6666FF]"}`}
-                  />
-                  <span
-                    className={`font-bold text-xl tabular-nums ${isPaused ? "text-[#E53E3E]" : "text-[#00306E]"}`}
-                  >
-                    {formattedTime}
+                  <span className={`text-[10px] font-semibold uppercase tracking-wide ${isPaused ? "text-[#E53E3E]" : "text-[#6666FF]"}`}>
+                    {isPaused ? "Click to resume timer" : "Click to pause timer"}
                   </span>
-                  {isPaused && (
-                    <span className="text-[#E53E3E] text-[10px] font-semibold">
-                      PAUSED
+                  <span className="mt-0.5 flex items-center gap-2">
+                    <Clock
+                      className={`w-5 h-5 ${isPaused ? "text-[#E53E3E]" : "text-[#6666FF]"}`}
+                    />
+                    <span
+                      className={`font-bold text-xl tabular-nums ${isPaused ? "text-[#E53E3E]" : "text-[#00306E]"}`}
+                    >
+                      {formattedTime}
                     </span>
-                  )}
+                    {isPaused && (
+                      <span className="text-[#E53E3E] text-[10px] font-semibold">
+                        PAUSED
+                      </span>
+                    )}
+                  </span>
                 </button>
               </div>
             </div>

@@ -951,40 +951,40 @@ export function PassageDisplay({
 
       {content && (onToggleExpand || (editMode && !isEditing && hasMiscues) || (onRecheckMiscues && !isEditing)) && (
         <div
-          className={`absolute right-4 z-20 flex items-center gap-1 md:right-5 ${collapsible && !collapsed ? "top-12 md:top-13" : "top-4 md:top-5"}`}
+          className={`absolute right-3 top-3 z-20 flex items-center gap-1 md:right-4 ${collapsible && !collapsed ? "md:top-12" : "md:top-4"}`}
         >
           {onRecheckMiscues && !isEditing && (
             <button
               type="button"
               onClick={onRecheckMiscues}
               disabled={isRechecking}
-              className="flex h-7 w-7 items-center justify-center rounded-md bg-[rgba(84,164,255,0.15)] text-[#1A5FB4] transition-colors hover:bg-[rgba(84,164,255,0.25)] disabled:cursor-wait disabled:opacity-60"
+              className="flex h-6.5 w-6.5 items-center justify-center rounded-md bg-[rgba(84,164,255,0.15)] text-[#1A5FB4] transition-colors hover:bg-[rgba(84,164,255,0.25)] disabled:cursor-wait disabled:opacity-60"
               title={isRechecking ? "Rechecking miscues" : "Recheck all miscues"}
               aria-label={isRechecking ? "Rechecking miscues" : "Recheck all miscues"}
             >
-              {isRechecking ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+              {isRechecking ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
             </button>
           )}
           {editMode && !isEditing && hasMiscues && (
             <button
               type="button"
               onClick={editMode.enterEditMode}
-              className="flex h-7 w-7 items-center justify-center rounded-md bg-[rgba(84,164,255,0.15)] text-[#1A5FB4] transition-colors hover:bg-[rgba(84,164,255,0.25)]"
+              className="flex h-6.5 w-6.5 items-center justify-center rounded-md bg-[rgba(84,164,255,0.15)] text-[#1A5FB4] transition-colors hover:bg-[rgba(84,164,255,0.25)]"
               title="Edit miscues"
               aria-label="Edit miscues"
             >
-              <Pencil className="h-3.5 w-3.5" />
+              <Pencil className="h-3 w-3" />
             </button>
           )}
           {onToggleExpand && (
             <button
               type="button"
               onClick={onToggleExpand}
-              className="flex h-7 w-7 items-center justify-center rounded-md bg-[rgba(84,164,255,0.15)] text-[#1A5FB4] transition-colors hover:bg-[rgba(84,164,255,0.25)]"
+              className="flex h-6.5 w-6.5 items-center justify-center rounded-md bg-[rgba(84,164,255,0.15)] text-[#1A5FB4] transition-colors hover:bg-[rgba(84,164,255,0.25)]"
               title={expanded ? "Collapse passage" : "Expand passage"}
               aria-label={expanded ? "Collapse passage" : "Expand passage"}
             >
-              {expanded ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+              {expanded ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
             </button>
           )}
         </div>

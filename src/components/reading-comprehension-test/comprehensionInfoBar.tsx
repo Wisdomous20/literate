@@ -34,24 +34,29 @@ export function ComprehensionInfoBar({
           onClick={onTogglePause}
           disabled={isSubmitted}
           className={
-            "flex h-8 items-center gap-1.5 rounded-full border border-[#D7D5E8] bg-white px-3 text-[#0F3B79] " +
+            "flex min-h-10 flex-col items-start justify-center rounded-2xl border border-[#D7D5E8] bg-white px-3 py-1.5 text-[#0F3B79] " +
             "shadow-[0_1px_4px_rgba(15,59,121,0.12)] transition " +
             (isSubmitted ? "cursor-default opacity-70" : "hover:bg-[#EEF3FF]")
           }
           title={isPaused ? "Click to resume timer" : "Click to pause timer"}
         >
-          <Clock
-            className={
-              "h-4 w-4 " + (isPaused ? "text-[#E53E3E]" : "text-[#6666FF]")
-            }
-          />
-          <span
-            className={
-              "text-sm font-bold tabular-nums leading-none " +
-              (isPaused ? "text-[#E53E3E]" : "text-[#0F3B79]")
-            }
-          >
-            {formattedTime}
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-[#69738A]">
+            {isPaused ? "Click to resume timer" : "Click to pause timer"}
+          </span>
+          <span className="mt-0.5 flex items-center gap-1.5">
+            <Clock
+              className={
+                "h-4 w-4 " + (isPaused ? "text-[#E53E3E]" : "text-[#6666FF]")
+              }
+            />
+            <span
+              className={
+                "text-sm font-bold tabular-nums leading-none " +
+                (isPaused ? "text-[#E53E3E]" : "text-[#0F3B79]")
+              }
+            >
+              {formattedTime}
+            </span>
           </span>
         </button>
       </div>

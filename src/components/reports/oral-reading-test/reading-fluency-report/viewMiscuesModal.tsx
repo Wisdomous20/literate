@@ -663,7 +663,7 @@ export default function ViewMiscuesModal({
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
 
       {/* Modal panel */}
-      <div className="relative z-50 mx-auto flex h-[90vh] w-full max-w-5xl flex-col rounded-2xl border border-[#54A4FF] bg-white shadow-[0_4px_40px_rgba(0,0,0,0.15)]">
+      <div className="relative z-50 mx-auto flex h-[90vh] w-full max-w-5xl flex-col overflow-visible rounded-2xl border border-[#54A4FF] bg-white shadow-[0_4px_40px_rgba(0,0,0,0.15)]">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#DAE6FF] px-6 py-4">
           <h2 className="text-lg font-bold text-[#00306E]">
@@ -859,7 +859,7 @@ export default function ViewMiscuesModal({
               </div>
             </>
           ) : activeTab === "edit" && editMiscues ? (
-            <div className="rounded-xl border border-[#DAE6FF] bg-white p-4 shadow-[0px_1px_20px_rgba(108,164,239,0.18)]">
+            <div className="overflow-visible rounded-xl border border-[#DAE6FF] bg-white p-4 shadow-[0px_1px_20px_rgba(108,164,239,0.18)]">
               <PassageDisplay
                 content={passageContent}
                 miscues={editMiscues.isEditing ? editMiscues.editedMiscues : resolvedMiscues}

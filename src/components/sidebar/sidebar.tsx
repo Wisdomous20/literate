@@ -20,8 +20,8 @@ import {
   BookOpen,
   Settings,
   LogOut,
-  ChevronsLeft,
-  ChevronsRight,
+  PanelLeftClose,
+  PanelLeftOpen,
   Zap,
   Users,
   Menu,
@@ -579,18 +579,21 @@ export function Sidebar() {
           )}
         </div>
 
-        {/* Collapse button — floats at the right edge, vertically centered */}
+        {/* Collapse button */}
         <button
           type="button"
           onClick={() => setCollapsed(!collapsed)}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="absolute right-0 top-1/2 z-50 flex h-9 w-9 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-xl border border-[#D6DDFB] bg-[#F1F5FF] text-[#6C4EEB] shadow-sm transition duration-200 hover:border-[#6C4EEB]/40 hover:bg-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#6C4EEB]/20"
+          className={cn(
+            "absolute top-4 z-50 flex h-9 w-9 items-center justify-center rounded-xl border border-white/25 bg-white/12 text-white shadow-sm backdrop-blur transition duration-200 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/20",
+            collapsed ? "right-1/2 translate-x-1/2" : "right-4",
+          )}
         >
           {collapsed ? (
-            <ChevronsRight className="h-5 w-5" />
+            <PanelLeftOpen className="h-4.5 w-4.5" />
           ) : (
-            <ChevronsLeft className="h-5 w-5" />
+            <PanelLeftClose className="h-4.5 w-4.5" />
           )}
         </button>
 

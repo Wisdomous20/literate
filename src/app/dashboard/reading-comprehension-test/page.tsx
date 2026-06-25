@@ -21,6 +21,7 @@ import { useClassList } from "@/lib/hooks/useClassList";
 import { useQueryClient } from "@tanstack/react-query";
 import { getQuizByPassageAction } from "@/app/actions/comprehension-Test/getQuizByPassage";
 import { createStudent } from "@/app/actions/student/createStudent";
+import { exportComprehensionReportPdf } from "@/lib/exportComprehensionReportPdf";
 
 function getCurrentSchoolYear(): string {
   const now = new Date();
@@ -625,6 +626,38 @@ export default function ReadingComprehensionTestPage() {
             onTagClick={handleTagClick}
             showReportButton={true}
             reportHref="/dashboard/reading-comprehension-test/report"
+            onExportPdf={() => {
+              if (!comprehensionResult?.tagBreakdown) return;
+              exportComprehensionReportPdf(
+                {
+                  studentName: studentName || "\u2014",
+                  gradeLevel: gradeLevel ? `Grade ${gradeLevel}` : "\u2014",
+                  className: selectedClassName || "\u2014",
+                  passageTitle: selectedTitle || "\u2014",
+                  passageLevel: selectedLevel || "\u2014",
+                  numberOfWords: passageContent
+                    ? passageContent.split(/\s+/).filter(Boolean).length
+                    : 0,
+                  testType: selectedTestType || "\u2014",
+                  assessmentType: "Reading Comprehension Test",
+                  score: comprehensionResult.score,
+                  totalItems: comprehensionResult.totalItems,
+                  percentage:
+                    comprehensionResult.totalItems > 0
+                      ? Math.round(
+                          (comprehensionResult.score /
+                            comprehensionResult.totalItems) *
+                            100,
+                        )
+                      : 0,
+                  classificationLevel: comprehensionResult.level,
+                  literal: comprehensionResult.tagBreakdown.literal,
+                  inferential: comprehensionResult.tagBreakdown.inferential,
+                  critical: comprehensionResult.tagBreakdown.critical,
+                },
+                `Comprehension_Report_${(studentName || "report").replace(/[^a-zA-Z0-9]/g, "_")}`,
+              );
+            }}
           />
         ) : undefined
       }
@@ -702,7 +735,7 @@ export default function ReadingComprehensionTestPage() {
               disabled={showQuestions}
             />
 
-            {showQuestions && hasPassage && (
+            {!showQuestions && hasPassage && (
               <div className="pointer-events-none absolute right-5 top-4.5 z-20">
                 <div className="relative">
                   <div className="absolute inset-0 translate-y-1 rounded-full bg-[#B3A4F1]/55" />
@@ -713,7 +746,7 @@ export default function ReadingComprehensionTestPage() {
                         return !prev;
                       });
                     }}
-                    className="pointer-events-auto relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#6666FF] bg-white text-[#6666FF] shadow transition-transform hover:bg-[#6666FF] hover:text-white hover:-translate-y-0.5 active:translate-y-0"
+                    className="pointer-events-auto relative inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#6666FF] bg-white text-[#6666FF] shadow transition-transform hover:bg-[#6666FF] hover:text-white hover:-translate-y-0.5 active:translate-y-0"
                     title={
                       passageExpanded
                         ? "Exit full passage view"
@@ -726,9 +759,9 @@ export default function ReadingComprehensionTestPage() {
                     }
                   >
                     {passageExpanded ? (
-                      <Minimize2 className="h-4 w-4 shrink-0" />
+                      <Minimize2 className="h-3 w-3 shrink-0" />
                     ) : (
-                      <Maximize2 className="h-4 w-4 shrink-0" />
+                      <Maximize2 className="h-3 w-3 shrink-0" />
                     )}
                   </button>
                 </div>
@@ -759,11 +792,11 @@ export default function ReadingComprehensionTestPage() {
                     <button
                       type="button"
                       onClick={() => setPassageExpanded(false)}
-                      className="absolute right-3 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[#6666FF] bg-white text-[#6666FF] shadow transition-transform hover:bg-[#6666FF] hover:text-white hover:-translate-y-1/2 hover:scale-105 active:scale-95"
+                      className="absolute right-3 top-3 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#6666FF] bg-white text-[#6666FF] shadow transition-transform hover:bg-[#6666FF] hover:text-white hover:scale-105 active:scale-95"
                       title="Exit full passage view"
                       aria-label="Exit full passage view"
                     >
-                      <Minimize2 className="h-4 w-4 shrink-0" />
+                      <Minimize2 className="h-3 w-3 shrink-0" />
                     </button>
                   )}
                   <PassageDisplay
@@ -780,11 +813,11 @@ export default function ReadingComprehensionTestPage() {
                   <button
                     type="button"
                     onClick={() => setPassageExpanded(false)}
-                    className="absolute right-3 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[#6666FF] bg-white text-[#6666FF] shadow transition-transform hover:bg-[#6666FF] hover:text-white hover:-translate-y-1/2 hover:scale-105 active:scale-95"
+                    className="absolute right-3 top-3 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#6666FF] bg-white text-[#6666FF] shadow transition-transform hover:bg-[#6666FF] hover:text-white hover:scale-105 active:scale-95"
                     title="Exit full passage view"
                     aria-label="Exit full passage view"
                   >
-                    <Minimize2 className="h-4 w-4 shrink-0" />
+                    <Minimize2 className="h-3 w-3 shrink-0" />
                   </button>
                   <PassageDisplay
                     content={passageContent}

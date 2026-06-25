@@ -165,7 +165,7 @@ export function StudentTable({
                   <tr
                     key={student.id}
                     onClick={() => !isEditingRow && hasAssessment && handleCardClick(student)}
-                    className={`${hasAssessment && !isEditingRow ? "cursor-pointer hover:bg-[#F9FAFF]" : "bg-[#FCFCFF]"} ${clickedStudentId === student.id ? "scale-[1.01] bg-[#EEF4FF] shadow-[inset_0_0_0_1px_rgba(102,102,255,0.2)]" : ""} border-t border-[#EEF1FF] transition-all duration-150`}
+                    className={`${hasAssessment && !isEditingRow ? "cursor-pointer hover:scale-[1.01] hover:bg-[#F9FAFF] hover:shadow-[0_6px_18px_rgba(102,102,255,0.08)]" : "bg-[#FCFCFF]"} ${clickedStudentId === student.id ? "scale-[1.01] bg-[#EEF4FF] shadow-[inset_0_0_0_1px_rgba(102,102,255,0.2)]" : ""} border-t border-[#EEF1FF] transition-all duration-200`}
                   >
                     <td className="px-4 py-3 text-left text-sm font-semibold text-[#00306E]">
                       {isEditingRow ? (

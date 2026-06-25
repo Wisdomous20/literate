@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Check, RotateCcw } from "lucide-react";
+import { ArrowRight, SendHorizonal, RotateCcw } from "lucide-react";
 
 interface ComprehensionSubmitAreaProps {
   submitError: string | null;
@@ -73,7 +73,7 @@ export function ComprehensionSubmitArea({
             disabled={isSubmitting}
             className="relative flex items-center justify-center gap-2 rounded-full bg-[#6666FF] px-9 py-3 text-base font-bold text-white transition-transform hover:-translate-y-0.5 active:translate-y-0 shadow disabled:opacity-60 min-w-[210px]"
           >
-            {!isSubmitting && <Check className="h-4.5 w-4.5" />}
+            {!isSubmitting && <SendHorizonal className="h-4.5 w-4.5" />}
             {isSubmitting ? "Submitting..." : "Submit"}
           </button>
         </div>
