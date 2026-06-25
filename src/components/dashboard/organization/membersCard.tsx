@@ -6,6 +6,7 @@ import {
   Loader2,
   RefreshCw,
   ShieldCheck,
+  UserMinus,
 } from "lucide-react";
 import type { Member } from "./types";
 
@@ -13,14 +14,18 @@ interface MembersCardProps {
   members: Member[];
   onGeneratePassword: (member: Member) => Promise<void>;
   onResetPassword: (member: Member) => void;
+  onRoleChange: (member: Member, role: "ADMIN" | "USER") => void | Promise<void>;
   onToggle: (member: Member, disable: boolean) => void | Promise<void>;
+  onRemove: (member: Member) => void | Promise<void>;
 }
 
 export function MembersCard({
   members,
   onGeneratePassword,
   onResetPassword,
+  onRoleChange,
   onToggle,
+  onRemove,
 }: MembersCardProps) {
   return (
     <section
@@ -57,7 +62,9 @@ export function MembersCard({
               member={member}
               onGeneratePassword={onGeneratePassword}
               onResetPassword={onResetPassword}
+              onRoleChange={onRoleChange}
               onToggle={onToggle}
+              onRemove={onRemove}
             />
           ))}
         </ul>
@@ -70,15 +77,21 @@ function MemberRow({
   member,
   onGeneratePassword,
   onResetPassword,
+  onRoleChange,
   onToggle,
+  onRemove,
 }: {
   member: Member;
   onGeneratePassword: (member: Member) => Promise<void>;
   onResetPassword: (member: Member) => void;
+  onRoleChange: (member: Member, role: "ADMIN" | "USER") => void | Promise<void>;
   onToggle: (member: Member, disable: boolean) => void | Promise<void>;
+  onRemove: (member: Member) => void | Promise<void>;
 }) {
   const [busy, setBusy] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [roleBusy, setRoleBusy] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const fullName = [member.firstName, member.lastName].filter(Boolean).join(" ");
   const initials = (
     member.firstName?.[0] ??
@@ -104,6 +117,35 @@ function MemberRow({
     setGenerating(false);
   }
 
+  async function handleRoleChange() {
+    if (roleBusy || member.isOwner) return;
+
+    const nextRole = member.role === "ADMIN" ? "USER" : "ADMIN";
+    const confirmed = window.confirm(
+      nextRole === "ADMIN"
+        ? `Make ${fullName || member.email} an organization admin?`
+        : `Change ${fullName || member.email} to a regular organization user?`
+    );
+    if (!confirmed) return;
+
+    setRoleBusy(true);
+    await onRoleChange(member, nextRole);
+    setRoleBusy(false);
+  }
+
+  async function handleRemove() {
+    if (removing || member.isOwner) return;
+
+    const confirmed = window.confirm(
+      `Remove ${fullName || member.email} from this organization? Their account, classrooms, students, and assessments will remain, but they will lose organization subscription access.`
+    );
+    if (!confirmed) return;
+
+    setRemoving(true);
+    await onRemove(member);
+    setRemoving(false);
+  }
+
   return (
     <li className="rounded-[26px] border border-[rgba(21,35,95,0.08)] bg-[linear-gradient(180deg,#FFFFFF_0%,#FBFCFF_100%)] px-4 py-4 transition hover:border-[rgba(93,93,251,0.2)] hover:shadow-[0_14px_36px_rgba(15,23,88,0.05)] sm:px-5">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
@@ -120,6 +162,16 @@ function MemberRow({
               {member.isOwner && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-[#EEF1FF] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-[#5D5DFB]">
                   <ShieldCheck className="h-3 w-3" /> Owner
+                </span>
+              )}
+              {!member.isOwner && member.role === "ADMIN" && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#EEF1FF] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-[#5D5DFB]">
+                  <ShieldCheck className="h-3 w-3" /> Admin
+                </span>
+              )}
+              {!member.isOwner && member.role === "USER" && (
+                <span className="rounded-full bg-slate-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-600">
+                  User
                 </span>
               )}
               {member.isDisabled && !member.isOwner && (
@@ -170,6 +222,19 @@ function MemberRow({
               </button>
               <button
                 type="button"
+                onClick={() => void handleRoleChange()}
+                disabled={roleBusy}
+                className="flex h-10 items-center gap-1.5 rounded-2xl border border-[#D4DBFF] bg-white px-3.5 text-xs font-semibold text-[#24356E] transition hover:border-[#5D5DFB]/35 hover:bg-[#F6F8FF] disabled:opacity-50"
+              >
+                <ShieldCheck className="h-3.5 w-3.5" />
+                {roleBusy
+                  ? "Updating..."
+                  : member.role === "ADMIN"
+                    ? "Make user"
+                    : "Make admin"}
+              </button>
+              <button
+                type="button"
                 onClick={() => void handleToggle()}
                 disabled={busy}
                 className={`h-10 rounded-2xl px-3.5 text-xs font-bold transition disabled:opacity-50 ${
@@ -183,6 +248,19 @@ function MemberRow({
                   : member.isDisabled
                     ? "Enable member"
                     : "Disable member"}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleRemove()}
+                disabled={removing}
+                className="flex h-10 items-center gap-1.5 rounded-2xl border border-red-200 bg-white px-3.5 text-xs font-bold text-red-700 transition hover:bg-red-50 disabled:opacity-50"
+              >
+                {removing ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <UserMinus className="h-3.5 w-3.5" />
+                )}
+                {removing ? "Removing..." : "Remove"}
               </button>
             </>
           )}

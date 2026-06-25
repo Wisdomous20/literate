@@ -42,13 +42,13 @@ describe("updateMemberPasswordService", () => {
     expect(mockPrisma.user.update).not.toHaveBeenCalled();
   });
 
-  it("returns failure when the requesting user is not the owner", async () => {
+  it("returns failure when the requesting user is not an organization admin", async () => {
     mockPrisma.organization.findUnique.mockResolvedValue(baseOrg);
 
     const result = await updateMemberPasswordService("member-1", "newpassword", "org-1", "not-owner");
 
     expect(result.success).toBe(false);
-    expect(result.error).toMatch(/owner/);
+    expect(result.error).toMatch(/admins/);
   });
 
   it("returns failure when the owner tries to update their own password", async () => {

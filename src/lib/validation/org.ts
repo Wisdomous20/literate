@@ -7,7 +7,7 @@ import {
   requiredString,
 } from "@/lib/validation/common";
 
-const personNameSchema = (label: string) =>
+export const personNameSchema = (label: string) =>
   requiredString(label).pipe(
     z.string().max(60, `${label} must be 60 characters or fewer`)
   );
@@ -20,8 +20,6 @@ const organizationNameSchema = requiredString("Organization name")
 
 export const addOrgMemberSchema = z.object({
   email: emailString(),
-  firstName: personNameSchema("First name"),
-  lastName: personNameSchema("Last name"),
   organizationId: idString("Organization ID"),
   requestedByUserId: idString("User ID"),
 });
@@ -43,6 +41,8 @@ export const invitationTokenSchema = z.object({
 export const acceptInvitationSchema = z.object({
   token: requiredString("Invitation token"),
   password: passwordString().optional(),
+  firstName: personNameSchema("First name").optional(),
+  lastName: personNameSchema("Last name").optional(),
 });
 
 export const updateMemberPasswordSchema = z.object({
@@ -59,10 +59,23 @@ export const toggleMemberStatusSchema = z.object({
   disable: z.boolean(),
 });
 
+export const removeOrgMemberSchema = z.object({
+  memberId: idString("Member ID"),
+  organizationId: idString("Organization ID"),
+  requestedByUserId: idString("User ID"),
+});
+
 export const generateMemberPasswordSchema = z.object({
   memberId: idString("Member ID"),
   organizationId: idString("Organization ID"),
   requestedByUserId: idString("User ID"),
+});
+
+export const updateMemberRoleSchema = z.object({
+  memberId: idString("Member ID"),
+  organizationId: idString("Organization ID"),
+  requestedByUserId: idString("User ID"),
+  role: z.enum(["ADMIN", "USER"]),
 });
 
 export const createShareableLinkSchema = z.object({

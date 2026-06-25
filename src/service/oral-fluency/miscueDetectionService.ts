@@ -1,5 +1,5 @@
 import type { AlignedWord, MiscueResult } from "@/types/oral-reading"
-import { similarityRatio, isSimilarForRepetition, isReversal, normalizeWord} from "@/utils/textUtils";
+import { similarityRatio, isSimilarForRepetition, isReversal, normalizeWord, areWordsEquivalent} from "@/utils/textUtils";
 import detectSelfCorrections from "./detectSelfCorrections"
 import detectTranspositions from "./detectTranspositions"
 import detectRepetitions from "./detectRepetitions"
@@ -173,7 +173,7 @@ export function detectMiscues(
     }
 
     if (aligned.match === "MISMATCH" && aligned.expected && aligned.spoken) {
-      if (normalizeWord(aligned.expected) === normalizeWord(aligned.spoken)) continue;
+      if (areWordsEquivalent(aligned.expected, aligned.spoken)) continue;
 
       const normExpected = normalizeWord(aligned.expected);
       const normSpoken = normalizeWord(aligned.spoken);

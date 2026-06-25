@@ -2,15 +2,13 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-import { prisma } from "@/lib/prisma";
 import { addOrgMemberService } from "@/service/org/addOrgMemberService";
 import { addOrgMemberSchema } from "@/lib/validation/org";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
+import { findAdminOrganizationForUser } from "@/service/org/orgAuthorization";
 
 export async function addMemberAction(input: {
   email: string;
-  firstName: string;
-  lastName: string;
 }) {
   const session = await getServerSession(authOptions);
 
@@ -18,9 +16,7 @@ export async function addMemberAction(input: {
     return { success: false, error: "Unauthorized" };
   }
 
-  const org = await prisma.organization.findFirst({
-    where: { ownerId: session.user.id },
-  });
+  const org = await findAdminOrganizationForUser(session.user.id);
 
   if (!org) {
     return { success: false, error: "No organization found" };

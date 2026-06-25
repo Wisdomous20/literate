@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  areWordsEquivalent,
   editDistance,
   isReversal,
   isSimilar,
@@ -27,6 +28,24 @@ describe("normalizeWord", () => {
   it("strips apostrophes but preserves hyphens", () => {
     expect(normalizeWord("don't")).toBe("dont");
     expect(normalizeWord("well-known")).toBe("well-known");
+  });
+
+  it("keeps number words lexical during normalization", () => {
+    expect(normalizeWord("eleven")).toBe("eleven");
+    expect(normalizeWord("11")).toBe("11");
+  });
+});
+
+describe("areWordsEquivalent", () => {
+  it("treats number words and digits as equivalent without changing normalization", () => {
+    expect(areWordsEquivalent("eleven", "11")).toBe(true);
+    expect(areWordsEquivalent("twenty-one", "21")).toBe(true);
+    expect(areWordsEquivalent("one hundred", "100")).toBe(true);
+    expect(areWordsEquivalent("one thousand two hundred thirty-four", "1234")).toBe(true);
+  });
+
+  it("does not treat unrelated words as equivalent", () => {
+    expect(areWordsEquivalent("won", "one")).toBe(false);
   });
 });
 

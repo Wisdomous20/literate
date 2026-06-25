@@ -2,10 +2,10 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-import { prisma } from "@/lib/prisma";
 import { generateMemberPasswordService } from "@/service/org/generateMemberPasswordService";
 import { generateMemberPasswordSchema } from "@/lib/validation/org";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
+import { findAdminOrganizationForUser } from "@/service/org/orgAuthorization";
 
 export async function generateMemberPasswordAction(memberId: string) {
   const session = await getServerSession(authOptions);
@@ -14,9 +14,7 @@ export async function generateMemberPasswordAction(memberId: string) {
     return { success: false, error: "Unauthorized" };
   }
 
-  const org = await prisma.organization.findFirst({
-    where: { ownerId: session.user.id },
-  });
+  const org = await findAdminOrganizationForUser(session.user.id);
 
   if (!org) {
     return { success: false, error: "No organization found" };

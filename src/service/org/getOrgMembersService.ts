@@ -1,10 +1,17 @@
 import { prisma } from "@/lib/prisma";
+import { getOrgAdminContext } from "@/service/org/orgAuthorization";
 
 export async function getOrgMembersService(organizationId: string, requestedByUserId: string) {
+  const adminContext = await getOrgAdminContext(organizationId, requestedByUserId);
+
+  if (!adminContext.success) {
+    return { success: false, error: adminContext.error };
+  }
+
   const org = await prisma.organization.findUnique({
     where: { id: organizationId },
     include: {
-      subscription: true,
+      subscription: { include: { plan: true } },
       _count: {
         select: {
           members: { where: { user: { isDisabled: false } } },
@@ -13,8 +20,8 @@ export async function getOrgMembersService(organizationId: string, requestedByUs
     },
   });
 
-  if (!org || org.ownerId !== requestedByUserId) {
-    return { success: false, error: "Only the organization owner can view members" };
+  if (!org) {
+    return { success: false, error: "No organization found" };
   }
 
   const members = await prisma.organizationMember.findMany({
@@ -39,15 +46,16 @@ export async function getOrgMembersService(organizationId: string, requestedByUs
     organization: {
       id: organizationId,
       name: org.name,
-      plan: org.subscription?.planType || null,
-      maxMembers: org.subscription?.maxMembers || 0,
+      plan: org.subscription?.plan.code || null,
+      maxMembers: org.subscription?.maxMembersSnapshot || 0,
       currentMembers: org._count.members,
       totalMembers: members.length,
     },
     members: members.map((m) => ({
       membershipId: m.id,
+      role: m.role === "OWNER" ? "ADMIN" : m.role,
       joinedAt: m.joinedAt,
-      isOwner: m.userId === org.ownerId,
+      isOwner: m.role === "OWNER",
       ...m.user,
     })),
   };

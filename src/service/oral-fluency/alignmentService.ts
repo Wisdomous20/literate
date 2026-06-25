@@ -1,5 +1,5 @@
 import { AlignedWord } from "@/types/oral-reading"
-import { normalizeWord, similarityRatio } from "@/utils/textUtils"
+import { areWordsEquivalent, normalizeWord, similarityRatio } from "@/utils/textUtils"
 
 // The old file had its own copies of levenshteinDistance and
 // tokenizeForComparison that duplicated textUtils.ts. Removed them.
@@ -9,6 +9,7 @@ interface SpokenWordEntry {
   word: string
   start: number
   end: number
+  confidence?: number
 }
 
 export function alignWords(
@@ -25,7 +26,9 @@ export function alignWords(
   const simMatrix: number[][] = Array.from({ length: n }, () => Array(m).fill(0))
   for (let i = 0; i < n; i++) {
     for (let j = 0; j < m; j++) {
-      simMatrix[i][j] = similarityRatio(normExpected[i], normSpoken[j])
+      simMatrix[i][j] = areWordsEquivalent(passageWords[i], spokenWords[j].word)
+        ? 1
+        : similarityRatio(normExpected[i], normSpoken[j])
     }
   }
 
@@ -103,8 +106,10 @@ export function alignWords(
         spokenIndex: j - 1,
         timestamp: spokenWords[j - 1].start,
         endTimestamp: spokenWords[j - 1].end,
-        confidence: null,
-        match: normExpected[i - 1] === normSpoken[j - 1] ? "EXACT" : "MISMATCH",
+        confidence: spokenWords[j - 1].confidence ?? null,
+        match: areWordsEquivalent(passageWords[i - 1], spokenWords[j - 1].word)
+          ? "EXACT"
+          : "MISMATCH",
       })
       i--
       j--

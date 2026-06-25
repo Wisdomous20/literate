@@ -37,6 +37,15 @@ describe("selectBestAlternative", () => {
     expect(result).toBe(goodAlt);
   });
 
+  it("scores equivalent number words and digits as exact matches", () => {
+    const digitAlt = makeAlt(["11"]);
+    const wordAlt = makeAlt(["seven"]);
+
+    const result = selectBestAlternative([wordAlt, digitAlt], ["eleven"]);
+
+    expect(result).toBe(digitAlt);
+  });
+
   it("uses phonetic similarity to score homophones as better matches", () => {
     // "there" and "their" are homophones — the alternative containing "their"
     // should score higher when the passage has "their"

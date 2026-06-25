@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getOrgAdminContext } from "@/service/org/orgAuthorization";
 
 export async function toggleMemberStatusService(
   memberId: string,
@@ -6,17 +7,18 @@ export async function toggleMemberStatusService(
   requestedByUserId: string,
   disable: boolean
 ) {
-  const org = await prisma.organization.findUnique({
-    where: { id: organizationId },
-    select: { ownerId: true },
-  });
+  const adminContext = await getOrgAdminContext(organizationId, requestedByUserId);
 
-  if (!org || org.ownerId !== requestedByUserId) {
-    return { success: false, error: "Only the organization owner can manage members" };
+  if (!adminContext.success) {
+    return { success: false, error: adminContext.error };
   }
 
-  if (memberId === requestedByUserId) {
+  if (disable && memberId === requestedByUserId) {
     return { success: false, error: "You cannot disable your own account" };
+  }
+
+  if (memberId === adminContext.context.organization.ownerId) {
+    return { success: false, error: "The organization owner cannot be disabled" };
   }
 
   const membership = await prisma.organizationMember.findUnique({

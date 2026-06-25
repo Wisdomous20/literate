@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { countPendingOrgInvitations } from "@/service/org/orgInvitationRedisService";
 
 export interface AdminManagementSnapshot {
   overview: {
@@ -25,7 +26,7 @@ export interface AdminManagementSnapshot {
   organizations: {
     id: string;
     name: string;
-    ownerId: string;
+    ownerId: string | null;
     ownerName: string;
     ownerEmail: string;
     memberCount: number;
@@ -66,7 +67,6 @@ interface AdminManagementSnapshotResult {
 
 export async function getAdminManagementSnapshotService(): Promise<AdminManagementSnapshotResult> {
   try {
-    const now = new Date();
     const [users, organizations, memberships, passages] = await Promise.all([
       prisma.user.findMany({
         select: {
@@ -80,7 +80,6 @@ export async function getAdminManagementSnapshotService(): Promise<AdminManageme
           createdAt: true,
           _count: {
             select: {
-              ownedOrganizations: true,
               orgMemberships: true,
             },
           },
@@ -91,38 +90,29 @@ export async function getAdminManagementSnapshotService(): Promise<AdminManageme
         select: {
           id: true,
           name: true,
-          ownerId: true,
           createdAt: true,
-          owner: {
-            select: {
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
           subscription: {
             select: {
-              planType: true,
-              maxMembers: true,
-            },
-          },
-          members: {
-            select: {
-              user: {
+              maxMembersSnapshot: true,
+              plan: {
                 select: {
-                  isDisabled: true,
+                  code: true,
                 },
               },
             },
           },
-          invitations: {
-            where: {
-              acceptedAt: null,
-              revokedAt: null,
-              expiresAt: { gt: now },
-            },
+          members: {
             select: {
-              id: true,
+              userId: true,
+              role: true,
+              user: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                  isDisabled: true,
+                },
+              },
             },
           },
         },
@@ -133,6 +123,7 @@ export async function getAdminManagementSnapshotService(): Promise<AdminManageme
           id: true,
           joinedAt: true,
           userId: true,
+          role: true,
           organizationId: true,
           user: {
             select: {
@@ -146,7 +137,6 @@ export async function getAdminManagementSnapshotService(): Promise<AdminManageme
           organization: {
             select: {
               name: true,
-              ownerId: true,
             },
           },
         },
@@ -171,6 +161,9 @@ export async function getAdminManagementSnapshotService(): Promise<AdminManageme
     const organizationsWithSubscription = organizations.filter(
       (organization) => organization.subscription !== null
     ).length;
+    const ownerMemberships = memberships.filter(
+      (membership) => membership.role === "OWNER"
+    );
 
     return {
       success: true,
@@ -181,7 +174,7 @@ export async function getAdminManagementSnapshotService(): Promise<AdminManageme
           disabledUsers,
           totalOrganizations: organizations.length,
           totalMemberships: memberships.length,
-          organizationOwners: organizations.length,
+          organizationOwners: ownerMemberships.length,
           subscribedOrganizations: organizationsWithSubscription,
           totalPassages: passages.length,
         },
@@ -194,36 +187,41 @@ export async function getAdminManagementSnapshotService(): Promise<AdminManageme
           role: user.role,
           isDisabled: user.isDisabled,
           isVerified: user.isVerified,
-          ownedOrganizationCount: user._count.ownedOrganizations,
+          ownedOrganizationCount: ownerMemberships.filter(
+            (membership) => membership.userId === user.id
+          ).length,
           membershipCount: user._count.orgMemberships,
           createdAt: user.createdAt,
         })),
-        organizations: organizations.map((organization) => {
+        organizations: await Promise.all(organizations.map(async (organization) => {
           const activeMemberCount = organization.members.filter(
             (member) => !member.user.isDisabled
           ).length;
+          const pendingInvitations = await countPendingOrgInvitations(organization.id);
+          const ownerMembership =
+            organization.members.find((member) => member.role === "OWNER") ?? null;
 
           return {
             id: organization.id,
             name: organization.name,
-            ownerId: organization.ownerId,
+            ownerId: ownerMembership?.userId ?? null,
             ownerName:
               [
-                organization.owner.firstName,
-                organization.owner.lastName,
+                ownerMembership?.user.firstName,
+                ownerMembership?.user.lastName,
               ]
                 .filter(Boolean)
                 .join(" ")
                 .trim() || "Unnamed owner",
-            ownerEmail: organization.owner.email ?? "No email",
+            ownerEmail: ownerMembership?.user.email ?? "No email",
             memberCount: organization.members.length,
             activeMemberCount,
-            subscriptionPlan: organization.subscription?.planType ?? null,
-            maxMembers: organization.subscription?.maxMembers ?? null,
-            pendingInvitations: organization.invitations.length,
+            subscriptionPlan: organization.subscription?.plan.code ?? null,
+            maxMembers: organization.subscription?.maxMembersSnapshot ?? null,
+            pendingInvitations,
             createdAt: organization.createdAt,
           };
-        }),
+        })),
         memberships: memberships.map((membership) => ({
           membershipId: membership.id,
           joinedAt: membership.joinedAt,
@@ -237,7 +235,7 @@ export async function getAdminManagementSnapshotService(): Promise<AdminManageme
           userRole: membership.user.role,
           organizationId: membership.organizationId,
           organizationName: membership.organization.name,
-          isOwnerMembership: membership.organization.ownerId === membership.userId,
+          isOwnerMembership: membership.role === "OWNER",
           userDisabled: membership.user.isDisabled,
         })),
         passages: passages.map((passage) => ({

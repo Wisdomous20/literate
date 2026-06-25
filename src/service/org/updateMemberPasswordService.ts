@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
+import { getOrgAdminContext } from "@/service/org/orgAuthorization";
 
 export async function updateMemberPasswordService(
   memberId: string,
@@ -11,17 +12,18 @@ export async function updateMemberPasswordService(
     return { success: false, error: "Password must be at least 8 characters" };
   }
 
-  const org = await prisma.organization.findUnique({
-    where: { id: organizationId },
-    select: { ownerId: true },
-  });
+  const adminContext = await getOrgAdminContext(organizationId, requestedByUserId);
 
-  if (!org || org.ownerId !== requestedByUserId) {
-    return { success: false, error: "Only the organization owner can edit passwords" };
+  if (!adminContext.success) {
+    return { success: false, error: adminContext.error };
   }
 
   if (memberId === requestedByUserId) {
     return { success: false, error: "Use regular password change for your own account" };
+  }
+
+  if (memberId === adminContext.context.organization.ownerId) {
+    return { success: false, error: "The organization owner password cannot be managed here" };
   }
 
   const membership = await prisma.organizationMember.findUnique({

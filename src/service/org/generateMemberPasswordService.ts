@@ -1,21 +1,31 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
 import { generateOrgPassword } from "@/utils/generateOrgPassword";
+import { getOrgAdminContext } from "@/service/org/orgAuthorization";
 
 export async function generateMemberPasswordService(
   memberId: string,
   organizationId: string,
   requestedByUserId: string
 ) {
-  const org = await prisma.organization.findUnique({
-    where: { id: organizationId },
-    select: { ownerId: true, name: true },
-  });
+  const adminContext = await getOrgAdminContext(organizationId, requestedByUserId);
 
-  if (!org || org.ownerId !== requestedByUserId) {
+  if (!adminContext.success) {
     return {
       success: false,
-      error: "Only the organization owner can reset passwords",
+      error: adminContext.error,
+    };
+  }
+
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { name: true },
+  });
+
+  if (!org) {
+    return {
+      success: false,
+      error: "No organization found",
     };
   }
 
@@ -23,6 +33,13 @@ export async function generateMemberPasswordService(
     return {
       success: false,
       error: "Use regular password change for your own account",
+    };
+  }
+
+  if (memberId === adminContext.context.organization.ownerId) {
+    return {
+      success: false,
+      error: "The organization owner password cannot be managed here",
     };
   }
 

@@ -167,6 +167,14 @@ describe("detectMiscues", () => {
     expect(result).toHaveLength(0);
   });
 
+  it("skips MISMATCH where a number word and digit normalize to the same value", () => {
+    const words = [mismatch("eleven", "11", 0)];
+
+    const result = detectMiscues(words, "english");
+
+    expect(result).toHaveLength(0);
+  });
+
   it("classifies adjacent INSERTION after EXACT where both words match as REPETITION", () => {
     // Student read "cat" correctly then said "cat" again
     const words = [exact("the", 0), exact("cat", 1), insertion("cat", 2), exact("sat", 3)];

@@ -10,6 +10,7 @@ export interface OrgSummary {
 export interface Member {
   membershipId: string;
   id: string;
+  role: "ADMIN" | "USER";
   firstName: string | null;
   lastName: string | null;
   email: string | null;

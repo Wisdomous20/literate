@@ -16,9 +16,7 @@ export type StopRenewalResult = StopRenewalSuccess | StopRenewalFailure;
 export async function stopSubscriptionRenewalService(
   userId: string
 ): Promise<StopRenewalResult> {
-  const subscription = await prisma.subscription.findUnique({
-    where: { userId },
-  });
+  const subscription = await findManageableSubscriptionForUser(userId);
 
   if (!subscription?.xenditPlanId) {
     return { success: false, error: "No personal subscription to stop" };
@@ -40,7 +38,7 @@ export async function stopSubscriptionRenewalService(
     );
 
     await prisma.subscription.update({
-      where: { userId },
+      where: { id: subscription.id },
       data: { cancelAtPeriodEnd: true },
     });
 
@@ -49,4 +47,35 @@ export async function stopSubscriptionRenewalService(
     console.error("Stop subscription renewal error:", error);
     return { success: false, error: "Failed to stop renewal" };
   }
+}
+
+async function findManageableSubscriptionForUser(userId: string) {
+  const memberships = await prisma.organizationMember.findMany({
+    where: {
+      userId,
+      role: { in: ["OWNER", "ADMIN"] },
+      organization: {
+        subscription: {
+          is: {
+            xenditPlanId: { not: null },
+          },
+        },
+      },
+    },
+    include: {
+      organization: {
+        include: {
+          subscription: true,
+        },
+      },
+    },
+    orderBy: { joinedAt: "asc" },
+  });
+
+  return (
+    memberships.find((membership) => membership.organization.type === "PERSONAL")
+      ?.organization.subscription ??
+    memberships[0]?.organization.subscription ??
+    null
+  );
 }

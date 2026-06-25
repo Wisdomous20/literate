@@ -2,7 +2,10 @@ import { prisma } from "@/lib/prisma";
 
 type SubscriptionRecord = NonNullable<
   Awaited<ReturnType<typeof prisma.subscription.findFirst>>
->;
+> & {
+  plan: { code: string };
+  organization: { type: "PERSONAL" | "TEAM" };
+};
 
 export type SubscriptionSource = "DIRECT" | "ORGANIZATION";
 
@@ -12,26 +15,33 @@ export interface ResolvedUserSubscription {
   canManage: boolean;
 }
 
-async function findActiveOrganizationSubscription(
+function canManageOrganizationSubscription(role: string | null | undefined): boolean {
+  return role === "OWNER" || role === "ADMIN";
+}
+
+async function findOrganizationSubscriptionForUser(
   userId: string,
-  now: Date
+  now: Date,
+  activeOnly: boolean
 ): Promise<ResolvedUserSubscription | null> {
-  const membership = await prisma.organizationMember.findFirst({
+  const memberships = await prisma.organizationMember.findMany({
     where: {
       userId,
       organization: {
-        subscription: {
-          is: {
-            status: "ACTIVE",
-            currentPeriodEnd: { gte: now },
-          },
-        },
+        subscription: activeOnly
+          ? {
+              is: {
+                status: "ACTIVE",
+                currentPeriodEnd: { gte: now },
+              },
+            }
+          : { isNot: null },
       },
     },
     include: {
       organization: {
         include: {
-          subscription: true,
+          subscription: { include: { plan: true, organization: true } },
         },
       },
     },
@@ -40,6 +50,10 @@ async function findActiveOrganizationSubscription(
     },
   });
 
+  const membership =
+    memberships.find((item) => item.organization.type === "PERSONAL") ??
+    memberships[0];
+
   const subscription = membership?.organization.subscription;
   if (!subscription) {
     return null;
@@ -47,49 +61,8 @@ async function findActiveOrganizationSubscription(
 
   return {
     subscription,
-    source: "ORGANIZATION",
-    canManage: subscription.userId === userId,
-  };
-}
-
-async function findActiveDirectSubscription(
-  userId: string,
-  now: Date
-): Promise<ResolvedUserSubscription | null> {
-  const subscription = await prisma.subscription.findFirst({
-    where: {
-      userId,
-      status: "ACTIVE",
-      currentPeriodEnd: { gte: now },
-    },
-  });
-
-  if (!subscription) {
-    return null;
-  }
-
-  return {
-    subscription,
-    source: "DIRECT",
-    canManage: true,
-  };
-}
-
-async function findDirectSubscription(
-  userId: string
-): Promise<ResolvedUserSubscription | null> {
-  const subscription = await prisma.subscription.findUnique({
-    where: { userId },
-  });
-
-  if (!subscription) {
-    return null;
-  }
-
-  return {
-    subscription,
-    source: "DIRECT",
-    canManage: true,
+    source: membership.organization.type === "PERSONAL" ? "DIRECT" : "ORGANIZATION",
+    canManage: canManageOrganizationSubscription(membership.role),
   };
 }
 
@@ -98,14 +71,15 @@ export async function getEffectiveActiveSubscription(
 ): Promise<ResolvedUserSubscription | null> {
   const now = new Date();
 
-  return (
-    (await findActiveOrganizationSubscription(userId, now)) ??
-    (await findActiveDirectSubscription(userId, now))
-  );
+  return findOrganizationSubscriptionForUser(userId, now, true);
 }
 
 export async function getDisplayedSubscription(
   userId: string
 ): Promise<ResolvedUserSubscription | null> {
-  return (await getEffectiveActiveSubscription(userId)) ?? findDirectSubscription(userId);
+  const now = new Date();
+  return (
+    (await getEffectiveActiveSubscription(userId)) ??
+    findOrganizationSubscriptionForUser(userId, now, false)
+  );
 }

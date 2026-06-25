@@ -25,13 +25,13 @@ describe("toggleMemberStatusService", () => {
     expect(mockPrisma.user.update).not.toHaveBeenCalled();
   });
 
-  it("returns failure when the requesting user is not the owner", async () => {
+  it("returns failure when the requesting user is not an organization admin", async () => {
     mockPrisma.organization.findUnique.mockResolvedValue(baseOrg);
 
     const result = await toggleMemberStatusService("member-1", "org-1", "other-user", true);
 
     expect(result.success).toBe(false);
-    expect(result.error).toMatch(/owner/);
+    expect(result.error).toMatch(/admins/);
   });
 
   it("returns failure when the owner tries to disable their own account", async () => {

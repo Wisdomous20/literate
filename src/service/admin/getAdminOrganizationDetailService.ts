@@ -1,11 +1,12 @@
 import { prisma } from "@/lib/prisma";
+import { countPendingOrgInvitations } from "@/service/org/orgInvitationRedisService";
 
 interface AdminOrganizationDetailResult {
   success: boolean;
   organization?: {
     id: string;
     name: string;
-    ownerId: string;
+    ownerId: string | null;
     ownerName: string;
     ownerEmail: string;
     subscriptionPlan: string | null;
@@ -32,36 +33,20 @@ export async function getAdminOrganizationDetailService(
   organizationId: string
 ): Promise<AdminOrganizationDetailResult> {
   try {
-    const now = new Date();
-
     const organization = await prisma.organization.findUnique({
       where: { id: organizationId },
       select: {
         id: true,
         name: true,
-        ownerId: true,
         createdAt: true,
-        owner: {
-          select: {
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
         subscription: {
           select: {
-            planType: true,
-            maxMembers: true,
-          },
-        },
-        invitations: {
-          where: {
-            acceptedAt: null,
-            revokedAt: null,
-            expiresAt: { gt: now },
-          },
-          select: {
-            id: true,
+            maxMembersSnapshot: true,
+            plan: {
+              select: {
+                code: true,
+              },
+            },
           },
         },
         members: {
@@ -69,6 +54,7 @@ export async function getAdminOrganizationDetailService(
           select: {
             id: true,
             userId: true,
+            role: true,
             joinedAt: true,
             user: {
               select: {
@@ -88,6 +74,10 @@ export async function getAdminOrganizationDetailService(
       return { success: false, error: "Organization not found." };
     }
 
+    const ownerMembership =
+      organization.members.find((membership) => membership.role === "OWNER") ??
+      null;
+
     const members = organization.members.map((membership) => ({
       membershipId: membership.id,
       userId: membership.userId,
@@ -99,7 +89,7 @@ export async function getAdminOrganizationDetailService(
       email: membership.user.email ?? "No email",
       role: membership.user.role,
       isDisabled: membership.user.isDisabled,
-      isOwner: membership.userId === organization.ownerId,
+      isOwner: membership.role === "OWNER",
       joinedAt: membership.joinedAt,
     }));
 
@@ -108,18 +98,21 @@ export async function getAdminOrganizationDetailService(
       organization: {
         id: organization.id,
         name: organization.name,
-        ownerId: organization.ownerId,
+        ownerId: ownerMembership?.userId ?? null,
         ownerName:
-          [organization.owner.firstName, organization.owner.lastName]
+          [
+            ownerMembership?.user.firstName,
+            ownerMembership?.user.lastName,
+          ]
             .filter(Boolean)
             .join(" ")
             .trim() || "Unnamed owner",
-        ownerEmail: organization.owner.email ?? "No email",
-        subscriptionPlan: organization.subscription?.planType ?? null,
-        maxMembers: organization.subscription?.maxMembers ?? null,
+        ownerEmail: ownerMembership?.user.email ?? "No email",
+        subscriptionPlan: organization.subscription?.plan.code ?? null,
+        maxMembers: organization.subscription?.maxMembersSnapshot ?? null,
         activeMemberCount: members.filter((member) => !member.isDisabled).length,
         totalMemberCount: members.length,
-        pendingInvitations: organization.invitations.length,
+        pendingInvitations: await countPendingOrgInvitations(organization.id),
         createdAt: organization.createdAt,
         members,
       },

@@ -57,14 +57,28 @@ describe("renameOrganizationService", () => {
     expect(updateCall.data.name).toBe("New Name");
   });
 
-  it("searches for the organization by the requesting user's ownerId", async () => {
+  it("searches for an organization the requester can administer", async () => {
     mockPrisma.organization.findFirst.mockResolvedValue(baseOrg);
     mockPrisma.organization.update.mockResolvedValue({ ...baseOrg, name: "New Name" });
 
     await renameOrganizationService("New Name", "user-99");
 
     expect(mockPrisma.organization.findFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { ownerId: "user-99" } }),
+      expect.objectContaining({
+        where: {
+          OR: [
+            { ownerId: "user-99" },
+            {
+              members: {
+                some: {
+                  userId: "user-99",
+                  role: "ADMIN",
+                },
+              },
+            },
+          ],
+        },
+      }),
     );
   });
 });
