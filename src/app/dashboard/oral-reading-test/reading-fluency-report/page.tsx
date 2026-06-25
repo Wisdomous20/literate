@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, useRef, useSyncExternalStore } from "react";
+import { useState, useMemo, useCallback, useRef, useSyncExternalStore } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, ArrowLeft, ChevronRight } from "lucide-react";
 import ReportHeader from "@/components/reports/oral-reading-test/reading-fluency-report/reportHeader";
