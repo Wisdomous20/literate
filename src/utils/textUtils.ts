@@ -1,12 +1,106 @@
+const SMALL_NUMBER_WORDS: Record<string, number> = {
+  zero: 0,
+  one: 1,
+  two: 2,
+  three: 3,
+  four: 4,
+  five: 5,
+  six: 6,
+  seven: 7,
+  eight: 8,
+  nine: 9,
+  ten: 10,
+  eleven: 11,
+  twelve: 12,
+  thirteen: 13,
+  fourteen: 14,
+  fifteen: 15,
+  sixteen: 16,
+  seventeen: 17,
+  eighteen: 18,
+  nineteen: 19,
+};
+
+const TENS_NUMBER_WORDS: Record<string, number> = {
+  twenty: 20,
+  thirty: 30,
+  forty: 40,
+  fifty: 50,
+  sixty: 60,
+  seventy: 70,
+  eighty: 80,
+  ninety: 90,
+};
+
+const SCALE_NUMBER_WORDS: Record<string, number> = {
+  thousand: 1_000,
+  million: 1_000_000,
+};
+
+function parseEnglishNumberWords(input: string): number | null {
+  const tokens = input
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[.,!?;:'""\u2018\u2019\u201C\u201D\u2014\u2013()[\]{}]/g, " ")
+    .replace(/-/g, " ")
+    .split(/\s+/)
+    .filter((token) => token.length > 0 && token !== "and");
+
+  if (tokens.length === 0) return null;
+
+  let total = 0;
+  let group = 0;
+  let hasNumberWord = false;
+
+  for (const token of tokens) {
+    if (token in SMALL_NUMBER_WORDS) {
+      group += SMALL_NUMBER_WORDS[token];
+      hasNumberWord = true;
+      continue;
+    }
+
+    if (token in TENS_NUMBER_WORDS) {
+      group += TENS_NUMBER_WORDS[token];
+      hasNumberWord = true;
+      continue;
+    }
+
+    if (token === "hundred") {
+      group = (group || 1) * 100;
+      hasNumberWord = true;
+      continue;
+    }
+
+    if (token in SCALE_NUMBER_WORDS) {
+      if (group === 0) return null;
+      total += group * SCALE_NUMBER_WORDS[token];
+      group = 0;
+      hasNumberWord = true;
+      continue;
+    }
+
+    return null;
+  }
+
+  if (!hasNumberWord) return null;
+
+  return total + group;
+}
 
 export function normalizeWord(word: string): string {
-  return word
+  const numberValue = parseEnglishNumberWords(word);
+  if (numberValue !== null) return String(numberValue);
+
+  const normalized = word
     .toLowerCase()
     .replace(/[.,!?;:'""\u2018\u2019\u201C\u201D\u2014\u2013()[\]{}]/g, "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9'\-]/g, "")
     .trim();
+
+  return normalized;
 }
 
 // Keep this alias around so callers that imported normalizeWordStrict still

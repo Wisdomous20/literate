@@ -28,6 +28,14 @@ describe("normalizeWord", () => {
     expect(normalizeWord("don't")).toBe("dont");
     expect(normalizeWord("well-known")).toBe("well-known");
   });
+
+  it("canonicalizes number words to digits", () => {
+    expect(normalizeWord("eleven")).toBe("11");
+    expect(normalizeWord("11")).toBe("11");
+    expect(normalizeWord("twenty-one")).toBe("21");
+    expect(normalizeWord("one hundred")).toBe("100");
+    expect(normalizeWord("one thousand two hundred thirty-four")).toBe("1234");
+  });
 });
 
 describe("tokenizeForComparison", () => {
