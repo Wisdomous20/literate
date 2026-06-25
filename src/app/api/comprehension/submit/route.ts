@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAssessmentService } from "@/service/assessment/createAssessmentService";
 import { prisma } from "@/lib/prisma";
-import { gradingQueue } from "@/lib/queues";
-import type { GradingJobData } from "@/lib/queues";
 import classifyComprehensionLevel from "@/service/comprehension-test/classifyComprehensionLevel";
 import { Tags } from "@/generated/prisma/enums";
 import { comprehensionSubmitSchema } from "@/lib/validation/assessment";
@@ -11,10 +9,10 @@ import {
   hasAssessmentAccess,
   hasStudentAccess,
 } from "@/lib/auth/assessmentAuthorization";
+import { answerMatchesGuide } from "@/service/comprehension-test/answerMatching";
+import { gradeEssayAnswer } from "@/service/comprehension-test/gradeEssayService";
 
-
-
-export const maxDuration = 10;
+export const maxDuration = 30;
 
 export async function POST(request: NextRequest) {
   try {
@@ -116,13 +114,12 @@ export async function POST(request: NextRequest) {
     const quiz = passage.quiz;
     const questionMap = new Map(quiz.questions.map((q) => [q.id, q]));
 
-    // 3. Grade MC immediately, mark essays as pending
-    let hasEssays = false;
+    // 3. Grade answers before returning so the UI receives the final score.
     const gradedAnswers: {
       questionId: string;
       questionText: string;
       answer: string;
-      isCorrect: boolean | null;
+      isCorrect: boolean;
       tag: Tags;
     }[] = [];
 
@@ -142,14 +139,24 @@ export async function POST(request: NextRequest) {
           tag: question.tags,
         });
       } else {
+        const guideMatch = answerMatchesGuide(question.correctAnswer, a.answer);
+        const essayGrade = guideMatch
+          ? { isCorrect: true }
+          : await gradeEssayAnswer({
+              questionText: question.questionText,
+              correctAnswer: question.correctAnswer,
+              passageContent: passage.content,
+              studentAnswer: a.answer,
+              tag: question.tags,
+            });
+
         gradedAnswers.push({
           questionId: a.questionId,
           questionText: question.questionText,
           answer: a.answer,
-          isCorrect: null,
+          isCorrect: essayGrade.isCorrect,
           tag: question.tags,
         });
-        hasEssays = true;
       }
     }
 
@@ -179,22 +186,6 @@ export async function POST(request: NextRequest) {
       select: { id: true },
     });
 
-    // 6. Enqueue essay grading if needed
-    if (hasEssays) {
-      const jobData: GradingJobData = {
-        assessmentId,
-        comprehensionTestId: comprehensionTest.id,
-        answers: answers.filter((a: { questionId: string }) => {
-          const q = questionMap.get(a.questionId);
-          return q?.type === "ESSAY";
-        }),
-      };
-
-      await gradingQueue.add(`grade-${assessmentId}`, jobData, {
-        jobId: `grading-${assessmentId}`,
-      });
-    }
-
     return NextResponse.json({
       success: true,
       assessmentId,
@@ -203,7 +194,7 @@ export async function POST(request: NextRequest) {
       totalItems,
       percentage: Math.round(prelimPct),
       level: prelimLevel,
-      essaysPending: hasEssays,
+      essaysPending: false,
       answers: gradedAnswers.map((a) => ({
         tag: a.tag,
         isCorrect: a.isCorrect,

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { gradeEssayAnswer } from "./gradeEssayService";
 import classifyComprehensionLevel from "./classifyComprehensionLevel";
 import { Tags } from "@/generated/prisma/enums";
+import { answerMatchesGuide } from "./answerMatching";
 
 interface SubmitAnswer {
   questionId: string;
@@ -95,6 +96,16 @@ export async function submitComprehensionService(
           tag: question.tags,
         });
       } else {
+        if (answerMatchesGuide(question.correctAnswer, a.answer)) {
+          mcResults.push({
+            questionText: question.questionText,
+            answer: a.answer,
+            isCorrect: true,
+            tag: question.tags,
+          });
+          continue;
+        }
+
         essayPromises.push(
           gradeEssayAnswer({
             questionText: question.questionText,

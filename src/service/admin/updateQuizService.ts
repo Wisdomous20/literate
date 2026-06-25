@@ -10,7 +10,7 @@ interface EditQuizInput {
     tags?: "Literal" | "Inferential" | "Critical";
     type?: "MULTIPLE_CHOICE" | "ESSAY";
     options?: string[]; // Only for MULTIPLE_CHOICE
-    correctAnswer?: string; // Only for MULTIPLE_CHOICE
+    correctAnswer?: string; // Correct MC option or ESSAY guide answer
   }[];
 }
 
@@ -68,16 +68,14 @@ export async function updateQuizService(
                   tags: q.tags!,
                   type: q.type!,
                   options: q.type === "MULTIPLE_CHOICE" ? q.options! : undefined,
-                  correctAnswer:
-                    q.type === "MULTIPLE_CHOICE" ? q.correctAnswer! : undefined,
+                  correctAnswer: q.correctAnswer,
                 },
                 update: {
                   questionText: q.questionText,
                   tags: q.tags,
                   type: q.type,
                   options: q.type === "MULTIPLE_CHOICE" ? q.options : undefined,
-                  correctAnswer:
-                    q.type === "MULTIPLE_CHOICE" ? q.correctAnswer : undefined,
+                  correctAnswer: q.correctAnswer,
                 },
               })),
             }

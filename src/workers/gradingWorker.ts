@@ -5,6 +5,7 @@ import { gradeEssayAnswer } from "@/service/comprehension-test/gradeEssayService
 import classifyComprehensionLevel from "@/service/comprehension-test/classifyComprehensionLevel";
 import { createOralReadingService } from "@/service/oral-reading/createOralReadingService";
 import type { GradingJobData } from "@/lib/queues";
+import { answerMatchesGuide } from "@/service/comprehension-test/answerMatching";
 
 async function processGrading(job: Job<GradingJobData>) {
   const { assessmentId, comprehensionTestId } = job.data;
@@ -66,6 +67,15 @@ async function processGrading(job: Job<GradingJobData>) {
     if (!originalQuestion || originalQuestion.type !== "ESSAY") continue;
 
     console.log(`[Worker:grading] Grading essay: "${ans.question.slice(0, 50)}..."`);
+
+    if (answerMatchesGuide(originalQuestion.correctAnswer, ans.answer)) {
+      await prisma.comprehensionAnswer.update({
+        where: { id: ans.id },
+        data: { isCorrect: true },
+      });
+      correctCount++;
+      continue;
+    }
 
     const result = await gradeEssayAnswer({
       questionText: ans.question,

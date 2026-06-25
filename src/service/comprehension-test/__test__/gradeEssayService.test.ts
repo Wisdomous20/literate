@@ -43,6 +43,24 @@ describe("gradeEssayAnswer", () => {
     expect(result.needsReview).toBe(false);
   });
 
+  it("returns isCorrect true without AI when the answer matches the guide answer", async () => {
+    const guideAnswer = [
+      "AI can help students study, find information, and practice new skills.",
+      "Students should check trusted sources and use AI responsibly.",
+    ].join(" ");
+
+    const result = await gradeEssayAnswer({
+      ...baseInput,
+      correctAnswer: guideAnswer,
+      studentAnswer:
+        "AI can help students study, find information, and practice new skills. Students should check trusted sources and use AI responsibly.",
+    });
+
+    expect(result.isCorrect).toBe(true);
+    expect(result.reasoning).toBe("Answer matches the guide answer.");
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+
   it("returns isCorrect false when the AI grades as incorrect", async () => {
     mockCreate.mockResolvedValue({
       choices: [{ message: { content: JSON.stringify({ isCorrect: false, reasoning: "Misses the point.", needsReview: true }) } }],
