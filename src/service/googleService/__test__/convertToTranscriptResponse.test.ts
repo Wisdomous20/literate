@@ -64,6 +64,16 @@ function makeResult(
   };
 }
 
+function makeResultWithAlternatives(
+  alternatives: TestWordInfo[][],
+): protos.google.cloud.speech.v2.ISpeechRecognitionResult {
+  return {
+    alternatives: alternatives.map((words) => ({
+      words: words as unknown as protos.google.cloud.speech.v2.IWordInfo[],
+    })),
+  };
+}
+
 describe("convertToTranscriptResponse", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -180,6 +190,24 @@ describe("convertToTranscriptResponse", () => {
     convertToTranscriptResponse(results, ONE_SECOND_WAV, true, "the cat sat");
 
     expect(mockCorrectWithPassage).toHaveBeenCalledOnce();
+  });
+
+  it("scores number-word and digit alternatives as passage matches", () => {
+    const results = [
+      makeResultWithAlternatives([
+        [makeWordInfo("seven", 0, 1)],
+        [makeWordInfo("11", 0, 1)],
+      ]),
+    ];
+
+    const response = convertToTranscriptResponse(
+      results,
+      ONE_SECOND_WAV,
+      true,
+      "eleven",
+    );
+
+    expect(response.words.map((word) => word.word)).toEqual(["11"]);
   });
 
   it("passes the assessment language into passage correction", () => {

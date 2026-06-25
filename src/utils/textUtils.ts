@@ -89,18 +89,33 @@ function parseEnglishNumberWords(input: string): number | null {
 }
 
 export function normalizeWord(word: string): string {
-  const numberValue = parseEnglishNumberWords(word);
-  if (numberValue !== null) return String(numberValue);
-
-  const normalized = word
+  return word
     .toLowerCase()
     .replace(/[.,!?;:'""\u2018\u2019\u201C\u201D\u2014\u2013()[\]{}]/g, "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9'\-]/g, "")
     .trim();
+}
 
-  return normalized;
+export function canonicalNumberValue(word: string): string | null {
+  const normalized = normalizeWord(word);
+  if (/^\d+$/.test(normalized)) return String(Number(normalized));
+
+  const parsed = parseEnglishNumberWords(word);
+  return parsed === null ? null : String(parsed);
+}
+
+export function areWordsEquivalent(
+  a: string | null | undefined,
+  b: string | null | undefined,
+): boolean {
+  if (!a || !b) return false;
+  if (normalizeWord(a) === normalizeWord(b)) return true;
+
+  const numberA = canonicalNumberValue(a);
+  const numberB = canonicalNumberValue(b);
+  return numberA !== null && numberA === numberB;
 }
 
 // Keep this alias around so callers that imported normalizeWordStrict still

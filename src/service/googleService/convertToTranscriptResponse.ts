@@ -1,7 +1,7 @@
 import { TranscriptWord, TranscriptResponse } from "@/types/oral-reading";
 import { protos } from "@google-cloud/speech";
 import correctWithPassage from "./correctWithPassage";
-import { normalizeWord, similarityRatio } from "@/utils/textUtils";
+import { areWordsEquivalent, normalizeWord, similarityRatio } from "@/utils/textUtils";
 import { normalizeTranscriptionConfidence } from "@/utils/transcriptionConfidence";
 
 const FALLBACK_WORD_DURATION_SECONDS = 0.2;
@@ -219,8 +219,12 @@ function pickBestAlternative(
       let bestMatch = 0;
       for (const pw of passageWords) {
         const sim = similarityRatio(spoken, pw);
+        if (areWordsEquivalent(spoken, pw)) {
+          bestMatch = 1;
+          break;
+        }
+
         if (sim > bestMatch) bestMatch = sim;
-        if (sim === 1.0) break;
       }
 
       // Give a bonus for exact matches to strongly prefer alternatives
