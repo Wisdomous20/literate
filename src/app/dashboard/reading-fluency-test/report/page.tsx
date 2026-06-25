@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect, useRef, useSyncExternalStore } from "react";
+import { useState, useMemo, useCallback, useRef, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, RotateCcw, Download, Loader2, FileBarChart2 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
@@ -23,6 +23,7 @@ import {
 } from "@/lib/readingDuration";
 import { seekAudioToTimestamp } from "@/lib/audioPlayback";
 import {
+  canChangeMiscueType,
   findMatchingDbMiscue,
   removeFirstMatchingMiscue,
   updateFirstMatchingSpokenWord,
@@ -335,6 +336,7 @@ export default function OralReadingReportPage() {
   const handleUpdateMiscueType = useCallback(
     async (miscue: MiscueResult, newType: MiscueResult["miscueType"]) => {
       if (!reportSessionId) return;
+      if (!canChangeMiscueType(miscue.miscueType, newType)) return;
       const dbResult = await fetchOralFluencyMiscues(reportSessionId);
       if (!dbResult.success || !dbResult.data) return;
       const match = findMatchingDbMiscue(dbResult.data, miscue);
@@ -343,6 +345,7 @@ export default function OralReadingReportPage() {
         miscueId: match.id,
         action: "update",
         newMiscueType: newType,
+        isSelfCorrected: newType === "SELF_CORRECTION",
       });
       if (!result.success) return;
       const sourceMiscues = editMiscues.isEditing

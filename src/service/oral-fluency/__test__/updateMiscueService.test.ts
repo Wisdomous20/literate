@@ -27,6 +27,7 @@ import { updateMiscueService } from "../updateMiscueService";
 const baseMiscue = {
   id: "m-1",
   sessionId: "s-1",
+  miscueType: "SUBSTITUTION",
   session: { id: "s-1", totalWords: 10, assessmentId: "a-1" },
 };
 
@@ -115,9 +116,47 @@ describe("updateMiscueService", () => {
 
     expect(mockTx.oralFluencyMiscue.update).toHaveBeenCalledWith({
       where: { id: "m-1" },
-      data: { miscueType: "OMISSION" },
+      data: { miscueType: "OMISSION", isSelfCorrected: false },
     });
     expect(mockTx.oralFluencyMiscue.delete).not.toHaveBeenCalled();
+  });
+
+  it("rejects changing a normal miscue type to insertion", async () => {
+    mockPrisma.oralFluencyMiscue.findUnique.mockResolvedValue(baseMiscue);
+
+    const result = await updateMiscueService({
+      miscueId: "m-1",
+      action: "update",
+      newMiscueType: "INSERTION",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.code).toBe("VALIDATION_ERROR");
+    expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("allows changing self-correction and repetition miscues to insertion", async () => {
+    for (const miscueType of ["SELF_CORRECTION", "REPETITION"] as const) {
+      vi.clearAllMocks();
+      mockCreateOralReadingService.mockResolvedValue({ success: true });
+      mockPrisma.oralFluencyMiscue.findUnique.mockResolvedValue({
+        ...baseMiscue,
+        miscueType,
+      });
+      setupTransactionWith([{ isSelfCorrected: false }], 10);
+
+      const result = await updateMiscueService({
+        miscueId: "m-1",
+        action: "update",
+        newMiscueType: "INSERTION",
+      });
+
+      expect(result.success).toBe(true);
+      expect(mockTx.oralFluencyMiscue.update).toHaveBeenCalledWith({
+        where: { id: "m-1" },
+        data: { miscueType: "INSERTION", isSelfCorrected: false },
+      });
+    }
   });
 
   it("excludes self-corrected miscues from the score recalculation count", async () => {

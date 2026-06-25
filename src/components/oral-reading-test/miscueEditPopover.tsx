@@ -4,13 +4,12 @@ import { useState, useRef, useEffect, type CSSProperties } from "react";
 import { Minus, Plus, Trash2, Loader2, Pencil, Play } from "lucide-react";
 import type { MiscueType } from "./useEditMiscues";
 import { formatMiscueTimestamp } from "@/lib/audioPlayback";
+import { canChangeMiscueType } from "@/lib/miscueEditing";
 
 // ─── Position helpers ───
 
 function computePopoverStyle(
   anchorRect: DOMRect,
-  _containerRect: DOMRect,
-  _scrollTop: number,
 ): CSSProperties {
   const popupWidth = 208;
   const viewportPadding = 12;
@@ -77,8 +76,6 @@ export function TextInputPopover({
     anchorEl && containerEl
       ? computePopoverStyle(
           anchorEl.getBoundingClientRect(),
-          containerEl.getBoundingClientRect(),
-          containerEl.scrollTop,
         )
       : { position: "absolute" as const, zIndex: 40 };
 
@@ -166,8 +163,6 @@ export function RepetitionPopover({
     anchorEl && containerEl
       ? computePopoverStyle(
           anchorEl.getBoundingClientRect(),
-          containerEl.getBoundingClientRect(),
-          containerEl.scrollTop,
         )
       : { position: "absolute" as const, zIndex: 40 };
 
@@ -475,7 +470,9 @@ export function MiscueActionPopover({
         Change type:
       </div>
       <div className="flex flex-wrap gap-1">
-        {TYPE_OPTIONS.filter((t) => t.type !== miscueType).map((opt) => (
+        {TYPE_OPTIONS.filter(
+          (t) => t.type !== miscueType && canChangeMiscueType(miscueType, t.type),
+        ).map((opt) => (
           <button
             key={opt.type}
             type="button"
