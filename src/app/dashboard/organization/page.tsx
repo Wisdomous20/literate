@@ -27,6 +27,7 @@ import { getMembersAction } from "@/app/actions/org/getMembers";
 import { toggleMemberAction } from "@/app/actions/org/toggleMember";
 import { generateMemberPasswordAction } from "@/app/actions/org/generateMemberPassword";
 import { updateMemberRoleAction } from "@/app/actions/org/updateMemberRole";
+import { removeMemberAction } from "@/app/actions/org/removeMember";
 
 const organizationQueryKey = ["organization", "members"];
 
@@ -92,6 +93,18 @@ export default function OrganizationPage() {
       const res = await updateMemberRoleAction(memberId, role);
       if (!res.success) {
         throw new Error(res.error ?? "Failed to update member role");
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: organizationQueryKey });
+    },
+  });
+
+  const removeMemberMutation = useMutation({
+    mutationFn: async ({ memberId }: { memberId: string }) => {
+      const res = await removeMemberAction(memberId);
+      if (!res.success) {
+        throw new Error(res.error ?? "Failed to remove member");
       }
     },
     onSuccess: async () => {
@@ -223,6 +236,19 @@ export default function OrganizationPage() {
               } catch (error) {
                 alert(
                   error instanceof Error ? error.message : "Failed to update member"
+                );
+              }
+            }}
+            onRemove={async (member) => {
+              try {
+                await removeMemberMutation.mutateAsync({
+                  memberId: member.id,
+                });
+              } catch (error) {
+                alert(
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to remove member"
                 );
               }
             }}

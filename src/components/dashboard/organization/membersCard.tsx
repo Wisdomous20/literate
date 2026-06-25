@@ -6,6 +6,7 @@ import {
   Loader2,
   RefreshCw,
   ShieldCheck,
+  UserMinus,
 } from "lucide-react";
 import type { Member } from "./types";
 
@@ -15,6 +16,7 @@ interface MembersCardProps {
   onResetPassword: (member: Member) => void;
   onRoleChange: (member: Member, role: "ADMIN" | "USER") => void | Promise<void>;
   onToggle: (member: Member, disable: boolean) => void | Promise<void>;
+  onRemove: (member: Member) => void | Promise<void>;
 }
 
 export function MembersCard({
@@ -23,6 +25,7 @@ export function MembersCard({
   onResetPassword,
   onRoleChange,
   onToggle,
+  onRemove,
 }: MembersCardProps) {
   return (
     <section
@@ -61,6 +64,7 @@ export function MembersCard({
               onResetPassword={onResetPassword}
               onRoleChange={onRoleChange}
               onToggle={onToggle}
+              onRemove={onRemove}
             />
           ))}
         </ul>
@@ -75,16 +79,19 @@ function MemberRow({
   onResetPassword,
   onRoleChange,
   onToggle,
+  onRemove,
 }: {
   member: Member;
   onGeneratePassword: (member: Member) => Promise<void>;
   onResetPassword: (member: Member) => void;
   onRoleChange: (member: Member, role: "ADMIN" | "USER") => void | Promise<void>;
   onToggle: (member: Member, disable: boolean) => void | Promise<void>;
+  onRemove: (member: Member) => void | Promise<void>;
 }) {
   const [busy, setBusy] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [roleBusy, setRoleBusy] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const fullName = [member.firstName, member.lastName].filter(Boolean).join(" ");
   const initials = (
     member.firstName?.[0] ??
@@ -124,6 +131,19 @@ function MemberRow({
     setRoleBusy(true);
     await onRoleChange(member, nextRole);
     setRoleBusy(false);
+  }
+
+  async function handleRemove() {
+    if (removing || member.isOwner) return;
+
+    const confirmed = window.confirm(
+      `Remove ${fullName || member.email} from this organization? Their account, classrooms, students, and assessments will remain, but they will lose organization subscription access.`
+    );
+    if (!confirmed) return;
+
+    setRemoving(true);
+    await onRemove(member);
+    setRemoving(false);
   }
 
   return (
@@ -228,6 +248,19 @@ function MemberRow({
                   : member.isDisabled
                     ? "Enable member"
                     : "Disable member"}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleRemove()}
+                disabled={removing}
+                className="flex h-10 items-center gap-1.5 rounded-2xl border border-red-200 bg-white px-3.5 text-xs font-bold text-red-700 transition hover:bg-red-50 disabled:opacity-50"
+              >
+                {removing ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <UserMinus className="h-3.5 w-3.5" />
+                )}
+                {removing ? "Removing..." : "Remove"}
               </button>
             </>
           )}
