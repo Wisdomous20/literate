@@ -58,7 +58,7 @@ export function DashboardHeader({
         data-tour-target="dashboard-header"
         className="relative flex min-h-16 items-center justify-between gap-3 overflow-hidden border-b-2 border-[#DED7FF] bg-white px-3 py-3 sm:px-4 md:px-6"
       >
-        <div className="flex min-w-0 items-center gap-2 md:gap-3">
+        <div className="flex min-w-0 items-center gap-1.5 md:gap-2">
           {resolvedIcon && (
             <div className="flex h-9 w-9 shrink-0 items-center justify-center md:h-10 md:w-10">
               {resolvedIcon}

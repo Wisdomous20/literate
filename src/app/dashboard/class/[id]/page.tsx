@@ -10,6 +10,7 @@ import {
   LayoutGrid,
   Table,
   Archive,
+  XCircle,
 } from "lucide-react";
 import { ClassListsHeader } from "@/components/class-lists/classListsHeader";
 import {

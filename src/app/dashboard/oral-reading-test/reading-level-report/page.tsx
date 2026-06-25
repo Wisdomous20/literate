@@ -11,6 +11,7 @@ import {
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  Download,
   FileText,
   Loader2,
 } from "lucide-react";
@@ -400,6 +401,7 @@ export default function ReadingLevelReportPage() {
                     className="relative inline-flex items-center gap-1.5 rounded-full bg-[#6666FF] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-transform hover:bg-[#5555EE] hover:-translate-y-0.5 active:translate-y-0"
                     type="button"
                   >
+                    <Download className="h-3.5 w-3.5" />
                     Export to PDF
                   </button>
                 </div>

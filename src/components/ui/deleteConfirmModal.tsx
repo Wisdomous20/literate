@@ -65,7 +65,7 @@ export function DeleteConfirmModal({
             <button
               type="button"
               onClick={onClose}
-              className="relative w-full rounded-full border border-[#6666FF]/40 bg-white px-4 py-2.5 text-sm font-semibold text-[#6666FF] shadow-sm transition-transform hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
+              className="relative w-full rounded-full border border-[#7C3AED]/40 bg-white px-4 py-2.5 text-sm font-semibold text-[#7C3AED] shadow-sm transition-transform hover:bg-[#F3E8FF] hover:-translate-y-0.5 active:translate-y-0"
             >
               Cancel
             </button>

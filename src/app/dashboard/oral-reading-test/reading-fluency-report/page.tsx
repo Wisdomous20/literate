@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef, useSyncExternalStore } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, ArrowLeft, ChevronRight } from "lucide-react";
-import ReportHeader from "@/components/reports/oral-reading-test/reading-fluency-report/reportHeader";
+import { Loader2, ArrowLeft, Download, RotateCcw, FileBarChart2 } from "lucide-react";
+import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import StudentInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/studentInfoCard";
 import PassageInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/passageInfoCard";
 import MetricCards from "@/components/reports/oral-reading-test/reading-fluency-report/metricCards";
@@ -472,10 +472,23 @@ export default function OralReadingReportPage() {
     behaviorItems,
   ]);
 
+  const handleStartNew = useCallback(() => {
+    try {
+      sessionStorage.removeItem(STORAGE_KEY);
+      sessionStorage.removeItem(AUDIO_STORAGE_KEY);
+      sessionStorage.removeItem("oral-reading-assessmentId");
+      sessionStorage.removeItem("oral-reading-comprehension-state");
+    } catch {}
+    router.push("/dashboard/oral-reading-test");
+  }, [router]);
+
   if (!isClient) {
     return (
       <div className="flex flex-col h-screen overflow-hidden">
-        <ReportHeader assessmentId={assessmentId} />
+        <DashboardHeader
+          title="Oral Fluency Test Report"
+          icon={<FileBarChart2 className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />}
+        />
         <div className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-[#6666FF]" />
@@ -491,7 +504,10 @@ export default function OralReadingReportPage() {
   if (!analysis) {
     return (
       <div className="flex flex-col h-screen overflow-hidden">
-        <ReportHeader assessmentId={assessmentId} />
+        <DashboardHeader
+          title="Oral Fluency Test Report"
+          icon={<FileBarChart2 className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />}
+        />
         <div className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-4 text-center px-4">
             <p className="text-[#00306E] font-semibold text-lg">
@@ -514,20 +530,23 @@ export default function OralReadingReportPage() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <ReportHeader assessmentId={assessmentId} />
+      <DashboardHeader
+        title="Oral Fluency Test Report"
+        icon={<FileBarChart2 className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />}
+      />
 
-      <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth">
-        <div className="max-w-[1400px] mx-auto px-6 py-6 md:px-8 lg:px-12 w-full">
+      <main className="flex-1 min-h-0 overflow-hidden">
+        <div className="max-w-350 mx-auto h-full px-6 py-6 md:px-8 lg:px-12 w-full">
           {/* All cards in one container */}
-          <div className="rounded-2xl border border-[#6666FF]/20 bg-white shadow-sm overflow-hidden">
+          <div className="flex h-full min-h-0 flex-col rounded-2xl border border-[#6666FF]/20 bg-white shadow-sm overflow-hidden">
             {/* Action bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E8E8FF] bg-[#F8F8FF] px-6 py-4">
+            <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 border-b border-[#E8E8FF] bg-[#F8F8FF] px-6 py-4">
               <div className="relative">
-                <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+                <div className="absolute inset-0 rounded-full translate-y-1 bg-[#E0E0FF]" />
                 <button
                   type="button"
                   onClick={() => router.back()}
-                  className="relative flex items-center gap-1.5 rounded-full border border-[#6666FF]/40 bg-white px-4 py-2 text-xs font-semibold text-[#6666FF] shadow-sm transition-transform hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
+                  className="relative inline-flex items-center gap-1.5 rounded-full border border-[#6666FF]/40 bg-white px-4 py-2 text-xs font-semibold text-[#6666FF] shadow-sm transition-transform hover:-translate-y-0.5 hover:bg-[#F0F4FF] active:translate-y-0"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" strokeWidth={2.5} />
                   Back
@@ -536,33 +555,27 @@ export default function OralReadingReportPage() {
 
               <div className="flex flex-wrap items-center gap-3">
                 {/* Export PDF */}
-                <div className="relative">
-                  <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
-                  <button
-                    type="button"
-                    onClick={handleExportPdf}
-                    className="relative inline-flex items-center gap-1.5 rounded-full bg-[#6666FF] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-transform hover:bg-[#5555EE] hover:-translate-y-0.5 active:translate-y-0"
-                  >
-                    Export to PDF
-                  </button>
-                </div>
-                {/* Continue to Comprehension */}
-                <div className="relative">
-                  <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
-                  <button
-                    type="button"
-                    onClick={() => router.push("/dashboard/oral-reading-test/comprehension")}
-                    className="relative inline-flex items-center gap-1.5 rounded-full border border-[#6666FF] bg-white px-5 py-2 text-xs font-semibold text-[#6666FF] shadow transition-transform hover:bg-[#6666FF] hover:text-white hover:-translate-y-0.5 active:translate-y-0"
-                  >
-                    <ChevronRight className="h-3.5 w-3.5" />
-                    Continue to Comprehension
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleExportPdf}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#7C3AED] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[#6D28D9]"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Export to PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={handleStartNew}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#7C3AED] bg-white px-5 py-2 text-xs font-semibold text-[#7C3AED] transition-colors hover:bg-[#F3E8FF]"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Start New
+                </button>
               </div>
             </div>
 
             {/* Cards content */}
-            <div className="p-6 space-y-6">
+            <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-6">
               {/* Top row: Student Info + Metric Cards */}
               <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
                 <StudentInfoCard

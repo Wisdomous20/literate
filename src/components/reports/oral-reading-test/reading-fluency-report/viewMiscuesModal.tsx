@@ -795,7 +795,7 @@ export default function ViewMiscuesModal({
                   if (!audio) return;
                   if (audio.paused) { audio.play().catch(() => {}); } else { audio.pause(); }
                 }}
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#6666FF] text-white transition-colors hover:bg-[#5555EE]"
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#7C3AED] text-white transition-colors hover:bg-[#6D28D9]"
                 aria-label={audioPlaying ? "Pause" : "Play"}
               >
                 {audioPlaying
@@ -846,7 +846,7 @@ export default function ViewMiscuesModal({
                     aria-label={showMiscues ? "Show original passage" : "Show miscue highlights"}
                     title={showMiscues ? "Show original passage" : "Show miscue highlights"}
                     className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
-                      showMiscues ? "bg-[#6666FF]" : "bg-[#C4C4FF]"
+                      showMiscues ? "bg-[#7C3AED]" : "bg-[#D8B4FE]"
                     }`}
                   >
                     <span
@@ -928,7 +928,7 @@ export default function ViewMiscuesModal({
                           effectiveJumpToTime(popup.miscue.timestamp!);
                           setPopup(null);
                         }}
-                        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md bg-[#6666FF] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:brightness-110"
+                        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md bg-[#7C3AED] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#6D28D9]"
                       >
                         <Play className="h-3 w-3" />
                         Jump to Word ({formatMiscueTimestamp(popup.miscue.timestamp!)})

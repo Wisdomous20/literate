@@ -152,7 +152,7 @@ export function CreateClassModal({
                   disabled={isLoading}
                   placeholder="Enter class name"
                   maxLength={MAX_CLASS_NAME_LENGTH}
-                  className="rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none shadow-[inset_0px_2px_4px_rgba(0,48,110,0.08)] transition-colors focus:border-[#6666FF] disabled:opacity-50"
+                  className="rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none shadow-[inset_0px_2px_4px_rgba(0,48,110,0.08)] transition-colors focus:border-[#7C3AED] disabled:opacity-50"
                 />
                 <span className="text-right text-xs text-gray-500 mt-2">
                   {className.length}/{MAX_CLASS_NAME_LENGTH}

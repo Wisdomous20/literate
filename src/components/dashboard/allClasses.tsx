@@ -189,7 +189,7 @@ export default function AllClassesPage({
               {paginatedClasses.map((c, idx) => (
                 <div
                   key={c.id}
-                  className="border-l border-t border-r-[6px] border-b-[6px] border-[#6666FF] rounded-2xl overflow-hidden bg-white min-h-35 shadow-lg shadow-[#6666FF]/10"
+                  className="rounded-2xl overflow-hidden border border-b-[6px] border-[#6666FF] bg-white min-h-35 shadow-lg shadow-[#6666FF]/10"
                 >
                   <ClassCard
                     classRoomId={c.id}

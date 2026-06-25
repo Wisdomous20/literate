@@ -143,7 +143,7 @@ export function UpdateClassModal({
                 disabled={isLoading}
                 placeholder="Enter class name"
                 maxLength={MAX_CLASS_NAME_LENGTH}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:border-[#6666FF] focus:outline-none focus:ring-2 focus:ring-[#6666FF]/20 disabled:opacity-50"
+                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:border-[#7C3AED] focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/20 disabled:opacity-50"
               />
               <span className="text-right text-xs text-gray-500 mt-2">
                 {className.length}/{MAX_CLASS_NAME_LENGTH}
@@ -166,7 +166,7 @@ export function UpdateClassModal({
             onClick={handleSubmit}
             type="button"
             disabled={isLoading || className === currentName}
-            className="flex items-center gap-2 rounded-lg bg-[#6666FF] px-4 py-2 text-sm font-medium text-white hover:bg-[#5555DD] disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 rounded-lg bg-[#7C3AED] px-4 py-2 text-sm font-medium text-white hover:bg-[#6D28D9] disabled:opacity-50 transition-colors"
           >
             {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
             {isLoading ? "Updating..." : "Update"}

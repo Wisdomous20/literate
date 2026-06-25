@@ -223,7 +223,7 @@ export function ClassInventory({
       {isLoading ? (
         <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4">
           {[0,1,2,3].map((i) => (
-            <div key={i} className="border-l border-t border-r-[6px] border-b-[6px] border-[#5D5DFB]/30 rounded-2xl overflow-hidden bg-white min-h-35 shadow-lg shadow-[#5D5DFB]/5 animate-pulse">
+            <div key={i} className="rounded-2xl overflow-hidden border border-b-[6px] border-[#5D5DFB]/30 bg-white min-h-35 shadow-lg shadow-[#5D5DFB]/5 animate-pulse">
               <div className="p-4 flex flex-col justify-between h-full min-h-35">
                 <div className="flex items-center gap-2">
                   <div className="h-8 w-8 rounded-md bg-[#E0E7FF]" />
@@ -260,7 +260,7 @@ export function ClassInventory({
             {visibleClasses.map((classItem) => (
               <div
                 key={classItem.id}
-                className="border-l border-t border-r-[6px] border-b-[6px] border-[#5D5DFB] rounded-2xl overflow-hidden bg-white min-h-35 shadow-lg shadow-[#5D5DFB]/10"
+                className="rounded-2xl overflow-hidden border border-b-[6px] border-[#5D5DFB] bg-white min-h-35 shadow-lg shadow-[#5D5DFB]/10"
               >
                 <ClassCard
                   classRoomId={classItem.id}

@@ -213,7 +213,7 @@ export function AddPassageModal({
         onClick={onClose}
       />
 
-      <div className="relative z-10 flex h-[100dvh] w-full flex-col overflow-hidden bg-white shadow-[0px_1px_20px_rgba(108,164,239,0.37)] sm:h-auto sm:max-h-[90dvh] sm:w-[min(52rem,calc(100vw-2rem))] sm:rounded-3xl sm:border-t sm:border-l sm:border-r-4 sm:border-b-4 sm:border-t-[#A855F7] sm:border-l-[#A855F7] sm:border-r-[#6653F9] sm:border-b-[#6653F9]">
+      <div className="relative z-10 flex h-dvh w-full flex-col overflow-hidden bg-white shadow-[0px_1px_20px_rgba(108,164,239,0.37)] sm:h-auto sm:max-h-[90dvh] sm:w-[min(52rem,calc(100vw-2rem))] sm:rounded-3xl sm:border-t sm:border-l sm:border-r-4 sm:border-b-4 sm:border-t-[#A855F7] sm:border-l-[#A855F7] sm:border-r-[#6653F9] sm:border-b-[#6653F9]">
         {" "}
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between gap-3 px-4 pb-3 pt-4 sm:px-8 sm:pb-4 sm:pt-6">
@@ -228,8 +228,8 @@ export function AddPassageModal({
                 onClick={() => setViewMode("list")}
                 className={`flex h-9 w-10 items-center justify-center transition-colors ${
                   viewMode === "list"
-                    ? "bg-[#5D5DFB]"
-                    : "bg-[#EFFDFF] hover:bg-[#E4F4FF]"
+                    ? "bg-[#7C3AED]"
+                    : "bg-[#F5F3FF] hover:bg-[#EDE9FE]"
                 }`}
                 title="List view"
                 aria-label="List view"
@@ -246,8 +246,8 @@ export function AddPassageModal({
                 onClick={() => setViewMode("grid")}
                 className={`flex h-9 w-10 items-center justify-center transition-colors ${
                   viewMode === "grid"
-                    ? "bg-[#5D5DFB]"
-                    : "bg-[#EFFDFF] hover:bg-[#E4F4FF]"
+                    ? "bg-[#7C3AED]"
+                    : "bg-[#F5F3FF] hover:bg-[#EDE9FE]"
                 }`}
                 title="Grid view"
                 aria-label="Grid view"
@@ -281,7 +281,7 @@ export function AddPassageModal({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by title, content, grade level, language, or test type..."
-              className="min-h-11 w-full rounded-[10px] border border-[#54A4FF] bg-white py-2.5 pl-9 pr-9 text-sm text-[#00306E] shadow-[0px_1px_10px_rgba(108,164,239,0.2)] outline-none placeholder:text-[#00306E]/40 focus:border-[#6666FF] focus:shadow-[0px_1px_14px_rgba(102,102,255,0.25)]"
+              className="min-h-11 w-full rounded-[10px] border border-[#54A4FF] bg-white py-2.5 pl-9 pr-9 text-sm text-[#00306E] shadow-[0px_1px_10px_rgba(108,164,239,0.2)] outline-none placeholder:text-[#00306E]/40 focus:border-[#7C3AED] focus:shadow-[0px_1px_14px_rgba(124,58,237,0.25)]"
             />
             {searchQuery && (
               <button
@@ -414,7 +414,7 @@ export function AddPassageModal({
               type="button"
               onClick={handleSelect}
               disabled={!selectedPassageId}
-              className="min-h-11 w-full rounded-lg bg-[#5D5DFB] px-8 py-2.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50 sm:w-auto"
+              className="min-h-11 w-full rounded-lg bg-[#7C3AED] px-8 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#6D28D9] disabled:opacity-50 sm:w-auto"
             >
               <span className="inline-flex items-center gap-2">
                 Select Passage
