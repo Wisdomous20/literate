@@ -17,7 +17,7 @@ import { hasActiveAccessAction } from "@/app/actions/subscription/hasActiveAcces
 import {
   LayoutDashboard,
   Mic,
-  Gauge,
+  BookAudio,
   BookOpen,
   Settings,
   LogOut,
@@ -51,7 +51,7 @@ const menuItems = [
   {
     label: "Reading Fluency Test",
     href: "/dashboard/reading-fluency-test",
-    icon: Gauge,
+    icon: BookAudio,
   },
   {
     label: "Reading Comprehension Test",

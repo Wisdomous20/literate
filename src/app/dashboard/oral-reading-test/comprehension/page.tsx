@@ -9,6 +9,7 @@ import {
   Square,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
+import { ClassificationPopup } from "@/components/oral-reading-test/classificationPopup";
 import { ComprehensionBreakdown } from "@/components/oral-reading-test/comprehensionBreakdown";
 import { ComprehensionSubmitArea } from "@/components/oral-reading-test/comprehensionSubmitArea";
 import { QuestionCard } from "@/components/oral-reading-test/questionCard";
@@ -166,6 +167,8 @@ export default function OralReadingComprehensionPage() {
   const [highlightedTag, setHighlightedTag] = useState<
     "literal" | "inferential" | "critical" | null
   >(null);
+  const [showClassificationPopup, setShowClassificationPopup] = useState(false);
+  const [studentName, setStudentName] = useState("");
   const contentRef = useRef<HTMLDivElement>(null);
 
   const handleTagClick = (tag: "literal" | "inferential" | "critical") => {
@@ -188,6 +191,7 @@ export default function OralReadingComprehensionPage() {
         }
 
         const session = JSON.parse(raw);
+        if (session.studentName) setStudentName(session.studentName);
         const passageId = session.selectedPassage;
 
         if (!passageId) {
@@ -385,6 +389,7 @@ export default function OralReadingComprehensionPage() {
           syncMainSession(existingResult, fluencyClassification);
 
           setIsSubmitted(true);
+          setShowClassificationPopup(true);
           return;
         }
       } catch {
@@ -547,6 +552,7 @@ export default function OralReadingComprehensionPage() {
       }
 
       setIsSubmitted(true);
+      setShowClassificationPopup(true);
     } catch (err) {
       console.error("Comprehension submit error:", err);
       setSubmitError("Something went wrong while submitting.");
@@ -653,6 +659,15 @@ export default function OralReadingComprehensionPage() {
     <div className="flex flex-col h-screen overflow-hidden">
       {/* Header */}
       <DashboardHeader title="Oral Reading Test" />
+
+      {showClassificationPopup && comprehensionResult?.level && (
+        <ClassificationPopup
+          classificationLevel={comprehensionResult.level}
+          studentName={studentName}
+          assessmentType="comprehension"
+          onClose={() => setShowClassificationPopup(false)}
+        />
+      )}
 
       {/* Main content area */}
       <main className="flex min-h-0 flex-1 px-4 py-4 md:px-6 lg:px-8">
