@@ -72,6 +72,14 @@ describe("alignWords", () => {
     expect(result[0].match).toBe("EXACT");
   });
 
+  it("aligns equivalent number words and digits as exact matches", () => {
+    const result = alignWords(["eleven"], [spoken("11", 0, 0.5)]);
+
+    expect(result[0].match).toBe("EXACT");
+    expect(result[0].expected).toBe("eleven");
+    expect(result[0].spoken).toBe("11");
+  });
+
   it("aligns multiple words in the correct order", () => {
     const result = alignWords(
       ["the", "quick", "fox"],

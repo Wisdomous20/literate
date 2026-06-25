@@ -115,6 +115,13 @@ export function hydrateMiscueTimestamps(
     const derivedTimestamp = deriveTimestampFromAlignedWords(miscue, alignedWords);
     if (derivedTimestamp === null) return miscue;
 
+    if (miscue.miscueType === "OMISSION" && miscue.timestamp !== derivedTimestamp) {
+      return {
+        ...miscue,
+        timestamp: derivedTimestamp,
+      };
+    }
+
     const hasMissingTimestamp = !isUsableTimestamp(miscue.timestamp);
     const hasSuspiciousZeroTimestamp =
       miscue.timestamp === 0 && miscue.wordIndex > 0 && derivedTimestamp > 0;

@@ -1,5 +1,6 @@
 import { TranscriptWord } from "@/types/oral-reading";
 import { normalizeWord, similarityRatio } from "@/utils/textUtils";
+import { lowestTranscriptionConfidence } from "@/utils/transcriptionConfidence";
 
 /**
  * Merge fragmented STT tokens back into single words when they match a
@@ -43,6 +44,7 @@ export default function mergeSplitWords(
           word: passageWords[matchIdx],
           start: transcribedWords[i].start,
           end: transcribedWords[i + 2].end,
+          ...withMergedConfidence(transcribedWords.slice(i, i + 3)),
         });
         estimatedPassagePos = matchIdx + 1;
         i += 3;
@@ -61,6 +63,7 @@ export default function mergeSplitWords(
           word: passageWords[matchIdx],
           start: transcribedWords[i].start,
           end: transcribedWords[i + 1].end,
+          ...withMergedConfidence(transcribedWords.slice(i, i + 2)),
         });
         estimatedPassagePos = matchIdx + 1;
         i += 2;
@@ -85,6 +88,16 @@ export default function mergeSplitWords(
     }
   }
   return merged;
+}
+
+function withMergedConfidence(
+  words: TranscriptWord[],
+): Pick<TranscriptWord, "confidence"> | Record<string, never> {
+  const confidence = lowestTranscriptionConfidence(
+    words.map((word) => word.confidence),
+  );
+
+  return confidence === undefined ? {} : { confidence };
 }
 
 const SEARCH_WINDOW = 20;

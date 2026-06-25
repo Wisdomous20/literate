@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect, useCallback, Fragment } from "react";
-import { X, Play, Pause, Trash2, Pencil, Loader2, Mic } from "lucide-react";
+import { X, Play, Pause, Mic } from "lucide-react";
 import type { MiscueResult, AlignedWord } from "@/types/oral-reading";
 import { getPassageTextStyle } from "@/components/oral-reading-test/passageDisplay";
 import { PassageDisplay } from "@/components/oral-reading-test/passageDisplay";
 import type { EditModeCallbacks } from "@/components/oral-reading-test/passageDisplay";
-import { MiscueActionPopover } from "@/components/oral-reading-test/miscueEditPopover";
 import { formatMiscueTimestamp, seekAudioToTimestamp } from "@/lib/audioPlayback";
 import { hydrateMiscueTimestamps } from "@/lib/miscueTimestamps";
 import { normalizeWord } from "@/utils/textUtils";
@@ -160,7 +159,6 @@ export default function ViewMiscuesModal({
   const [activeTab, setActiveTab] = useState<"passage" | "list" | "edit">("passage");
   const [showMiscues, setShowMiscues] = useState(true);
   const [popup, setPopup] = useState<PopupState | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const internalAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -416,7 +414,6 @@ export default function ViewMiscuesModal({
       setActiveTab("passage");
       setShowMiscues(true);
       setPopup(null);
-      setActionLoading(false);
       if (editMiscues?.isEditing) {
         editMiscues.cancelEdit();
       }
@@ -625,43 +622,6 @@ export default function ViewMiscuesModal({
                       {formatMiscueTimestamp(miscue.timestamp)}
                     </div>
                   )
-                )}
-                {onDeleteMiscue && (
-                  <div className="flex items-center gap-2">
-                    {(onUpdateMiscueType || onUpdateSpokenWord) && (
-                      <button
-                        type="button"
-                        onClick={(e) => openMiscuePopup(e.currentTarget, miscue)}
-                        className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#D7E6FF] bg-[#F8FBFF] px-2.5 text-[#1A5FB4] transition-colors hover:bg-[#EDF5FF]"
-                        aria-label={`Edit ${config.label.toLowerCase()} miscue`}
-                        title="Edit miscue"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                        <span className="text-[11px] font-semibold">Edit</span>
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        setActionLoading(true);
-                        try {
-                          await onDeleteMiscue(miscue);
-                        } finally {
-                          setActionLoading(false);
-                        }
-                      }}
-                      disabled={actionLoading}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#FFD7D7] bg-[#FFF6F6] text-[#C75A5A] transition-colors hover:bg-[#FFEAEA] disabled:opacity-50"
-                      aria-label={`Delete ${config.label.toLowerCase()} miscue`}
-                      title="Delete miscue"
-                    >
-                      {actionLoading ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-3.5 w-3.5" />
-                      )}
-                    </button>
-                  </div>
                 )}
               </div>
             </div>
@@ -931,69 +891,9 @@ export default function ViewMiscuesModal({
                     />
                   )}
 
-                  {onDeleteMiscue || onUpdateMiscueType ? (
-                    <div className="flex flex-col gap-1.5">
-                      <MiscueActionPopover
-                        miscueType={popup.miscue.miscueType}
-                        spokenWord={
-                          popup.miscue.miscueType === "REPETITION"
-                            ? getRepetitionWord(popup.miscue)
-                            : popup.miscue.spokenWord
-                        }
-                        isLoading={actionLoading}
-                        onDelete={async () => {
-                          if (!onDeleteMiscue) return;
-                          setActionLoading(true);
-                          try {
-                            await onDeleteMiscue(popup.miscue);
-                            setPopup(null);
-                          } finally {
-                            setActionLoading(false);
-                          }
-                        }}
-                        onChangeType={async (newType) => {
-                          if (!onUpdateMiscueType) return;
-                          setActionLoading(true);
-                          try {
-                            await onUpdateMiscueType(popup.miscue, newType);
-                            setPopup(null);
-                          } finally {
-                            setActionLoading(false);
-                          }
-                        }}
-                        onUpdateSpokenWord={
-                          onUpdateSpokenWord
-                            ? async (newSpokenWord: string) => {
-                                setActionLoading(true);
-                                try {
-                                  await onUpdateSpokenWord(popup.miscue, newSpokenWord);
-                                  setPopup(null);
-                                } finally {
-                                  setActionLoading(false);
-                                }
-                              }
-                            : undefined
-                        }
-                        onClose={() => setPopup(null)}
-                      />
-                      {hasTimestamp && effectiveJumpToTime && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            effectiveJumpToTime(popup.miscue.timestamp!);
-                            setPopup(null);
-                          }}
-                          className="flex w-full items-center justify-center gap-1.5 rounded-md bg-[#6666FF] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:brightness-110"
-                        >
-                          <Play className="h-3 w-3" />
-                          Jump to Word ({formatMiscueTimestamp(popup.miscue.timestamp!)})
-                        </button>
-                      )}
-                    </div>
-                  ) : (
-                    <div
-                      className={`rounded-lg border bg-white px-3 py-2 shadow-[0_4px_16px_rgba(0,0,0,0.12)] ${cfg.popupBorderClass}`}
-                    >
+                  <div
+                    className={`rounded-lg border bg-white px-3 py-2 shadow-[0_4px_16px_rgba(0,0,0,0.12)] ${cfg.popupBorderClass}`}
+                  >
                       <div className="mb-1 text-center">
                         <span
                           className={`text-[10px] font-bold uppercase tracking-wide ${cfg.textClass}`}
@@ -1032,8 +932,7 @@ export default function ViewMiscuesModal({
                           Jump to Word ({formatMiscueTimestamp(popup.miscue.timestamp!)})
                         </button>
                       )}
-                    </div>
-                  )}
+                  </div>
 
                   {!popup.flipped && (
                     <div

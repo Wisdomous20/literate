@@ -1,4 +1,4 @@
-import { normalizeWord, similarityRatio } from "@/utils/textUtils";
+import { areWordsEquivalent, normalizeWord, similarityRatio } from "@/utils/textUtils";
 import { protos } from "@google-cloud/speech";
 
 // ── Double Metaphone (lightweight implementation) ──────────
@@ -168,7 +168,7 @@ export function selectBestAlternative(
       for (let pi = searchStart; pi <= searchEnd; pi++) {
         const pWord = passageWordsNorm[pi];
 
-        if (tWord === pWord) {
+        if (areWordsEquivalent(tWord, pWord)) {
           wordBestScore = 3;
           break; // can't do better
         }

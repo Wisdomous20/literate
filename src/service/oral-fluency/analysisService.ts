@@ -1,5 +1,5 @@
 import { OralFluencyAnalysis } from "@/types/oral-reading"
-import { transcribeAudio } from "../googleService/googleSTTService"
+import { transcribeAudioWithConsensus } from "@/service/transcription/dualTranscriptionService"
 import { alignWords } from "./alignmentService"
 import { phoneticPostCorrection } from "./phoneticPostCorrection"
 import { detectMiscues } from "./miscueDetectionService"
@@ -37,7 +37,7 @@ export async function analyzeOralFluency(
   }
 
   // 1. Start network-bound STT before CPU-bound pitch analysis.
-  const sttPromise    = transcribeAudio(audioBuffer, fileName, language, passageText)
+  const sttPromise    = transcribeAudioWithConsensus(audioBuffer, fileName, language, passageText)
   const pitchAnalysis = analyzePitch(audioBuffer)
   const sttResult     = await sttPromise
 
@@ -71,6 +71,7 @@ export async function analyzeOralFluency(
     word: normalizeWord(w.word),
     start: w.start,
     end: w.end,
+    confidence: w.confidence,
   }))
 
   const corrected = postCorrectTranscription(
@@ -81,7 +82,12 @@ export async function analyzeOralFluency(
   // 4. Align spoken words against passage
   const rawAlignedWords = alignWords(
     normalizedPassageWords,
-    corrected.map(w => ({ word: w.word, start: w.start, end: w.end })),
+    corrected.map(w => ({
+      word: w.word,
+      start: w.start,
+      end: w.end,
+      confidence: w.confidence,
+    })),
   )
 
   // 5. Phonetic post-correction: check each MISMATCH — if the spoken word

@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import correctWithPassage from "../correctWithPassage";
 import { TranscriptWord } from "@/types/oral-reading";
 
-function word(w: string, start = 0, end = 1): TranscriptWord {
-  return { word: w, start, end };
+function word(w: string, start = 0, end = 1, confidence?: number): TranscriptWord {
+  return { word: w, start, end, ...(confidence === undefined ? {} : { confidence }) };
 }
 
 describe("correctWithPassage", () => {
@@ -27,6 +27,18 @@ describe("correctWithPassage", () => {
     const passage = "the cat sat";
 
     const result = correctWithPassage(words, passage);
+
+    expect(result[0].word).toBe("the");
+  });
+
+  it("preserves a high-confidence mismatch instead of forcing it to the passage", () => {
+    const result = correctWithPassage([word("thhe", 0, 1, 0.9)], "the");
+
+    expect(result[0].word).toBe("thhe");
+  });
+
+  it("corrects a low-confidence likely transcription error", () => {
+    const result = correctWithPassage([word("thhe", 0, 1, 0.2)], "the");
 
     expect(result[0].word).toBe("the");
   });

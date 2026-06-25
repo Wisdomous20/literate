@@ -15,8 +15,6 @@ export function AddMemberCard({
   seatsRemaining,
 }: AddMemberCardProps) {
   const [email, setEmail] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,8 +29,6 @@ export function AddMemberCard({
 
     const res = await addMemberAction({
       email: email.trim(),
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
     });
 
     setSubmitting(false);
@@ -44,8 +40,6 @@ export function AddMemberCard({
 
     const invitedEmail = email.trim();
     setEmail("");
-    setFirstName("");
-    setLastName("");
 
     if ("invitation" in res && res.invitation) {
       onInvited({
@@ -88,20 +82,6 @@ export function AddMemberCard({
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <TextField
-            label="First name"
-            value={firstName}
-            onChange={setFirstName}
-            disabled={seatsExhausted || submitting}
-          />
-          <TextField
-            label="Last name"
-            value={lastName}
-            onChange={setLastName}
-            disabled={seatsExhausted || submitting}
-          />
-        </div>
         <TextField
           label="Email"
           type="email"
@@ -115,9 +95,7 @@ export function AddMemberCard({
           disabled={
             seatsExhausted ||
             submitting ||
-            !email.trim() ||
-            !firstName.trim() ||
-            !lastName.trim()
+            !email.trim()
           }
           className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#5D5DFB] px-5 text-sm font-bold text-white transition hover:bg-[#4D4DEA] disabled:cursor-not-allowed disabled:opacity-50"
         >

@@ -6,10 +6,14 @@ import {
 } from "@/service/org/acceptInvitationService";
 import { acceptInvitationSchema } from "@/lib/validation/org";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
 
 export async function acceptInvitationAction(input: {
   token: string;
   password?: string;
+  firstName?: string;
+  lastName?: string;
 }): Promise<AcceptInvitationResult> {
   const validationResult = acceptInvitationSchema.safeParse(input);
 
@@ -20,5 +24,10 @@ export async function acceptInvitationAction(input: {
     };
   }
 
-  return await acceptInvitationService(validationResult.data);
+  const session = await getServerSession(authOptions);
+
+  return await acceptInvitationService({
+    ...validationResult.data,
+    authenticatedUserId: session?.user?.id,
+  });
 }

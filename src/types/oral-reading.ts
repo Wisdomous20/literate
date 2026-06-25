@@ -2,6 +2,8 @@ export interface TranscriptWord {
   word: string;
   start: number;
   end: number;
+  /** Google STT's confidence in this recognized word, when it provides one. */
+  confidence?: number;
 }
 
 export interface TranscriptSegment {

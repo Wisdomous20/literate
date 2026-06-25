@@ -126,6 +126,53 @@ describe("hydrateMiscueTimestamps", () => {
     expect(hydrateMiscueTimestamps(miscues, alignedWords)[0].timestamp).toBe(0.6);
   });
 
+  it("replaces a stale timestamp on an omission with its passage-local anchor", () => {
+    const miscues: MiscueResult[] = [
+      {
+        miscueType: "OMISSION",
+        expectedWord: "brown",
+        spokenWord: null,
+        wordIndex: 1,
+        timestamp: 1.3,
+        isSelfCorrected: false,
+      },
+    ];
+    const alignedWords: AlignedWord[] = [
+      {
+        expected: "The",
+        spoken: "The",
+        expectedIndex: 0,
+        spokenIndex: 0,
+        timestamp: 0.2,
+        endTimestamp: 0.6,
+        confidence: null,
+        match: "EXACT",
+      },
+      {
+        expected: "brown",
+        spoken: null,
+        expectedIndex: 1,
+        spokenIndex: null,
+        timestamp: null,
+        endTimestamp: null,
+        confidence: null,
+        match: "OMISSION",
+      },
+      {
+        expected: "fox",
+        spoken: "fox",
+        expectedIndex: 2,
+        spokenIndex: 1,
+        timestamp: 0.8,
+        endTimestamp: 1.1,
+        confidence: null,
+        match: "EXACT",
+      },
+    ];
+
+    expect(hydrateMiscueTimestamps(miscues, alignedWords)[0].timestamp).toBe(0.6);
+  });
+
   it("uses the next spoken word for an omission at the beginning of a passage", () => {
     const miscues: MiscueResult[] = [
       {

@@ -1,6 +1,7 @@
 import { AlignedWord } from "@/types/oral-reading";
 import { normalizeWord } from "@/utils/textUtils";
 import { soundsSimilar } from "@/utils/phoneticUtils";
+import { canAutoCorrectFromPassage } from "@/utils/transcriptionConfidence";
 
 const MORPHOLOGICAL_SUFFIXES = ["s", "es", "ed", "ing", "er", "est", "ly", "d"];
 
@@ -66,6 +67,10 @@ export function phoneticPostCorrection(alignedWords: AlignedWord[]): AlignedWord
 
     // Don't correct morphological variants — those are real reading errors
     if (isMorphologicalVariant(spokenNorm, expectedNorm)) return aw;
+
+    // A high-confidence different word is evidence of a real reading error.
+    // Do not overwrite it merely because it sounds similar to the passage.
+    if (!canAutoCorrectFromPassage(aw.confidence ?? undefined)) return aw;
 
     // The key check: do these words sound similar enough that STT likely
     // just picked the wrong spelling?
