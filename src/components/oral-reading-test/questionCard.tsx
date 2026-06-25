@@ -62,7 +62,7 @@ export function QuestionCard({
 
   return (
     <div
-      className={`rounded-2xl border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] px-8 py-6 transition-all duration-300 ${typeof tagClass === "string" ? tagClass : ""}`}
+      className={`rounded-2xl border border-[#DED9FF] px-8 py-6 transition-all duration-300 ${typeof tagClass === "string" ? tagClass : ""}`}
       style={
         highlight
           ? {
@@ -75,7 +75,7 @@ export function QuestionCard({
     >
       {/* Question Header */}
       <div className="mb-2 flex items-start gap-3">
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#2030CC] border-b-[#2030CC] bg-[#3939f4]">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#6666FF] shadow-sm">
           <span className="text-xs font-semibold text-white">
             {question.questionNumber}
           </span>
@@ -133,7 +133,7 @@ export function QuestionCard({
             onChange={(e) => onEssayChange(question.id, e.target.value)}
             disabled={isSubmitted}
             placeholder="Type your answer here..."
-            className="w-full min-h-12.5 bg-[rgba(108,164,239,0.09)] rounded-md border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] px-4 py-3 text-[#00306E] text-[15px] placeholder:text-[#00306E]/40 outline-none resize-y disabled:opacity-60"
+            className="min-h-12.5 w-full resize-none rounded-md bg-white px-4 py-3 text-[15px] text-[#00306E] placeholder:text-[#00306E]/40 outline-none disabled:opacity-60"
           />
         </div>
       )}

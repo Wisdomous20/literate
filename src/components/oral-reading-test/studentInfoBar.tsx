@@ -375,7 +375,7 @@ export default function StudentInfoBar({
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={handleCreateStudent}
                     disabled={isCreatingStudent}
-                    className="flex w-full items-center gap-1.5 px-3 py-1.5 text-left text-sm font-semibold text-[#6666FF] transition-colors duration-150 hover:bg-[#E4F4FF] disabled:opacity-50"
+                    className="mx-2 my-2 flex w-[calc(100%-1rem)] items-center justify-center gap-2 rounded-xl bg-[#6666FF] px-3 py-2 text-center text-sm font-semibold text-white shadow-[0_8px_18px_rgba(102,102,255,0.22)] transition-all duration-150 hover:-translate-y-0.5 hover:bg-[#5B5BF6] disabled:opacity-50"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     {isCreatingStudent
@@ -520,7 +520,7 @@ export default function StudentInfoBar({
                 <button
                   type="button"
                   onClick={() => handleClassChange("create-new")}
-                  className="flex w-full items-center gap-1.5 border-b border-[#EEEEFF] px-3 py-1.5 text-left text-sm font-semibold text-[#6666FF] transition-colors duration-150 hover:bg-[#EEEEFF]"
+                  className="mx-2 my-2 flex w-[calc(100%-1rem)] items-center justify-center gap-2 rounded-xl bg-[#6666FF] px-3 py-2 text-center text-sm font-semibold text-white shadow-[0_8px_18px_rgba(102,102,255,0.22)] transition-all duration-150 hover:-translate-y-0.5 hover:bg-[#5B5BF6]"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   Create New Class

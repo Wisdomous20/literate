@@ -139,7 +139,7 @@ export function CreateStudentModal({
                   value={studentName}
                   onChange={(e) => setStudentName(e.target.value)}
                   maxLength={50}
-                  className="rounded-lg border-2 border-[#6666FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none transition-colors focus:border-[#6666FF] shadow-[inset_0px_2px_4px_rgba(0,48,110,0.08)]"
+                  className="rounded-lg border-2 border-[#7C3AED] bg-white px-4 py-3 text-base text-[#00306E] outline-none transition-colors focus:border-[#7C3AED] shadow-[inset_0px_2px_4px_rgba(0,48,110,0.08)]"
                   placeholder=""
                 />
                 <span className="text-right text-xs text-gray-500 mt-2">
@@ -159,7 +159,7 @@ export function CreateStudentModal({
                 <button
                   type="button"
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex w-full items-center justify-between rounded-lg border-2 border-[#6666FF] bg-white px-4 py-3 text-left text-base text-[#00306E] outline-none transition-colors shadow-[inset_0px_2px_4px_rgba(0,48,110,0.08)]"
+                  className="flex w-full items-center justify-between rounded-lg border-2 border-[#7C3AED] bg-white px-4 py-3 text-left text-base text-[#00306E] outline-none transition-colors shadow-[inset_0px_2px_4px_rgba(0,48,110,0.08)]"
                 >
                   <span
                     className={
@@ -169,7 +169,7 @@ export function CreateStudentModal({
                     {gradeLevel || "Select grade level"}
                   </span>
                   <ChevronDown
-                    className={`h-5 w-5 text-[#6666FF] transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
+                    className={`h-5 w-5 text-[#7C3AED] transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
                   />
                 </button>
 
@@ -182,7 +182,7 @@ export function CreateStudentModal({
                         onClick={() => handleSelectGrade(grade)}
                         className={`w-full px-4 py-1 text-left text-sm transition-colors hover:bg-[#E4F4FF] ${
                           gradeLevel === grade
-                            ? "bg-[#E4F4FF] font-medium text-[#6666FF]"
+                            ? "bg-[#F3E8FF] font-medium text-[#7C3AED]"
                             : "text-[#00306E]"
                         }`}
                       >
@@ -197,7 +197,7 @@ export function CreateStudentModal({
             <div className="flex justify-center pt-4">
               <button
                 type="submit"
-                className="rounded-lg px-10 py-3 text-base font-semibold text-white transition-all hover:opacity-90 bg-[#2E2E68] shadow-[0px_4px_15px_rgba(46,46,104,0.4)]"
+                className="rounded-lg px-10 py-3 text-base font-semibold text-white transition-all hover:opacity-90 bg-[#6666FF] shadow-[0px_4px_15px_rgba(46,46,104,0.4)]"
               >
                 Create Student
               </button>

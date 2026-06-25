@@ -7,8 +7,6 @@ import {
   ChevronRight,
   ChevronDown,
   Loader2,
-  CheckCircle,
-  X,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import { NavButton } from "@/components/ui/navButton";
@@ -19,6 +17,7 @@ import { ComprehensionSubmitArea } from "@/components/reading-comprehension-test
 import { useQuizByPassage } from "@/lib/hooks/useQuizByPassage";
 import { createStudent } from "@/app/actions/student/createStudent";
 import { exportComprehensionReportPdf } from "@/lib/exportComprehensionReportPdf";
+import { ToastNotification } from "@/components/oral-reading-test/toastNotification";
 
 const SESSION_KEY = "reading-comprehension-session";
 const COMP_STATE_KEY = "reading-comprehension-comp-state";
@@ -72,7 +71,10 @@ export default function ReadingComprehensionQuestionsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [successToast, setSuccessToast] = useState(false);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
   const [comprehensionResult, setComprehensionResult] =
     useState<ComprehensionResult | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -361,7 +363,7 @@ export default function ReadingComprehensionQuestionsPage() {
       }
 
       setIsSubmitted(true);
-      setSuccessToast(true);
+      setToast({ message: "Answers submitted successfully!", type: "success" });
     } catch (err) {
       console.error("Comprehension submit error:", err);
       setSubmitError("Something went wrong while submitting.");
@@ -373,11 +375,11 @@ export default function ReadingComprehensionQuestionsPage() {
   const totalQuestions = questions.length;
 
   useEffect(() => {
-    if (successToast) {
-      const timer = setTimeout(() => setSuccessToast(false), 4000);
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 4000);
       return () => clearTimeout(timer);
     }
-  }, [successToast]);
+  }, [toast]);
 
   const loadError = sessionError || (quizError ? (quizError as Error).message : null);
 
@@ -422,20 +424,12 @@ export default function ReadingComprehensionQuestionsPage() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      {successToast && (
-        <div className="fixed top-6 right-6 z-50 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2.5 shadow-lg">
-          <CheckCircle className="h-4 w-4 text-green-600" />
-          <span className="text-sm font-medium text-green-700">
-            Answers submitted successfully!
-          </span>
-          <button
-            onClick={() => setSuccessToast(false)}
-            className="ml-2 text-green-400 hover:text-green-600"
-            aria-label="Close success message"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
+      {toast && (
+        <ToastNotification
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
       <DashboardHeader title="Reading Comprehension Test" />
 

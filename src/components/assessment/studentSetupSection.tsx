@@ -45,6 +45,7 @@ interface StudentSetupSectionProps {
   };
   hideStudentInfo?: boolean;
   disabled?: boolean;
+  allowPassageChange?: boolean;
 }
 
 export function StudentSetupSection({
@@ -68,6 +69,7 @@ export function StudentSetupSection({
   shareableLink,
   hideStudentInfo = false,
   disabled = false,
+  allowPassageChange = true,
 }: StudentSetupSectionProps) {
   const [showShareModal, setShowShareModal] = useState(false);
 
@@ -105,6 +107,7 @@ export function StudentSetupSection({
           showShareLink={!!shareableLink}
           onShareLink={shareableLink ? handleToggleShare : undefined}
           disabled={disabled}
+          allowPassageChange={allowPassageChange}
         />
       </div>
 

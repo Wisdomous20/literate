@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { CreateClassModal } from "@/components/dashboard/createClassModal";
 import { useClassList } from "@/lib/hooks/useClassList";
+import { ToastNotification } from "@/components/oral-reading-test/toastNotification";
 
 function getCurrentSchoolYear(): string {
   const now = new Date();
@@ -104,82 +105,11 @@ export default function Page() {
   return (
     <div>
       {toast && (
-        <div
-          className={`fixed top-6 right-6 z-50 flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium shadow-lg transition-all duration-300 ${
-            toast.type === "success"
-              ? "bg-green-50 border border-green-200 text-green-800"
-              : "bg-red-50 border border-red-200 text-red-800"
-          }`}
-          role="alert"
-        >
-          {toast.type === "success" ? (
-            <svg
-              className="h-4 w-4 shrink-0 text-green-500"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 12l2 2 4-4"
-              />
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="2"
-                fill="none"
-              />
-            </svg>
-          ) : (
-            <svg
-              className="h-4 w-4 shrink-0 text-red-500"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              viewBox="0 0 24 24"
-            >
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="2"
-                fill="none"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15 9l-6 6m0-6l6 6"
-              />
-            </svg>
-          )}
-          <span className="flex-1">{toast.message}</span>
-          <button
-            type="button"
-            onClick={() => setToast(null)}
-            aria-label="Close notification"
-            title="Close notification"
-            className="ml-1 rounded-full p-0.5 transition-colors hover:bg-gray-200"
-          >
-            <svg
-              className="h-3.5 w-3.5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
+        <ToastNotification
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
       {showCreate && (
         <CreateClassModal

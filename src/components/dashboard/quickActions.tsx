@@ -90,7 +90,7 @@ export function QuickActions({ schoolYear, minimal }: QuickActionsProps) {
                 key={item.id}
                 onClick={() => handleAssessmentClick(item)}
                 type="button"
-                className={`flex items-center justify-between px-4 py-3 transition-all hover:shadow-md hover:border-[#6666FF] hover:brightness-95 active:scale-95 motion-safe:animate-none ${cardBorder} ${pastelBg} pop-on-click`}
+                className={`flex items-center justify-between px-4 py-3 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(124,58,237,0.18)] hover:border-[#6666FF] hover:brightness-[0.98] active:scale-[0.98] motion-safe:animate-none ${cardBorder} ${pastelBg} pop-on-click`}
               >
                 <div className="flex min-w-0 flex-col gap-0.5 text-left">
                   <div className="flex items-center gap-1.5">
@@ -167,7 +167,7 @@ export function QuickActions({ schoolYear, minimal }: QuickActionsProps) {
                 key={item.id}
                 onClick={() => handleAssessmentClick(item)}
                 type="button"
-                className={`flex items-center justify-between px-4 py-3 transition-all hover:shadow-md hover:border-[#6666FF] hover:brightness-95 active:scale-95 motion-safe:animate-none ${cardBorder} ${pastelBg} pop-on-click`}
+                className={`flex items-center justify-between px-4 py-3 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(124,58,237,0.18)] hover:border-[#6666FF] hover:brightness-[0.98] active:scale-[0.98] motion-safe:animate-none ${cardBorder} ${pastelBg} pop-on-click`}
 
               >
                 <div className="flex min-w-0 flex-col gap-0.5 text-left">

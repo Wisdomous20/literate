@@ -11,6 +11,7 @@ import {
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  Download,
   FileText,
   Loader2,
 } from "lucide-react";
@@ -100,6 +101,19 @@ function getClassificationSubtext(level: string): string {
       return "Student requires intensive support to improve reading skills.";
     default:
       return "Student demonstrates strong reading ability across all areas.";
+  }
+}
+
+function getBannerGradient(level: string): string {
+  switch ((level || "").toUpperCase()) {
+    case "INDEPENDENT":
+      return "from-[#10B981]/90 to-[#34D399]/80";
+    case "INSTRUCTIONAL":
+      return "from-[#3B82F6]/90 to-[#60A5FA]/80";
+    case "FRUSTRATION":
+      return "from-[#EF4444]/90 to-[#F87171]/80";
+    default:
+      return "from-[#6666FF]/90 to-[#6666FF]/75";
   }
 }
 
@@ -347,9 +361,19 @@ export default function ReadingLevelReportPage() {
                   </button>
                 </div>
                 <div className="flex flex-col gap-0.5">
-                  <h1 className="text-base font-bold text-[#3B2F7F] leading-tight">
-                    {session.studentName || "Unknown Student"}
-                  </h1>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h1 className="text-base font-bold text-[#3B2F7F] leading-tight">
+                      {session.studentName || "Unknown Student"}
+                    </h1>
+                    {assessmentId && (
+                      <>
+                        <span className="text-[#C4B5FD] font-bold text-sm">|</span>
+                        <span className="text-[11px] font-semibold text-[#5D5DFB] font-mono tracking-wide select-all">
+                          {assessmentId}
+                        </span>
+                      </>
+                    )}
+                  </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-[11px] font-semibold text-[#5D5DFB] uppercase tracking-widest">
                       {session.gradeLevel ? `Grade ${session.gradeLevel}` : "\u2014"}
@@ -367,24 +391,17 @@ export default function ReadingLevelReportPage() {
                       Oral Reading Test
                     </span>
                   </div>
-                  {assessmentId && (
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <span className="text-[11px] font-medium text-[#5D5DFB]/70">Assessment ID:</span>
-                      <span className="text-[11px] font-bold text-[#3B2F7F] font-mono tracking-wide select-all">
-                        {assessmentId}
-                      </span>
-                    </div>
-                  )}
                 </div>
               </div>
                 <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="absolute inset-0 rounded-full translate-y-1 bg-[#1e3a8a]/30" />
+                  <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
                   <button
                     onClick={handleExportPdf}
-                    className="relative inline-flex items-center gap-1.5 rounded-full bg-[#1e3a8a] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-transform hover:bg-[#1d4ed8] hover:-translate-y-0.5 active:translate-y-0"
+                    className="relative inline-flex items-center gap-1.5 rounded-full bg-[#6666FF] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-transform hover:bg-[#5555EE] hover:-translate-y-0.5 active:translate-y-0"
                     type="button"
                   >
+                    <Download className="h-3.5 w-3.5" />
                     Export to PDF
                   </button>
                 </div>
@@ -398,7 +415,7 @@ export default function ReadingLevelReportPage() {
             {overallLevel && overallLevel !== "—" && (
               <div className="relative rounded-2xl overflow-hidden mb-6 h-48">
                 <div className="absolute inset-0 bg-[url('/images/Class-bg.png')] bg-cover bg-center" />
-                <div className="absolute inset-0 bg-linear-to-r from-[#6666FF]/90 to-[#6666FF]/75" />
+                <div className={`absolute inset-0 bg-linear-to-r ${getBannerGradient(overallLevel)}`} />
 
                 <div className="relative h-full flex items-center justify-between px-8 py-6">
                   <div className="flex flex-col gap-2">

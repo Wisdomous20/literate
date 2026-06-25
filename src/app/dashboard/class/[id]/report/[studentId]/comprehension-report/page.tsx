@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { FileText, ClipboardCheck } from "lucide-react";
+import { FileText, ClipboardCheck, Download } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import StudentInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/studentInfoCard";
 import PassageInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/passageInfoCard";
@@ -145,7 +145,7 @@ export default function ReadingComprehensionReportPage() {
       <DashboardHeader title="Reading Comprehension Test Report" />
 
       <main className="flex flex-1 flex-col overflow-y-auto px-4 py-4 lg:px-8">
-        <div className="rounded-2xl bg-white overflow-hidden flex flex-col flex-1 border-t border-l border-r-[4px] border-b-[4px] border-[#A855F7] border-r-[#5D5DFB] border-b-[#5D5DFB]">
+        <div className="rounded-2xl bg-white overflow-hidden flex flex-col flex-1 border-t border-l border-r-4 border-b-4 border-[#A855F7] border-r-[#5D5DFB] border-b-[#5D5DFB]">
           {/* Header bar */}
           <div className="px-5 py-4 bg-white border-b border-[#EDE9FE]">
             <div className="flex items-center justify-between flex-wrap gap-3">
@@ -190,6 +190,7 @@ export default function ReadingComprehensionReportPage() {
                   className="relative inline-flex items-center gap-1.5 rounded-full bg-[#6666FF] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-transform hover:bg-[#5555EE] hover:-translate-y-0.5 active:translate-y-0"
                   type="button"
                 >
+                  <Download className="h-3.5 w-3.5" />
                   Export to PDF
                 </button>
               </div>

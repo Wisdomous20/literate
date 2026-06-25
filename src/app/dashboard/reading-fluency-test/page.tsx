@@ -788,7 +788,7 @@ export default function ReadingFluencyTestPage() {
               selectedTitle,
               selectedLevel,
               selectedTestType,
-              assessmentType: "Oral Reading",
+              assessmentType: "Reading Fluency",
               passageContent,
               recordedSeconds,
               analysisResult: activeAnalysisResult,

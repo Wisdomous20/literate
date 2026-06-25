@@ -25,7 +25,7 @@ const LEVEL_CONFIG: Record<
   INDEPENDENT: {
     iconSrc: "/Independent.svg",
     iconAlt: "Independent bee logo",
-    message: "Amazing! You can read this all on your own. Keep up the great work!",
+    message: "Read it alone",
     cloudBorder: "border-[#22C55E]",
     cloudBg: "bg-[#F0FDF4]",
     accent: "text-[#2e7d32]",
@@ -33,7 +33,7 @@ const LEVEL_CONFIG: Record<
   INSTRUCTIONAL: {
     iconSrc: "/Instructional.svg",
     iconAlt: "Instructional bee logo",
-    message: "Great effort! With a little guidance, you'll master this in no time.",
+    message: "A little help",
     cloudBorder: "border-[#3B82F6]",
     cloudBg: "bg-[#EFF6FF]",
     accent: "text-[#27348B]",
@@ -41,7 +41,7 @@ const LEVEL_CONFIG: Record<
   FRUSTRATION: {
     iconSrc: "/Frustrated.svg",
     iconAlt: "Frustration bee logo",
-    message: "Don't give up! Every reader grows one page at a time. You've got this!",
+    message: "Needs more practice",
     cloudBorder: "border-[#EF4444]",
     cloudBg: "bg-[#FEF2F2]",
     accent: "text-[#B91C1C]",
@@ -60,10 +60,7 @@ export function ClassificationPopup({
   const firstName = studentName.trim().split(" ")[0] || "Reader";
 
   return (
-    <div
-      className="fixed inset-0 z-100 flex items-center justify-center bg-black/30 backdrop-blur-sm"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/30 backdrop-blur-sm">
       <div
         className="relative mx-4 flex w-full max-w-md flex-col items-center"
         onClick={(e) => e.stopPropagation()}

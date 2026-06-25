@@ -1,25 +1,9 @@
 import jsPDF from "jspdf";
 import {
-  type RGB,
-  PDF_COLORS,
-  classificationBg,
-  classificationTextColor,
-  rrect,
-  hline,
-  truncatePdfText,
-  drawFileTextIcon,
-  drawClockIcon,
-  drawClipboardCheckIcon,
-} from "./pdfHelpers";
-import {
   calculateWordsCorrectPerMinute,
   getDisplayReadingTimeSeconds,
   resolveReadingDurationSeconds,
 } from "./readingDuration";
-
-/* ------------------------------------------------------------------ */
-/*  Public data interface – callers build this from session state      */
-/* ------------------------------------------------------------------ */
 
 export interface FluencyReportData {
   studentName: string;
@@ -49,10 +33,6 @@ export interface FluencyReportData {
   behaviors: { label: string; description: string; checked: boolean }[];
   otherObservations?: string;
 }
-
-/* ------------------------------------------------------------------ */
-/*  Shared builder – assembles FluencyReportData from page state       */
-/* ------------------------------------------------------------------ */
 
 export interface FluencyExportInput {
   studentName: string;
@@ -120,319 +100,165 @@ export function buildFluencyReportData(input: FluencyExportInput): FluencyReport
     behaviors: [
       { label: "Does word-by-word reading", description: "(Nagbabasa nang pa-isa isang salita)", checked: detectedBehaviors.has("WORD_BY_WORD_READING") },
       { label: "Lacks expression: reads in a monotonous tone", description: "(Walang damdamin; walang pagbabago ang tono)", checked: detectedBehaviors.has("MONOTONOUS_READING") },
-      { label: "Disregards Punctuation", description: "(Hindi pinapansin ang mga bantas)", checked: detectedBehaviors.has("DISMISSAL_OF_PUNCTUATION") },
+      { label: "Disregards punctuation", description: "(Hindi pinapansin ang mga bantas)", checked: detectedBehaviors.has("DISMISSAL_OF_PUNCTUATION") },
       { label: "Employs little or no method of analysis", description: "(Bahagya o walang paraan ng pagsusuri)", checked: false },
     ],
   };
 }
 
-/* ------------------------------------------------------------------ */
-/*  Colour palette                                                     */
-/* ------------------------------------------------------------------ */
-
-const C = {
-  ...PDF_COLORS,
-  checkFill: [102, 102, 255] as RGB,
-  obsBg: [242, 245, 255] as RGB,
-  rateColor: [30, 95, 180] as RGB,
-  timeColor: [102, 102, 255] as RGB,
-  classColor: [124, 58, 237] as RGB,
-};
-
-/* per‑miscue colours */
-const MISCUE_CFG: {
-  key: keyof FluencyReportData["miscueData"];
-  label: string;
-  color: RGB;
-  bg: RGB;
-}[] = [
-  { key: "mispronunciation", label: "Mispronunciation", color: [196, 16, 72], bg: [253, 232, 241] },
-  { key: "omission", label: "Omission", color: [75, 59, 163], bg: [236, 232, 252] },
-  { key: "substitution", label: "Substitution", color: [26, 95, 180], bg: [227, 241, 255] },
-  { key: "transposition", label: "Transposition", color: [139, 0, 139], bg: [246, 230, 246] },
-  { key: "reversal", label: "Reversal", color: [110, 64, 35], bg: [244, 235, 227] },
-  { key: "insertion", label: "Insertion", color: [30, 122, 53], bg: [230, 248, 234] },
-  { key: "repetition", label: "Repetition", color: [184, 92, 0], bg: [255, 241, 227] },
-  { key: "selfCorrection", label: "Self-Correction", color: [138, 109, 0], bg: [255, 247, 214] },
-];
-
-/* ------------------------------------------------------------------ */
-/*  Fluency‑specific helpers                                           */
-/* ------------------------------------------------------------------ */
-
-function formatTime(s: number): { value: string; subtitle: string } {
-  if (s >= 3600) {
-    const h = Math.floor(s / 3600);
-    const m = Math.floor((s % 3600) / 60);
-    return { value: m ? `${h}:${String(m).padStart(2, "0")}` : String(h), subtitle: m ? "Hours & Minutes" : "Hours" };
+function classificationColor(level: string): [number, number, number] {
+  switch (level.trim().toUpperCase()) {
+    case "FRUSTRATION":
+      return [220, 38, 38];
+    case "INSTRUCTIONAL":
+      return [37, 99, 235];
+    case "INDEPENDENT":
+      return [22, 163, 74];
+    default:
+      return [17, 24, 39];
   }
-  if (s >= 60) {
-    const m = Math.floor(s / 60);
-    const sec = Math.round(s % 60);
-    return { value: sec ? `${m}:${String(sec).padStart(2, "0")}` : String(m), subtitle: sec ? "Minutes & Seconds" : "Minutes" };
-  }
-  return { value: String(Math.round(s)), subtitle: "Seconds" };
 }
 
-/* ------------------------------------------------------------------ */
-/*  Main export function                                               */
-/* ------------------------------------------------------------------ */
+function addSectionTitle(doc: jsPDF, text: string, x: number, y: number) {
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(17, 24, 39);
+  doc.text(text, x, y);
+}
+
+function addKeyValueRows(
+  doc: jsPDF,
+  rows: Array<[string, string]>,
+  x: number,
+  startY: number,
+  maxWidth: number,
+) {
+  let y = startY;
+  rows.forEach(([label, value]) => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(17, 24, 39);
+    doc.text(`${label}:`, x, y);
+    const labelWidth = doc.getTextWidth(`${label}: `);
+    doc.setFont("helvetica", "normal");
+    const lines = doc.splitTextToSize(value || "\u2014", maxWidth - labelWidth) as string[];
+    doc.text(lines, x + labelWidth + 1, y);
+    y += Math.max(6, lines.length * 4.8);
+  });
+  return y;
+}
 
 export function exportFluencyReportPdf(
   data: FluencyReportData,
   filename = "Oral_Fluency_Report",
 ) {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const left = 18;
+  const width = 174;
+  const pageHeight = doc.internal.pageSize.getHeight();
+  let y = 20;
 
-  const ML = 10;          // margin‑left
-  const PW = 190;         // page usable width
-  const GAP = 4;          // gap between cards
+  const ensureSpace = (height: number) => {
+    if (y + height <= pageHeight - 20) return;
+    doc.addPage();
+    y = 20;
+  };
 
-  let y = 10;             // current vertical cursor
-
-  /* ═══════════ TITLE BAR ═══════════ */
-  rrect(doc, ML, y, PW, 13, 2, C.headerBar);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.setTextColor(...C.white);
-  doc.text("Oral Fluency Test Report", ML + 8, y + 8.5);
-  y += 18;
+  doc.setFontSize(16);
+  doc.setTextColor(17, 24, 39);
+  doc.text("Reading Fluency Test Report", left, y);
+  y += 8;
+  doc.setDrawColor(31, 41, 55);
+  doc.setLineWidth(0.4);
+  doc.line(left, y, left + width, y);
+  y += 8;
 
-  /* ═══════════ TOP ROW: Student Info + 3 Metric Cards ═══════════ */
-  const siW = 48;                                       // student‑info width
-  const mcAreaW = PW - siW - GAP;                       // metric area width
-  const mcW = (mcAreaW - GAP * 2) / 3;                  // single metric card width
-  const topH = 62;                                      // row height
+  y = addKeyValueRows(
+    doc,
+    [
+      ["Student Name", data.studentName],
+      ["Grade Level", data.gradeLevel],
+      ["Class", data.className],
+      ["Passage Title", data.passageTitle],
+      ["Passage Level", data.passageLevel],
+      ["Number of Words", String(data.numberOfWords)],
+      ["Test Type", data.testType],
+      ["Assessment Type", data.assessmentType],
+    ],
+    left,
+    y,
+    width,
+  );
 
-  /* ── Student Info Card ── */
-  rrect(doc, ML, y, siW, topH, 3, C.cardBg, C.cardBorder);
+  y += 4;
+  ensureSpace(36);
+  addSectionTitle(doc, "Performance Summary", left, y);
+  y += 7;
+  y = addKeyValueRows(
+    doc,
+    [
+      ["Reading Rate (WCPM)", String(data.wcpm)],
+      ["Reading Time", `${data.readingTimeSeconds} seconds`],
+      ["Oral Fluency Score", data.miscueData.oralFluencyScore],
+      ["Classification Level", data.classificationLevel],
+    ],
+    left,
+    y,
+    width,
+  );
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(...C.textDark);
-  doc.text("Student Information", ML + 4, y + 7);
-  hline(doc, ML + 3, y + 9, siW - 6, C.divider);
+  const classColor = classificationColor(data.classificationLevel);
+  doc.setTextColor(...classColor);
+  doc.setFont("helvetica", "bold");
+  doc.text(data.classificationLevel, left + 56, y - 6);
+  doc.setTextColor(17, 24, 39);
 
-  const studentFields = [
-    { label: "Student Name", value: data.studentName },
-    { label: "Grade Level", value: data.gradeLevel },
-    { label: "Class", value: data.className },
-  ];
-  let fy = y + 14;
-  for (const f of studentFields) {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(6);
-    doc.setTextColor(...C.labelDark);
-    doc.text(f.label, ML + 4, fy);
-    fy += 3;
-    rrect(doc, ML + 3, fy, siW - 6, 7, 3.5, C.fieldBg, C.fieldBorder);
+  y += 4;
+  ensureSpace(70);
+  addSectionTitle(doc, "Miscue Analysis", left, y);
+  y += 7;
+  y = addKeyValueRows(
+    doc,
+    [
+      ["Mispronunciation", String(data.miscueData.mispronunciation)],
+      ["Omission", String(data.miscueData.omission)],
+      ["Substitution", String(data.miscueData.substitution)],
+      ["Transposition", String(data.miscueData.transposition)],
+      ["Reversal", String(data.miscueData.reversal)],
+      ["Insertion", String(data.miscueData.insertion)],
+      ["Repetition", String(data.miscueData.repetition)],
+      ["Self-Correction", String(data.miscueData.selfCorrection)],
+      ["Total Miscue", String(data.miscueData.totalMiscue)],
+    ],
+    left,
+    y,
+    width,
+  );
+
+  y += 4;
+  ensureSpace(50);
+  addSectionTitle(doc, "Observed Behaviors", left, y);
+  y += 7;
+  data.behaviors.forEach((behavior) => {
+    const prefix = behavior.checked ? "[x]" : "[ ]";
+    const line = `${prefix} ${behavior.label} ${behavior.description}`;
+    const lines = doc.splitTextToSize(line, width) as string[];
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(6);
-    doc.setTextColor(...C.textDark);
-    doc.text(truncatePdfText(doc, f.value, siW - 14), ML + 7, fy + 4.5);
-    fy += 12;
-  }
-
-  /* ── Metric Cards ── */
-  const rt = formatTime(data.readingTimeSeconds);
-  const metrics: {
-    t1: string; t2: string; value: string;
-    sub: string; accent: RGB; italic?: boolean; smallValue?: boolean;
-    drawIcon: (doc: jsPDF, bx: number, by: number, color: RGB) => void;
-    iconColor: RGB;
-  }[] = [
-    { t1: "Reading Rate", t2: "(WCPM)", value: String(data.wcpm), sub: "Words Correct Per Minute", accent: C.rateColor, drawIcon: drawFileTextIcon, iconColor: C.rateColor },
-    { t1: "Reading", t2: "Time", value: rt.value, sub: rt.subtitle, accent: C.timeColor, drawIcon: drawClockIcon, iconColor: C.timeColor },
-    { t1: "Fluency", t2: "Classification", value: data.classificationLevel, sub: "", accent: C.classColor, italic: true, smallValue: true, drawIcon: drawClipboardCheckIcon, iconColor: C.classColor },
-  ];
-  const mcX0 = ML + siW + GAP;
-
-  metrics.forEach((m, i) => {
-    const cx = mcX0 + i * (mcW + GAP);
-    rrect(doc, cx, y, mcW, topH, 3, C.cardBg, C.cardBorder);
-
-    // icon box with drawn icon
-    const ibS = 7;
-    const ibX = cx + (mcW / 2) - 12;
-    const ibY = y + 6;
-    rrect(doc, ibX, ibY, ibS, ibS, 1.5, C.iconBoxBg, C.iconBoxBorder);
-    m.drawIcon(doc, ibX, ibY, m.iconColor);
-
-    // title
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(7);
-    doc.setTextColor(...C.textHeading);
-    doc.text(m.t1, ibX + ibS + 2, ibY + 3);
-    doc.text(m.t2, ibX + ibS + 2, ibY + 7);
-
-    // large value
-    doc.setFont("helvetica", m.italic ? "bolditalic" : "bold");
-    doc.setFontSize(m.smallValue ? 13 : 22);
-    doc.setTextColor(...m.accent);
-    doc.text(truncatePdfText(doc, m.value, mcW - 8), cx + mcW / 2, y + 40, { align: "center" });
-
-    // subtitle
-    if (m.sub) {
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(6);
-      doc.setTextColor(...C.rateColor);
-      doc.text(truncatePdfText(doc, m.sub, mcW - 8), cx + mcW / 2, y + 48, { align: "center" });
-    }
+    doc.setFontSize(9);
+    doc.text(lines, left, y);
+    y += lines.length * 4.8 + 1.5;
   });
 
-  y += topH + 5;
-
-  /* ═══════════ BOTTOM ROW: Passage Info | Behavior | Miscue ═══════════ */
-  const colW = (PW - GAP * 2) / 3;
-
-  // Pre‑calculate bottom row height so all three cards are equal
-  const miscueRowH = MISCUE_CFG.length * 6.5;           // 8 rows
-  const miscueSummaryH = 3 * 7.5;                       // 3 summary rows
-  const miscueInternalH = 10 + miscueRowH + 4 + miscueSummaryH + 4;
-  const passageInternalH = 12 + 5 * 12.5 + 2;
-  const behaviorInternalH = 16 + data.behaviors.length * 10 + 20;
-  const bottomH = Math.max(miscueInternalH, passageInternalH, behaviorInternalH) + 4;
-
-  const c1X = ML;
-  const c2X = ML + colW + GAP;
-  const c3X = ML + (colW + GAP) * 2;
-
-  /* ── Passage Information ── */
-  rrect(doc, c1X, y, colW, bottomH, 3, C.cardBg, C.cardBorder);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(...C.textDark);
-  doc.text("Passage Information", c1X + 4, y + 7);
-  hline(doc, c1X + 3, y + 9, colW - 6, C.divider);
-
-  const passageFields = [
-    { label: "Passage Title", value: data.passageTitle },
-    { label: "Passage Level", value: data.passageLevel },
-    { label: "Number of Words", value: String(data.numberOfWords) },
-    { label: "Test Type", value: data.testType },
-    { label: "Assessment Type", value: data.assessmentType },
-  ];
-  let py = y + 14;
-  for (const f of passageFields) {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(6);
-    doc.setTextColor(...C.labelDark);
-    doc.text(f.label, c1X + 4, py);
-    py += 3;
-    rrect(doc, c1X + 3, py, colW - 6, 6, 3, C.passageFieldBg, C.passageFieldBorder);
+  if (data.otherObservations?.trim()) {
+    y += 2;
+    ensureSpace(28);
+    addSectionTitle(doc, "Other Observations", left, y);
+    y += 7;
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(5.5);
-    doc.setTextColor(...C.textDark);
-    doc.text(truncatePdfText(doc, f.value, colW - 14), c1X + 7, py + 4);
-    py += 9.5;
+    doc.setFontSize(9);
+    doc.text(doc.splitTextToSize(data.otherObservations.trim(), width) as string[], left, y);
   }
 
-  /* ── Oral Behavior Checklist ── */
-  rrect(doc, c2X, y, colW, bottomH, 3, C.cardBg, C.cardBorder);
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(...C.textHeading);
-  doc.text("Oral Behavior Checklist", c2X + 4, y + 7);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(5);
-  doc.setTextColor(40, 19, 19);
-  doc.text("Behavior analysis during reading", c2X + 4, y + 11);
-
-  let by = y + 16;
-  data.behaviors.forEach((b, i) => {
-    const cbX = c2X + 4;
-    const cbS = 4;
-    if (b.checked) {
-      rrect(doc, cbX, by, cbS, cbS, 0.5, C.checkFill);
-      // checkmark
-      doc.setDrawColor(...C.white);
-      doc.setLineWidth(0.5);
-      doc.line(cbX + 0.8, by + 2, cbX + 1.8, by + 3);
-      doc.line(cbX + 1.8, by + 3, cbX + 3.2, by + 1);
-    } else {
-      rrect(doc, cbX, by, cbS, cbS, 0.5, C.white, C.checkFill);
-    }
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(5);
-    doc.setTextColor(...C.purple);
-    doc.text(truncatePdfText(doc, b.label, colW - cbS - 10), cbX + cbS + 2, by + 2);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(4);
-    doc.text(truncatePdfText(doc, b.description, colW - cbS - 10), cbX + cbS + 2, by + 5.5);
-
-    by += 9;
-    if (i < data.behaviors.length - 1) {
-      hline(doc, c2X + 3, by, colW - 6, C.dividerLight, 0.15);
-    }
-    by += 1;
-  });
-
-  // Other Observations
-  by += 2;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(4.5);
-  doc.setTextColor(...C.purple);
-  doc.text("Other Observations (Ibang Puna)", c2X + 4, by);
-  by += 2;
-  rrect(doc, c2X + 3, by, colW - 6, 14, 1, C.obsBg);
-  if (data.otherObservations) {
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(5);
-    doc.setTextColor(...C.purple);
-    doc.text(truncatePdfText(doc, data.otherObservations, colW - 10), c2X + 5, by + 4);
-  }
-
-  /* ── Miscue Analysis ── */
-  rrect(doc, c3X, y, colW, bottomH, 3, C.cardBg, C.cardBorder);
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(...C.textHeading);
-  doc.text("Miscue Analysis", c3X + 4, y + 7);
-
-  let my = y + 13;
-  MISCUE_CFG.forEach((item, i) => {
-    const count = data.miscueData[item.key] as number;
-    // badge
-    rrect(doc, c3X + 3, my, 6, 5, 1, item.bg, C.iconBoxBorder);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(6);
-    doc.setTextColor(...item.color);
-    doc.text(String(count), c3X + 6, my + 3.5, { align: "center" });
-    // label
-    doc.text(item.label, c3X + colW - 4, my + 3.5, { align: "right" });
-
-    my += 6;
-    if (i < MISCUE_CFG.length - 1) hline(doc, c3X + 3, my, colW - 6, C.dividerLight, 0.15);
-    my += 0.5;
-  });
-
-  // Summary
-  my += 3;
-  const summaryRows: { label: string; value: string; bg: RGB; valueColor?: RGB }[] = [
-    { label: "Total Miscue:", value: String(data.miscueData.totalMiscue), bg: C.summaryBg1 },
-    { label: "Oral Fluency Score:", value: data.miscueData.oralFluencyScore, bg: C.summaryBg2 },
-    {
-      label: "Classification Level:",
-      value: data.miscueData.classificationLevel,
-      bg: classificationBg(data.miscueData.classificationLevel),
-      valueColor: classificationTextColor(data.miscueData.classificationLevel),
-    },
-  ];
-  for (const row of summaryRows) {
-    rrect(doc, c3X + 3, my, colW - 6, 6.5, 1, row.bg);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(5);
-    doc.setTextColor(...C.purple);
-    doc.text(row.label, c3X + 5, my + 4.2);
-    doc.setFontSize(7);
-    doc.setTextColor(...(row.valueColor ?? C.deepPurple));
-    doc.text(truncatePdfText(doc, row.value, colW - 38), c3X + colW - 5, my + 4.5, { align: "right" });
-    my += 7.5;
-  }
-
-  /* ═══════════ SAVE ═══════════ */
   doc.save(`${filename}.pdf`);
 }

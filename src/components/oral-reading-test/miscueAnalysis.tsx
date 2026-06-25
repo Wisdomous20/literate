@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useEffect, useState } from "react";
-import { Loader2, Download, RefreshCw, FileBarChart } from "lucide-react";
+import { Loader2, Download, FileBarChart } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { MiscueResult } from "@/types/oral-reading";
 
@@ -377,31 +377,6 @@ export function MiscueAnalysis({
                 </span>
               </div>
             </div>
-
-            {onRecheckMiscues && (
-              <div className="mt-2">
-                <button
-                  type="button"
-                  onClick={onRecheckMiscues}
-                  disabled={isRechecking || displayTotalMiscue <= 0}
-                  className="flex w-full items-center justify-center gap-2 rounded-[10px] border border-[#6666FF]/35 bg-[rgba(102,102,255,0.06)] px-4 py-2 text-sm font-semibold text-[#5555EE] transition-colors hover:bg-[rgba(102,102,255,0.12)] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {isRechecking ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-4 w-4" />
-                  )}
-                  <span>
-                    {isRechecking ? "Rechecking..." : "Recheck All Miscues"}
-                  </span>
-                </button>
-                {recheckSummary && (
-                  <p className="mt-2 text-center text-[11px] font-medium text-[#31318A]/70">
-                    {recheckSummary}
-                  </p>
-                )}
-              </div>
-            )}
 
             <div className="mt-2.5 flex justify-center">
               <div className="relative w-full mt-3">

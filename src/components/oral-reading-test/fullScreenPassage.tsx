@@ -321,11 +321,11 @@ export function FullScreenPassage({
   // Countdown overlay
   if (isCountingDown || !recordingReady) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#E4F4FF]">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F5F3FF]">
         <div className="flex flex-col items-center gap-6">
           <p className="text-lg font-semibold text-[#31318A]">{isCountingDown ? "Get Ready..." : "Starting..."}</p>
           {isCountingDown && (
-            <div className="flex h-32 w-32 items-center justify-center rounded-full border-[3px] border-[#6666FF] bg-[rgba(102,102,255,0.12)] text-6xl font-bold text-[#6666FF]">
+            <div className="flex h-32 w-32 items-center justify-center rounded-full border-[3px] border-[#8B5CF6] bg-[#EFE7FF] text-6xl font-bold text-[#8B5CF6]">
               <span key={countdown} className="animate-pulse">
                 {countdown}
               </span>
@@ -342,12 +342,12 @@ export function FullScreenPassage({
   // Fullscreen passage view
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col bg-[#E4F4FF]"
+      className="fixed inset-0 z-50 flex flex-col bg-[#F5F3FF]"
       onMouseMove={handleMouseMove}
     >
       {/* Passage Card */}
       <div className="flex min-h-0 flex-1 flex-col items-center px-4 pb-2 pt-4 md:px-6 md:pb-3 md:pt-6 lg:px-8 lg:pb-4 lg:pt-8">
-        <div className="relative flex w-full max-w-342 flex-1 flex-col overflow-hidden rounded-[25px] border border-[rgba(74,74,252,0.44)] bg-[#EFFDFF] shadow-[0px_1px_20px_rgba(108,164,239,0.37)]">
+        <div className="relative flex w-full max-w-342 flex-1 flex-col overflow-hidden rounded-[25px] border border-[#C4B5FD] bg-white shadow-[0px_1px_20px_rgba(139,92,246,0.18)]">
           {/* Close Button */}
           <button
             type="button"
@@ -385,7 +385,7 @@ export function FullScreenPassage({
           </div>
 
           {/* Top fade edge */}
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-1 h-12 rounded-t-[25px] bg-[linear-gradient(to_bottom,#EFFDFF_0%,transparent_100%)] md:h-16" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-1 h-12 rounded-t-[25px] bg-[linear-gradient(to_bottom,#FFFFFF_0%,transparent_100%)] md:h-16" />
 
           
           {/* Passage Content */}
@@ -404,7 +404,7 @@ export function FullScreenPassage({
           </div>
 
           {/* Bottom fade edge */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-1 h-12 rounded-b-[25px] bg-[linear-gradient(to_top,#EFFDFF_0%,transparent_100%)] md:h-16" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-1 h-12 rounded-b-[25px] bg-[linear-gradient(to_top,#FFFFFF_0%,transparent_100%)] md:h-16" />
         </div>
       </div>
 

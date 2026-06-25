@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
-  ChevronDown,
-  Clock,
+  Pause,
+  Play,
+  Square,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import { ComprehensionBreakdown } from "@/components/oral-reading-test/comprehensionBreakdown";
@@ -162,7 +163,6 @@ export default function OralReadingComprehensionPage() {
     useState<ComprehensionResult | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const [showScrollButton, setShowScrollButton] = useState(true);
   const [highlightedTag, setHighlightedTag] = useState<
     "literal" | "inferential" | "critical" | null
   >(null);
@@ -334,26 +334,6 @@ export default function OralReadingComprehensionPage() {
 
   const togglePause = () => {
     if (!isSubmitted) setIsPaused((prev) => !prev);
-  };
-
-  // Track scroll position to show/hide scroll-down button
-  useEffect(() => {
-    const container = contentRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = container;
-      const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100;
-      setShowScrollButton(!isNearBottom);
-    };
-
-    container.addEventListener("scroll", handleScroll);
-    handleScroll(); // initial check
-    return () => container.removeEventListener("scroll", handleScroll);
-  }, [questions]);
-
-  const scrollDown = () => {
-    contentRef.current?.scrollBy({ top: 300, behavior: "smooth" });
   };
 
   const formattedTime = `${String(Math.floor(elapsedSeconds / 60)).padStart(2, "0")}:${String(elapsedSeconds % 60).padStart(2, "0")}`;
@@ -591,6 +571,7 @@ export default function OralReadingComprehensionPage() {
   };
 
   const totalQuestions = questions.length;
+  const TimerIcon = isSubmitted ? Square : isPaused ? Pause : Play;
 
   // Loading state — skeleton
   if (isLoading) {
@@ -707,28 +688,31 @@ export default function OralReadingComprehensionPage() {
                 {/* Timer */}
                 <button
                   onClick={togglePause}
-                  className={`flex items-center gap-2 rounded-full border px-4 py-2 transition-all cursor-pointer select-none shrink-0 ${
-                    isPaused
+                  disabled={isSubmitted}
+                  className={`flex min-h-11 flex-col items-start justify-center rounded-2xl border px-4 py-1.5 transition-all cursor-pointer select-none shrink-0 ${
+                    isSubmitted
+                      ? "border-[#94A3B8] bg-slate-50 shadow-[0_0_12px_rgba(100,116,139,0.16)]"
+                      : isPaused
                       ? "border-[#E53E3E] bg-red-50 shadow-[0_0_12px_rgba(229,62,62,0.2)]"
                       : "border-[#D0D0FF] bg-[#F5F5FF] shadow-sm"
                   }`}
-                  title={
-                    isPaused ? "Click to resume timer" : "Click to pause timer"
-                  }
+                  title={isSubmitted ? "Timer stopped" : isPaused ? "Resume timer" : "Pause timer"}
                 >
-                  <Clock
-                    className={`w-5 h-5 ${isPaused ? "text-[#E53E3E]" : "text-[#6666FF]"}`}
-                  />
-                  <span
-                    className={`font-bold text-xl tabular-nums ${isPaused ? "text-[#E53E3E]" : "text-[#00306E]"}`}
-                  >
-                    {formattedTime}
-                  </span>
-                  {isPaused && (
-                    <span className="text-[#E53E3E] text-[10px] font-semibold">
-                      PAUSED
+                  <span className="mt-0.5 flex items-center gap-2">
+                    <TimerIcon
+                      className={`w-5 h-5 ${isSubmitted ? "text-[#64748B]" : isPaused ? "text-[#E53E3E]" : "text-[#6666FF]"}`}
+                    />
+                    <span
+                      className={`font-bold text-xl tabular-nums ${isSubmitted ? "text-[#64748B]" : isPaused ? "text-[#E53E3E]" : "text-[#00306E]"}`}
+                    >
+                      {formattedTime}
                     </span>
-                  )}
+                    {isPaused && !isSubmitted && (
+                      <span className="text-[#E53E3E] text-[10px] font-semibold">
+                        PAUSED
+                      </span>
+                    )}
+                  </span>
                 </button>
               </div>
             </div>
@@ -821,17 +805,6 @@ export default function OralReadingComprehensionPage() {
           </div>
         </div>
       </main>
-
-      {/* Scroll Down Button */}
-      {showScrollButton && (
-        <button
-          onClick={scrollDown}
-          className="absolute bottom-6 right-10 z-10 flex h-10 w-10 animate-bounce items-center justify-center rounded-full bg-[#6666FF] text-white transition-all hover:bg-[#5555EE] shadow-[0_0_16px_rgba(102,102,255,0.5)]"
-          aria-label="Scroll down"
-        >
-          <ChevronDown className="h-5 w-5" />
-        </button>
-      )}
     </div>
   );
 }

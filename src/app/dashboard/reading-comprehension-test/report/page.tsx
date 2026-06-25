@@ -2,11 +2,12 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, ArrowLeft, RotateCcw, Download } from "lucide-react";
+import { Loader2, ArrowLeft, RotateCcw, Download, FileBarChart2 } from "lucide-react";
 import StudentInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/studentInfoCard";
 import PassageInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/passageInfoCard";
 import ComprehensionMetricCards from "@/components/reports/oral-reading-test/comprehension-report/comprehensionMetricCards";
 import ComprehensionBreakdownReport from "@/components/reports/oral-reading-test/comprehension-report/comprehensionBreakdownReport";
+import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import { useAssessmentById } from "@/lib/hooks/useAssessmentById";
 import { exportComprehensionReportPdf } from "@/lib/exportComprehensionReportPdf";
 
@@ -120,11 +121,10 @@ export default function ReadingComprehensionReportPage() {
   if (isLoading) {
     return (
       <div className="flex h-screen flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-8 py-5 border-b-[3px] border-[#5D5DFB] bg-white">
-          <h1 className="text-xl lg:text-2xl font-semibold text-[#31318A]">
-            Reading Comprehension Test Report
-          </h1>
-        </div>
+        <DashboardHeader
+          title="Reading Comprehension Test Report"
+          icon={<FileBarChart2 className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />}
+        />
         <div className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-[#6666FF]" />
@@ -148,11 +148,10 @@ export default function ReadingComprehensionReportPage() {
   if (error || !reportData) {
     return (
       <div className="flex h-screen flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-8 py-5 border-b-[3px] border-[#5D5DFB] bg-white">
-          <h1 className="text-xl lg:text-2xl font-semibold text-[#31318A]">
-            Reading Comprehension Test Report
-          </h1>
-        </div>
+        <DashboardHeader
+          title="Reading Comprehension Test Report"
+          icon={<FileBarChart2 className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />}
+        />
         <div className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-4 text-center px-4">
             <p className="text-red-600 font-medium">
@@ -202,76 +201,55 @@ export default function ReadingComprehensionReportPage() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center gap-3 border-b-[3px] border-[#5D5DFB] bg-white px-4 md:px-6 py-4">
-        <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg bg-[#5D5DFB]/10 shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5 text-[#5D5DFB]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
-        </div>
-        <div className="flex flex-col">
-          <h1 className="text-base md:text-lg font-semibold text-[#483efa]">
-            Reading Comprehension Test Report
-          </h1>
-          {assessmentId && (
-            <p className="text-xs md:text-sm font-medium text-[#2E2E68]/65 mt-0.5">
-              Assessment ID:{" "}
-              <span className="font-bold text-[#2E2E68] font-mono tracking-wide select-all">
-                {assessmentId}
-              </span>
-            </p>
-          )}
-        </div>
-      </div>
+      <DashboardHeader
+        title="Reading Comprehension Test Report"
+        icon={<FileBarChart2 className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />}
+      />
 
-      <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth">
-        <div className="max-w-[1400px] mx-auto px-6 py-6 md:px-8 lg:px-12 w-full">
-          <div className="rounded-2xl border border-[#6666FF]/20 bg-white shadow-sm overflow-hidden">
+      <main className="flex-1 min-h-0 overflow-hidden">
+        <div className="max-w-350 mx-auto h-full px-6 py-6 md:px-8 lg:px-12 w-full">
+          <div className="flex h-full min-h-0 flex-col rounded-2xl border border-[#6666FF]/20 bg-white shadow-sm overflow-hidden">
             {/* Action bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E8E8FF] bg-[#F8F8FF] px-6 py-4">
+            <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 border-b border-[#E8E8FF] bg-[#F8F8FF] px-6 py-4">
               <div className="relative">
-                <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+                <div className="absolute inset-0 rounded-full translate-y-1 bg-[#E0E0FF]" />
                 <button
                   type="button"
                   onClick={() => router.back()}
-                  className="relative flex items-center gap-1.5 rounded-full border border-[#6666FF]/40 bg-white px-4 py-2 text-xs font-semibold text-[#6666FF] shadow-sm transition-transform hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
+                  className="relative inline-flex items-center gap-1.5 rounded-full border border-[#6666FF]/40 bg-white px-4 py-2 text-xs font-semibold text-[#6666FF] shadow-sm transition-transform hover:-translate-y-0.5 hover:bg-[#F0F4FF] active:translate-y-0"
                 >
                   <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
                   Back
                 </button>
               </div>
               <div className="flex flex-wrap items-center gap-3">
-                <div className="relative">
-                  <div className="absolute inset-0 rounded-full translate-y-1 bg-[#1e3a8a]/30" />
-                  <button
-                    type="button"
-                    onClick={handleExportPdf}
-                    className="relative inline-flex items-center gap-1.5 rounded-full bg-[#1e3a8a] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-transform hover:bg-[#1d4ed8] hover:-translate-y-0.5 active:translate-y-0"
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                    Export to PDF
-                  </button>
-                </div>
-                <div className="relative">
-                  <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      try {
-                        sessionStorage.removeItem("reading-comprehension-session");
-                        sessionStorage.removeItem("reading-comprehension-assessmentId");
-                      } catch {}
-                      router.push("/dashboard/reading-comprehension-test");
-                    }}
-                    className="relative inline-flex items-center gap-1.5 rounded-full border border-[#6666FF] bg-white px-5 py-2 text-xs font-semibold text-[#6666FF] shadow transition-transform hover:bg-[#6666FF] hover:text-white hover:-translate-y-0.5 active:translate-y-0"
-                  >
-                    <RotateCcw className="h-3.5 w-3.5" />
-                    Start New
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleExportPdf}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#6666FF] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[#6D28D9]"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Export to PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    try {
+                      sessionStorage.removeItem("reading-comprehension-session");
+                      sessionStorage.removeItem("reading-comprehension-assessmentId");
+                    } catch {}
+                    router.push("/dashboard/reading-comprehension-test");
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#7C3AED] bg-white px-5 py-2 text-xs font-semibold text-[#7C3AED] transition-colors hover:bg-[#F3E8FF]"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Start New
+                </button>
               </div>
             </div>
 
             {/* Cards content */}
-            <div className="p-6 space-y-6">
+            <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-[40%_1fr] gap-4">
                 <StudentInfoCard
                   studentName={reportData.studentName}

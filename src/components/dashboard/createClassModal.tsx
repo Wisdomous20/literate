@@ -152,7 +152,7 @@ export function CreateClassModal({
                   disabled={isLoading}
                   placeholder="Enter class name"
                   maxLength={MAX_CLASS_NAME_LENGTH}
-                  className="rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none shadow-[inset_0px_2px_4px_rgba(0,48,110,0.08)] transition-colors focus:border-[#6666FF] disabled:opacity-50"
+                  className="rounded-lg border-2 border-[#E4F4FF] bg-white px-4 py-3 text-base text-[#00306E] outline-none shadow-[inset_0px_2px_4px_rgba(0,48,110,0.08)] transition-colors focus:border-[#7C3AED] disabled:opacity-50"
                 />
                 <span className="text-right text-xs text-gray-500 mt-2">
                   {className.length}/{MAX_CLASS_NAME_LENGTH}
@@ -179,7 +179,7 @@ export function CreateClassModal({
               <button
                 type="submit"
                 disabled={isLoading || !className.trim()}
-                className="flex items-center gap-2 rounded-lg bg-[#2E2E68] px-10 py-3 text-base font-semibold text-white shadow-[0px_4px_15px_rgba(46,46,104,0.4)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center gap-2 rounded-lg bg-[#6666FF] px-10 py-3 text-base font-semibold text-white shadow-[0px_4px_15px_rgba(46,46,104,0.4)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
                 {isLoading ? "Creating..." : "Create Class"}
