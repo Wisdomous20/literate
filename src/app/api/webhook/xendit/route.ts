@@ -10,6 +10,7 @@ import {
   completeXenditWebhookDelivery,
   releaseXenditWebhookDelivery,
 } from "@/service/subscription/xenditWebhookDeliveryService";
+import { createInvoiceAndSendEmail } from "@/service/subscription/invoiceService";
 
 export const dynamic = "force-dynamic";
 
@@ -61,74 +62,22 @@ export async function POST(req: NextRequest) {
             Number.isSafeInteger(requestedMaxMembers) && requestedMaxMembers > 0
               ? requestedMaxMembers
               : 1;
-          const userId = metadata?.userId;
-          const planType = metadata?.planType;
-
-          // Activate the subscription
-          await prisma.subscription.updateMany({
+          const updatedSubscription = await prisma.subscription.update({
             where: { xenditPlanId: planId },
             data: {
               status: "ACTIVE",
-              maxMembers,
+              maxMembersSnapshot: maxMembers,
               currentPeriodStart: new Date(),
               currentPeriodEnd: getNextYear(),
             },
           });
 
-          // If it's an org plan, auto-create the organization
-          if (userId && planType && planType !== "SOLO") {
-            // Upgrade user role
-            await prisma.user.update({
-              where: { id: userId },
-              data: { role: "ORG_ADMIN" },
-            });
-
-            // Check if user already has an org
-            const existingOrg = await prisma.organization.findFirst({
-              where: { ownerId: userId },
-            });
-
-            if (!existingOrg) {
-              // Get user info for org name
-              const user = await prisma.user.findUnique({
-                where: { id: userId },
-                select: { firstName: true, lastName: true },
-              });
-
-              const orgName = `${user?.firstName || "My"}'s Organization`;
-
-              // Create org + membership + link subscription in a transaction
-              await prisma.$transaction(async (tx) => {
-                const org = await tx.organization.create({
-                  data: {
-                    name: orgName,
-                    ownerId: userId,
-                  },
-                });
-
-                // Add owner as a member
-                await tx.organizationMember.create({
-                  data: {
-                    userId: userId,
-                    organizationId: org.id,
-                    role: "ADMIN",
-                  },
-                });
-
-                // Link the subscription to the org
-                await tx.subscription.updateMany({
-                  where: { xenditPlanId: planId },
-                  data: { organizationId: org.id },
-                });
-              });
-            } else {
-              // Org already exists, just link the subscription
-              await prisma.subscription.updateMany({
-                where: { xenditPlanId: planId },
-                data: { organizationId: existingOrg.id },
-              });
-            }
-          }
+          await createInvoiceAndSendEmail({
+            subscriptionId: updatedSubscription.id,
+            providerInvoiceId: createProviderInvoiceId(event, planId),
+            providerPaymentId: getPayloadId(payload.data),
+            providerPayload: payload.data,
+          });
         }
         break;
       }
@@ -150,13 +99,20 @@ export async function POST(req: NextRequest) {
       case "recurring.cycle.succeeded": {
         const planId = payload.data.plan_id;
         if (planId) {
-          await prisma.subscription.updateMany({
+          const updatedSubscription = await prisma.subscription.update({
             where: { xenditPlanId: planId },
             data: {
               status: "ACTIVE",
               currentPeriodStart: new Date(),
               currentPeriodEnd: getNextYear(),
             },
+          });
+
+          await createInvoiceAndSendEmail({
+            subscriptionId: updatedSubscription.id,
+            providerInvoiceId: createProviderInvoiceId(event, planId),
+            providerPaymentId: getPayloadId(payload.data),
+            providerPayload: payload.data,
           });
         }
         break;
@@ -199,4 +155,22 @@ function getNextYear(): Date {
   const next = new Date();
   next.setFullYear(next.getFullYear() + 1);
   return next;
+}
+
+function createProviderInvoiceId(event: string, planId: string): string {
+  const datePart = new Date().toISOString().slice(0, 10);
+  return `xendit:${event}:${planId}:${datePart}`;
+}
+
+function getPayloadId(data: unknown): string | null {
+  if (
+    typeof data === "object" &&
+    data !== null &&
+    "id" in data &&
+    typeof data.id === "string"
+  ) {
+    return data.id;
+  }
+
+  return null;
 }

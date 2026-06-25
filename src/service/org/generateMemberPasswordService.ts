@@ -19,7 +19,7 @@ export async function generateMemberPasswordService(
 
   const org = await prisma.organization.findUnique({
     where: { id: organizationId },
-    select: { ownerId: true, name: true },
+    select: { name: true },
   });
 
   if (!org) {

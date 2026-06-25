@@ -32,7 +32,6 @@ export async function addOrgMemberService(input: AddMemberInput) {
     where: { id: input.organizationId },
     include: {
       subscription: true,
-      owner: { select: { firstName: true, lastName: true } },
       _count: {
         select: {
           members: { where: { user: { isDisabled: false } } },
@@ -47,6 +46,11 @@ export async function addOrgMemberService(input: AddMemberInput) {
       error: "No organization found",
     };
   }
+
+  const invitedBy = await prisma.user.findUnique({
+    where: { id: input.requestedByUserId },
+    select: { firstName: true, lastName: true },
+  });
 
   const existingUser = await prisma.user.findFirst({
     where: { email: { equals: normalizedEmail, mode: "insensitive" } },
@@ -71,7 +75,7 @@ export async function addOrgMemberService(input: AddMemberInput) {
     }
   }
 
-  const maxMembers = org.subscription?.maxMembers || 1;
+  const maxMembers = org.subscription?.maxMembersSnapshot || 1;
   const invitationResult = await createOrgInvitation({
     email: normalizedEmail,
     organizationId: input.organizationId,
@@ -97,7 +101,7 @@ export async function addOrgMemberService(input: AddMemberInput) {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const acceptUrl = `${baseUrl}/accept-invitation?token=${invitationResult.token}`;
   const invitedByName =
-    [org.owner?.firstName, org.owner?.lastName].filter(Boolean).join(" ").trim() ||
+    [invitedBy?.firstName, invitedBy?.lastName].filter(Boolean).join(" ").trim() ||
     "Your organization admin";
 
   try {

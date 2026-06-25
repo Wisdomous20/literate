@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 export interface OrgAdminContext {
   organization: {
     id: string;
-    ownerId: string;
+    ownerId: string | null;
   };
   requesterMembershipId: string | null;
   isOwner: boolean;
@@ -20,11 +20,13 @@ export async function getOrgAdminContext(
     where: { id: organizationId },
     select: {
       id: true,
-      ownerId: true,
       members: {
-        where: { userId: requestedByUserId },
+        where: {
+          OR: [{ userId: requestedByUserId }, { role: "OWNER" }],
+        },
         select: {
           id: true,
+          userId: true,
           role: true,
         },
       },
@@ -35,8 +37,12 @@ export async function getOrgAdminContext(
     return { success: false, error: "No organization found" };
   }
 
-  const membership = organization.members?.[0] ?? null;
-  const isOwner = organization.ownerId === requestedByUserId;
+  const membership =
+    organization.members.find((member) => member.userId === requestedByUserId) ??
+    null;
+  const ownerMembership =
+    organization.members.find((member) => member.role === "OWNER") ?? null;
+  const isOwner = membership?.role === "OWNER";
   const isAdmin = isOwner || membership?.role === "ADMIN";
 
   if (!isAdmin) {
@@ -51,7 +57,7 @@ export async function getOrgAdminContext(
     context: {
       organization: {
         id: organization.id,
-        ownerId: organization.ownerId,
+        ownerId: ownerMembership?.userId ?? null,
       },
       requesterMembershipId: membership?.id ?? null,
       isOwner,
@@ -62,17 +68,15 @@ export async function getOrgAdminContext(
 export async function findAdminOrganizationForUser(userId: string) {
   return prisma.organization.findFirst({
     where: {
-      OR: [
-        { ownerId: userId },
-        {
-          members: {
-            some: {
-              userId,
-              role: "ADMIN",
-            },
+      type: "TEAM",
+      members: {
+        some: {
+          userId,
+          role: {
+            in: ["OWNER", "ADMIN"],
           },
         },
-      ],
+      },
     },
     select: { id: true },
     orderBy: { createdAt: "asc" },

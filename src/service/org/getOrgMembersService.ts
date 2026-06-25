@@ -11,7 +11,7 @@ export async function getOrgMembersService(organizationId: string, requestedByUs
   const org = await prisma.organization.findUnique({
     where: { id: organizationId },
     include: {
-      subscription: true,
+      subscription: { include: { plan: true } },
       _count: {
         select: {
           members: { where: { user: { isDisabled: false } } },
@@ -46,16 +46,16 @@ export async function getOrgMembersService(organizationId: string, requestedByUs
     organization: {
       id: organizationId,
       name: org.name,
-      plan: org.subscription?.planType || null,
-      maxMembers: org.subscription?.maxMembers || 0,
+      plan: org.subscription?.plan.code || null,
+      maxMembers: org.subscription?.maxMembersSnapshot || 0,
       currentMembers: org._count.members,
       totalMembers: members.length,
     },
     members: members.map((m) => ({
       membershipId: m.id,
-      role: m.userId === org.ownerId ? "ADMIN" : m.role,
+      role: m.role === "OWNER" ? "ADMIN" : m.role,
       joinedAt: m.joinedAt,
-      isOwner: m.userId === org.ownerId,
+      isOwner: m.role === "OWNER",
       ...m.user,
     })),
   };

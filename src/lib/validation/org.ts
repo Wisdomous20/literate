@@ -59,6 +59,12 @@ export const toggleMemberStatusSchema = z.object({
   disable: z.boolean(),
 });
 
+export const removeOrgMemberSchema = z.object({
+  memberId: idString("Member ID"),
+  organizationId: idString("Organization ID"),
+  requestedByUserId: idString("User ID"),
+});
+
 export const generateMemberPasswordSchema = z.object({
   memberId: idString("Member ID"),
   organizationId: idString("Organization ID"),

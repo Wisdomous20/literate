@@ -23,17 +23,19 @@ export const subscribeSchema = z
 const recurringPlanMetadataSchema = z.object({
   maxMembers: z.string().optional(),
   userId: z.string().optional(),
+  organizationId: z.string().optional(),
+  planId: z.string().optional(),
   planType: planTypeSchema.optional(),
 });
 
 const recurringPlanDataSchema = z.object({
   id: z.string().min(1),
   metadata: recurringPlanMetadataSchema.optional(),
-});
+}).passthrough();
 
 const recurringCycleDataSchema = z.object({
   plan_id: z.string().min(1),
-});
+}).passthrough();
 
 export const xenditWebhookSchema = z.discriminatedUnion("event", [
   z.object({

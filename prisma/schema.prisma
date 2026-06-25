@@ -14,45 +14,40 @@ datasource db {
 }
 
 model User {
-  id                 String               @id @default(cuid())
-  role               userType             @default(USER)
-  firstName          String?
-  lastName           String?
-  email              String?              @unique
-  password           String?
-  isVerified         Boolean              @default(false)
-  isDisabled         Boolean              @default(false)
-  classRoom          ClassRoom[]
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
-  subscription       Subscription?
-  ownedOrganizations Organization[]       @relation("OrgOwner")
-  orgMemberships     OrganizationMember[]
+  id             String               @id @default(cuid())
+  role           userType             @default(USER)
+  firstName      String?
+  lastName       String?
+  email          String?              @unique
+  password       String?
+  isVerified     Boolean              @default(false)
+  isDisabled     Boolean              @default(false)
+  classRoom      ClassRoom[]
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  orgMemberships OrganizationMember[]
 
   @@map("users")
 }
 
 model Organization {
-  id           String                   @id @default(cuid())
+  id           String               @id @default(cuid())
   name         String
-  ownerId      String
-  owner        User                     @relation("OrgOwner", fields: [ownerId], references: [id])
+  type         OrganizationType     @default(PERSONAL)
   members      OrganizationMember[]
-  subscription Subscription?            @relation("OrgSubscription")
-  createdAt    DateTime                 @default(now())
-  updatedAt    DateTime                 @updatedAt
-
-  @@index([ownerId])
+  subscription Subscription?        @relation("OrgSubscription")
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
 }
 
 model OrganizationMember {
-  id             String       @id @default(cuid())
+  id             String                 @id @default(cuid())
   userId         String
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   role           OrganizationMemberRole @default(USER)
-  joinedAt       DateTime     @default(now())
+  joinedAt       DateTime               @default(now())
 
   @@unique([userId, organizationId])
   @@index([organizationId])
@@ -60,31 +55,102 @@ model OrganizationMember {
 }
 
 model Subscription {
-  id                 String             @id @default(cuid())
-  userId             String?            @unique
-  user               User?              @relation(fields: [userId], references: [id])
-  organizationId     String?            @unique
-  organization       Organization?      @relation("OrgSubscription", fields: [organizationId], references: [id])
-  planType           PlanType
-  status             SubscriptionStatus @default(PENDING)
-  maxMembers         Int                @default(1)
-  xenditCustomerId   String?
-  xenditPlanId       String?
-  currentPeriodStart DateTime?
-  currentPeriodEnd   DateTime?
-  cancelAtPeriodEnd  Boolean            @default(false)
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  id                  String             @id @default(cuid())
+  organizationId      String             @unique
+  organization        Organization       @relation("OrgSubscription", fields: [organizationId], references: [id], onDelete: Cascade)
+  planId              String
+  plan                Plan               @relation(fields: [planId], references: [id])
+  status              SubscriptionStatus @default(PENDING)
+  maxMembersSnapshot  Int                @default(1)
+  priceAmountSnapshot Decimal            @db.Decimal(10, 2)
+  currencySnapshot    String             @default("PHP")
+  xenditCustomerId    String?
+  xenditPlanId        String?            @unique
+  currentPeriodStart  DateTime?
+  currentPeriodEnd    DateTime?
+  cancelAtPeriodEnd   Boolean            @default(false)
+  invoices            Invoice[]
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@index([planId])
+  @@index([status, currentPeriodEnd])
 }
 
 model WebhookDelivery {
   id          String    @id
+  provider    String    @default("XENDIT")
+  eventId     String?   @unique
   event       String
   receivedAt  DateTime  @default(now())
   processedAt DateTime?
 
   @@index([receivedAt])
   @@map("webhook_deliveries")
+}
+
+model Plan {
+  id              String         @id @default(cuid())
+  code            PlanType       @unique
+  name            String
+  maxMembers      Int
+  priceAmount     Decimal        @db.Decimal(10, 2)
+  currency        String         @default("PHP")
+  billingInterval String         @default("YEAR")
+  providerPlanId  String?
+  active          Boolean        @default(true)
+  subscriptions   Subscription[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model Invoice {
+  id                        String               @id @default(cuid())
+  subscriptionId            String
+  subscription              Subscription         @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  invoiceNumber             String               @unique
+  status                    InvoiceStatus        @default(PENDING)
+  currency                  String
+  subtotalAmount            Decimal              @db.Decimal(10, 2)
+  taxAmount                 Decimal              @default(0) @db.Decimal(10, 2)
+  totalAmount               Decimal              @db.Decimal(10, 2)
+  amountPaid                Decimal              @default(0) @db.Decimal(10, 2)
+  billingSnapshotEncrypted  String?              @db.Text
+  billingSnapshotKeyVersion String?
+  recipientEmailEncrypted   String?              @db.Text
+  recipientEmailKeyVersion  String?
+  emailStatus               InvoiceEmailStatus   @default(PENDING)
+  emailSentAt               DateTime?
+  emailFailureReason        String?
+  invoicePdfUrl             String?
+  providerInvoiceId         String?              @unique
+  issuedAt                  DateTime?
+  dueAt                     DateTime?
+  paidAt                    DateTime?
+  transactions              PaymentTransaction[]
+  createdAt                 DateTime             @default(now())
+  updatedAt                 DateTime             @updatedAt
+
+  @@index([subscriptionId])
+  @@index([status, issuedAt])
+}
+
+model PaymentTransaction {
+  id                        String   @id @default(cuid())
+  invoiceId                 String
+  invoice                   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  provider                  String   @default("XENDIT")
+  providerPaymentId         String?  @unique
+  status                    String
+  amount                    Decimal  @db.Decimal(10, 2)
+  currency                  String
+  providerPayloadEncrypted  String?  @db.Text
+  providerPayloadKeyVersion String?
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  @@index([invoiceId])
+  @@index([provider, status])
 }
 
 model ClassRoom {
@@ -114,15 +180,15 @@ model Student {
 }
 
 model Assessment {
-  id         String         @id @default(cuid())
-  studentId  String
-  student    Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  passageId  String
-  passage    Passage        @relation(fields: [passageId], references: [id])
-  dateTaken  DateTime       @default(now())
-  type       AssessmentType
-  
-  assessmentLink  AssessmentLink?
+  id        String         @id @default(cuid())
+  studentId String
+  student   Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  passageId String
+  passage   Passage        @relation(fields: [passageId], references: [id])
+  dateTaken DateTime       @default(now())
+  type      AssessmentType
+
+  assessmentLink    AssessmentLink?
   oralReadingResult OralReadingResult?
   comprehension     ComprehensionTest?
   oralFluency       OralFluencySession?
@@ -300,7 +366,13 @@ enum userType {
   ORG_ADMIN
 }
 
+enum OrganizationType {
+  PERSONAL
+  TEAM
+}
+
 enum OrganizationMemberRole {
+  OWNER
   ADMIN
   USER
 }
@@ -357,6 +429,19 @@ enum SubscriptionStatus {
   CANCELED
   PAST_DUE
   EXPIRED
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  VOID
+  FAILED
+}
+
+enum InvoiceEmailStatus {
+  PENDING
+  SENT
+  FAILED
 }
 
 enum PlanType {

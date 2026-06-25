@@ -14,19 +14,27 @@ export async function createOrganizationService(name: string, ownerId: string) {
     return { success: false, error: "Only ORG_ADMIN users can create organizations" };
   }
 
-  const existing = await prisma.organization.findFirst({
-    where: { ownerId },
+  const existing = await prisma.organizationMember.findFirst({
+    where: {
+      userId: ownerId,
+      role: "OWNER",
+      organization: { type: "TEAM" },
+    },
   });
   if (existing) {
     return { success: false, error: "You already own an organization" };
   }
 
-  const org = await prisma.organization.create({
-    data: { name: name.trim(), ownerId },
-  });
+  const org = await prisma.$transaction(async (tx) => {
+    const organization = await tx.organization.create({
+      data: { name: name.trim(), type: "TEAM" },
+    });
 
-  await prisma.organizationMember.create({
-    data: { userId: ownerId, organizationId: org.id, role: "ADMIN" },
+    await tx.organizationMember.create({
+      data: { userId: ownerId, organizationId: organization.id, role: "OWNER" },
+    });
+
+    return organization;
   });
 
   return { success: true, organization: org };
