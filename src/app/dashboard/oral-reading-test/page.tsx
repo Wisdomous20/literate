@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Mic } from "lucide-react";
+import { Mic, Sparkle } from "lucide-react";
 import { TestPageLayout } from "@/components/assessment/testPageLayout";
 import { StudentSetupSection } from "@/components/assessment/studentSetupSection";
 import { ClassificationPopup } from "@/components/oral-reading-test/classificationPopup";
@@ -221,6 +221,11 @@ export default function OralReadingTestPage() {
 
       if (!audioUrl) {
         console.error("Background audio upload failed");
+        setAssessmentId("");
+        setToast({
+          message: "Audio upload failed. Please try the recording again.",
+          type: "error",
+        });
         return;
       }
 
@@ -238,6 +243,10 @@ export default function OralReadingTestPage() {
 
       if (!response.ok) {
         console.error("Transcription enqueue failed:", result.error);
+        setToast({
+          message: "Failed to start transcription. Please try the recording again.",
+          type: "error",
+        });
         return;
       }
 
@@ -1060,7 +1069,12 @@ export default function OralReadingTestPage() {
   return (
     <TestPageLayout
       title="Oral Reading Test"
-      icon={<Mic className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />}
+      icon={
+        <span className="relative inline-flex items-center justify-center">
+          <Mic className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />
+          <Sparkle className="absolute -right-1.5 -top-1.5 h-3 w-3 text-[#6C4EEB]" />
+        </span>
+      }
       toast={toast}
       onCloseToast={() => setToast(null)}
       passageExpanded={passageExpanded}

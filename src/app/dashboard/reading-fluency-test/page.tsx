@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Gauge } from "lucide-react";
+import { BookAudio } from "lucide-react";
 import { TestPageLayout } from "@/components/assessment/testPageLayout";
 import { StudentSetupSection } from "@/components/assessment/studentSetupSection";
 import { ClassificationPopup } from "@/components/oral-reading-test/classificationPopup";
@@ -750,7 +750,7 @@ export default function ReadingFluencyTestPage() {
   return (
     <TestPageLayout
       title="Reading Fluency Test"
-      icon={<Gauge className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />}
+      icon={<BookAudio className="h-4.5 w-4.5 text-[#6C4EEB] md:h-5 md:w-5" />}
       toast={toast}
       onCloseToast={() => setToast(null)}
       passageExpanded={passageExpanded}
