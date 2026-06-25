@@ -1,11 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { getOrgAdminContext } from "@/service/org/orgAuthorization";
 
-export async function toggleMemberStatusService(
+export async function removeOrgMemberService(
   memberId: string,
   organizationId: string,
-  requestedByUserId: string,
-  disable: boolean
+  requestedByUserId: string
 ) {
   const adminContext = await getOrgAdminContext(organizationId, requestedByUserId);
 
@@ -13,12 +12,8 @@ export async function toggleMemberStatusService(
     return { success: false, error: adminContext.error };
   }
 
-  if (disable && memberId === requestedByUserId) {
-    return { success: false, error: "You cannot disable your own account" };
-  }
-
-  if (memberId === adminContext.context.organization.ownerId) {
-    return { success: false, error: "The organization owner cannot be disabled" };
+  if (memberId === requestedByUserId) {
+    return { success: false, error: "You cannot remove yourself from the organization" };
   }
 
   const membership = await prisma.organizationMember.findUnique({
@@ -28,19 +23,29 @@ export async function toggleMemberStatusService(
         organizationId,
       },
     },
+    select: {
+      id: true,
+      role: true,
+    },
   });
 
   if (!membership) {
     return { success: false, error: "User is not a member of this organization" };
   }
 
-  await prisma.user.update({
-    where: { id: memberId },
-    data: { isDisabled: disable },
+  if (membership.role === "OWNER") {
+    return {
+      success: false,
+      error: "The organization owner cannot be removed. Transfer ownership first.",
+    };
+  }
+
+  await prisma.organizationMember.delete({
+    where: { id: membership.id },
   });
 
   return {
     success: true,
-    message: disable ? "Member disabled" : "Member enabled",
+    message: "Member removed from organization",
   };
 }

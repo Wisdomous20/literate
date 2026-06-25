@@ -79,7 +79,7 @@ export async function acceptInvitationService(
       const organization = await tx.organization.findUnique({
         where: { id: invitation.payload.organizationId },
         include: {
-          subscription: { select: { maxMembers: true } },
+          subscription: { select: { maxMembersSnapshot: true } },
           _count: {
             select: {
               members: { where: { user: { isDisabled: false } } },
@@ -111,7 +111,7 @@ export async function acceptInvitationService(
 
       }
 
-      const maxMembers = organization.subscription?.maxMembers || 1;
+      const maxMembers = organization.subscription?.maxMembersSnapshot || 1;
       if (organization._count.members >= maxMembers) {
         return {
           success: false as const,
@@ -142,6 +142,7 @@ export async function acceptInvitationService(
         data: {
           userId,
           organizationId: invitation.payload.organizationId,
+          role: "USER",
         },
       });
 

@@ -55,13 +55,13 @@ describe("addOrgMemberService", () => {
     expect(mockPrisma.organization.findUnique).not.toHaveBeenCalled();
   });
 
-  it("returns failure when the org does not exist or requester is not its owner", async () => {
+  it("returns failure when the org does not exist", async () => {
     mockPrisma.organization.findUnique.mockResolvedValue(null);
 
     const result = await addOrgMemberService(baseInput);
 
     expect(result.success).toBe(false);
-    expect(result.error).toMatch(/owner/);
+    expect(result.error).toMatch(/No organization found/);
   });
 
   it("returns failure when the existing user is already a member", async () => {

@@ -3,12 +3,9 @@ import { prisma } from "@/lib/prisma";
 export async function removeMembershipByAdminService(membershipId: string) {
   const membership = await prisma.organizationMember.findUnique({
     where: { id: membershipId },
-    include: {
-      organization: {
-        select: {
-          ownerId: true,
-        },
-      },
+    select: {
+      id: true,
+      role: true,
     },
   });
 
@@ -16,7 +13,7 @@ export async function removeMembershipByAdminService(membershipId: string) {
     return { success: false, error: "Membership not found." };
   }
 
-  if (membership.userId === membership.organization.ownerId) {
+  if (membership.role === "OWNER") {
     return {
       success: false,
       error: "Owner memberships cannot be removed until ownership is transferred.",

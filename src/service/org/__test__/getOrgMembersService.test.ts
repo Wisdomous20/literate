@@ -21,12 +21,14 @@ const baseMembers = [
   {
     id: "mem-1",
     userId: "user-1",
+    role: "ADMIN",
     joinedAt: new Date("2024-01-01"),
     user: { id: "user-1", firstName: "Juan", lastName: "dela Cruz", email: "juan@example.com", isDisabled: false, createdAt: new Date() },
   },
   {
     id: "mem-2",
     userId: "user-2",
+    role: "USER",
     joinedAt: new Date("2024-02-01"),
     user: { id: "user-2", firstName: "Maria", lastName: "Santos", email: "maria@example.com", isDisabled: false, createdAt: new Date() },
   },
@@ -44,13 +46,13 @@ describe("getOrgMembersService", () => {
     expect(mockPrisma.organizationMember.findMany).not.toHaveBeenCalled();
   });
 
-  it("returns failure when the requesting user is not the owner", async () => {
+  it("returns failure when the requesting user is not an organization admin", async () => {
     mockPrisma.organization.findUnique.mockResolvedValue({ ...baseOrg, ownerId: "user-1" });
 
     const result = await getOrgMembersService("org-1", "user-999");
 
     expect(result.success).toBe(false);
-    expect(result.error).toMatch(/owner/);
+    expect(result.error).toMatch(/admins/);
   });
 
   it("returns the organization summary and member list on success", async () => {
@@ -75,6 +77,18 @@ describe("getOrgMembersService", () => {
 
     const nonOwner = result.members?.find((m) => m.id === "user-2");
     expect(nonOwner?.isOwner).toBe(false);
+  });
+
+  it("includes organization member roles in the member list", async () => {
+    mockPrisma.organization.findUnique.mockResolvedValue(baseOrg);
+    mockPrisma.organizationMember.findMany.mockResolvedValue(baseMembers);
+
+    const result = await getOrgMembersService("org-1", "user-1");
+
+    const owner = result.members?.find((m) => m.id === "user-1");
+    const member = result.members?.find((m) => m.id === "user-2");
+    expect(owner?.role).toBe("ADMIN");
+    expect(member?.role).toBe("USER");
   });
 
   it("returns null plan when organization has no subscription", async () => {

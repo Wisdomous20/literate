@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import { xenditRequest } from "@/lib/xendit";
 import { prisma } from "@/lib/prisma";
-import { calculatePrice, getMaxMembers, PlanKey } from "@/config/plans";
+import { calculatePrice, getMaxMembers, PLANS, PlanKey } from "@/config/plans";
 
 interface CreateSubscriptionInput {
   userId: string;
@@ -25,11 +25,47 @@ export async function createSubscriptionService(input: CreateSubscriptionInput) 
 
   const amount = calculatePrice(planType, memberCount);
   const maxMembers = getMaxMembers(planType, memberCount);
+  const planMaxMembers =
+    planType === "PAMILYA" ? PLANS.PAMILYA.minMembers : PLANS[planType].maxMembers;
+  const planPriceAmount =
+    planType === "PAMILYA"
+      ? calculatePrice(planType, PLANS.PAMILYA.minMembers)
+      : amount;
+  const organizationType = planType === "SOLO" ? "PERSONAL" : "TEAM";
+  const organizationName =
+    organizationType === "PERSONAL"
+      ? `${userName || "My"}'s Workspace`
+      : `${userName || "My"}'s Organization`;
 
   try {
-    // Check for existing subscription
+    const planRecord = await prisma.plan.upsert({
+      where: { code: planType },
+      create: {
+        code: planType,
+        name: PLANS[planType].name,
+        maxMembers: planMaxMembers,
+        priceAmount: planPriceAmount,
+        currency: "PHP",
+        billingInterval: "YEAR",
+      },
+      update: {
+        name: PLANS[planType].name,
+        maxMembers: planMaxMembers,
+        priceAmount: planPriceAmount,
+        currency: "PHP",
+        billingInterval: "YEAR",
+        active: true,
+      },
+    });
+
+    const organization = await ensureSubscriptionOrganization({
+      userId,
+      name: organizationName,
+      type: organizationType,
+    });
+
     const existingSub = await prisma.subscription.findUnique({
-      where: { userId },
+      where: { organizationId: organization.id },
     });
 
     let xenditCustomerId = existingSub?.xenditCustomerId;
@@ -70,7 +106,7 @@ export async function createSubscriptionService(input: CreateSubscriptionInput) 
       status: string;
       actions: { action: string; url: string }[];
     }>("/recurring/plans", "POST", {
-      reference_id: `literate-${planType.toLowerCase()}-${userId}-${uniqueId}`,
+      reference_id: `literate-${planType.toLowerCase()}-${organization.id}-${uniqueId}`,
       customer_id: xenditCustomerId,
       recurring_action: "PAYMENT",
       currency: "PHP",
@@ -98,6 +134,8 @@ export async function createSubscriptionService(input: CreateSubscriptionInput) 
       description: `Literate ${planType} Plan — Annual`,
       metadata: {
         userId,
+        organizationId: organization.id,
+        planId: planRecord.id,
         planType,
         maxMembers: String(maxMembers),
       },
@@ -105,19 +143,23 @@ export async function createSubscriptionService(input: CreateSubscriptionInput) 
 
     // Step 3: Save subscription record
     await prisma.subscription.upsert({
-      where: { userId },
+      where: { organizationId: organization.id },
       create: {
-        userId,
-        planType,
+        organizationId: organization.id,
+        planId: planRecord.id,
         status: "PENDING",
-        maxMembers,
+        maxMembersSnapshot: maxMembers,
+        priceAmountSnapshot: amount,
+        currencySnapshot: "PHP",
         xenditCustomerId,
         xenditPlanId: plan.id,
       },
       update: {
-        planType,
+        planId: planRecord.id,
         status: "PENDING",
-        maxMembers,
+        maxMembersSnapshot: maxMembers,
+        priceAmountSnapshot: amount,
+        currencySnapshot: "PHP",
         xenditCustomerId,
         xenditPlanId: plan.id,
       },
@@ -135,4 +177,50 @@ export async function createSubscriptionService(input: CreateSubscriptionInput) 
     console.error("Xendit subscription error:", error);
     return { success: false, error: "Failed to create subscription" };
   }
+}
+
+async function ensureSubscriptionOrganization(input: {
+  userId: string;
+  name: string;
+  type: "PERSONAL" | "TEAM";
+}) {
+  const existingMembership = await prisma.organizationMember.findFirst({
+    where: {
+      userId: input.userId,
+      role: "OWNER",
+      organization: { type: input.type },
+    },
+    include: { organization: true },
+    orderBy: { joinedAt: "asc" },
+  });
+
+  if (existingMembership) {
+    return existingMembership.organization;
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const organization = await tx.organization.create({
+      data: {
+        name: input.name,
+        type: input.type,
+      },
+    });
+
+    await tx.organizationMember.create({
+      data: {
+        userId: input.userId,
+        organizationId: organization.id,
+        role: "OWNER",
+      },
+    });
+
+    if (input.type === "TEAM") {
+      await tx.user.update({
+        where: { id: input.userId },
+        data: { role: "ORG_ADMIN" },
+      });
+    }
+
+    return organization;
+  });
 }

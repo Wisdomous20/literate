@@ -4,6 +4,7 @@ import {
   discardOrgInvitation,
 } from "@/service/org/orgInvitationRedisService";
 import { sendOrgInvitationEmail } from "@/service/notification/sendOrgInvitationEmail";
+import { getOrgAdminContext } from "@/service/org/orgAuthorization";
 
 interface AddMemberInput {
   email: string;
@@ -18,11 +19,19 @@ export async function addOrgMemberService(input: AddMemberInput) {
     return { success: false, error: "Email is required" };
   }
 
+  const adminContext = await getOrgAdminContext(
+    input.organizationId,
+    input.requestedByUserId,
+  );
+
+  if (!adminContext.success) {
+    return { success: false, error: adminContext.error };
+  }
+
   const org = await prisma.organization.findUnique({
     where: { id: input.organizationId },
     include: {
       subscription: true,
-      owner: { select: { firstName: true, lastName: true } },
       _count: {
         select: {
           members: { where: { user: { isDisabled: false } } },
@@ -31,12 +40,17 @@ export async function addOrgMemberService(input: AddMemberInput) {
     },
   });
 
-  if (!org || org.ownerId !== input.requestedByUserId) {
+  if (!org) {
     return {
       success: false,
-      error: "Only the organization owner can add members",
+      error: "No organization found",
     };
   }
+
+  const invitedBy = await prisma.user.findUnique({
+    where: { id: input.requestedByUserId },
+    select: { firstName: true, lastName: true },
+  });
 
   const existingUser = await prisma.user.findFirst({
     where: { email: { equals: normalizedEmail, mode: "insensitive" } },
@@ -61,7 +75,7 @@ export async function addOrgMemberService(input: AddMemberInput) {
     }
   }
 
-  const maxMembers = org.subscription?.maxMembers || 1;
+  const maxMembers = org.subscription?.maxMembersSnapshot || 1;
   const invitationResult = await createOrgInvitation({
     email: normalizedEmail,
     organizationId: input.organizationId,
@@ -87,7 +101,7 @@ export async function addOrgMemberService(input: AddMemberInput) {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const acceptUrl = `${baseUrl}/accept-invitation?token=${invitationResult.token}`;
   const invitedByName =
-    [org.owner?.firstName, org.owner?.lastName].filter(Boolean).join(" ").trim() ||
+    [invitedBy?.firstName, invitedBy?.lastName].filter(Boolean).join(" ").trim() ||
     "Your organization admin";
 
   try {

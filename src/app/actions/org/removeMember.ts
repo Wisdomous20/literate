@@ -2,14 +2,12 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-import { addOrgMemberService } from "@/service/org/addOrgMemberService";
-import { addOrgMemberSchema } from "@/lib/validation/org";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
+import { removeOrgMemberSchema } from "@/lib/validation/org";
 import { findAdminOrganizationForUser } from "@/service/org/orgAuthorization";
+import { removeOrgMemberService } from "@/service/org/removeOrgMemberService";
 
-export async function addMemberAction(input: {
-  email: string;
-}) {
+export async function removeMemberAction(memberId: string) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
@@ -22,8 +20,8 @@ export async function addMemberAction(input: {
     return { success: false, error: "No organization found" };
   }
 
-  const validationResult = addOrgMemberSchema.safeParse({
-    ...input,
+  const validationResult = removeOrgMemberSchema.safeParse({
+    memberId,
     organizationId: org.id,
     requestedByUserId: session.user.id,
   });
@@ -35,5 +33,9 @@ export async function addMemberAction(input: {
     };
   }
 
-  return await addOrgMemberService(validationResult.data);
+  return removeOrgMemberService(
+    validationResult.data.memberId,
+    validationResult.data.organizationId,
+    validationResult.data.requestedByUserId
+  );
 }
