@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
             Number.isSafeInteger(requestedMaxMembers) && requestedMaxMembers > 0
               ? requestedMaxMembers
               : 1;
-          const updatedSubscription = await prisma.subscription.update({
+          await prisma.subscription.update({
             where: { xenditPlanId: planId },
             data: {
               status: "ACTIVE",
@@ -70,13 +70,6 @@ export async function POST(req: NextRequest) {
               currentPeriodStart: new Date(),
               currentPeriodEnd: getNextYear(),
             },
-          });
-
-          await createInvoiceAndSendEmail({
-            subscriptionId: updatedSubscription.id,
-            providerInvoiceId: createProviderInvoiceId(event, planId),
-            providerPaymentId: getPayloadId(payload.data),
-            providerPayload: payload.data,
           });
         }
         break;
