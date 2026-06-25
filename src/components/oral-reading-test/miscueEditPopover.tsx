@@ -1,24 +1,30 @@
 "use client";
 
 import { useState, useRef, useEffect, type CSSProperties } from "react";
-import { Minus, Plus, Trash2, Loader2, Pencil } from "lucide-react";
+import { Minus, Plus, Trash2, Loader2, Pencil, Play } from "lucide-react";
 import type { MiscueType } from "./useEditMiscues";
+import { formatMiscueTimestamp } from "@/lib/audioPlayback";
 
 // ─── Position helpers ───
 
 function computePopoverStyle(
   anchorRect: DOMRect,
-  containerRect: DOMRect,
-  scrollTop: number,
+  _containerRect: DOMRect,
+  _scrollTop: number,
 ): CSSProperties {
-  const xPos = anchorRect.left - containerRect.left + anchorRect.width / 2;
-  const yPos = anchorRect.bottom - containerRect.top + scrollTop + 6;
+  const popupWidth = 208;
+  const viewportPadding = 12;
+  const xPos = Math.min(
+    Math.max(anchorRect.left + anchorRect.width / 2, viewportPadding + popupWidth / 2),
+    window.innerWidth - viewportPadding - popupWidth / 2,
+  );
+  const yPos = anchorRect.bottom + 8;
   return {
-    position: "absolute",
+    position: "fixed",
     left: xPos,
     top: yPos,
     transform: "translateX(-50%)",
-    zIndex: 40,
+    zIndex: 80,
   };
 }
 
@@ -89,7 +95,7 @@ export function TextInputPopover({
   return (
     <div
       style={style}
-      className="w-48 rounded-lg border border-[#54A4FF] bg-white p-2 shadow-lg"
+      className="w-52 rounded-lg border border-[#54A4FF] bg-white p-2 shadow-lg"
     >
       <div className="mb-1 text-[10px] font-bold uppercase" style={{ color }}>
         {miscueType.replace(/_/g, " ")}
@@ -250,7 +256,7 @@ export function ContextMenuPopover({
   return (
     <div
       ref={ref}
-      style={{ position: "absolute", left: x, top: y, zIndex: 50 }}
+      style={{ position: "fixed", left: x, top: y, zIndex: 80 }}
       className="rounded-lg border border-[#C41048]/30 bg-white py-1 shadow-lg"
     >
       <button
@@ -329,20 +335,22 @@ const TYPE_OPTIONS: {
 interface MiscueActionPopoverProps {
   miscueType: MiscueType;
   spokenWord?: string | null;
+  timestamp?: number | null;
   isLoading: boolean;
-  onDelete: () => void;
   onChangeType: (newType: MiscueType) => void;
   onUpdateSpokenWord?: (newSpokenWord: string) => void;
+  onJumpToWord?: () => void;
   onClose: () => void;
 }
 
 export function MiscueActionPopover({
   miscueType,
   spokenWord,
+  timestamp,
   isLoading,
-  onDelete,
   onChangeType,
   onUpdateSpokenWord,
+  onJumpToWord,
   onClose,
 }: MiscueActionPopoverProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -462,23 +470,6 @@ export function MiscueActionPopover({
         </div>
       )}
 
-      {/* Permanent delete */}
-      <div className="mb-2">
-        <button
-          type="button"
-          disabled={isLoading}
-          onClick={onDelete}
-          className="flex w-full items-center justify-center gap-1.5 rounded-md bg-[#C41048] px-2 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#A30D3B] disabled:opacity-50"
-        >
-          {isLoading ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : (
-            <Trash2 className="h-3 w-3" />
-          )}
-          Delete permanently
-        </button>
-      </div>
-
       {/* Change type */}
       <div className="mb-1 text-[10px] font-semibold text-[#31318A]/60">
         Change type:
@@ -497,6 +488,22 @@ export function MiscueActionPopover({
           </button>
         ))}
       </div>
+
+      {timestamp != null && onJumpToWord && (
+        <button
+          type="button"
+          disabled={isLoading}
+          onClick={onJumpToWord}
+          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md bg-[#6666FF] px-2 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#5555EE] disabled:opacity-50"
+        >
+          {isLoading ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <Play className="h-3 w-3" />
+          )}
+          Jump to Word ({formatMiscueTimestamp(timestamp)})
+        </button>
+      )}
     </div>
   );
 }

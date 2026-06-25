@@ -558,7 +558,7 @@ export default function OralReadingReportPage() {
                 <button
                   type="button"
                   onClick={handleExportPdf}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[#7C3AED] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[#6D28D9]"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#6666FF] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[#6D28D9]"
                 >
                   <Download className="h-3.5 w-3.5" />
                   Export to PDF

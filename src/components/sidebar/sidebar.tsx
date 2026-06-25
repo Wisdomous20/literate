@@ -112,10 +112,10 @@ function SidebarNavItem({
 
         onActivate?.();
       }}
-      title={collapsed ? label : undefined}
+      title={undefined}
       className={cn(
         "group relative z-10 isolate flex items-center overflow-visible text-sm font-medium transition-all duration-200 ease-out",
-        collapsed ? "justify-center rounded-lg px-0 py-2" : "gap-3 px-2 py-2",
+        collapsed ? "mx-auto w-11 justify-center rounded-2xl px-0 py-1.5" : "gap-3 px-2 py-2",
         isActive
           ? collapsed
             ? "rounded-[20px] bg-white text-[#6666FF] shadow-[0_12px_28px_rgba(55,44,183,0.2)]"
@@ -146,6 +146,11 @@ function SidebarNavItem({
               : "text-white group-hover:text-white",
           )}
         >
+          {label}
+        </span>
+      )}
+      {collapsed && (
+        <span className="pointer-events-none absolute left-full top-1/2 ml-3 -translate-y-1/2 rounded-xl bg-[#6C4EEB] px-3 py-1.5 text-[11px] font-semibold text-white opacity-0 shadow-[0_10px_24px_rgba(108,78,235,0.32)] transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-100">
           {label}
         </span>
       )}
@@ -584,9 +589,8 @@ export function Sidebar() {
           type="button"
           onClick={() => setCollapsed(!collapsed)}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className={cn(
-            "absolute top-4 z-50 flex h-9 w-9 items-center justify-center text-white transition duration-200 hover:text-white/80 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/20",
+            "group absolute top-4 z-50 flex h-9 w-9 items-center justify-center text-white transition duration-200 hover:text-white/80 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/20",
             collapsed ? "right-1/2 translate-x-1/2" : "right-4",
           )}
         >
@@ -595,6 +599,9 @@ export function Sidebar() {
           ) : (
             <PanelLeftClose className="h-4.5 w-4.5" />
           )}
+          <span className="pointer-events-none absolute left-full top-1/2 ml-3 hidden -translate-y-1/2 rounded-xl bg-[#6C4EEB] px-3 py-1.5 text-[11px] font-semibold whitespace-nowrap text-white opacity-0 shadow-[0_10px_24px_rgba(108,78,235,0.32)] transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-100 md:flex">
+            {collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          </span>
         </button>
 
         {!collapsed ? (
@@ -610,7 +617,7 @@ export function Sidebar() {
 
         <div
           ref={navContainerRef}
-          className={cn("relative flex-1", collapsed ? "px-3 pb-6" : "px-6")}
+          className={cn("relative flex-1", collapsed ? "px-3 pb-6 pt-6" : "px-6")}
         >
           {!collapsed && (
             <span
@@ -727,9 +734,9 @@ export function Sidebar() {
           <button
             type="button"
             onClick={handleLogout}
-            title={collapsed ? "Logout Account" : undefined}
+            title={undefined}
             className={cn(
-              "relative z-10 flex items-center gap-3 rounded-lg px-2 py-2 text-sm font-medium text-white/90 group",
+              "group relative z-10 flex items-center gap-3 rounded-lg px-2 py-2 text-sm font-medium text-white/90",
               collapsed ? "w-auto justify-center" : "w-full",
             )}
           >
@@ -737,6 +744,11 @@ export function Sidebar() {
               <LogOut className="h-4 w-4 text-[#6666FF] group-hover:text-white transition-colors duration-200" />
             </div>
             {!collapsed && <span className="text-[13px]">Logout Account</span>}
+            {collapsed && (
+              <span className="pointer-events-none absolute left-full top-1/2 ml-3 -translate-y-1/2 rounded-xl bg-[#6C4EEB] px-3 py-1.5 text-[11px] font-semibold whitespace-nowrap text-white opacity-0 shadow-[0_10px_24px_rgba(108,78,235,0.32)] transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-100">
+                Logout Account
+              </span>
+            )}
           </button>
         </div>
       </div>

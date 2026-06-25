@@ -197,7 +197,7 @@ export function CreateStudentModal({
             <div className="flex justify-center pt-4">
               <button
                 type="submit"
-                className="rounded-lg px-10 py-3 text-base font-semibold text-white transition-all hover:opacity-90 bg-[#2E2E68] shadow-[0px_4px_15px_rgba(46,46,104,0.4)]"
+                className="rounded-lg px-10 py-3 text-base font-semibold text-white transition-all hover:opacity-90 bg-[#6666FF] shadow-[0px_4px_15px_rgba(46,46,104,0.4)]"
               >
                 Create Student
               </button>

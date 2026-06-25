@@ -85,11 +85,11 @@ export function DashboardHeader({
           <button
             type="button"
             data-tour-target="recent-assessments-button"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#D6DDFB] bg-[#F1F5FF] text-[#6C4EEB] transition duration-200 hover:border-[#6C4EEB]/40 hover:bg-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#6C4EEB]/20 md:h-10 md:w-10"
-            aria-label="History"
+            className="flex h-9 items-center gap-2 rounded-xl border border-[#D6DDFB] bg-[#F5F1FF] px-3 text-left transition duration-200 hover:-translate-y-0.5 hover:border-[#6C4EEB]/40 hover:bg-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#6C4EEB]/20 md:h-10 md:px-3.5"
+            aria-label="Recent assessment"
             onClick={() => setShowDrawer(true)}
           >
-            <History className="h-4 w-4 md:h-5 md:w-5" />
+            <History className="h-4 w-4 shrink-0 text-[#6C4EEB] md:h-5 md:w-5" />
           </button>
         </div>
       </header>
@@ -98,21 +98,28 @@ export function DashboardHeader({
       {showDrawer && (
         <div className="fixed inset-0 z-50 flex">
           <div
-            className="fixed inset-0 bg-black/30"
+            className="fixed inset-0 bg-[#140C3A]/30 backdrop-blur-[2px]"
             onClick={() => setShowDrawer(false)}
           />
-          <aside className="relative ml-auto flex h-full w-full max-w-sm flex-col bg-white shadow-2xl">
-            <div className="flex items-center justify-between p-4 border-b border-[#E0E7FF]">
-              <h2 className="text-lg font-semibold text-[#00306E]">
-                Recent Assessment
-              </h2>
-              <button
-                className="rounded-full p-1 hover:bg-[#F0F4FF]"
-                onClick={() => setShowDrawer(false)}
-                aria-label="Close"
-              >
-                <X className="h-5 w-5 text-[#5D5DFB]" />
-              </button>
+          <aside className="relative ml-auto flex h-full w-full max-w-sm animate-in slide-in-from-right-8 duration-300 flex-col bg-white shadow-2xl">
+            <div className="border-b border-[#E0E7FF] bg-[#F7F2FF] p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-[#6C4EEB]">
+                    Recent Assessment
+                  </h2>
+                  <p className="mt-1 text-xs text-[#7C3AED]/70">
+                    Review the latest student records
+                  </p>
+                </div>
+                <button
+                  className="rounded-full p-1 transition-colors hover:bg-white/80"
+                  onClick={() => setShowDrawer(false)}
+                  aria-label="Close"
+                >
+                  <X className="h-5 w-5 text-[#5D5DFB]" />
+                </button>
+              </div>
             </div>
             <div className="flex-1 overflow-y-auto p-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-[#A855F7] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent">
               <QuickActions schoolYear={schoolYear} minimal />

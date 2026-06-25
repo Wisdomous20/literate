@@ -594,19 +594,21 @@ export function PassageDisplay({
 
   const openPopup = useCallback((e: React.MouseEvent, miscue: MiscueResult) => {
     const rect = (e.target as HTMLElement).getBoundingClientRect();
-    const container = containerRef.current;
-    if (!container) return;
-    const containerRect = container.getBoundingClientRect();
-    const xPos =
-      rect.left - containerRect.left + rect.width / 2 + container.scrollLeft;
-    const yAbove = rect.top - containerRect.top + container.scrollTop - 4;
-    const yBelow = rect.bottom - containerRect.top + container.scrollTop + 4;
-    const spaceAbove = rect.top - containerRect.top;
-    const flip = spaceAbove < 95;
+    const viewportPadding = 12;
+    const popupHalfWidth = 110;
+    const xPos = Math.max(
+      viewportPadding + popupHalfWidth,
+      Math.min(
+        rect.left + rect.width / 2,
+        window.innerWidth - viewportPadding - popupHalfWidth,
+      ),
+    );
+    const yAbove = rect.top - 8;
+    const yBelow = rect.bottom + 8;
+    const flip = rect.top < 140;
 
-    const popupHalfWidth = 90;
-    const spaceLeft = rect.left - containerRect.left + rect.width / 2;
-    const spaceRight = containerRect.right - rect.left - rect.width / 2;
+    const spaceLeft = rect.left + rect.width / 2;
+    const spaceRight = window.innerWidth - rect.left - rect.width / 2;
     let hAlign: "center" | "left" | "right" = "center";
     if (spaceLeft < popupHalfWidth) {
       hAlign = "left";
@@ -969,8 +971,8 @@ export function PassageDisplay({
             <button
               type="button"
               onClick={editMode.enterEditMode}
-              className="flex h-6.5 w-6.5 items-center justify-center rounded-md bg-[rgba(84,164,255,0.15)] text-[#1A5FB4] transition-colors hover:bg-[rgba(84,164,255,0.25)]"
-              title="Edit miscues"
+              className="inline-flex h-6.5 items-center justify-center gap-1 rounded-md bg-[rgba(84,164,255,0.15)] px-2 text-[#1A5FB4] transition-colors hover:bg-[rgba(84,164,255,0.25)]"
+              title="Edit miscue"
               aria-label="Edit miscues"
             >
               <Pencil className="h-3 w-3" />
@@ -1010,7 +1012,7 @@ export function PassageDisplay({
 
       <div
         ref={containerRef}
-        className={`oral-reading-scroll relative flex-1 overflow-auto rounded-[10px] border-2 border-[#A78BFA] bg-white p-4 md:p-5 ${collapsible && !collapsed && !expanded ? "rounded-t-none border-t-0" : ""}`}    >
+        className={`oral-reading-scroll relative flex-1 overflow-x-visible overflow-y-auto rounded-[10px] border-2 border-[#A78BFA] bg-white p-4 md:p-5 ${collapsible && !collapsed && !expanded ? "rounded-t-none border-t-0" : ""}`}    >
         {content ? (
           <p
             className={`whitespace-pre-wrap text-center leading-relaxed text-[#00306E] px-8 md:px-10 ${getPassageTextClasses(passageLevel)}`}
@@ -1044,7 +1046,7 @@ export function PassageDisplay({
             return (
               <div
                 ref={popupRef}
-                className={`absolute z-30 flex ${popup.flipped ? "flex-col-reverse" : "flex-col"}`}
+                className={`fixed z-30 flex ${popup.flipped ? "flex-col-reverse" : "flex-col"}`}
               >
                 {popup.flipped && (
                   <div
@@ -1056,24 +1058,8 @@ export function PassageDisplay({
                   <MiscueActionPopover
                     miscueType={popup.miscue.miscueType}
                     spokenWord={popup.miscue.spokenWord}
+                    timestamp={popup.miscue.timestamp}
                     isLoading={actionLoading}
-                    onDelete={async () => {
-                      if (isEditing && editMode) {
-                        const index = findEditedMiscueIndex(popup.miscue);
-                        if (index === -1) return;
-                        editMode.removeMiscue(index);
-                        setPopup(null);
-                        return;
-                      }
-                      if (!onDeleteMiscue) return;
-                      setActionLoading(true);
-                      try {
-                        await onDeleteMiscue(popup.miscue);
-                        setPopup(null);
-                      } finally {
-                        setActionLoading(false);
-                      }
-                    }}
                     onChangeType={async (newType) => {
                       if (isEditing && editMode) {
                         const index = findEditedMiscueIndex(popup.miscue);
@@ -1113,6 +1099,14 @@ export function PassageDisplay({
                         setActionLoading(false);
                       }
                     }}
+                    onJumpToWord={
+                      hasTimestamp && onJumpToTime
+                        ? () => {
+                            onJumpToTime(popup.miscue.timestamp!);
+                            setPopup(null);
+                          }
+                        : undefined
+                    }
                     onClose={() => setPopup(null)}
                   />
                 ) : (

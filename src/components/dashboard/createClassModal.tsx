@@ -179,7 +179,7 @@ export function CreateClassModal({
               <button
                 type="submit"
                 disabled={isLoading || !className.trim()}
-                className="flex items-center gap-2 rounded-lg bg-[#2E2E68] px-10 py-3 text-base font-semibold text-white shadow-[0px_4px_15px_rgba(46,46,104,0.4)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center gap-2 rounded-lg bg-[#6666FF] px-10 py-3 text-base font-semibold text-white shadow-[0px_4px_15px_rgba(46,46,104,0.4)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
                 {isLoading ? "Creating..." : "Create Class"}
