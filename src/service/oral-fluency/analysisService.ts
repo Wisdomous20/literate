@@ -71,6 +71,7 @@ export async function analyzeOralFluency(
     word: normalizeWord(w.word),
     start: w.start,
     end: w.end,
+    confidence: w.confidence,
   }))
 
   const corrected = postCorrectTranscription(
@@ -81,7 +82,12 @@ export async function analyzeOralFluency(
   // 4. Align spoken words against passage
   const rawAlignedWords = alignWords(
     normalizedPassageWords,
-    corrected.map(w => ({ word: w.word, start: w.start, end: w.end })),
+    corrected.map(w => ({
+      word: w.word,
+      start: w.start,
+      end: w.end,
+      confidence: w.confidence,
+    })),
   )
 
   // 5. Phonetic post-correction: check each MISMATCH — if the spoken word

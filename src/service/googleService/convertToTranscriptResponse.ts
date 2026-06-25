@@ -2,6 +2,7 @@ import { TranscriptWord, TranscriptResponse } from "@/types/oral-reading";
 import { protos } from "@google-cloud/speech";
 import correctWithPassage from "./correctWithPassage";
 import { normalizeWord, similarityRatio } from "@/utils/textUtils";
+import { normalizeTranscriptionConfidence } from "@/utils/transcriptionConfidence";
 
 const FALLBACK_WORD_DURATION_SECONDS = 0.2;
 
@@ -101,11 +102,13 @@ export default function convertToTranscriptResponse(
       for (const wordInfo of alternative.words) {
         const startSec = durationToSeconds(wordInfo.startOffset);
         const endSec = durationToSeconds(wordInfo.endOffset);
+        const confidence = normalizeTranscriptionConfidence(wordInfo.confidence);
 
         allWords.push({
           word: wordInfo.word ?? "",
           start: startSec,
           end: endSec,
+          ...(confidence === undefined ? {} : { confidence }),
         });
 
         if (endSec > maxEndTime) {

@@ -9,6 +9,7 @@ interface SpokenWordEntry {
   word: string
   start: number
   end: number
+  confidence?: number
 }
 
 export function alignWords(
@@ -103,7 +104,7 @@ export function alignWords(
         spokenIndex: j - 1,
         timestamp: spokenWords[j - 1].start,
         endTimestamp: spokenWords[j - 1].end,
-        confidence: null,
+        confidence: spokenWords[j - 1].confidence ?? null,
         match: normExpected[i - 1] === normSpoken[j - 1] ? "EXACT" : "MISMATCH",
       })
       i--

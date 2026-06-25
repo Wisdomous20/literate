@@ -29,4 +29,22 @@ describe("postCorrectTranscription", () => {
 
     expect(result[0]).toMatchObject({ word: "sit", correctedFrom: "shit" });
   });
+
+  it("preserves a high-confidence mismatch", () => {
+    const result = postCorrectTranscription(
+      [{ word: "shit", start: 0, end: 0.2, confidence: 0.9 }],
+      ["sit"],
+    );
+
+    expect(result[0].word).toBe("shit");
+  });
+
+  it("corrects a low-confidence edit-distance-one transcription error", () => {
+    const result = postCorrectTranscription(
+      [{ word: "shit", start: 0, end: 0.2, confidence: 0.2 }],
+      ["sit"],
+    );
+
+    expect(result[0]).toMatchObject({ word: "sit", correctedFrom: "shit" });
+  });
 });

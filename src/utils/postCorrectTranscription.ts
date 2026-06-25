@@ -1,4 +1,12 @@
 import { editDistance, normalizeWord } from "./textUtils";
+import { canAutoCorrectFromPassage } from "./transcriptionConfidence";
+
+interface TranscribedWord {
+  word: string;
+  start: number;
+  end: number;
+  confidence?: number;
+}
 
 /**
  * Post-correction pass that fixes obvious STT noise by matching against
@@ -12,9 +20,9 @@ import { editDistance, normalizeWord } from "./textUtils";
  * to prevent false corrections without the noise gate.
  */
 export function postCorrectTranscription(
-  transcribed: { word: string; start: number; end: number }[],
+  transcribed: TranscribedWord[],
   normalizedPassageWords: string[]
-): { word: string; start: number; end: number; correctedFrom?: string }[] {
+): (TranscribedWord & { correctedFrom?: string })[] {
   const passageSet = new Set(normalizedPassageWords);
 
   return transcribed.map((w, index) => {
@@ -29,6 +37,10 @@ export function postCorrectTranscription(
     );
 
     if (candidates.length !== 1) return w;
+
+    // A high-confidence mismatch is likely a genuine spoken word, not a
+    // transcription typo. Preserve it so the assessment can detect a miscue.
+    if (!canAutoCorrectFromPassage(w.confidence)) return w;
 
     // Keep a wrong attempt when the reader immediately supplies the exact
     // expected word, so the alignment layer can record a self-correction.

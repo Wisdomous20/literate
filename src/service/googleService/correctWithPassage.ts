@@ -1,5 +1,6 @@
 import { TranscriptWord } from "@/types/oral-reading";
 import { normalizeWord, similarityRatio } from "@/utils/textUtils";
+import { canAutoCorrectFromPassage } from "@/utils/transcriptionConfidence";
 import mergeSplitWords from "./mergeSplitWords";
 
 /**
@@ -278,7 +279,10 @@ export default function correctWithPassage(
           // rather than a genuine substitution.
           const isLikelyNoise = sim > 0.7;
 
-          if (isLikelyNoise) {
+          if (
+            isLikelyNoise &&
+            canAutoCorrectFromPassage(transcribedWords[ci - 1].confidence)
+          ) {
             corrections.set(ci - 1, passageWords[cj - 1]);
             console.log(
               `[correction] "${transcribedNorm}" → "${passageNorm}" | sim: ${sim.toFixed(2)}`

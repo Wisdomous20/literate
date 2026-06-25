@@ -14,6 +14,7 @@ type TestWordInfo = {
   word: string;
   startOffset: protos.google.protobuf.IDuration | string;
   endOffset: protos.google.protobuf.IDuration | string;
+  confidence?: number;
 };
 
 function makeDuration(seconds: number) {
@@ -30,6 +31,15 @@ function makeWordInfo(word: string, startSec: number, endSec: number): TestWordI
     startOffset: makeDuration(startSec),
     endOffset: makeDuration(endSec),
   };
+}
+
+function makeConfidentWordInfo(
+  word: string,
+  startSec: number,
+  endSec: number,
+  confidence: number,
+): TestWordInfo {
+  return { ...makeWordInfo(word, startSec, endSec), confidence };
 }
 
 function makeRestWordInfo(word: string, startSec: string, endSec: string): TestWordInfo {
@@ -76,6 +86,22 @@ describe("convertToTranscriptResponse", () => {
 
     expect(response.words.map((w) => w.word)).toEqual(["hello", "world"]);
     expect(response.text).toBe("hello world");
+  });
+
+  it("preserves valid Google word-confidence values", () => {
+    const results = [makeResult([makeConfidentWordInfo("hello", 0, 1, 0.42)])];
+
+    const response = convertToTranscriptResponse(results, ONE_SECOND_WAV, true, undefined);
+
+    expect(response.words[0]).toMatchObject({ word: "hello", confidence: 0.42 });
+  });
+
+  it("drops invalid Google word-confidence values", () => {
+    const results = [makeResult([makeConfidentWordInfo("hello", 0, 1, 2)])];
+
+    const response = convertToTranscriptResponse(results, ONE_SECOND_WAV, true, undefined);
+
+    expect(response.words[0]).not.toHaveProperty("confidence");
   });
 
   it("derives duration from WAV buffer length when no words are present", () => {
