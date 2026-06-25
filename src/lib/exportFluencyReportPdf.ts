@@ -4,6 +4,7 @@ import {
   getDisplayReadingTimeSeconds,
   resolveReadingDurationSeconds,
 } from "./readingDuration";
+import { buildReadingBehaviorItems } from "./readingBehaviors";
 
 export interface FluencyReportData {
   studentName: string;
@@ -70,8 +71,6 @@ export function buildFluencyReportData(input: FluencyExportInput): FluencyReport
     counts[m.miscueType] = (counts[m.miscueType] || 0) + 1;
   }
 
-  const detectedBehaviors = new Set(analysisResult.behaviors.map((b) => b.behaviorType));
-
   return {
     studentName: input.studentName,
     gradeLevel: input.gradeLevel ? `Grade ${input.gradeLevel}` : "\u2014",
@@ -97,12 +96,9 @@ export function buildFluencyReportData(input: FluencyExportInput): FluencyReport
       oralFluencyScore: `${analysisResult.oralFluencyScore}%`,
       classificationLevel: analysisResult.classificationLevel,
     },
-    behaviors: [
-      { label: "Does word-by-word reading", description: "(Nagbabasa nang pa-isa isang salita)", checked: detectedBehaviors.has("WORD_BY_WORD_READING") },
-      { label: "Lacks expression: reads in a monotonous tone", description: "(Walang damdamin; walang pagbabago ang tono)", checked: detectedBehaviors.has("MONOTONOUS_READING") },
-      { label: "Disregards punctuation", description: "(Hindi pinapansin ang mga bantas)", checked: detectedBehaviors.has("DISMISSAL_OF_PUNCTUATION") },
-      { label: "Employs little or no method of analysis", description: "(Bahagya o walang paraan ng pagsusuri)", checked: false },
-    ],
+    behaviors: buildReadingBehaviorItems(analysisResult.behaviors).map(
+      ({ label, description, checked }) => ({ label, description, checked }),
+    ),
   };
 }
 

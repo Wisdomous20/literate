@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockTx = {
+  oralFluencySession: {
+    update: vi.fn(),
+  },
   oralFluencyBehavior: {
     deleteMany: vi.fn(),
     createMany: vi.fn(),
@@ -21,6 +24,7 @@ function setupTransaction() {
   mockPrisma.$transaction.mockImplementation(
     (fn: (tx: typeof mockTx) => Promise<unknown>) => fn(mockTx),
   );
+  mockTx.oralFluencySession.update.mockResolvedValue({});
   mockTx.oralFluencyBehavior.deleteMany.mockResolvedValue({ count: 0 });
   mockTx.oralFluencyBehavior.createMany.mockResolvedValue({ count: 0 });
   mockTx.oralFluencyBehavior.findMany.mockResolvedValue([
@@ -71,6 +75,24 @@ describe("updateBehaviorsService", () => {
       data: [
         { sessionId: "s-1", behaviorType: "WORD_BY_WORD_READING" },
         { sessionId: "s-1", behaviorType: "MONOTONOUS_READING" },
+      ],
+    });
+  });
+
+  it("saves teacher-observed behavior rows", async () => {
+    mockPrisma.oralFluencySession.findUnique.mockResolvedValue({ id: "s-1" });
+    setupTransaction();
+
+    const result = await updateBehaviorsService({
+      sessionId: "s-1",
+      behaviorTypes: ["VOICE_HARDLY_AUDIBLE", "FINGER_POINTING"],
+    });
+
+    expect(result.success).toBe(true);
+    expect(mockTx.oralFluencyBehavior.createMany).toHaveBeenCalledWith({
+      data: [
+        { sessionId: "s-1", behaviorType: "VOICE_HARDLY_AUDIBLE" },
+        { sessionId: "s-1", behaviorType: "FINGER_POINTING" },
       ],
     });
   });

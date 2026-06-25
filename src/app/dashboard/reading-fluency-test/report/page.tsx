@@ -29,6 +29,7 @@ import {
   updateFirstMatchingSpokenWord,
   updateFirstMatchingMiscueType,
 } from "@/lib/miscueEditing";
+import { buildReadingBehaviorItems } from "@/lib/readingBehaviors";
 import type { MiscueData } from "@/components/reports/oral-reading-test/reading-fluency-report/miscueAnalysis";
 import type {
   BehaviorItem,
@@ -37,7 +38,6 @@ import type {
 import type {
   OralFluencyAnalysis,
   MiscueResult,
-  BehaviorResult,
 } from "@/types/oral-reading";
 
 const STORAGE_KEY = "reading-fluency-session";
@@ -115,34 +115,7 @@ function buildMiscueData(
 function buildBehaviorItems(
   analysis: OralFluencyAnalysis | null | undefined,
 ): BehaviorItem[] {
-  const detectedTypes = new Set(
-    (analysis?.behaviors || []).map((b: BehaviorResult) => b.behaviorType),
-  );
-
-  return [
-    {
-      key: "WORD_BY_WORD_READING",
-      label: "Does word-by-word reading",
-      description: "(Nagbabasa nang pa-isa isang salita)",
-      checked: detectedTypes.has("WORD_BY_WORD_READING"),
-    },
-    {
-      key: "MONOTONOUS_READING",
-      label: "Lacks expression: reads in a monotonous tone",
-      description: "(Walang damdamin; walang pagbabago ang tono)",
-      checked: detectedTypes.has("MONOTONOUS_READING"),
-    },
-    {
-      key: "DISMISSAL_OF_PUNCTUATION",
-      label: "Disregards Punctuation",
-      description: "(Hindi pinapansin ang mga bantas)",
-      checked: detectedTypes.has("DISMISSAL_OF_PUNCTUATION"),
-    },
-    {
-      label: "Employs little or no method of analysis",
-      description: "(Bahagya o walang paraan ng pagsusuri)",
-    },
-  ];
+  return buildReadingBehaviorItems(analysis?.behaviors);
 }
 
 export default function OralReadingReportPage() {
@@ -601,7 +574,7 @@ export default function OralReadingReportPage() {
               </div>
 
               {/* Three-column row */}
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
                 <div className="flex flex-col gap-6">
                   <PassageInfoCard
                     passageTitle={passageTitle}
