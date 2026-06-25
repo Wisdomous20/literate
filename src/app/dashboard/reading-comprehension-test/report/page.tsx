@@ -7,6 +7,7 @@ import StudentInfoCard from "@/components/reports/oral-reading-test/reading-flue
 import PassageInfoCard from "@/components/reports/oral-reading-test/reading-fluency-report/passageInfoCard";
 import ComprehensionMetricCards from "@/components/reports/oral-reading-test/comprehension-report/comprehensionMetricCards";
 import ComprehensionBreakdownReport from "@/components/reports/oral-reading-test/comprehension-report/comprehensionBreakdownReport";
+import ReadingComprehensionReportHeader from "@/components/reports/reading-comprehension-test/reportHeader";
 import { useAssessmentById } from "@/lib/hooks/useAssessmentById";
 import { exportComprehensionReportPdf } from "@/lib/exportComprehensionReportPdf";
 
@@ -120,11 +121,7 @@ export default function ReadingComprehensionReportPage() {
   if (isLoading) {
     return (
       <div className="flex h-screen flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-8 py-5 border-b-[3px] border-[#5D5DFB] bg-white">
-          <h1 className="text-xl lg:text-2xl font-semibold text-[#31318A]">
-            Reading Comprehension Test Report
-          </h1>
-        </div>
+        <ReadingComprehensionReportHeader />
         <div className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-[#6666FF]" />
@@ -148,11 +145,7 @@ export default function ReadingComprehensionReportPage() {
   if (error || !reportData) {
     return (
       <div className="flex h-screen flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-8 py-5 border-b-[3px] border-[#5D5DFB] bg-white">
-          <h1 className="text-xl lg:text-2xl font-semibold text-[#31318A]">
-            Reading Comprehension Test Report
-          </h1>
-        </div>
+        <ReadingComprehensionReportHeader />
         <div className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-4 text-center px-4">
             <p className="text-red-600 font-medium">
@@ -202,25 +195,7 @@ export default function ReadingComprehensionReportPage() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      {/* Header */}
-      <div className="sticky top-0 z-20 flex items-center gap-3 border-b-[3px] border-[#5D5DFB] bg-white px-4 py-4 md:px-6">
-        <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg bg-[#5D5DFB]/10 shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5 text-[#5D5DFB]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
-        </div>
-        <div className="flex flex-col">
-          <h1 className="text-base md:text-lg font-semibold text-[#483efa]">
-            Reading Comprehension Test Report
-          </h1>
-          {assessmentId && (
-            <p className="text-xs md:text-sm font-medium text-[#2E2E68]/65 mt-0.5">
-              Assessment ID:{" "}
-              <span className="font-bold text-[#2E2E68] font-mono tracking-wide select-all">
-                {assessmentId}
-              </span>
-            </p>
-          )}
-        </div>
-      </div>
+      <ReadingComprehensionReportHeader />
 
       <main className="flex-1 min-h-0 overflow-y-auto scroll-smooth">
         <div className="max-w-[1400px] mx-auto px-6 py-6 md:px-8 lg:px-12 w-full">

@@ -586,7 +586,7 @@ export function Sidebar() {
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className={cn(
-            "absolute top-4 z-50 flex h-9 w-9 items-center justify-center rounded-xl border border-white/25 bg-white/12 text-white shadow-sm backdrop-blur transition duration-200 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/20",
+            "absolute top-4 z-50 flex h-9 w-9 items-center justify-center text-white transition duration-200 hover:text-white/80 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/20",
             collapsed ? "right-1/2 translate-x-1/2" : "right-4",
           )}
         >
@@ -610,7 +610,7 @@ export function Sidebar() {
 
         <div
           ref={navContainerRef}
-          className={cn("relative flex-1", collapsed ? "px-3" : "px-6")}
+          className={cn("relative flex-1", collapsed ? "px-3 pb-6" : "px-6")}
         >
           {!collapsed && (
             <span

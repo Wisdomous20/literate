@@ -21,6 +21,7 @@ interface PassageFiltersProps {
   onShareLink?: () => void;
   showShareLink?: boolean;
   disabled?: boolean;
+  allowPassageChange?: boolean;
 }
 
 function FilterChip({
@@ -56,6 +57,7 @@ export function PassageFilters({
   onShareLink,
   showShareLink = false,
   disabled = false,
+  allowPassageChange = true,
 }: PassageFiltersProps) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -98,7 +100,7 @@ export function PassageFilters({
       </div>
 
       {/* Right: shareable link + add passage button */}
-      <div className="flex w-full flex-col gap-2 pt-0.5 sm:w-auto sm:flex-shrink-0 sm:flex-row sm:items-center">
+      <div className="flex w-full flex-col gap-2 pt-0.5 sm:w-auto sm:shrink-0 sm:flex-row sm:items-center">
         {showShareLink && onShareLink && (
           <button
             type="button"
@@ -111,31 +113,33 @@ export function PassageFilters({
             <span>Share Link</span>
           </button>
         )}
-        <div className="relative">
-          <div className={`absolute inset-0 rounded-full translate-y-1 ${disabled ? "bg-[#D1D5DB]" : "bg-[#B3A4F1]"}`} />
-          <button
-            type="button"
-            data-tour-target="add-passage-button"
-            onClick={disabled ? undefined : onOpenPassageModal}
-            disabled={disabled}
-            className={`relative flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 py-2 text-xs font-semibold shadow transition-transform sm:w-auto sm:min-h-0
-      ${
-        disabled
-          ? "bg-[#9CA3AF] text-white cursor-not-allowed opacity-60 shadow-none"
-          : hasPassage
-          ? "bg-[#6666FF] text-white hover:bg-[#4F46E5] hover:-translate-y-0.5 active:translate-y-0"
-          : "bg-[#4F46E5] text-white hover:bg-[#6666FF] hover:-translate-y-0.5 active:translate-y-0"
-      }
-    `}
-          >
-            {hasPassage ? (
-              <Repeat2 className="h-3.5 w-3.5 shrink-0" />
-            ) : (
-              <Plus className="h-3.5 w-3.5 shrink-0" />
-            )}
-            {hasPassage ? "Change Passage" : "Add Passage"}
-          </button>
-        </div>
+        {(!hasPassage || allowPassageChange) && (
+          <div className="relative">
+            <div className={`absolute inset-0 rounded-full translate-y-1 ${disabled ? "bg-[#D1D5DB]" : "bg-[#B3A4F1]"}`} />
+            <button
+              type="button"
+              data-tour-target="add-passage-button"
+              onClick={disabled ? undefined : onOpenPassageModal}
+              disabled={disabled}
+              className={`relative flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 py-2 text-xs font-semibold shadow transition-transform sm:w-auto sm:min-h-0
+        ${
+          disabled
+            ? "bg-[#9CA3AF] text-white cursor-not-allowed opacity-60 shadow-none"
+            : hasPassage
+            ? "bg-[#6666FF] text-white hover:bg-[#4F46E5] hover:-translate-y-0.5 active:translate-y-0"
+            : "bg-[#4F46E5] text-white hover:bg-[#6666FF] hover:-translate-y-0.5 active:translate-y-0"
+        }
+      `}
+            >
+              {hasPassage ? (
+                <Repeat2 className="h-3.5 w-3.5 shrink-0" />
+              ) : (
+                <Plus className="h-3.5 w-3.5 shrink-0" />
+              )}
+              {hasPassage ? "Change Passage" : "Add Passage"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

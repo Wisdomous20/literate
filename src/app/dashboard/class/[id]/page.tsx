@@ -4,11 +4,8 @@ import { useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Loader2,
-  CheckCircle,
-  XCircle,
   Search,
   AArrowDown,
-  X,
   Plus,
   LayoutGrid,
   Table,
@@ -31,6 +28,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useClassById } from "@/lib/hooks/useClassById";
 import { useClassAssessmentSummaries } from "@/lib/hooks/useClassAssessmentSummaries";
 import type { AssessmentSummaryData, StudentTableItem } from "@/types/assessment";
+import { ToastNotification } from "@/components/oral-reading-test/toastNotification";
 
 interface StudentData {
   id: string;
@@ -344,27 +342,11 @@ export default function ClassListsPage() {
       <ClassListsHeader />
 
       {toast && (
-        <div
-          className={`fixed top-4 right-4 z-50 flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-white transition-all ${
-            toast.type === "success"
-              ? "bg-green-500 shadow-lg"
-              : "bg-red-500 shadow-lg"
-          }`}
-        >
-          {toast.type === "success" ? (
-            <CheckCircle className="h-4 w-4" />
-          ) : (
-            <XCircle className="h-4 w-4" />
-          )}
-          {toast.message}
-          <button
-            onClick={() => setToast(null)}
-            className="ml-2"
-            aria-label="Close notification"
-          >
-            <X className="h-3 w-3" />
-          </button>
-        </div>
+        <ToastNotification
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
 
       <div className="flex-1 px-4 py-4 md:px-6 md:py-6 gap-4 md:gap-6 flex flex-col xl:flex-row min-w-0">

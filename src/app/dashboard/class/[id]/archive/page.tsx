@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ArchiveRestore, CheckCircle, Search, X, XCircle } from "lucide-react";
+import { ArrowLeft, ArchiveRestore, Search } from "lucide-react";
 import { ClassListsHeader } from "@/components/class-lists/classListsHeader";
 import { useClassById } from "@/lib/hooks/useClassById";
 import { useArchivedStudentsByClassId } from "@/lib/hooks/useArchivedStudentsByClassId";
 import { updateStudent } from "@/app/actions/student/updateStudent";
+import { ToastNotification } from "@/components/oral-reading-test/toastNotification";
 
 function levelToGrade(level?: number) {
   if (!level) return "Grade 1";
@@ -89,25 +90,11 @@ export default function ArchivedStudentsPage() {
       <ClassListsHeader />
 
       {toast && (
-        <div
-          className={`fixed right-4 top-4 z-50 flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-white transition-all ${
-            toast.type === "success" ? "bg-green-500 shadow-lg" : "bg-red-500 shadow-lg"
-          }`}
-        >
-          {toast.type === "success" ? (
-            <CheckCircle className="h-4 w-4" />
-          ) : (
-            <XCircle className="h-4 w-4" />
-          )}
-          {toast.message}
-          <button
-            onClick={() => setToast(null)}
-            className="ml-2"
-            aria-label="Close notification"
-          >
-            <X className="h-3 w-3" />
-          </button>
-        </div>
+        <ToastNotification
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
 
       <main className="flex w-full flex-1 flex-col gap-4 px-4 py-5 md:px-6 md:py-6 xl:px-8">

@@ -149,7 +149,7 @@ export function StudentTable({
           <table className="min-w-full bg-white">
             <thead className="bg-[#F5F7FF]">
               <tr>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-[#3B2F7F]">Student</th>
+                <th className="px-4 py-2 text-center text-xs font-semibold text-[#3B2F7F]">Student</th>
                 <th className="px-4 py-2 text-center text-xs font-semibold text-[#3B2F7F]">Grade</th>
                 <th className="px-4 py-2 text-center text-xs font-semibold text-[#3B2F7F]">Assessment Type</th>
                 <th className="px-4 py-2 text-center text-xs font-semibold text-[#3B2F7F]">Last Assessment</th>

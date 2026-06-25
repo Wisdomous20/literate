@@ -733,9 +733,10 @@ export default function ReadingComprehensionTestPage() {
               }
               hideStudentInfo
               disabled={showQuestions}
+              allowPassageChange={!hasPassage}
             />
 
-            {!showQuestions && hasPassage && (
+            {hasPassage && !passageExpanded && (
               <div className="pointer-events-none absolute right-5 top-4.5 z-20">
                 <div className="relative">
                   <div className="absolute inset-0 translate-y-1 rounded-full bg-[#B3A4F1]/55" />
