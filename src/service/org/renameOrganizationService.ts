@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { findAdminOrganizationForUser } from "@/service/org/orgAuthorization";
 
 export async function renameOrganizationService(
   newName: string,
@@ -8,16 +9,10 @@ export async function renameOrganizationService(
     return { success: false, error: "Organization name is required" };
   }
 
-  const org = await prisma.organization.findFirst({
-    where: { ownerId: requestedByUserId },
-  });
+  const org = await findAdminOrganizationForUser(requestedByUserId);
 
   if (!org) {
     return { success: false, error: "No organization found" };
-  }
-
-  if (org.ownerId !== requestedByUserId) {
-    return { success: false, error: "Only the organization owner can rename it" };
   }
 
   const updated = await prisma.organization.update({

@@ -4,6 +4,7 @@ import {
   discardOrgInvitation,
 } from "@/service/org/orgInvitationRedisService";
 import { sendOrgInvitationEmail } from "@/service/notification/sendOrgInvitationEmail";
+import { getOrgAdminContext } from "@/service/org/orgAuthorization";
 
 interface AddMemberInput {
   email: string;
@@ -16,6 +17,15 @@ export async function addOrgMemberService(input: AddMemberInput) {
 
   if (!normalizedEmail) {
     return { success: false, error: "Email is required" };
+  }
+
+  const adminContext = await getOrgAdminContext(
+    input.organizationId,
+    input.requestedByUserId,
+  );
+
+  if (!adminContext.success) {
+    return { success: false, error: adminContext.error };
   }
 
   const org = await prisma.organization.findUnique({
@@ -31,10 +41,10 @@ export async function addOrgMemberService(input: AddMemberInput) {
     },
   });
 
-  if (!org || org.ownerId !== input.requestedByUserId) {
+  if (!org) {
     return {
       success: false,
-      error: "Only the organization owner can add members",
+      error: "No organization found",
     };
   }
 

@@ -51,6 +51,7 @@ model OrganizationMember {
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role           OrganizationMemberRole @default(USER)
   joinedAt       DateTime     @default(now())
 
   @@unique([userId, organizationId])
@@ -297,6 +298,11 @@ enum userType {
   USER
   ADMIN
   ORG_ADMIN
+}
+
+enum OrganizationMemberRole {
+  ADMIN
+  USER
 }
 
 enum testType {

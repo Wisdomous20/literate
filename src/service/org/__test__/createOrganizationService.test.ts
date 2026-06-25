@@ -63,7 +63,13 @@ describe("createOrganizationService", () => {
     expect(result.success).toBe(true);
     expect(result.organization).toMatchObject({ id: "org-1", name: "Sunshine School" });
     expect(mockPrisma.organizationMember.create).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { userId: "user-1", organizationId: "org-1" } }),
+      expect.objectContaining({
+        data: expect.objectContaining({
+          userId: "user-1",
+          organizationId: "org-1",
+          role: "ADMIN",
+        }),
+      }),
     );
   });
 

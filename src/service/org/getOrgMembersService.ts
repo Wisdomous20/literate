@@ -1,6 +1,13 @@
 import { prisma } from "@/lib/prisma";
+import { getOrgAdminContext } from "@/service/org/orgAuthorization";
 
 export async function getOrgMembersService(organizationId: string, requestedByUserId: string) {
+  const adminContext = await getOrgAdminContext(organizationId, requestedByUserId);
+
+  if (!adminContext.success) {
+    return { success: false, error: adminContext.error };
+  }
+
   const org = await prisma.organization.findUnique({
     where: { id: organizationId },
     include: {
@@ -13,8 +20,8 @@ export async function getOrgMembersService(organizationId: string, requestedByUs
     },
   });
 
-  if (!org || org.ownerId !== requestedByUserId) {
-    return { success: false, error: "Only the organization owner can view members" };
+  if (!org) {
+    return { success: false, error: "No organization found" };
   }
 
   const members = await prisma.organizationMember.findMany({
@@ -46,6 +53,7 @@ export async function getOrgMembersService(organizationId: string, requestedByUs
     },
     members: members.map((m) => ({
       membershipId: m.id,
+      role: m.userId === org.ownerId ? "ADMIN" : m.role,
       joinedAt: m.joinedAt,
       isOwner: m.userId === org.ownerId,
       ...m.user,

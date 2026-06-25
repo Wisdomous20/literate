@@ -111,6 +111,7 @@ export async function POST(req: NextRequest) {
                   data: {
                     userId: userId,
                     organizationId: org.id,
+                    role: "ADMIN",
                   },
                 });
 

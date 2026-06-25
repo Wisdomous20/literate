@@ -138,7 +138,7 @@ describe("acceptInvitationService", () => {
       createdAccount: false,
     });
     expect(transactionClient.organizationMember.create).toHaveBeenCalledWith({
-      data: { userId: "user-existing", organizationId: "org-1" },
+      data: { userId: "user-existing", organizationId: "org-1", role: "USER" },
     });
     expect(mockConsumeOrgInvitation).toHaveBeenCalledWith(
       "token-hash",

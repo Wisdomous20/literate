@@ -26,6 +26,7 @@ import type {
 import { getMembersAction } from "@/app/actions/org/getMembers";
 import { toggleMemberAction } from "@/app/actions/org/toggleMember";
 import { generateMemberPasswordAction } from "@/app/actions/org/generateMemberPassword";
+import { updateMemberRoleAction } from "@/app/actions/org/updateMemberRole";
 
 const organizationQueryKey = ["organization", "members"];
 
@@ -73,6 +74,24 @@ export default function OrganizationPage() {
       const res = await toggleMemberAction(memberId, disable);
       if (!res.success) {
         throw new Error(res.error ?? "Failed to update member");
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: organizationQueryKey });
+    },
+  });
+
+  const updateRoleMutation = useMutation({
+    mutationFn: async ({
+      memberId,
+      role,
+    }: {
+      memberId: string;
+      role: "ADMIN" | "USER";
+    }) => {
+      const res = await updateMemberRoleAction(memberId, role);
+      if (!res.success) {
+        throw new Error(res.error ?? "Failed to update member role");
       }
     },
     onSuccess: async () => {
@@ -181,6 +200,20 @@ export default function OrganizationPage() {
 
           <MembersCard
             members={members}
+            onRoleChange={async (member, role) => {
+              try {
+                await updateRoleMutation.mutateAsync({
+                  memberId: member.id,
+                  role,
+                });
+              } catch (error) {
+                alert(
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to update member role"
+                );
+              }
+            }}
             onToggle={async (member, disable) => {
               try {
                 await toggleMemberMutation.mutateAsync({

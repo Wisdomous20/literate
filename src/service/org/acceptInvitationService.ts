@@ -142,6 +142,7 @@ export async function acceptInvitationService(
         data: {
           userId,
           organizationId: invitation.payload.organizationId,
+          role: "USER",
         },
       });
 

@@ -26,7 +26,7 @@ export async function createOrganizationService(name: string, ownerId: string) {
   });
 
   await prisma.organizationMember.create({
-    data: { userId: ownerId, organizationId: org.id },
+    data: { userId: ownerId, organizationId: org.id, role: "ADMIN" },
   });
 
   return { success: true, organization: org };

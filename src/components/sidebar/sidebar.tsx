@@ -12,6 +12,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { hasOrgManagementAccessAction } from "@/app/actions/org/hasOrgManagementAccess";
 import { hasActiveAccessAction } from "@/app/actions/subscription/hasActiveAccess";
 import {
   LayoutDashboard,
@@ -229,6 +230,7 @@ export function Sidebar() {
   const [hasActiveSubscription, setHasActiveSubscription] = useState<
     boolean | null
   >(null);
+  const [hasOrgManagementAccess, setHasOrgManagementAccess] = useState(false);
   const [optimisticHref, setOptimisticHref] = useState<string | null>(null);
   const hasActiveSubscriptionRef = useRef<boolean | null>(null);
   const navContainerRef = useRef<HTMLDivElement | null>(null);
@@ -241,7 +243,8 @@ export function Sidebar() {
 
   const firstName = session?.user?.name?.split(" ")[0] || "User";
   const schoolYear = getCurrentSchoolYear();
-  const isOrgAdmin = session?.user?.role === "ORG_ADMIN";
+  const isOrgAdmin =
+    session?.user?.role === "ORG_ADMIN" || hasOrgManagementAccess;
   const routeActiveHref = [
     ...menuItems,
     ...generalItems,
@@ -318,6 +321,7 @@ export function Sidebar() {
     if (status === "loading") return;
     if (!session?.user?.id) {
       setHasActiveSubscription(false);
+      setHasOrgManagementAccess(false);
       return;
     }
 
@@ -362,6 +366,29 @@ export function Sidebar() {
     return () => {
       cancelled = true;
       document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [session?.user?.id, status]);
+
+  useEffect(() => {
+    if (status === "loading") return;
+    if (!session?.user?.id) {
+      setHasOrgManagementAccess(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadAccess = async () => {
+      const res = await hasOrgManagementAccessAction();
+      if (!cancelled) {
+        setHasOrgManagementAccess(res.success && res.hasAccess);
+      }
+    };
+
+    void loadAccess();
+
+    return () => {
+      cancelled = true;
     };
   }, [session?.user?.id, status]);
 
