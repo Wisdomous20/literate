@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { Tags } from "@/generated/prisma/enums";
+import { answerMatchesGuide } from "./answerMatching";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -57,6 +58,15 @@ export async function gradeEssayAnswer(
     return { isCorrect: false, reasoning: "No answer provided." };
   }
 
+  if (answerMatchesGuide(correctAnswer, studentAnswer)) {
+    return {
+      isCorrect: true,
+      reasoning: "Answer matches the guide answer.",
+      confidence: 1,
+      needsReview: false,
+    };
+  }
+
   if (isTooVague(questionText, studentAnswer, tag)) {
     return {
       isCorrect: false,
@@ -70,7 +80,9 @@ export async function gradeEssayAnswer(
   const systemPrompt = `You are grading a Phil-IRI style reading-comprehension essay using the LiteRate binary scoring framework.
 Score only 1 or 0.
 Prioritize meaning over mechanics. Ignore grammar, spelling, punctuation, and code-switching if the meaning is clear.
-Use only the supplied passage and answer key. Do not use outside knowledge. If the student states something contradicted by or unsupported by the passage, score 0.
+Use the guide answer / target concept as the primary scoring key. Use the passage only to resolve ambiguity or reject statements that clearly contradict the passage.
+Award 1 when the student answer expresses the same core idea as the guide answer, even if wording, order, grammar, spelling, or examples differ.
+Award 0 when the answer misses the guide answer's core idea, is mostly unrelated, or states something contradicted by the passage.
 One-word or otherwise vague answers score 0 when they do not provide enough evidence of understanding.
 ${DIMENSION_GUIDANCE[tag]}
 Return ONLY valid JSON with this shape:
@@ -83,7 +95,7 @@ ${passageContent.slice(0, 1000)}
 
 Question dimension: ${tag}
 Question: ${questionText}
-${correctAnswer ? `Validated answer key / target concept: ${correctAnswer}` : ""}
+${correctAnswer ? `Guide answer / target concept: ${correctAnswer}` : ""}
 Student answer: ${studentAnswer}
 
 Grade the answer using LiteRate's binary rubric. Set needsReview to true when the answer is in a high-uncertainty zone.`;

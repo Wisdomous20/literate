@@ -27,6 +27,11 @@ const essayQuestion = {
   type: "ESSAY" as const,
 };
 
+const essayQuestionWithGuideAnswer = {
+  ...essayQuestion,
+  correctAnswer: "The setting is a small village near the forest.",
+};
+
 const baseQuiz = {
   id: "quiz-1",
   passageId: "passage-1",
@@ -155,6 +160,25 @@ describe("createQuizService", () => {
     expect(result.success).toBe(true);
   });
 
+  it("persists ESSAY guide answers when creating a quiz", async () => {
+    mockPrisma.quiz.create.mockResolvedValue({ ...baseQuiz, totalNumber: 1 });
+
+    const result = await createQuizService({
+      passageId: "passage-1",
+      totalScore: 5,
+      totalNumber: 1,
+      questions: [essayQuestionWithGuideAnswer],
+    });
+
+    expect(result.success).toBe(true);
+    const createCall = mockPrisma.quiz.create.mock.calls[0][0];
+    expect(createCall.data.questions.create[0]).toMatchObject({
+      type: "ESSAY",
+      options: undefined,
+      correctAnswer: essayQuestionWithGuideAnswer.correctAnswer,
+    });
+  });
+
   it("returns INTERNAL_ERROR when prisma throws", async () => {
     mockPrisma.quiz.create.mockRejectedValue(new Error("DB down"));
 
@@ -220,6 +244,31 @@ describe("updateQuizService", () => {
     expect(result.success).toBe(true);
     const updateCall = mockPrisma.quiz.update.mock.calls[0][0];
     expect(updateCall.data.questions?.upsert).toHaveLength(1);
+  });
+
+  it("persists ESSAY guide answers when upserting quiz questions", async () => {
+    const updated = { ...baseQuiz, totalNumber: 1 };
+    mockPrisma.quiz.findUnique.mockResolvedValue({ ...baseQuiz, questions: [] });
+    mockPrisma.quiz.update.mockResolvedValue(updated);
+
+    const result = await updateQuizService({
+      id: baseQuiz.id,
+      questions: [essayQuestionWithGuideAnswer],
+    });
+
+    expect(result.success).toBe(true);
+    const updateCall = mockPrisma.quiz.update.mock.calls[0][0];
+    const upsert = updateCall.data.questions?.upsert[0];
+    expect(upsert.create).toMatchObject({
+      type: "ESSAY",
+      options: undefined,
+      correctAnswer: essayQuestionWithGuideAnswer.correctAnswer,
+    });
+    expect(upsert.update).toMatchObject({
+      type: "ESSAY",
+      options: undefined,
+      correctAnswer: essayQuestionWithGuideAnswer.correctAnswer,
+    });
   });
 
   it("skips question update when no questions array is provided", async () => {

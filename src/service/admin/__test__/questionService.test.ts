@@ -158,6 +158,38 @@ describe("addQuestionService", () => {
     expect(result.question?.type).toBe("ESSAY");
   });
 
+  it("adds an ESSAY question with a guide answer", async () => {
+    const guideAnswer = "The story shows why helping others matters.";
+    const essayQuestion = {
+      ...baseQuestion,
+      type: "ESSAY",
+      options: null,
+      correctAnswer: guideAnswer,
+    };
+    mockPrisma.quiz.findUnique.mockResolvedValue(baseQuiz);
+    mockPrisma.question.create.mockResolvedValue(essayQuestion);
+    mockPrisma.quiz.update.mockResolvedValue(baseQuiz);
+
+    const result = await addQuestionService({
+      passageId: "passage-1",
+      questionText: "Explain the lesson.",
+      tags: "Critical",
+      type: "ESSAY",
+      correctAnswer: guideAnswer,
+    });
+
+    expect(result.success).toBe(true);
+    expect(mockPrisma.question.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          type: "ESSAY",
+          options: undefined,
+          correctAnswer: guideAnswer,
+        }),
+      }),
+    );
+  });
+
   it("increments quiz totalNumber after adding a question", async () => {
     mockPrisma.quiz.findUnique.mockResolvedValue(baseQuiz);
     mockPrisma.question.create.mockResolvedValue(baseQuestion);
@@ -396,7 +428,7 @@ describe("updateQuestionService", () => {
     expect(result.question?.questionText).toBe("Updated question?");
   });
 
-  it("clears options and correctAnswer when switching to ESSAY type", async () => {
+  it("clears options and correctAnswer when switching to ESSAY type without a guide answer", async () => {
     const essayQuestion = { ...baseQuestion, type: "ESSAY", options: null, correctAnswer: null };
     mockPrisma.question.findUnique.mockResolvedValue(baseQuestion);
     mockPrisma.question.update.mockResolvedValue(essayQuestion);
@@ -405,6 +437,55 @@ describe("updateQuestionService", () => {
 
     expect(result.success).toBe(true);
     expect(result.question?.type).toBe("ESSAY");
+  });
+
+  it("stores a guide answer when switching to ESSAY type", async () => {
+    const guideAnswer = "The student should explain the character's decision.";
+    const essayQuestion = {
+      ...baseQuestion,
+      type: "ESSAY",
+      options: null,
+      correctAnswer: guideAnswer,
+    };
+    mockPrisma.question.findUnique.mockResolvedValue(baseQuestion);
+    mockPrisma.question.update.mockResolvedValue(essayQuestion);
+
+    const result = await updateQuestionService({
+      id: baseQuestion.id,
+      type: "ESSAY",
+      correctAnswer: guideAnswer,
+    });
+
+    expect(result.success).toBe(true);
+    expect(mockPrisma.question.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          options: null,
+          correctAnswer: guideAnswer,
+        }),
+      }),
+    );
+  });
+
+  it("preserves existing ESSAY guide answer when editing another field", async () => {
+    const essayQuestion = {
+      ...baseQuestion,
+      type: "ESSAY",
+      options: null,
+      correctAnswer: "Existing guide answer",
+    };
+    const updated = { ...essayQuestion, questionText: "Updated essay question?" };
+    mockPrisma.question.findUnique.mockResolvedValue(essayQuestion);
+    mockPrisma.question.update.mockResolvedValue(updated);
+
+    const result = await updateQuestionService({
+      id: baseQuestion.id,
+      questionText: "Updated essay question?",
+    });
+
+    expect(result.success).toBe(true);
+    const updateCall = mockPrisma.question.update.mock.calls[0][0];
+    expect(updateCall.data.correctAnswer).toBeUndefined();
   });
 
   it("returns INTERNAL_ERROR when prisma throws", async () => {

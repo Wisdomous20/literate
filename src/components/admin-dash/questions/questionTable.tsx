@@ -243,7 +243,7 @@ export function QuestionTable({
                             Expected answer
                           </div>
                           <p className="mt-3 text-sm leading-7 text-[#33507A]">
-                            {question.correctAnswer?.trim() || "No expected answer provided."}
+                            {question.correctAnswer?.trim() || "No guide answer provided."}
                           </p>
                         </div>
                       )}
@@ -548,7 +548,7 @@ function QuestionEditorForm({
         ) : (
           <div>
             <label className="mb-2 block text-sm font-semibold text-[#16324F]">
-              Expected Answer
+              Guide Answer
             </label>
             <textarea
               value={correctAnswer}

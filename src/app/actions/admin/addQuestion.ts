@@ -10,7 +10,7 @@ interface AddQuestionActionInput {
   tags: "Literal" | "Inferential" | "Critical";
   type: "MULTIPLE_CHOICE" | "ESSAY";
   options?: string[]; // Only for MULTIPLE_CHOICE
-  correctAnswer?: string; // Only for MULTIPLE_CHOICE
+  correctAnswer?: string; // Correct MC option or ESSAY guide answer
 }
 
 export async function addQuestionAction(input: AddQuestionActionInput) {

@@ -528,7 +528,7 @@ function CreateQuestionModalForm({
               {question.type === "ESSAY" && (
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-[#16324F]">
-                    Expected Answer
+                    Guide Answer
                   </label>
                   <textarea
                     value={question.correctAnswer}

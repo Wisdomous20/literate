@@ -60,6 +60,8 @@ export async function updateQuestionService(
 
     // Determine the final type (use existing if not provided)
     const finalType = type || existingQuestion.type;
+    const isSwitchingToEssay =
+      type === "ESSAY" && existingQuestion.type !== "ESSAY";
 
     // Update the question
     const updatedQuestion = await prisma.question.update({
@@ -71,9 +73,14 @@ export async function updateQuestionService(
         options: finalType === "MULTIPLE_CHOICE" 
           ? options 
           : Prisma.JsonNull, // Use Prisma.JsonNull instead
-        correctAnswer: finalType === "MULTIPLE_CHOICE" 
-          ? correctAnswer 
-          : null,
+        correctAnswer:
+          finalType === "MULTIPLE_CHOICE"
+            ? correctAnswer
+            : correctAnswer !== undefined
+              ? correctAnswer
+              : isSwitchingToEssay
+                ? null
+                : undefined,
       },
     });
 

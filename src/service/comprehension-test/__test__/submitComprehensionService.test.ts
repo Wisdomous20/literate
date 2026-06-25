@@ -109,17 +109,49 @@ describe("submitComprehensionService", () => {
       assessmentId: "assessment-1",
       answers: [
         { questionId: "q-1", answer: "friendship" },
-        { questionId: "q-2", answer: "A small village near the forest." },
+        { questionId: "q-2", answer: "The character learned to be brave." },
       ],
     });
 
     expect(mockGradeEssayAnswer).toHaveBeenCalledWith(
       expect.objectContaining({
         questionText: essayQuestion.questionText,
-        studentAnswer: "A small village near the forest.",
+        studentAnswer: "The character learned to be brave.",
         tag: essayQuestion.tags,
       }),
     );
+  });
+
+  it("marks ESSAY answers correct without AI when they exactly match the guide answer", async () => {
+    const guideAnswer = `AI can help students in many useful ways.
+It can help them study, find information, and practice new skills.`;
+    const essayWithGuideAnswer = {
+      ...essayQuestion,
+      correctAnswer: guideAnswer,
+    };
+    mockPrisma.assessment.findUnique.mockResolvedValue(
+      makeAssessment([essayWithGuideAnswer]),
+    );
+
+    const result = await submitComprehensionService({
+      assessmentId: "assessment-1",
+      answers: [
+        {
+          questionId: "q-2",
+          answer:
+            "AI can help students in many useful ways. It can help them study, find information, and practice new skills.",
+        },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.score).toBe(1);
+    expect(mockGradeEssayAnswer).not.toHaveBeenCalled();
+    const createCall = mockPrisma.comprehensionTest.create.mock.calls[0][0];
+    expect(createCall.data.answers.create[0]).toMatchObject({
+      question: essayQuestion.questionText,
+      isCorrect: true,
+    });
   });
 
   it("marks an answer as incorrect when questionId is unknown", async () => {

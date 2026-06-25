@@ -269,7 +269,7 @@ export function CreateQuestionForm({
             {q.type === "ESSAY" && (
               <div>
                 <label className="block mb-1 font-semibold text-[#00306E] text-[15px]">
-                  Expected Answer
+                  Guide Answer
                 </label>
                 <textarea
                   value={q.correctAnswer}
@@ -278,7 +278,7 @@ export function CreateQuestionForm({
                   }
                   rows={3}
                   className="w-full rounded-lg border border-[#E4F4FF] bg-white px-3 py-2 text-sm text-[#00306E] outline-none shadow-sm focus:border-[#6666FF] transition"
-                  placeholder="Enter the expected answer or key points for AI grading..."
+                  placeholder="Enter the guide answer or key points for AI grading..."
                   disabled={isLoading}
                 />
                 <p className="mt-1 text-xs text-[#00306E]/50">

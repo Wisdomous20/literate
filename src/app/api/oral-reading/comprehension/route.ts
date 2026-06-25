@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { gradingQueue, oralReadingLevelQueue } from "@/lib/queues";
-import type { GradingJobData } from "@/lib/queues";
 import classifyComprehensionLevel from "@/service/comprehension-test/classifyComprehensionLevel";
 import { createOralReadingService } from "@/service/oral-reading/createOralReadingService";
 import { Tags } from "@/generated/prisma/enums";
 import { oralReadingComprehensionSubmitSchema } from "@/lib/validation/assessment";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { hasAssessmentAccess } from "@/lib/auth/assessmentAuthorization";
+import { answerMatchesGuide } from "@/service/comprehension-test/answerMatching";
+import { gradeEssayAnswer } from "@/service/comprehension-test/gradeEssayService";
 
 export async function POST(request: NextRequest) {
   try {
@@ -66,13 +66,12 @@ export async function POST(request: NextRequest) {
     const quiz = assessment.passage.quiz;
     const questionMap = new Map(quiz.questions.map((q) => [q.id, q]));
 
-    // 2. Grade MC immediately, mark essays as pending
-    let hasEssays = false;
+    // 2. Grade answers before returning so the UI receives the final score.
     const gradedAnswers: {
       questionId: string;
       questionText: string;
       answer: string;
-      isCorrect: boolean | null;
+      isCorrect: boolean;
       tag: Tags;
     }[] = [];
 
@@ -92,14 +91,24 @@ export async function POST(request: NextRequest) {
           tag: question.tags,
         });
       } else {
+        const guideMatch = answerMatchesGuide(question.correctAnswer, a.answer);
+        const essayGrade = guideMatch
+          ? { isCorrect: true }
+          : await gradeEssayAnswer({
+              questionText: question.questionText,
+              correctAnswer: question.correctAnswer,
+              passageContent: assessment.passage.content,
+              studentAnswer: a.answer,
+              tag: question.tags,
+            });
+
         gradedAnswers.push({
           questionId: a.questionId,
           questionText: question.questionText,
           answer: a.answer,
-          isCorrect: null,
+          isCorrect: essayGrade.isCorrect,
           tag: question.tags,
         });
-        hasEssays = true;
       }
     }
 
@@ -129,42 +138,18 @@ export async function POST(request: NextRequest) {
       select: { id: true },
     });
 
-    // 5. Enqueue essay grading if needed
-    if (hasEssays) {
-      const jobData: GradingJobData = {
-        assessmentId,
-        comprehensionTestId: comprehensionTest.id,
-        answers: answers.filter((a) => {
-          const q = questionMap.get(a.questionId);
-          return q?.type === "ESSAY";
-        }),
-      };
-
-      await gradingQueue.add(`grade-${assessmentId}`, jobData, {
-        jobId: `grading-${assessmentId}`,
-      });
-    }
-
     // 6. Try to compute oral reading level
     let oralReadingResult = null;
-    if (!hasEssays) {
-      try {
-        const response = await createOralReadingService(
-          assessmentId,
-          prelimLevel,
-        );
-        if (response.success) {
-          oralReadingResult = response;
-        }
-      } catch {
-        console.log("Oral reading level not ready (transcription may be pending)");
-      }
-    } else {
-      await oralReadingLevelQueue.add(
-        `oral-reading-${assessmentId}`,
-        { assessmentId },
-        { jobId: `oral-reading-${assessmentId}`, delay: 15000 },
+    try {
+      const response = await createOralReadingService(
+        assessmentId,
+        prelimLevel,
       );
+      if (response.success) {
+        oralReadingResult = response;
+      }
+    } catch {
+      console.log("Oral reading level not ready (transcription may be pending)");
     }
 
     return NextResponse.json({
@@ -178,7 +163,7 @@ export async function POST(request: NextRequest) {
         tag: a.tag,
         isCorrect: a.isCorrect,
       })),
-      essaysPending: hasEssays,
+      essaysPending: false,
       oralReadingResult: oralReadingResult ?? null,
       transcriptionPending: oralReadingResult === null,
     });
