@@ -11,7 +11,6 @@ import {
   BarChart3,
   ClipboardList,
   Search,
-  Repeat2,
   type LucideIcon,
 } from "lucide-react";
 import { usePassageList } from "@/lib/hooks/usePassageList";

@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { X } from "lucide-react";
 
@@ -9,6 +11,7 @@ interface ClassificationPopupProps {
   onClose: () => void;
   score?: string;
   assessmentType?: "oral-reading" | "comprehension" | "fluency";
+  positionClassName?: string;
 }
 
 const LEVEL_CONFIG: Record<
@@ -20,6 +23,7 @@ const LEVEL_CONFIG: Record<
     cloudBorder: string;
     cloudBg: string;
     accent: string;
+    progressBg: string;
   }
 > = {
   INDEPENDENT: {
@@ -29,6 +33,7 @@ const LEVEL_CONFIG: Record<
     cloudBorder: "border-[#22C55E]",
     cloudBg: "bg-[#F0FDF4]",
     accent: "text-[#2e7d32]",
+    progressBg: "bg-[#22C55E]",
   },
   INSTRUCTIONAL: {
     iconSrc: "/Instructional.svg",
@@ -37,6 +42,7 @@ const LEVEL_CONFIG: Record<
     cloudBorder: "border-[#3B82F6]",
     cloudBg: "bg-[#EFF6FF]",
     accent: "text-[#27348B]",
+    progressBg: "bg-[#3B82F6]",
   },
   FRUSTRATION: {
     iconSrc: "/Frustrated.svg",
@@ -45,6 +51,7 @@ const LEVEL_CONFIG: Record<
     cloudBorder: "border-[#EF4444]",
     cloudBg: "bg-[#FEF2F2]",
     accent: "text-[#B91C1C]",
+    progressBg: "bg-[#EF4444]",
   },
 };
 
@@ -52,6 +59,7 @@ export function ClassificationPopup({
   classificationLevel,
   studentName,
   onClose,
+  positionClassName = "fixed bottom-24 left-4 z-[9999] md:bottom-6 md:left-24",
 }: ClassificationPopupProps) {
   const config =
     LEVEL_CONFIG[classificationLevel.toUpperCase()] ||
@@ -59,10 +67,42 @@ export function ClassificationPopup({
 
   const firstName = studentName.trim().split(" ")[0] || "Reader";
 
-  return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  // Portal mount guard (SSR-safe)
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => onCloseRef.current(), 7000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!mounted) return null;
+
+  return createPortal(
+    <>
+      <style>{`
+        @keyframes classification-shrink {
+          from { width: 100%; }
+          to { width: 0%; }
+        }
+        .classification-progress {
+          animation: classification-shrink 7s linear forwards;
+        }
+        @keyframes classification-slide-in {
+          from { opacity: 0; transform: translateY(12px) scale(0.96); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .classification-enter {
+          animation: classification-slide-in 0.25s ease-out forwards;
+        }
+      `}</style>
       <div
-        className="relative mx-4 flex w-full max-w-md flex-col items-center"
+        className={`classification-enter flex w-52 flex-col items-center ${positionClassName}`}
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -77,35 +117,41 @@ export function ClassificationPopup({
 
         <div className="relative flex w-full flex-col items-center">
           <div
-            className={`relative w-full max-w-90 rounded-[42px] border-3 px-6 py-5 text-center shadow-[0_14px_34px_rgba(17,24,39,0.14)] ${config.cloudBg} ${config.cloudBorder}`}
+            className={`relative w-full rounded-[28px] border-3 px-4 py-4 text-center shadow-[0_14px_34px_rgba(17,24,39,0.14)] ${config.cloudBg} ${config.cloudBorder}`}
           >
             <p className="text-sm font-bold text-[#27348B]">
               Well done, {firstName}!
             </p>
             <p className={`mt-1 text-xs font-extrabold uppercase tracking-[0.08em] ${config.accent}`}>
               {classificationLevel.charAt(0) +
-                classificationLevel.slice(1).toLowerCase()} Level
+                classificationLevel.slice(1).toLowerCase()}{" "}
+              Level
             </p>
-            <p className="mt-2 text-sm leading-relaxed text-[#27348B]/85">
+            <p className="mt-1.5 text-xs leading-relaxed text-[#27348B]/85">
               {config.message}
             </p>
 
             <div
-              className={`absolute -bottom-4 left-1/2 h-7 w-7 -translate-x-1/2 rotate-45 rounded-[6px] border-r-3 border-b-3 ${config.cloudBorder} ${config.cloudBg}`}
+              className={`absolute -bottom-3.5 left-1/2 h-6 w-6 -translate-x-1/2 rotate-45 rounded-[5px] border-r-3 border-b-3 ${config.cloudBorder} ${config.cloudBg}`}
             />
           </div>
 
-          <div className="relative mt-4 rounded-full bg-white/85 p-2 shadow-[0_16px_30px_rgba(39,52,139,0.2)]">
+          <div className="relative mt-3 rounded-full bg-white/85 p-1.5 shadow-[0_16px_30px_rgba(39,52,139,0.2)]">
             <Image
               src={config.iconSrc}
               alt={config.iconAlt}
-              width={138}
-              height={138}
-              className="h-28 w-28 object-contain sm:h-32 sm:w-32"
+              width={88}
+              height={88}
+              className="h-20 w-20 object-contain"
             />
           </div>
         </div>
+
+        <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-black/10">
+          <div className={`classification-progress h-full rounded-full ${config.progressBg}`} />
+        </div>
       </div>
-    </div>
+    </>,
+    document.body,
   );
 }

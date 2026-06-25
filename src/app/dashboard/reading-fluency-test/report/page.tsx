@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect, useRef, useSyncExternalStore } from "react";
+import { useState, useMemo, useCallback, useRef, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, RotateCcw, Download, Loader2, FileBarChart2 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";

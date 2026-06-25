@@ -1078,17 +1078,6 @@ export default function OralReadingTestPage() {
       toast={toast}
       onCloseToast={() => setToast(null)}
       passageExpanded={passageExpanded}
-      overlay={
-        <>
-          {showClassificationPopup && analysisResult?.classificationLevel && (
-            <ClassificationPopup
-              classificationLevel={analysisResult.classificationLevel}
-              studentName={studentName}
-              onClose={() => setShowClassificationPopup(false)}
-            />
-          )}
-        </>
-      }
       sidebar={
         <MiscueAnalysis
           isAnalyzing={isAnalyzingFluency}
@@ -1185,7 +1174,14 @@ export default function OralReadingTestPage() {
       )}
 
       {/* ── Container 2: Passage section — elevated card ── */}
-      <div className="flex flex-1 min-h-0 flex-col overflow-hidden rounded-2xl border border-[#C4B5FD] bg-white shadow-[0_12px_48px_rgba(102,102,255,0.18),0_3px_12px_rgba(102,102,255,0.10)]">
+      <div className="relative flex flex-1 min-h-0 flex-col overflow-hidden rounded-2xl border border-[#C4B5FD] bg-white shadow-[0_12px_48px_rgba(102,102,255,0.18),0_3px_12px_rgba(102,102,255,0.10)]">
+        {showClassificationPopup && analysisResult?.classificationLevel && (
+          <ClassificationPopup
+            classificationLevel={analysisResult.classificationLevel}
+            studentName={studentName}
+            onClose={() => setShowClassificationPopup(false)}
+          />
+        )}
 
         {/* Passage header: title, filter chips, share link, add passage */}
         {!passageExpanded && (

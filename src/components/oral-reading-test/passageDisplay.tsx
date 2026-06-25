@@ -262,7 +262,7 @@ export function PassageDisplay({
   passageTitle,
   initialHeight,
   editMode,
-  onDeleteMiscue,
+  onDeleteMiscue: _onDeleteMiscue,
   onUpdateMiscueType,
   onUpdateSpokenWord,
   onRecheckMiscues,

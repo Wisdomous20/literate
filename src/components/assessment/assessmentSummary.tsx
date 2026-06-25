@@ -31,6 +31,19 @@ interface AssessmentSummaryProps {
   onBack: () => void;
 }
 
+function getLevelMascot(level: string): string {
+  switch (level?.toLowerCase()) {
+    case "independent":
+      return "/Independent.svg";
+    case "instructional":
+      return "/Instructional.svg";
+    case "frustration":
+      return "/Frustrated.svg";
+    default:
+      return "/Independent.svg";
+  }
+}
+
 function getBannerGradient(level: string): string {
   switch (level?.toLowerCase()) {
     case "independent":
@@ -339,11 +352,11 @@ export function AssessmentSummary({
 
                   <div className="relative -mr-8">
                     <Image
-                      src="/images/Class.png"
+                      src={getLevelMascot(oralReadingLevel.level)}
                       alt="Student mascot"
-                      width={200}
-                      height={200}
-                      className="h-auto w-auto"
+                      width={400}
+                      height={400}
+                      className="h-[400px] w-[400px] object-contain"
                       priority
                     />
                   </div>

@@ -147,7 +147,7 @@ function buildBehaviorItems(
 export default function OralReadingReportPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const assessmentId = searchParams.get("id");
+  const _assessmentId = searchParams.get("id");
   const [showMiscuesModal, setShowMiscuesModal] = useState(false);
   const [localAnalysis, setLocalAnalysis] = useState<OralFluencyAnalysis | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);

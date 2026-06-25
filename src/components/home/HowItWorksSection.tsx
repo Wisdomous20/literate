@@ -27,7 +27,7 @@ const steps = [
     color: "#575E6B",
     highlight: false,
     icon: "/assets/IMG_15.png",
-    iconClass: "w-24 h-auto",
+    iconClass: "w-20 h-20",
   },
 ];
 
