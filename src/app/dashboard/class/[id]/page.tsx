@@ -145,7 +145,7 @@ export default function ClassListsPage() {
     }
   };
 
-  const handleDeleteStudent = async (studentId: string) => {
+  const _handleDeleteStudent = async (studentId: string) => {
     try {
       const result = await deleteStudent(studentId);
       if (result.success) {

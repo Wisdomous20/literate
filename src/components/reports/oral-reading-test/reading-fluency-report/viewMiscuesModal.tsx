@@ -666,7 +666,7 @@ export default function ViewMiscuesModal({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#DAE6FF] px-6 py-4">
           <h2 className="text-lg font-bold text-[#00306E]">
-            View Miscues
+            Manage Miscues
           </h2>
           <button
             type="button"
