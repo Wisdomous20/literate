@@ -115,7 +115,7 @@ export default function BehaviorChecklist({
   }));
 
   return (
-    <div className="flex min-w-0 flex-col self-start rounded-[10px] border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-white p-4 pb-3 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
+    <div className="flex min-w-0 flex-col rounded-[10px] border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-white p-4 pb-3 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
       {/* Header row */}
       <div className="flex items-start justify-between mb-0.5">
         <h3 className="text-base font-bold leading-tight text-[#003366]">

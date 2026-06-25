@@ -574,8 +574,8 @@ export default function OralReadingReportPage() {
               </div>
 
               {/* Three-column row */}
-              <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
-                <div className="flex flex-col gap-6">
+              <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-3">
+                <div className="flex flex-col gap-6 self-start">
                   <PassageInfoCard
                     passageTitle={passageTitle}
                     passageLevel={passageLevel}
