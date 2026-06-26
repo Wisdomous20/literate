@@ -190,7 +190,9 @@ export default function OralReadingReportPage() {
         behaviorTypes,
         otherObservations,
       });
-      if (!result.success) return;
+      if (!result.success) {
+        throw new Error(result.error || "Failed to save observations.");
+      }
 
       const savedBehaviorTypes =
         result.behaviors?.map((behavior) => behavior.behaviorType) ??

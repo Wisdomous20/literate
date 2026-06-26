@@ -81,4 +81,27 @@ describe("BehaviorChecklist", () => {
 
     expect(onSave).toHaveBeenCalledWith([], "Voice was too soft");
   });
+
+  it("keeps edit mode open when saving fails", async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn().mockRejectedValue(new Error("Database save failed"));
+
+    render(
+      <BehaviorChecklist
+        behaviors={buildReadingBehaviorItems([])}
+        onSave={onSave}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+    await user.click(screen.getByRole("button", { name: /voice is hardly audible/i }));
+    await user.click(screen.getByRole("button", { name: /save observation/i }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Database save failed",
+    );
+    expect(
+      screen.getByRole("button", { name: /save observation/i }),
+    ).toBeInTheDocument();
+  });
 });

@@ -272,7 +272,9 @@ export default function ReadingFluencyReportPage() {
         behaviorTypes,
         otherObservations,
       });
-      if (!result.success) return;
+      if (!result.success) {
+        throw new Error(result.error || "Failed to save observations.");
+      }
 
       setLocalBehaviors(
         result.behaviors?.map((behavior) => ({
