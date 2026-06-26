@@ -324,6 +324,7 @@ export default function ReadingComprehensionTestPage() {
   // ── Timer ──
   const timerActive =
     showQuestions &&
+    !passageExpanded &&
     !isSubmitted &&
     !isSubmitting &&
     !isPaused &&
@@ -433,6 +434,12 @@ export default function ReadingComprehensionTestPage() {
       questionsRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 100);
   }, [hasPassage, studentName, gradeLevel, selectedClassName]);
+
+  const handleBackToPassage = useCallback(() => {
+    setShowQuestions(false);
+    setPassageExpanded(false);
+    setQuestionsLoadError(null);
+  }, []);
 
   const handleSelectOption = useCallback(
     (questionId: string, option: string) => {
@@ -909,6 +916,7 @@ export default function ReadingComprehensionTestPage() {
               formattedTime={formattedTime}
               isPaused={isPaused}
               isSubmitted={isSubmitted}
+              onBackToPassage={handleBackToPassage}
               onTogglePause={() => {
                 if (!isSubmitted) setIsPaused((prev) => !prev);
               }}

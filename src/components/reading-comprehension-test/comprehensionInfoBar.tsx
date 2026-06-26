@@ -1,6 +1,6 @@
 "use client";
 
-import { Pause, Play, Square } from "lucide-react";
+import { ArrowLeft, Pause, Play, Square } from "lucide-react";
 
 interface ComprehensionInfoBarProps {
   totalQuestions: number;
@@ -8,6 +8,7 @@ interface ComprehensionInfoBarProps {
   isPaused: boolean;
   onTogglePause: () => void;
   isSubmitted: boolean;
+  onBackToPassage?: () => void;
 }
 
 export function ComprehensionInfoBar({
@@ -16,19 +17,34 @@ export function ComprehensionInfoBar({
   isPaused,
   onTogglePause,
   isSubmitted,
+  onBackToPassage,
 }: ComprehensionInfoBarProps) {
   const TimerIcon = isSubmitted ? Square : isPaused ? Pause : Play;
 
   return (
     <div className="shrink-0 rounded-xl border border-[#DED9FF] bg-[#FCFBFF] px-4 py-2.5">
       <div className="flex items-center justify-between gap-3">
-        <div className="leading-tight">
-          <h2 className="text-base font-bold text-[#00306E]">
-            Questions 1-{totalQuestions}
-          </h2>
-          <p className="mt-0.5 text-xs font-medium text-[#69738A]">
-            Choose the correct answer
-          </p>
+        <div className="flex min-w-0 items-center gap-3">
+          {onBackToPassage && (
+            <button
+              type="button"
+              onClick={onBackToPassage}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#DED9FF] bg-white text-[#6666FF] shadow-[0_1px_4px_rgba(15,59,121,0.10)] transition hover:bg-[#EEF3FF]"
+              title="Back to passage selection"
+              aria-label="Back to passage selection"
+            >
+              <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
+            </button>
+          )}
+
+          <div className="min-w-0 leading-tight">
+            <h2 className="truncate text-base font-bold text-[#00306E]">
+              Questions 1-{totalQuestions}
+            </h2>
+            <p className="mt-0.5 text-xs font-medium text-[#69738A]">
+              Choose the correct answer
+            </p>
+          </div>
         </div>
 
         <button
