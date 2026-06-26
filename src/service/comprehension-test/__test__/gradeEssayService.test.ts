@@ -20,7 +20,10 @@ const baseInput = {
 };
 
 describe("gradeEssayAnswer", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    process.env.OPENAI_API_KEY = "test-openai-key";
+    vi.clearAllMocks();
+  });
 
   it("returns isCorrect false immediately when studentAnswer is empty", async () => {
     const result = await gradeEssayAnswer({ ...baseInput, studentAnswer: "   " });
