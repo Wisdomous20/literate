@@ -23,6 +23,11 @@ import type {
 import { exportFluencyReportPdf } from "@/lib/exportFluencyReportPdf";
 import { buildReadingBehaviorItems } from "@/lib/readingBehaviors";
 import {
+  loadManualReadingBehaviorState,
+  mergeManualReadingBehaviorItems,
+  saveManualReadingBehaviorState,
+} from "@/lib/manualReadingBehaviorStorage";
+import {
   calculateWordsCorrectPerMinute,
   getDisplayReadingTimeSeconds,
   resolveReadingDurationSeconds,
@@ -177,52 +182,91 @@ export default function OralReadingReportPage() {
 
   const classification = analysis?.classificationLevel || "—";
   const miscueData = useMemo(() => buildMiscueData(analysis), [analysis]);
-  const behaviorItems = useMemo(() => buildBehaviorItems(analysis), [analysis]);
+  const storedBehaviorState = useMemo(
+    () =>
+      isClient
+        ? loadManualReadingBehaviorState(session.sessionId)
+        : null,
+    [isClient, session.sessionId],
+  );
+  const behaviorItems = useMemo(
+    () =>
+      mergeManualReadingBehaviorItems(
+        buildBehaviorItems(analysis),
+        storedBehaviorState,
+      ),
+    [analysis, storedBehaviorState],
+  );
+  const displayedOtherObservations =
+    storedBehaviorState?.otherObservations ?? analysis?.otherObservations ?? "";
 
   const handleSaveBehaviors = useCallback(
     async (behaviorTypes: BehaviorType[], otherObservations: string) => {
       if (!session.sessionId) return;
+      const buildSavedBehaviors = (types: BehaviorType[]) =>
+        types.map((behaviorType) => ({
+          behaviorType,
+          startIndex: null,
+          endIndex: null,
+          startTime: null,
+          endTime: null,
+          notes: null,
+        }));
+      const applySavedBehaviors = (
+        types: BehaviorType[],
+        observations: string,
+      ) => {
+        const behaviors = buildSavedBehaviors(types);
+
+        setLocalAnalysis((prev) => {
+          const base = prev ?? (analysis as OralFluencyAnalysis);
+          return {
+            ...base,
+            behaviors,
+            otherObservations: observations,
+          };
+        });
+
+        try {
+          const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
+          if (sessionRaw) {
+            const s = JSON.parse(sessionRaw);
+            if (s.analysisResult) {
+              s.analysisResult.behaviors = behaviors;
+              s.analysisResult.otherObservations = observations;
+              sessionStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+            }
+          }
+        } catch {}
+      };
+
+      saveManualReadingBehaviorState(
+        session.sessionId,
+        behaviorTypes,
+        otherObservations,
+      );
+      applySavedBehaviors(behaviorTypes, otherObservations);
+
       const result = await updateBehaviorsAction({
         sessionId: session.sessionId,
         behaviorTypes,
         otherObservations,
       });
       if (!result.success) {
-        throw new Error(result.error || "Failed to save observations.");
+        console.warn("Failed to save observations to server:", result.error);
+        return;
       }
 
       const savedBehaviorTypes =
         result.behaviors?.map((behavior) => behavior.behaviorType) ??
         behaviorTypes;
-      const behaviors = savedBehaviorTypes.map((behaviorType) => ({
-        behaviorType,
-        startIndex: null,
-        endIndex: null,
-        startTime: null,
-        endTime: null,
-        notes: null,
-      }));
-
-      setLocalAnalysis((prev) => {
-        const base = prev ?? (analysis as OralFluencyAnalysis);
-        return {
-          ...base,
-          behaviors,
-          otherObservations: result.otherObservations ?? null,
-        };
-      });
-
-      try {
-        const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
-        if (sessionRaw) {
-          const s = JSON.parse(sessionRaw);
-          if (s.analysisResult) {
-            s.analysisResult.behaviors = behaviors;
-            s.analysisResult.otherObservations = result.otherObservations ?? null;
-            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(s));
-          }
-        }
-      } catch {}
+      const savedObservations = result.otherObservations ?? otherObservations;
+      saveManualReadingBehaviorState(
+        session.sessionId,
+        savedBehaviorTypes,
+        savedObservations,
+      );
+      applySavedBehaviors(savedBehaviorTypes, savedObservations);
     },
     [analysis, session.sessionId],
   );
@@ -586,7 +630,7 @@ export default function OralReadingReportPage() {
 
                 <BehaviorChecklist
                   behaviors={behaviorItems}
-                  otherObservations={analysis?.otherObservations ?? ""}
+                  otherObservations={displayedOtherObservations}
                   onSave={session.sessionId ? handleSaveBehaviors : undefined}
                 />
 

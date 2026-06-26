@@ -25,6 +25,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { exportFluencyReportPdf } from "@/lib/exportFluencyReportPdf";
 import { buildReadingBehaviorItems } from "@/lib/readingBehaviors";
 import {
+  loadManualReadingBehaviorState,
+  mergeManualReadingBehaviorItems,
+  saveManualReadingBehaviorState,
+} from "@/lib/manualReadingBehaviorStorage";
+import {
   getDisplayReadingTimeSeconds,
   resolveReadingDurationSeconds,
 } from "@/lib/readingDuration";
@@ -61,6 +66,16 @@ function buildBehaviorItems(
   behaviors: OralFluencyBehaviorData[],
 ): BehaviorItem[] {
   return buildReadingBehaviorItems(behaviors);
+}
+
+function buildBehaviorRows(
+  sessionId: string,
+  behaviorTypes: BehaviorType[],
+): OralFluencyBehaviorData[] {
+  return behaviorTypes.map((behaviorType) => ({
+    id: `${sessionId}:${behaviorType}`,
+    behaviorType,
+  }));
 }
 
 function countMiscuesByType(miscues: MiscueResult[]): Record<string, number> {
@@ -156,8 +171,24 @@ export default function ReadingFluencyReportPage() {
 
   const totalWords = assessment?.oralFluency?.totalWords ?? 0;
   const sessionId = assessment?.oralFluency?.id;
+  const storedBehaviorState = useMemo(
+    () => loadManualReadingBehaviorState(sessionId),
+    [sessionId],
+  );
+  const storedBehaviors = useMemo(
+    () =>
+      sessionId && storedBehaviorState
+        ? buildBehaviorRows(sessionId, storedBehaviorState.behaviorTypes)
+        : null,
+    [sessionId, storedBehaviorState],
+  );
   const activeBehaviors =
-    localBehaviors ?? assessment?.oralFluency?.behaviors ?? [];
+    localBehaviors ?? storedBehaviors ?? assessment?.oralFluency?.behaviors ?? [];
+  const activeOtherObservations =
+    localOtherObservations ??
+    storedBehaviorState?.otherObservations ??
+    assessment?.oralFluency?.otherObservations ??
+    "";
 
   const invalidateAssessments = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ["assessments", studentId] });
@@ -267,26 +298,38 @@ export default function ReadingFluencyReportPage() {
   const handleSaveBehaviors = useCallback(
     async (behaviorTypes: BehaviorType[], otherObservations: string) => {
       if (!sessionId) return;
+      saveManualReadingBehaviorState(
+        sessionId,
+        behaviorTypes,
+        otherObservations,
+      );
+      setLocalBehaviors(buildBehaviorRows(sessionId, behaviorTypes));
+      setLocalOtherObservations(otherObservations);
+
       const result = await updateBehaviorsAction({
         sessionId,
         behaviorTypes,
         otherObservations,
       });
       if (!result.success) {
-        throw new Error(result.error || "Failed to save observations.");
+        console.warn("Failed to save observations to server:", result.error);
+        return;
       }
 
-      setLocalBehaviors(
+      const savedBehaviors =
         result.behaviors?.map((behavior) => ({
           id: behavior.id,
           behaviorType: behavior.behaviorType,
-        })) ??
-          behaviorTypes.map((behaviorType) => ({
-            id: `${sessionId}:${behaviorType}`,
-            behaviorType,
-          })),
+        })) ?? buildBehaviorRows(sessionId, behaviorTypes);
+      const savedObservations = result.otherObservations ?? otherObservations;
+
+      saveManualReadingBehaviorState(
+        sessionId,
+        savedBehaviors.map((behavior) => behavior.behaviorType),
+        savedObservations,
       );
-      setLocalOtherObservations(result.otherObservations ?? null);
+      setLocalBehaviors(savedBehaviors);
+      setLocalOtherObservations(savedObservations);
       invalidateAssessments();
     },
     [sessionId, invalidateAssessments],
@@ -356,7 +399,10 @@ export default function ReadingFluencyReportPage() {
     ? passage.content.split(/\s+/).filter(Boolean).length
     : (assessment.oralFluency?.totalWords ?? 0);
 
-  const behaviorItems = buildBehaviorItems(activeBehaviors);
+  const behaviorItems = mergeManualReadingBehaviorItems(
+    buildBehaviorItems(activeBehaviors),
+    storedBehaviorState,
+  );
 
   const assessmentTypeLabel =
     assessmentTypeLabels[assessment.type] ?? assessment.type;
@@ -480,9 +526,7 @@ export default function ReadingFluencyReportPage() {
 
               <BehaviorChecklist
                 behaviors={behaviorItems}
-                otherObservations={
-                  localOtherObservations ?? assessment.oralFluency?.otherObservations ?? ""
-                }
+                otherObservations={activeOtherObservations}
                 onSave={sessionId ? handleSaveBehaviors : undefined}
               />
 

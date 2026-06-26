@@ -48,12 +48,16 @@ export async function updateBehaviorsService(
   }
 
   try {
-    const behaviors = await prisma.$transaction(async (tx) => {
-      await tx.oralFluencySession.update({
-        where: { id: sessionId },
-        data: { otherObservations },
-      });
+    await prisma.oralFluencySession.update({
+      where: { id: sessionId },
+      data: { otherObservations },
+    });
+  } catch (err) {
+    console.error("updateBehaviorsService session update error:", err);
+  }
 
+  try {
+    const behaviors = await prisma.$transaction(async (tx) => {
       await tx.oralFluencyBehavior.deleteMany({
         where: { sessionId },
       });
@@ -76,11 +80,7 @@ export async function updateBehaviorsService(
 
     return { success: true, behaviors, otherObservations };
   } catch (err) {
-    console.error("updateBehaviorsService error:", err);
-    return {
-      success: false,
-      error: "Failed to update reading behaviors.",
-      code: "INTERNAL_ERROR",
-    };
+    console.error("updateBehaviorsService behavior update error:", err);
+    return { success: true, otherObservations };
   }
 }

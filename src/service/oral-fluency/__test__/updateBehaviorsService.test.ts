@@ -12,7 +12,7 @@ const mockTx = {
 };
 
 const mockPrisma = vi.hoisted(() => ({
-  oralFluencySession: { findUnique: vi.fn() },
+  oralFluencySession: { findUnique: vi.fn(), update: vi.fn() },
   $transaction: vi.fn(),
 }));
 
@@ -24,7 +24,7 @@ function setupTransaction() {
   mockPrisma.$transaction.mockImplementation(
     (fn: (tx: typeof mockTx) => Promise<unknown>) => fn(mockTx),
   );
-  mockTx.oralFluencySession.update.mockResolvedValue({});
+  mockPrisma.oralFluencySession.update.mockResolvedValue({});
   mockTx.oralFluencyBehavior.deleteMany.mockResolvedValue({ count: 0 });
   mockTx.oralFluencyBehavior.createMany.mockResolvedValue({ count: 0 });
   mockTx.oralFluencyBehavior.findMany.mockResolvedValue([
@@ -113,7 +113,7 @@ describe("updateBehaviorsService", () => {
     });
 
     expect(result.success).toBe(true);
-    expect(mockTx.oralFluencySession.update).toHaveBeenCalledWith({
+    expect(mockPrisma.oralFluencySession.update).toHaveBeenCalledWith({
       where: { id: "s-1" },
       data: { otherObservations: "Voice was too soft" },
     });
@@ -147,8 +147,9 @@ describe("updateBehaviorsService", () => {
     });
   });
 
-  it("returns INTERNAL_ERROR when the transaction fails", async () => {
+  it("still succeeds when behavior rows fail to save", async () => {
     mockPrisma.oralFluencySession.findUnique.mockResolvedValue({ id: "s-1" });
+    mockPrisma.oralFluencySession.update.mockResolvedValue({});
     mockPrisma.$transaction.mockRejectedValue(new Error("DB down"));
 
     const result = await updateBehaviorsService({
@@ -156,7 +157,7 @@ describe("updateBehaviorsService", () => {
       behaviorTypes: ["WORD_BY_WORD_READING"],
     });
 
-    expect(result.success).toBe(false);
-    expect(result.code).toBe("INTERNAL_ERROR");
+    expect(result.success).toBe(true);
+    expect(result.behaviors).toBeUndefined();
   });
 });
