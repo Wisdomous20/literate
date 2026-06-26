@@ -8,6 +8,7 @@ import { analyzePitch } from "./pitchAnalysisService"
 import { postCorrectTranscription } from "@/utils/postCorrectTranscription"
 import { initPhoneticDict } from "@/utils/phoneticUtils"
 import { normalizeWordStrict as normalizeWord } from "@/utils/textUtils"
+import type { TranscriptWord } from "@/types/oral-reading"
 
 // Load CMU dict once on first use
 let dictLoaded = false;
@@ -21,6 +22,31 @@ function classifyReadingLevel(score: number): "INDEPENDENT" | "INSTRUCTIONAL" | 
   if (score >= 97) return "INDEPENDENT"
   if (score >= 90) return "INSTRUCTIONAL"
   return "FRUSTRATION"
+}
+
+function hasLikelyNoMeaningfulSpeech(
+  words: TranscriptWord[],
+  transcriptText: string,
+  voicedFrames: number,
+  voicedRatio: number,
+): boolean {
+  const normalizedTranscript = transcriptText
+    .split(/\s+/)
+    .map((word) => normalizeWord(word))
+    .filter((word) => word.length > 0);
+
+  if (normalizedTranscript.length === 0 || words.length === 0) {
+    return true;
+  }
+
+  // Silence or ambient noise can still cause the STT provider to hallucinate a
+  // few or even many passage words when given passage context. If the audio has
+  // essentially no voiced speech, treat the sample as unread.
+  if (voicedFrames < 5 || voicedRatio < 0.02) {
+    return true;
+  }
+
+  return false;
 }
 
 export async function analyzeOralFluency(
@@ -67,7 +93,17 @@ export async function analyzeOralFluency(
   //
 
   // 3. Normalize and correct edit-distance noise
-  const normalized = sttResult.words.map(w => ({
+  const silenceLikely = hasLikelyNoMeaningfulSpeech(
+    sttResult.words,
+    sttResult.text,
+    pitchAnalysis.voicedFrames,
+    pitchAnalysis.voicedRatio,
+  )
+
+  const effectiveTranscriptWords = silenceLikely ? [] : sttResult.words
+  const effectiveTranscriptText = silenceLikely ? "" : sttResult.text
+
+  const normalized = effectiveTranscriptWords.map(w => ({
     word: normalizeWord(w.word),
     start: w.start,
     end: w.end,
@@ -116,7 +152,7 @@ export async function analyzeOralFluency(
   const oralFluencyScore = computeOralFluencyScore(totalWords, countedMiscues)
 
   return {
-    transcript:          sttResult.text,
+    transcript:          effectiveTranscriptText,
     wordsPerMinute:      Math.round(wordsPerMinute * 10) / 10,
     accuracy:            Math.round(accuracy * 10) / 10,
     totalWords,

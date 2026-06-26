@@ -77,5 +77,6 @@ export interface OralFluencyAnalysis {
 
   miscues: MiscueResult[];
   behaviors: BehaviorResult[];
+  otherObservations?: string | null;
   alignedWords: AlignedWord[];
 }

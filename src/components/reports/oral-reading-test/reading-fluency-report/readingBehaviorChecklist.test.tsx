@@ -37,8 +37,48 @@ describe("BehaviorChecklist", () => {
 
     await user.click(screen.getByRole("button", { name: /edit/i }));
     await user.click(screen.getByRole("button", { name: /voice is hardly audible/i }));
+    await user.click(
+      screen.getByRole("button", {
+        name: /points to each word with his\/her finger/i,
+      }),
+    );
+    await user.click(
+      screen.getByRole("button", {
+        name: /employs little or no method of analysis/i,
+      }),
+    );
     await user.click(screen.getByRole("button", { name: /save observation/i }));
 
-    expect(onSave).toHaveBeenCalledWith(["VOICE_HARDLY_AUDIBLE"], "");
+    expect(onSave).toHaveBeenCalledWith(
+      [
+        "VOICE_HARDLY_AUDIBLE",
+        "FINGER_POINTING",
+        "LITTLE_OR_NO_ANALYSIS",
+      ],
+      "",
+    );
+  });
+
+  it("loads and saves other observations", async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn();
+
+    render(
+      <BehaviorChecklist
+        behaviors={buildReadingBehaviorItems([])}
+        otherObservations="Needs review"
+        onSave={onSave}
+      />,
+    );
+
+    const observations = screen.getByPlaceholderText("Enter observations...");
+    expect(observations).toHaveValue("Needs review");
+
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+    await user.clear(observations);
+    await user.type(observations, "Voice was too soft");
+    await user.click(screen.getByRole("button", { name: /save observation/i }));
+
+    expect(onSave).toHaveBeenCalledWith([], "Voice was too soft");
   });
 });

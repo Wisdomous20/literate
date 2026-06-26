@@ -903,48 +903,6 @@ export default function ViewMiscuesModal({
                   <div
                     className={`rounded-lg border bg-white px-3 py-2 shadow-[0_4px_16px_rgba(0,0,0,0.12)] ${cfg.popupBorderClass}`}
                   >
-                      <div className="mb-1 text-center">
-                        <span
-                          className={`text-[10px] font-bold uppercase tracking-wide ${cfg.textClass}`}
-                        >
-                          {popup.miscue.miscueType.replace(/_/g, " ")}
-                        </span>
-                        {popup.miscue.miscueType === "REPETITION" &&
-                          getRepetitionWord(popup.miscue) && (
-                          <div className="text-[10px] text-[#31318A]/70">
-                            Repeated word: &ldquo;{getRepetitionWord(popup.miscue)}&rdquo;
-                          </div>
-                        )}
-                        {popup.miscue.miscueType !== "REPETITION" &&
-                          popup.miscue.spokenWord && (
-                          <div className="text-[10px] text-[#31318A]/70">
-                            Spoken: &ldquo;{popup.miscue.spokenWord}&rdquo;
-                          </div>
-                        )}
-                        {hasTimestamp && !effectiveJumpToTime && (
-                          <div className="mt-1 flex items-center justify-center gap-1 text-[10px] text-[#31318A]/50">
-                            <Play className="h-2.5 w-2.5" />
-                            {formatMiscueTimestamp(popup.miscue.timestamp!)}
-                          </div>
-                        )}
-                      </div>
-                      {hasTimestamp && effectiveJumpToTime && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            effectiveJumpToTime(popup.miscue.timestamp!);
-                            setPopup(null);
-                          }}
-                          className="flex w-full items-center justify-center gap-1.5 rounded-md bg-[#6666FF] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:brightness-110"
-                        >
-                          <Play className="h-3 w-3" />
-                          Jump to Word ({formatMiscueTimestamp(popup.miscue.timestamp!)})
-                        </button>
-                      )}
-                  </div>
-                  <div
-                    className={`rounded-lg border bg-white px-3 py-2 shadow-[0_4px_16px_rgba(0,0,0,0.12)] ${cfg.popupBorderClass}`}
-                  >
                     <div className="space-y-1 text-center">
                       <span
                         className={`text-[10px] font-bold uppercase tracking-wide ${cfg.textClass}`}
