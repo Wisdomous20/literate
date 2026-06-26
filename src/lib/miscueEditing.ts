@@ -22,6 +22,14 @@ export function sameMiscue(a: MiscueLike, b: MiscueLike) {
   );
 }
 
+export function canChangeMiscueType(
+  currentType: MiscueResult["miscueType"],
+  newType: MiscueResult["miscueType"],
+) {
+  if (newType !== "INSERTION") return true;
+  return currentType === "SELF_CORRECTION" || currentType === "REPETITION";
+}
+
 export function findMatchingDbMiscue(
   miscues: OralFluencyMiscue[],
   target: MiscueResult,

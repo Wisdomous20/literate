@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { MiscueType, LevelClassification } from "@/generated/prisma/enums";
 import { createOralReadingService } from "@/service/oral-reading/createOralReadingService";
+import { canChangeMiscueType } from "@/lib/miscueEditing";
 
 function computeOralFluencyScore(
   totalWords: number,
@@ -118,6 +119,19 @@ export async function updateMiscueService(
     return { success: false, error: "Miscue not found.", code: "NOT_FOUND" };
   }
 
+  if (
+    action === "update" &&
+    newMiscueType &&
+    !canChangeMiscueType(existingMiscue!.miscueType, newMiscueType)
+  ) {
+    return {
+      success: false,
+      error:
+        "Miscue type can only be changed to insertion from self-correction or repetition.",
+      code: "VALIDATION_ERROR",
+    };
+  }
+
   const targetSessionId =
     action === "create" ? sessionId! : existingMiscue!.sessionId;
   const assessmentId =
@@ -153,12 +167,22 @@ export async function updateMiscueService(
         });
         createdMiscueId = createdMiscue.id;
       } else {
+        const updateData = {
+          ...(newMiscueType ? { miscueType: newMiscueType } : {}),
+          ...(newMiscueType
+            ? {
+                isSelfCorrected:
+                  isSelfCorrected ?? newMiscueType === "SELF_CORRECTION",
+              }
+            : isSelfCorrected !== undefined
+              ? { isSelfCorrected }
+              : {}),
+          ...(newSpokenWord ? { spokenWord: newSpokenWord } : {}),
+        };
+
         await tx.oralFluencyMiscue.update({
           where: { id: miscueId! },
-          data: {
-            ...(newMiscueType ? { miscueType: newMiscueType } : {}),
-            ...(newSpokenWord ? { spokenWord: newSpokenWord } : {}),
-          },
+          data: updateData,
         });
       }
 

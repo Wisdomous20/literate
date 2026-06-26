@@ -102,7 +102,7 @@ export default function MiscueAnalysisReport({
   );
 
   return (
-    <div className="flex flex-col rounded-[10px] border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-white p-5 pb-3 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
+    <div className="flex min-w-0 flex-col rounded-[10px] border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-white p-4 pb-3 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
       {/* Header */}
       <h3 className="mb-2 text-base font-bold text-[#003366]">
         Miscue Analysis

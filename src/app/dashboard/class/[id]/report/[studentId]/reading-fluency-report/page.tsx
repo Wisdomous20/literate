@@ -23,6 +23,7 @@ import { useAssessmentsByStudent } from "@/lib/hooks/useStudentAssessments";
 import { useClassById } from "@/lib/hooks/useClassById";
 import { useQueryClient } from "@tanstack/react-query";
 import { exportFluencyReportPdf } from "@/lib/exportFluencyReportPdf";
+import { buildReadingBehaviorItems } from "@/lib/readingBehaviors";
 import {
   getDisplayReadingTimeSeconds,
   resolveReadingDurationSeconds,
@@ -59,32 +60,7 @@ function formatTestType(testType?: string): string {
 function buildBehaviorItems(
   behaviors: OralFluencyBehaviorData[],
 ): BehaviorItem[] {
-  const detectedTypes = new Set(behaviors.map((b) => b.behaviorType));
-  return [
-    {
-      key: "WORD_BY_WORD_READING",
-      label: "Does word-by-word reading",
-      description: "(Nagbabasa nang pa-isa isang salita)",
-      checked: detectedTypes.has("WORD_BY_WORD_READING"),
-    },
-    {
-      key: "MONOTONOUS_READING",
-      label: "Lacks expression: reads in a monotonous tone",
-      description: "(Walang damdamin; walang pagbabago ang tono)",
-      checked: detectedTypes.has("MONOTONOUS_READING"),
-    },
-    {
-      key: "DISMISSAL_OF_PUNCTUATION",
-      label: "Disregards Punctuation",
-      description: "(Hindi pinapansin ang mga bantas)",
-      checked: detectedTypes.has("DISMISSAL_OF_PUNCTUATION"),
-    },
-    {
-      label: "Employs little or no method of analysis",
-      description: "(Bahagya o walang paraan ng pagsusuri)",
-      checked: false,
-    },
-  ];
+  return buildReadingBehaviorItems(behaviors);
 }
 
 function countMiscuesByType(miscues: MiscueResult[]): Record<string, number> {
@@ -477,8 +453,8 @@ export default function ReadingFluencyReportPage() {
             </div>
 
             {/* Three-column row */}
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-              <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-3">
+              <div className="flex flex-col gap-6 self-start">
                 <PassageInfoCard
                   passageTitle={passage?.title ?? "—"}
                   passageLevel={passage?.level ? `Grade ${passage.level}` : "—"}

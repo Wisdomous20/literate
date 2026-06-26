@@ -12,7 +12,10 @@ export type MiscueType =
 export type BehaviorType =
   | "WORD_BY_WORD_READING"
   | "MONOTONOUS_READING"
-  | "DISMISSAL_OF_PUNCTUATION";
+  | "DISMISSAL_OF_PUNCTUATION"
+  | "VOICE_HARDLY_AUDIBLE"
+  | "FINGER_POINTING"
+  | "LITTLE_OR_NO_ANALYSIS";
 
 export interface AssessmentQuestion {
   id: string;

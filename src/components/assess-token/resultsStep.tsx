@@ -15,6 +15,7 @@ import {
   SharedAssessmentHeaderByType,
   surfaceClass,
 } from "./ui";
+import { READING_BEHAVIOR_DEFINITIONS } from "@/lib/readingBehaviors";
 
 const miscueLabels: { key: string; label: string }[] = [
   { key: "MISPRONUNCIATION", label: "Mispronunciation" },
@@ -25,24 +26,6 @@ const miscueLabels: { key: string; label: string }[] = [
   { key: "INSERTION", label: "Insertion" },
   { key: "REPETITION", label: "Repetition" },
   { key: "SELF_CORRECTION", label: "Self-Correction" },
-];
-
-const behaviorLabels: { key: string; label: string; description: string }[] = [
-  {
-    key: "WORD_BY_WORD_READING",
-    label: "Does word-by-word reading",
-    description: "(Nagbabasa nang pa-isa isang salita)",
-  },
-  {
-    key: "MONOTONOUS_READING",
-    label: "Lacks expression: reads in a monotonous tone",
-    description: "(Walang damdamin; walang pagbabago ang tono)",
-  },
-  {
-    key: "DISMISSAL_OF_PUNCTUATION",
-    label: "Disregards punctuation",
-    description: "(Hindi pinapansin ang mga bantas)",
-  },
 ];
 
 function getLevelColor(level: string) {
@@ -256,7 +239,7 @@ export function ResultsStep({
                     Reading behavior observations
                   </p>
                   <div className="mt-4 space-y-3">
-                    {behaviorLabels.map(({ key, label, description }) => {
+                    {READING_BEHAVIOR_DEFINITIONS.map(({ key, label, description }) => {
                       const detected = fluencyResult.behaviors.includes(key);
                       return (
                         <div key={key} className="flex items-start gap-3">

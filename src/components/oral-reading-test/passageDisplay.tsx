@@ -21,7 +21,7 @@ import {
 import type { MiscueResult, AlignedWord } from "@/types/oral-reading";
 import { formatMiscueTimestamp } from "@/lib/audioPlayback";
 import { hydrateMiscueTimestamps } from "@/lib/miscueTimestamps";
-import { sameMiscue } from "@/lib/miscueEditing";
+import { canChangeMiscueType, sameMiscue } from "@/lib/miscueEditing";
 import { normalizeWord } from "@/utils/textUtils";
 import type {
   EditableMiscueResult,
@@ -1061,6 +1061,9 @@ export function PassageDisplay({
                     timestamp={popup.miscue.timestamp}
                     isLoading={actionLoading}
                     onChangeType={async (newType) => {
+                      if (!canChangeMiscueType(popup.miscue.miscueType, newType)) {
+                        return;
+                      }
                       if (isEditing && editMode) {
                         const index = findEditedMiscueIndex(popup.miscue);
                         if (index === -1) return;

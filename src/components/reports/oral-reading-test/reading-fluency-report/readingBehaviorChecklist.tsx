@@ -2,16 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { Loader2, Pencil } from "lucide-react";
+import {
+  buildReadingBehaviorItems,
+  type ReadingBehaviorSource,
+  type ReadingBehaviorType,
+} from "@/lib/readingBehaviors";
 
-export type BehaviorType =
-  | "WORD_BY_WORD_READING"
-  | "MONOTONOUS_READING"
-  | "DISMISSAL_OF_PUNCTUATION";
+export type BehaviorType = ReadingBehaviorType;
 
 export interface BehaviorItem {
   key?: BehaviorType;
   label: string;
   description: string;
+  source?: ReadingBehaviorSource;
   checked?: boolean;
 }
 
@@ -21,24 +24,7 @@ interface BehaviorChecklistProps {
   onSave?: (behaviorTypes: BehaviorType[], otherObservations: string) => Promise<void> | void;
 }
 
-const defaultBehaviors: BehaviorItem[] = [
-  {
-    label: "Does word-by-word reading",
-    description: "(Nagbabasa nang pa-isa isang salita)",
-  },
-  {
-    label: "Lacks expression: reads in a monotonous tone",
-    description: "(Walang damdamin; walang pagbabago ang tono)",
-  },
-  {
-    label: "Disregards Punctuation",
-    description: "(Hindi pinapansin ang mga bantas)",
-  },
-  {
-    label: "Employs little or no method of analysis",
-    description: "(Bahagya o walang paraan ng pagsusuri)",
-  },
-];
+const defaultBehaviors: BehaviorItem[] = buildReadingBehaviorItems([]);
 
 export default function BehaviorChecklist({
   behaviors = defaultBehaviors,
@@ -110,11 +96,29 @@ export default function BehaviorChecklist({
     setObservations("");
   };
 
+  const behaviorGroups = [
+    {
+      source: "automated" as const,
+      title: "Automated checks",
+      caption: "Detected from transcript, timing, and punctuation analysis.",
+    },
+    {
+      source: "teacher" as const,
+      title: "Teacher observations",
+      caption: "Marked manually during report review.",
+    },
+  ].map((group) => ({
+    ...group,
+    items: behaviors
+      .map((item, index) => ({ item, index }))
+      .filter(({ item }) => (item.source ?? "teacher") === group.source),
+  }));
+
   return (
-    <div className="bg-white border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] shadow-[0_1px_20px_rgba(108,164,239,0.37)] rounded-[10px] p-5 pb-3 flex flex-col">
+    <div className="flex min-w-0 flex-col rounded-[10px] border-t border-l border-r-4 border-b-4 border-t-[#A855F7] border-l-[#A855F7] border-r-[#6653F9] border-b-[#6653F9] bg-white p-4 pb-3 shadow-[0_1px_20px_rgba(108,164,239,0.37)]">
       {/* Header row */}
       <div className="flex items-start justify-between mb-0.5">
-        <h3 className="text-base font-bold text-[#003366]">
+        <h3 className="text-base font-bold leading-tight text-[#003366]">
           Oral Behavior Checklist
         </h3>
         {!isEditMode && (
@@ -128,56 +132,81 @@ export default function BehaviorChecklist({
           </button>
         )}
       </div>
-      <p className="mb-4 font-kanit text-sm text-[rgba(40,19,19,0.71)]">
+      <p className="mb-3 font-kanit text-xs text-[rgba(40,19,19,0.71)]">
         Behavior analysis during reading
       </p>
 
-      <div className="flex flex-col gap-0">
-        {behaviors.map((item, i) => (
-          <div key={item.label}>
-            <button
-              type="button"
-              onClick={() => toggleItem(i)}
-              disabled={!isEditMode}
-              className={`flex items-start gap-3 py-3 w-full text-left ${isEditMode ? "cursor-pointer" : "cursor-default"}`}
-            >
-              <div
-                className={`w-8 h-8 shrink-0 rounded border mt-0.5 flex items-center justify-center transition-colors ${
-                  checkedItems[i]
-                    ? "bg-[#5D5DFB] border-[#5D5DFB]"
-                    : isEditMode
-                      ? "bg-white border-[#5D5DFB]"
-                      : "bg-white border-[#9CA3AF]"
-                }`}
-              >
-                {checkedItems[i] && (
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path
-                      d="M3 8l3 3 7-7"
-                      stroke="white"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                )}
+      <div className="flex min-w-0 flex-col gap-2.5">
+        {behaviorGroups.map((group) => (
+          <section
+            key={group.source}
+            className={
+              group.source === "teacher"
+                ? "rounded-lg border border-dashed border-[#BFD7FF] bg-[#F8FBFF] px-3 py-2"
+                : ""
+            }
+          >
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#31318A]/70">
+                  {group.title}
+                </p>
+                <p className="text-[10px] leading-snug text-[#31318A]/50">
+                  {group.caption}
+                </p>
               </div>
-              <div className="flex flex-col">
-                <span className="text-xs font-semibold text-[#31318A]">
-                  {item.label}
-                </span>
-                <span className="text-[10px] text-[#31318A]">
-                  {item.description}
-                </span>
-              </div>
-            </button>
-            <div className="border-b border-[rgba(18,48,220,0.25)]" />
-          </div>
+            </div>
+            <div className="flex flex-col gap-0">
+              {group.items.map(({ item, index }, groupIndex) => (
+                <div key={item.key ?? item.label}>
+                  <button
+                    type="button"
+                    onClick={() => toggleItem(index)}
+                    disabled={!isEditMode}
+                    className={`flex w-full items-start gap-2.5 py-2 text-left ${isEditMode ? "cursor-pointer" : "cursor-default"}`}
+                  >
+                    <div
+                      className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded border transition-colors ${
+                        checkedItems[index]
+                          ? "bg-[#5D5DFB] border-[#5D5DFB]"
+                          : isEditMode
+                            ? "bg-white border-[#5D5DFB]"
+                            : "bg-white border-[#9CA3AF]"
+                      }`}
+                    >
+                      {checkedItems[index] && (
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <path
+                            d="M3 8l3 3 7-7"
+                            stroke="white"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="flex min-w-0 flex-col">
+                      <span className="break-words text-xs font-semibold leading-snug text-[#31318A]">
+                        {item.label}
+                      </span>
+                      <span className="break-words text-[10px] leading-snug text-[#31318A]">
+                        {item.description}
+                      </span>
+                    </div>
+                  </button>
+                  {groupIndex < group.items.length - 1 && (
+                    <div className="border-b border-[rgba(18,48,220,0.18)]" />
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
         ))}
       </div>
 
       {/* Other Observations */}
-      <div className="mt-2">
+      <div className="mt-2 min-w-0">
         <label className="text-[10px] font-semibold text-[#31318A] block mb-1">
           Other Observations (Ibang Puna)
         </label>
@@ -186,8 +215,8 @@ export default function BehaviorChecklist({
           onChange={(e) => setObservations(e.target.value)}
           disabled={!isEditMode}
           placeholder="Enter observations..."
-          className={`w-full p-3 bg-[rgba(201,201,250,0.15)] rounded text-xs text-[#31318A] placeholder:text-[#31318A]/40 resize-none focus:outline-none focus:ring-1 focus:ring-[#5D5DFB] ${!isEditMode ? "opacity-70 cursor-default" : ""}`}
-          rows={4}
+          className={`w-full resize-none rounded bg-[rgba(201,201,250,0.15)] p-2.5 text-xs text-[#31318A] placeholder:text-[#31318A]/40 focus:outline-none focus:ring-1 focus:ring-[#5D5DFB] ${!isEditMode ? "opacity-70 cursor-default" : ""}`}
+          rows={3}
         />
       </div>
 

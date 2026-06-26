@@ -65,4 +65,62 @@ describe("PassageDisplay", () => {
     });
     expect(onUpdateMiscueType).not.toHaveBeenCalled();
   });
+
+  it("does not offer insertion when changing from a normal miscue type", async () => {
+    const user = userEvent.setup();
+    const miscues: EditableMiscueResult[] = [
+      {
+        miscueType: "SUBSTITUTION",
+        expectedWord: "cat",
+        spokenWord: "bat",
+        wordIndex: 0,
+        timestamp: null,
+        isSelfCorrected: false,
+      },
+    ];
+
+    render(
+      <PassageDisplay
+        content="cat"
+        miscues={miscues}
+        editMode={createEditMode(miscues)}
+      />,
+    );
+
+    await user.click(screen.getByText("cat"));
+
+    expect(
+      screen.queryByRole("button", { name: "Insertion" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("offers insertion when changing from self-correction or repetition", async () => {
+    const user = userEvent.setup();
+
+    for (const miscueType of ["SELF_CORRECTION", "REPETITION"] as const) {
+      const miscues: EditableMiscueResult[] = [
+        {
+          miscueType,
+          expectedWord: "cat",
+          spokenWord: "cat",
+          wordIndex: 0,
+          timestamp: null,
+          isSelfCorrected: miscueType === "SELF_CORRECTION",
+        },
+      ];
+
+      const { unmount } = render(
+        <PassageDisplay
+          content="cat"
+          miscues={miscues}
+          editMode={createEditMode(miscues)}
+        />,
+      );
+
+      await user.click(screen.getByText("cat"));
+
+      expect(screen.getByRole("button", { name: "Insertion" })).toBeInTheDocument();
+      unmount();
+    }
+  });
 });
