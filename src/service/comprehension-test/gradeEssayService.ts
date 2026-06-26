@@ -2,9 +2,19 @@ import OpenAI from "openai";
 import { Tags } from "@/generated/prisma/enums";
 import { answerMatchesGuide } from "./answerMatching";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+let openai: OpenAI | null = null;
+
+function getOpenAIClient() {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY is not configured.");
+  }
+
+  openai ??= new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+
+  return openai;
+}
 
 interface GradeEssayInput {
   questionText: string;
@@ -101,7 +111,7 @@ Student answer: ${studentAnswer}
 Grade the answer using LiteRate's binary rubric. Set needsReview to true when the answer is in a high-uncertainty zone.`;
 
   try {
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAIClient().chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
