@@ -754,15 +754,6 @@ export default function ReadingFluencyTestPage() {
       toast={toast}
       onCloseToast={() => setToast(null)}
       passageExpanded={passageExpanded}
-      overlay={
-        showClassificationPopup && activeAnalysisResult?.classificationLevel ? (
-          <ClassificationPopup
-            classificationLevel={activeAnalysisResult.classificationLevel}
-            studentName={studentName}
-            onClose={() => setShowClassificationPopup(false)}
-          />
-        ) : undefined
-      }
       sidebar={
         <MiscueAnalysis
           disabled={!hasRecording}
@@ -834,7 +825,14 @@ export default function ReadingFluencyTestPage() {
         />
       )}
 
-      <div className="flex flex-1 min-h-0 flex-col overflow-hidden rounded-2xl border border-[#C4B5FD] bg-white shadow-[0_12px_48px_rgba(102,102,255,0.18),0_3px_12px_rgba(102,102,255,0.10)]">
+      <div className="relative flex flex-1 min-h-0 flex-col overflow-hidden rounded-2xl border border-[#C4B5FD] bg-white shadow-[0_12px_48px_rgba(102,102,255,0.18),0_3px_12px_rgba(102,102,255,0.10)]">
+        {showClassificationPopup && activeAnalysisResult?.classificationLevel && (
+          <ClassificationPopup
+            classificationLevel={activeAnalysisResult.classificationLevel}
+            studentName={studentName}
+            onClose={() => setShowClassificationPopup(false)}
+          />
+        )}
         {!passageExpanded && (
           <div className="shrink-0 px-5 pt-4 pb-3">
             <StudentSetupSection

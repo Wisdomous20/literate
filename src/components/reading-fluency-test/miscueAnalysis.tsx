@@ -119,9 +119,9 @@ export function MiscueAnalysis({
   onToggleHighlight,
   onResetHighlight,
   onExportPdf,
-  onRecheckMiscues,
-  isRechecking = false,
-  recheckSummary,
+  onRecheckMiscues: _onRecheckMiscues,
+  isRechecking: _isRechecking = false,
+  recheckSummary: _recheckSummary,
 }: MiscueAnalysisProps) {
   const router = useRouter();
   const cardRef = useRef<HTMLDivElement>(null);

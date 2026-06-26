@@ -1,7 +1,7 @@
 "use client";
 
 import { Mic, SkipBack, Play, Pause, SkipForward } from "lucide-react";
-import { useRef, useState, useEffect, type RefObject } from "react";
+import { useRef, useState, type RefObject } from "react";
 import { formatAudioClock } from "@/lib/readingDuration";
 
 interface AudioPlaybackCardProps {
@@ -19,12 +19,14 @@ export default function AudioPlaybackCard({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [prevAudioSrc, setPrevAudioSrc] = useState(audioSrc);
 
-  useEffect(() => {
+  if (prevAudioSrc !== audioSrc) {
+    setPrevAudioSrc(audioSrc);
     setIsPlaying(false);
     setCurrentTime(0);
     setDuration(0);
-  }, [audioSrc]);
+  }
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 

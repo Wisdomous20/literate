@@ -57,7 +57,7 @@ export default function HeroSection() {
             <div className="relative">
               <div className="absolute inset-0 bg-[#B3A4F1] rounded-[10px] translate-y-1.5" />
               <Link
-                href="/assess"
+                href="#problem"
                 className="relative inline-flex min-h-13 w-full items-center justify-center rounded-[10px] bg-[#6C4EEB] px-8 py-4 text-base font-medium text-white transition-transform hover:-translate-y-0.5 active:translate-y-0 sm:w-auto sm:px-10 sm:text-lg"
               >
                 EXPLORE

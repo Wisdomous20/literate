@@ -60,7 +60,10 @@ export default function ReadingLevelsSection() {
                 SUMMARY
               </span>
             </div>
-            <p className="text-sm font-medium text-[#575E6B] mb-2">97-100% Accuracy</p>
+            <div className="flex flex-col gap-1 mb-2">
+              <p className="text-sm font-medium text-[#575E6B]">Fluency: 97 - 100%</p>
+              <p className="text-sm font-medium text-[#575E6B]">Comprehension: 80 - 100%</p>
+            </div>
             {/* Progress bar */}
             <div className="w-full bg-[#E8F5E9] rounded-full h-1.5 mb-6 overflow-hidden">
               <motion.div
@@ -104,7 +107,10 @@ export default function ReadingLevelsSection() {
                 INSIGHT VIEW
               </span>
             </div>
-            <p className="text-sm font-medium text-[#575E6B] mb-2">90-96% Accuracy</p>
+            <div className="flex flex-col gap-1 mb-2">
+              <p className="text-sm font-medium text-[#575E6B]">Fluency: 90 - 96%</p>
+              <p className="text-sm font-medium text-[#575E6B]">Comprehension: 59 - 79%</p>
+            </div>
             {/* Progress bar */}
             <div className="w-full bg-[#E3F0FF] rounded-full h-1.5 mb-4 overflow-hidden">
               <motion.div
@@ -149,7 +155,10 @@ export default function ReadingLevelsSection() {
                 SUMMARY
               </span>
             </div>
-            <p className="text-sm font-medium text-[#575E6B] mb-2">&lt;90% Accuracy</p>
+            <div className="flex flex-col gap-1 mb-2">
+              <p className="text-sm font-medium text-[#575E6B]">Fluency: 89% below</p>
+              <p className="text-sm font-medium text-[#575E6B]">Comprehension: 58% below</p>
+            </div>
             {/* Progress bar */}
             <div className="w-full bg-[#FDEAEA] rounded-full h-1.5 mb-6 overflow-hidden">
               <motion.div

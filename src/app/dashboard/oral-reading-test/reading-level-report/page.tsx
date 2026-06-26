@@ -104,6 +104,19 @@ function getClassificationSubtext(level: string): string {
   }
 }
 
+function getLevelMascot(level: string): string {
+  switch ((level || "").toUpperCase()) {
+    case "INDEPENDENT":
+      return "/Independent.svg";
+    case "INSTRUCTIONAL":
+      return "/Instructional.svg";
+    case "FRUSTRATION":
+      return "/Frustrated.svg";
+    default:
+      return "/Independent.svg";
+  }
+}
+
 function getBannerGradient(level: string): string {
   switch ((level || "").toUpperCase()) {
     case "INDEPENDENT":
@@ -438,11 +451,11 @@ export default function ReadingLevelReportPage() {
 
                   <div className="relative -mr-8">
                     <Image
-                      src="/images/Class.png"
+                      src={getLevelMascot(overallLevel)}
                       alt="Student mascot"
-                      width={200}
-                      height={200}
-                      className="h-auto w-auto"
+                      width={400}
+                      height={400}
+                      className="h-[400px] w-[400px] object-contain"
                       priority
                     />
                   </div>
