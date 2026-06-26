@@ -14,6 +14,7 @@ const assessments = [
     shadowColor: "#F9A8C0",
     bgFrom: "#C41048",
     bgTo: "#7B0229",
+    videoUrl: "https://storage.googleapis.com/video-tutorial-literate/ORT.mp4",
     duration: "2:45",
     teaser: "Detect and classify 8 reading miscue types in real time.",
     description:
@@ -25,16 +26,17 @@ const assessments = [
     ],
   },
   {
-    id: "oral-fluency",
-    label: "Oral Fluency Test",
+    id: "reading-fluency",
+    label: "Reading Fluency Test",
     color: "#1E7A35",
     shadowColor: "#A7F3C0",
     bgFrom: "#1E7A35",
     bgTo: "#0A4A1C",
+    videoUrl: "https://storage.googleapis.com/video-tutorial-literate/RFT.mp4",
     duration: "1:30",
     teaser: "Measure reading speed and fluency score in under 2 minutes.",
     description:
-      "The Oral Fluency Test captures the student's reading performance out loud and classifies them into three reading level classficiation.",
+      "The Reading Fluency Test captures the student's reading performance out loud and classifies them into three reading level classifications.",
     covers: [
       "Words Correct Per Minute (WCPM) scoring",
       "Reading Behavior Analysis",
@@ -48,6 +50,7 @@ const assessments = [
     shadowColor: "#93C5FD",
     bgFrom: "#1766D6",
     bgTo: "#0A3A80",
+    videoUrl: "https://storage.googleapis.com/video-tutorial-literate/RCT.mp4",
     duration: "3:10",
     teaser: "Evaluate understanding with adaptive comprehension questions.",
     description:
@@ -201,36 +204,22 @@ export default function AssessVideoSection() {
                                   className="relative rounded-[12px] overflow-hidden border-2"
                                   style={{ borderColor: a.color }}
                                 >
-                                  {/* 16:9 ratio container */}
-                                  <div className="aspect-video relative flex flex-col items-center justify-center"
+                                  <div
+                                    className="aspect-video bg-[#101217]"
                                     style={{
-                                      background: `linear-gradient(135deg, ${a.bgFrom} 0%, ${a.bgTo} 100%)`,
+                                      backgroundImage: `linear-gradient(135deg, ${a.bgFrom} 0%, ${a.bgTo} 100%)`,
                                     }}
                                   >
-                                    {/* Subtle pattern overlay */}
-                                    <div className="absolute inset-0 opacity-10"
-                                      style={{
-                                        backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)",
-                                        backgroundSize: "24px 24px",
-                                      }}
-                                    />
-
-                                    {/* Play button */}
-                                    <motion.div
-                                      className="relative z-10 w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-2xl cursor-pointer"
-                                      whileHover={{ scale: 1.1 }}
-                                      whileTap={{ scale: 0.96 }}
-                                      transition={{ duration: 0.2 }}
+                                    <video
+                                      className="h-full w-full object-contain"
+                                      controls
+                                      preload="metadata"
+                                      playsInline
+                                      aria-label={`${a.label} tutorial video`}
                                     >
-                                      <svg
-                                        className="w-6 h-6 translate-x-0.5"
-                                        fill="currentColor"
-                                        viewBox="0 0 24 24"
-                                        style={{ color: a.color }}
-                                      >
-                                        <path d="M8 5v14l11-7z" />
-                                      </svg>
-                                    </motion.div>
+                                      <source src={a.videoUrl} type="video/mp4" />
+                                      Your browser does not support the video tag.
+                                    </video>
                                   </div>
 
                                   {/* Bottom bar */}

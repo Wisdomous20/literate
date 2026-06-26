@@ -85,7 +85,11 @@ describe("updateBehaviorsService", () => {
 
     const result = await updateBehaviorsService({
       sessionId: "s-1",
-      behaviorTypes: ["VOICE_HARDLY_AUDIBLE", "FINGER_POINTING"],
+      behaviorTypes: [
+        "VOICE_HARDLY_AUDIBLE",
+        "FINGER_POINTING",
+        "LITTLE_OR_NO_ANALYSIS",
+      ],
     });
 
     expect(result.success).toBe(true);
@@ -93,8 +97,27 @@ describe("updateBehaviorsService", () => {
       data: [
         { sessionId: "s-1", behaviorType: "VOICE_HARDLY_AUDIBLE" },
         { sessionId: "s-1", behaviorType: "FINGER_POINTING" },
+        { sessionId: "s-1", behaviorType: "LITTLE_OR_NO_ANALYSIS" },
       ],
     });
+  });
+
+  it("saves other observations on the session", async () => {
+    mockPrisma.oralFluencySession.findUnique.mockResolvedValue({ id: "s-1" });
+    setupTransaction();
+
+    const result = await updateBehaviorsService({
+      sessionId: "s-1",
+      behaviorTypes: ["VOICE_HARDLY_AUDIBLE"],
+      otherObservations: "Voice was too soft",
+    });
+
+    expect(result.success).toBe(true);
+    expect(mockTx.oralFluencySession.update).toHaveBeenCalledWith({
+      where: { id: "s-1" },
+      data: { otherObservations: "Voice was too soft" },
+    });
+    expect(result.otherObservations).toBe("Voice was too soft");
   });
 
   it("does not create rows when all behaviors are cleared", async () => {

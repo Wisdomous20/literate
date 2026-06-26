@@ -192,7 +192,10 @@ export default function OralReadingReportPage() {
       });
       if (!result.success) return;
 
-      const behaviors = behaviorTypes.map((behaviorType) => ({
+      const savedBehaviorTypes =
+        result.behaviors?.map((behavior) => behavior.behaviorType) ??
+        behaviorTypes;
+      const behaviors = savedBehaviorTypes.map((behaviorType) => ({
         behaviorType,
         startIndex: null,
         endIndex: null,
@@ -203,7 +206,11 @@ export default function OralReadingReportPage() {
 
       setLocalAnalysis((prev) => {
         const base = prev ?? (analysis as OralFluencyAnalysis);
-        return { ...base, behaviors };
+        return {
+          ...base,
+          behaviors,
+          otherObservations: result.otherObservations ?? null,
+        };
       });
 
       try {
@@ -212,6 +219,7 @@ export default function OralReadingReportPage() {
           const s = JSON.parse(sessionRaw);
           if (s.analysisResult) {
             s.analysisResult.behaviors = behaviors;
+            s.analysisResult.otherObservations = result.otherObservations ?? null;
             sessionStorage.setItem(STORAGE_KEY, JSON.stringify(s));
           }
         }
@@ -588,6 +596,7 @@ export default function OralReadingReportPage() {
 
                 <BehaviorChecklist
                   behaviors={behaviorItems}
+                  otherObservations={analysis?.otherObservations ?? ""}
                   onSave={session.sessionId ? handleSaveBehaviors : undefined}
                 />
 

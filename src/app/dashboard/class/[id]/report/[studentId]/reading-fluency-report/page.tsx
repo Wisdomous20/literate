@@ -275,10 +275,14 @@ export default function ReadingFluencyReportPage() {
       if (!result.success) return;
 
       setLocalBehaviors(
-        behaviorTypes.map((behaviorType) => ({
-          id: `${sessionId}:${behaviorType}`,
-          behaviorType,
-        })),
+        result.behaviors?.map((behavior) => ({
+          id: behavior.id,
+          behaviorType: behavior.behaviorType,
+        })) ??
+          behaviorTypes.map((behaviorType) => ({
+            id: `${sessionId}:${behaviorType}`,
+            behaviorType,
+          })),
       );
       setLocalOtherObservations(result.otherObservations ?? null);
       invalidateAssessments();
