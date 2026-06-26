@@ -37,6 +37,25 @@ describe("ViewMiscuesModal", () => {
     expect(onJumpToTime).toHaveBeenCalledWith(5);
   });
 
+  it("renders only one popup card when a miscue is clicked in passage view", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ViewMiscuesModal
+        open
+        onClose={() => {}}
+        passageContent="The cat sat"
+        miscues={miscues}
+        onJumpToTime={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByText("cat"));
+
+    expect(screen.getAllByText("MISPRONUNCIATION")).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: /jump to word/i })).toHaveLength(1);
+  });
+
   it("calls onJumpToTime from the miscue list timestamp", async () => {
     const user = userEvent.setup();
     const onJumpToTime = vi.fn();
@@ -57,7 +76,7 @@ describe("ViewMiscuesModal", () => {
     expect(onJumpToTime).toHaveBeenCalledWith(5);
   });
 
-  it("keeps Passage View and Miscued Words read-only when editing is available", async () => {
+  it("keeps the passage popup read-only when editing is available", async () => {
     const user = userEvent.setup();
 
     render(
@@ -73,10 +92,6 @@ describe("ViewMiscuesModal", () => {
     );
 
     await user.click(screen.getByText("cat"));
-    expect(screen.queryByRole("button", { name: /delete mispronunciation/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /edit mispronunciation/i })).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Miscued Words" }));
     expect(screen.queryByRole("button", { name: /delete mispronunciation/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /edit mispronunciation/i })).not.toBeInTheDocument();
   });
