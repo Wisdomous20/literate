@@ -37,6 +37,7 @@ export default function BehaviorChecklist({
   const [observations, setObservations] = useState(otherObservations);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   // snapshot for cancel
   const [savedChecked, setSavedChecked] = useState<boolean[]>(
     behaviors.map((b) => b.checked ?? false),
@@ -55,6 +56,7 @@ export default function BehaviorChecklist({
 
   const toggleItem = (index: number) => {
     if (!isEditMode) return;
+    setSaveError(null);
     setCheckedItems((prev) => {
       const next = [...prev];
       next[index] = !next[index];
@@ -68,6 +70,7 @@ export default function BehaviorChecklist({
       .map((item) => item.key!);
 
   const handleSave = async () => {
+    setSaveError(null);
     if (!onSave) {
       setSavedChecked([...checkedItems]);
       setSavedObservations(observations);
@@ -80,6 +83,12 @@ export default function BehaviorChecklist({
       setSavedChecked([...checkedItems]);
       setSavedObservations(observations);
       setIsEditMode(false);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to save observations.";
+      setSaveError(message);
     } finally {
       setIsSaving(false);
     }
@@ -88,10 +97,12 @@ export default function BehaviorChecklist({
   const handleCancel = () => {
     setCheckedItems([...savedChecked]);
     setObservations(savedObservations);
+    setSaveError(null);
     setIsEditMode(false);
   };
 
   const handleClear = () => {
+    setSaveError(null);
     setCheckedItems(behaviors.map(() => false));
     setObservations("");
   };
@@ -212,12 +223,20 @@ export default function BehaviorChecklist({
         </label>
         <textarea
           value={observations}
-          onChange={(e) => setObservations(e.target.value)}
+          onChange={(e) => {
+            setSaveError(null);
+            setObservations(e.target.value);
+          }}
           disabled={!isEditMode}
           placeholder="Enter observations..."
           className={`w-full resize-none rounded bg-[rgba(201,201,250,0.15)] p-2.5 text-xs text-[#31318A] placeholder:text-[#31318A]/40 focus:outline-none focus:ring-1 focus:ring-[#5D5DFB] ${!isEditMode ? "opacity-70 cursor-default" : ""}`}
           rows={3}
         />
+        {saveError && (
+          <p className="mt-1 text-[10px] font-semibold text-red-600" role="alert">
+            {saveError}
+          </p>
+        )}
       </div>
 
       {/* Buttons */}
