@@ -51,10 +51,10 @@ export async function GET(
                 },
               },
             },
-            comprehension: {
+            comprehensionResult: {
               select: { score: true, totalItems: true, classificationLevel: true },
             },
-            oralFluency: {
+            oralFluencyResult: {
               select: { status: true, classificationLevel: true },
             },
           },
@@ -90,12 +90,12 @@ export async function GET(
     // Check if assessment got completed (mark used if so)
     const isCompleted =
       (assessment.type === "COMPREHENSION" &&
-        !!assessment.comprehension) ||
+        !!assessment.comprehensionResult) ||
       (assessment.type === "READING_FLUENCY" &&
-        assessment.oralFluency?.status === "COMPLETED") ||
+        assessment.oralFluencyResult?.status === "COMPLETED") ||
       (assessment.type === "ORAL_READING" &&
-        !!assessment.comprehension &&
-        assessment.oralFluency?.status === "COMPLETED");
+        !!assessment.comprehensionResult &&
+        assessment.oralFluencyResult?.status === "COMPLETED");
 
     if (isCompleted) {
       await prisma.assessmentLink.update({

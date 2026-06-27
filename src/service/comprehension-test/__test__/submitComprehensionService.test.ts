@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockPrisma = vi.hoisted(() => ({
   assessment: { findUnique: vi.fn() },
-  comprehensionTest: { create: vi.fn() },
+  comprehensionResult: { create: vi.fn() },
 }));
 
 const mockGradeEssayAnswer = vi.hoisted(() => vi.fn());
@@ -45,7 +45,7 @@ describe("submitComprehensionService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockClassify.mockReturnValue("INDEPENDENT");
-    mockPrisma.comprehensionTest.create.mockResolvedValue({ id: "comp-test-1" });
+    mockPrisma.comprehensionResult.create.mockResolvedValue({ id: "comp-test-1" });
   });
 
   it("returns failure when assessment or passage is not found", async () => {
@@ -147,7 +147,7 @@ It can help them study, find information, and practice new skills.`;
     expect(result.success).toBe(true);
     expect(result.score).toBe(1);
     expect(mockGradeEssayAnswer).not.toHaveBeenCalled();
-    const createCall = mockPrisma.comprehensionTest.create.mock.calls[0][0];
+    const createCall = mockPrisma.comprehensionResult.create.mock.calls[0][0];
     expect(createCall.data.answers.create[0]).toMatchObject({
       question: essayQuestion.questionText,
       isCorrect: true,
@@ -175,7 +175,7 @@ It can help them study, find information, and practice new skills.`;
       answers: [{ questionId: "q-1", answer: "friendship" }],
     });
 
-    const createCall = mockPrisma.comprehensionTest.create.mock.calls[0][0];
+    const createCall = mockPrisma.comprehensionResult.create.mock.calls[0][0];
     expect(createCall.data.score).toBe(1);
     expect(createCall.data.classificationLevel).toBe("INDEPENDENT");
     expect(createCall.data.assessmentId).toBe("assessment-1");
@@ -193,7 +193,7 @@ It can help them study, find information, and practice new skills.`;
     expect(result.success).toBe(true);
     expect(result.percentage).toBe(100);
     expect(result.level).toBe("INDEPENDENT");
-    expect(result.comprehensionTestId).toBe("comp-test-1");
+    expect(result.comprehensionResultId).toBe("comp-test-1");
   });
 
   it("returns failure when prisma throws", async () => {

@@ -20,11 +20,11 @@ function assessment(
     type,
     oralReadingResult:
       type === "ORAL_READING" ? { classificationLevel: level } : null,
-    oralFluency:
+    oralFluencyResult:
       type === "READING_FLUENCY"
         ? { classificationLevel: level, deletedAt: null }
         : null,
-    comprehension:
+    comprehensionResult:
       type === "COMPREHENSION" ? { classificationLevel: level } : null,
   };
 }

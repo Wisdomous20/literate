@@ -1,10 +1,10 @@
 import { prisma } from "@/lib/prisma";
 
-export async function getAllComprehensionTestsByStudentIdService(
+export async function getAllComprehensionResultsByStudentIdService(
   studentId: string,
   userId?: string
 ) {
-  const comprehensionTests = await prisma.comprehensionTest.findMany({
+  const ComprehensionResults = await prisma.comprehensionResult.findMany({
     where: {
       assessment: {
         studentId,
@@ -34,5 +34,5 @@ export async function getAllComprehensionTestsByStudentIdService(
     },
   });
 
-  return comprehensionTests;
+  return ComprehensionResults;
 }

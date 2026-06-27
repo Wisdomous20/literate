@@ -56,9 +56,9 @@ function getAssessmentClassification(
     case "ORAL_READING":
       return assessment.oralReadingResult?.classificationLevel || null;
     case "READING_FLUENCY":
-      return assessment.oralFluency?.classificationLevel || null;
+      return assessment.oralFluencyResult?.classificationLevel || null;
     case "COMPREHENSION":
-      return assessment.comprehension?.classificationLevel || null;
+      return assessment.comprehensionResult?.classificationLevel || null;
     default:
       return null;
   }

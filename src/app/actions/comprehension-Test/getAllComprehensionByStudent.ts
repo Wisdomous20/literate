@@ -1,11 +1,11 @@
 "use server";
 
-import { getAllComprehensionTestsByStudentIdService } from "@/service/comprehension-test/getAllComprehensionByStudentService";
+import { getAllComprehensionResultsByStudentIdService } from "@/service/comprehension-test/getAllComprehensionByStudentService";
 import { studentAssessmentIdSchema } from "@/lib/validation/assessment";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { requireAuth } from "@/utils/roleCheck";
 
-export async function fetchComprehensionTestsByStudentId(studentId: string) {
+export async function fetchComprehensionResultsByStudentId(studentId: string) {
   try {
     const session = await requireAuth();
     const validationResult = studentAssessmentIdSchema.safeParse({ studentId });
@@ -18,11 +18,11 @@ export async function fetchComprehensionTestsByStudentId(studentId: string) {
       };
     }
 
-    const comprehensionTests = await getAllComprehensionTestsByStudentIdService(
+    const ComprehensionResults = await getAllComprehensionResultsByStudentIdService(
       validationResult.data.studentId,
       session.user.id
     );
-    return { success: true, data: comprehensionTests };
+    return { success: true, data: ComprehensionResults };
   } catch (error) {
     const message =
       error instanceof Error

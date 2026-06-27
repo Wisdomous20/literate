@@ -39,12 +39,12 @@ export default function AssessmentSummaryPage() {
     const cards: AssessmentCard[] = [];
 
     // Fluency card — always show for ORAL_READING
-    if (found.oralFluency) {
+    if (found.oralFluencyResult) {
       cards.push({
         id: "reading-fluency-report",
         title: "Oral Reading Fluency Test",
-        percentage: found.oralFluency.oralFluencyScore ?? 0,
-        level: found.oralFluency.classificationLevel || "—",
+        percentage: found.oralFluencyResult.oralFluencyScore ?? 0,
+        level: found.oralFluencyResult.classificationLevel || "—",
       });
     } else {
       cards.push({
@@ -56,19 +56,19 @@ export default function AssessmentSummaryPage() {
     }
 
     // Comprehension card — always show for ORAL_READING
-    if (found.comprehension) {
-      const answers = found.comprehension.answers || [];
+    if (found.comprehensionResult) {
+      const answers = found.comprehensionResult.answers || [];
       const totalCorrect = answers.filter(
         (a: ComprehensionAnswer) => a.isCorrect,
       ).length;
-      const totalItems = found.comprehension.totalItems ?? answers.length;
+      const totalItems = found.comprehensionResult.totalItems ?? answers.length;
       const pct =
         totalItems > 0 ? Math.round((totalCorrect / totalItems) * 100) : 0;
       cards.push({
         id: "comprehension-report",
         title: "Reading Comprehension Test",
         percentage: pct,
-        level: found.comprehension.classificationLevel || "—",
+        level: found.comprehensionResult.classificationLevel || "—",
       });
     } else {
       cards.push({
@@ -84,8 +84,8 @@ export default function AssessmentSummaryPage() {
       level = found.oralReadingResult.classificationLevel || "";
     } else {
       level = computeFinalClassification(
-        found.oralFluency?.classificationLevel,
-        found.comprehension?.classificationLevel,
+        found.oralFluencyResult?.classificationLevel,
+        found.comprehensionResult?.classificationLevel,
       );
     }
 
@@ -94,8 +94,8 @@ export default function AssessmentSummaryPage() {
 
   const handleViewReport = (cardId: string) => {
     if (!assessmentId) return;
-    if (cardId === "reading-fluency-report" && !found?.oralFluency) return;
-    if (cardId === "comprehension-report" && !found?.comprehension) return;
+    if (cardId === "reading-fluency-report" && !found?.oralFluencyResult) return;
+    if (cardId === "comprehension-report" && !found?.comprehensionResult) return;
 
     if (cardId === "reading-fluency-report") {
       router.push(

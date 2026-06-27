@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockTx = {
-  oralFluencySession: { update: vi.fn() },
+  oralFluencyResult: { update: vi.fn() },
   wordTimestamp: { createMany: vi.fn() },
   oralFluencyMiscue: { createMany: vi.fn() },
   oralFluencyBehavior: { createMany: vi.fn() },
@@ -9,7 +9,7 @@ const mockTx = {
 
 const mockPrisma = vi.hoisted(() => ({
   assessment: { findUnique: vi.fn() },
-  oralFluencySession: { create: vi.fn(), update: vi.fn() },
+  oralFluencyResult: { create: vi.fn(), update: vi.fn() },
   $transaction: vi.fn(),
 }));
 
@@ -18,7 +18,7 @@ const mockAnalyzeOralFluency = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));
 vi.mock("../analysisService", () => ({ analyzeOralFluency: mockAnalyzeOralFluency }));
 
-import { createOralFluencySessionService } from "../createOralFluencySessionService";
+import { createOralFluencyResultService } from "../createOralFluencyResultService";
 
 const baseAssessment = {
   id: "a-1",
@@ -42,20 +42,20 @@ const baseAnalysis = {
   ],
 };
 
-describe("createOralFluencySessionService", () => {
+describe("createOralFluencyResultService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockPrisma.$transaction.mockImplementation((fn: (tx: typeof mockTx) => Promise<unknown>) =>
       fn(mockTx),
     );
-    mockTx.oralFluencySession.update.mockResolvedValue({});
+    mockTx.oralFluencyResult.update.mockResolvedValue({});
     mockTx.wordTimestamp.createMany.mockResolvedValue({});
     mockTx.oralFluencyMiscue.createMany.mockResolvedValue({});
     mockTx.oralFluencyBehavior.createMany.mockResolvedValue({});
   });
 
   it("returns VALIDATION_ERROR when assessmentId is missing", async () => {
-    const result = await createOralFluencySessionService({
+    const result = await createOralFluencyResultService({
       assessmentId: "",
       audioBuffer: Buffer.from("audio"),
       fileName: "audio.wav",
@@ -70,7 +70,7 @@ describe("createOralFluencySessionService", () => {
   it("returns NOT_FOUND when assessment does not exist", async () => {
     mockPrisma.assessment.findUnique.mockResolvedValue(null);
 
-    const result = await createOralFluencySessionService({
+    const result = await createOralFluencyResultService({
       assessmentId: "a-1",
       audioBuffer: Buffer.from("audio"),
       fileName: "audio.wav",
@@ -79,13 +79,13 @@ describe("createOralFluencySessionService", () => {
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("NOT_FOUND");
-    expect(mockPrisma.oralFluencySession.create).not.toHaveBeenCalled();
+    expect(mockPrisma.oralFluencyResult.create).not.toHaveBeenCalled();
   });
 
   it("returns NOT_FOUND when assessment has no passage", async () => {
     mockPrisma.assessment.findUnique.mockResolvedValue({ id: "a-1", passage: null });
 
-    const result = await createOralFluencySessionService({
+    const result = await createOralFluencyResultService({
       assessmentId: "a-1",
       audioBuffer: Buffer.from("audio"),
       fileName: "audio.wav",
@@ -98,17 +98,17 @@ describe("createOralFluencySessionService", () => {
 
   it("creates the session with PROCESSING status before running analysis", async () => {
     mockPrisma.assessment.findUnique.mockResolvedValue(baseAssessment);
-    mockPrisma.oralFluencySession.create.mockResolvedValue({ id: "s-1" });
+    mockPrisma.oralFluencyResult.create.mockResolvedValue({ id: "s-1" });
     mockAnalyzeOralFluency.mockResolvedValue(baseAnalysis);
 
-    await createOralFluencySessionService({
+    await createOralFluencyResultService({
       assessmentId: "a-1",
       audioBuffer: Buffer.from("audio"),
       fileName: "audio.wav",
       audioUrl: "http://example.com/audio.wav",
     });
 
-    expect(mockPrisma.oralFluencySession.create).toHaveBeenCalledWith(
+    expect(mockPrisma.oralFluencyResult.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ status: "PROCESSING" }),
       }),
@@ -117,10 +117,10 @@ describe("createOralFluencySessionService", () => {
 
   it("returns success with sessionId and analysis on happy path", async () => {
     mockPrisma.assessment.findUnique.mockResolvedValue(baseAssessment);
-    mockPrisma.oralFluencySession.create.mockResolvedValue({ id: "s-1" });
+    mockPrisma.oralFluencyResult.create.mockResolvedValue({ id: "s-1" });
     mockAnalyzeOralFluency.mockResolvedValue(baseAnalysis);
 
-    const result = await createOralFluencySessionService({
+    const result = await createOralFluencyResultService({
       assessmentId: "a-1",
       audioBuffer: Buffer.from("audio"),
       fileName: "audio.wav",
@@ -134,10 +134,10 @@ describe("createOralFluencySessionService", () => {
 
   it("persists analysis results inside a transaction", async () => {
     mockPrisma.assessment.findUnique.mockResolvedValue(baseAssessment);
-    mockPrisma.oralFluencySession.create.mockResolvedValue({ id: "s-1" });
+    mockPrisma.oralFluencyResult.create.mockResolvedValue({ id: "s-1" });
     mockAnalyzeOralFluency.mockResolvedValue(baseAnalysis);
 
-    await createOralFluencySessionService({
+    await createOralFluencyResultService({
       assessmentId: "a-1",
       audioBuffer: Buffer.from("audio"),
       fileName: "audio.wav",
@@ -145,7 +145,7 @@ describe("createOralFluencySessionService", () => {
     });
 
     expect(mockPrisma.$transaction).toHaveBeenCalledOnce();
-    expect(mockTx.oralFluencySession.update).toHaveBeenCalledWith(
+    expect(mockTx.oralFluencyResult.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ status: "COMPLETED", transcript: baseAnalysis.transcript }),
       }),
@@ -154,10 +154,10 @@ describe("createOralFluencySessionService", () => {
 
   it("persists word timestamps from alignedWords that have a spoken word and timestamp", async () => {
     mockPrisma.assessment.findUnique.mockResolvedValue(baseAssessment);
-    mockPrisma.oralFluencySession.create.mockResolvedValue({ id: "s-1" });
+    mockPrisma.oralFluencyResult.create.mockResolvedValue({ id: "s-1" });
     mockAnalyzeOralFluency.mockResolvedValue(baseAnalysis);
 
-    await createOralFluencySessionService({
+    await createOralFluencyResultService({
       assessmentId: "a-1",
       audioBuffer: Buffer.from("audio"),
       fileName: "audio.wav",
@@ -171,11 +171,11 @@ describe("createOralFluencySessionService", () => {
 
   it("marks session as FAILED and returns ANALYSIS_FAILED when analysis throws", async () => {
     mockPrisma.assessment.findUnique.mockResolvedValue(baseAssessment);
-    mockPrisma.oralFluencySession.create.mockResolvedValue({ id: "s-1" });
+    mockPrisma.oralFluencyResult.create.mockResolvedValue({ id: "s-1" });
     mockAnalyzeOralFluency.mockRejectedValue(new Error("STT failure"));
-    mockPrisma.oralFluencySession.update.mockResolvedValue({});
+    mockPrisma.oralFluencyResult.update.mockResolvedValue({});
 
-    const result = await createOralFluencySessionService({
+    const result = await createOralFluencyResultService({
       assessmentId: "a-1",
       audioBuffer: Buffer.from("audio"),
       fileName: "audio.wav",
@@ -184,7 +184,7 @@ describe("createOralFluencySessionService", () => {
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("ANALYSIS_FAILED");
-    expect(mockPrisma.oralFluencySession.update).toHaveBeenCalledWith(
+    expect(mockPrisma.oralFluencyResult.update).toHaveBeenCalledWith(
       expect.objectContaining({ data: { status: "FAILED" } }),
     );
   });

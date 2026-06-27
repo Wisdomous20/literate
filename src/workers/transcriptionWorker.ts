@@ -11,7 +11,7 @@ async function processTranscription(job: Job<TranscriptionJobData>) {
   const { assessmentId, audioUrl, fileName } = job.data;
   console.log(`[Worker:transcription] Processing ${assessmentId}`);
 
-  const session = await prisma.oralFluencySession.findUnique({
+  const session = await prisma.oralFluencyResult.findUnique({
     where: { assessmentId },
   });
   if (!session) throw new Error(`No session for ${assessmentId}`);
@@ -22,7 +22,7 @@ async function processTranscription(job: Job<TranscriptionJobData>) {
   });
   if (!assessment?.passage) throw new Error(`Assessment/passage not found`);
 
-  await prisma.oralFluencySession.update({
+  await prisma.oralFluencyResult.update({
     where: { id: session.id },
     data: { status: "PROCESSING" },
   });
@@ -41,7 +41,7 @@ async function processTranscription(job: Job<TranscriptionJobData>) {
     await tx.oralFluencyMiscue.deleteMany({ where: { sessionId: session.id } });
     await tx.oralFluencyBehavior.deleteMany({ where: { sessionId: session.id } });
 
-    await tx.oralFluencySession.update({
+    await tx.oralFluencyResult.update({
       where: { id: session.id },
       data: {
         transcript: analysis.transcript,
@@ -128,7 +128,7 @@ transcriptionWorker.on("failed", async (job, err) => {
   const attempts = job?.opts.attempts ?? 1;
   if (!job || job.attemptsMade < attempts) return;
 
-  await prisma.oralFluencySession
+  await prisma.oralFluencyResult
     .update({
       where: { assessmentId: job.data.assessmentId },
       data: { status: "FAILED" },

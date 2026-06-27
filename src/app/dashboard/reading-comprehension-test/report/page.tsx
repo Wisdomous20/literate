@@ -63,7 +63,7 @@ export default function ReadingComprehensionReportPage() {
     if (!assessment) return null;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const test = (assessment as any)?.comprehension;
+    const test = (assessment as any)?.comprehensionResult;
     if (!test) return null;
 
     const session = loadSession();

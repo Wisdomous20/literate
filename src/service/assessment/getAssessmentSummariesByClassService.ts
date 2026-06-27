@@ -43,12 +43,12 @@ export async function getAssessmentSummariesByClassService(
         studentId: true,
         dateTaken: true,
         type: true,
-        oralFluency: {
+        oralFluencyResult: {
           select: {
             classificationLevel: true,
           },
         },
-        comprehension: {
+        comprehensionResult: {
           select: {
             classificationLevel: true,
           },

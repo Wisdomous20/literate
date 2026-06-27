@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockPrisma = vi.hoisted(() => ({
-  comprehensionTest: { findUnique: vi.fn() },
+  comprehensionResult: { findUnique: vi.fn() },
 }));
 
 vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));
 
-import { getComprehensionTestByIdService } from "../getComprehensionTestByIdService";
+import { getComprehensionResultByIdService } from "../getComprehensionResultByIdService";
 
 const baseTest = {
   id: "test-1",
@@ -21,39 +21,39 @@ const baseTest = {
   answers: [],
 };
 
-describe("getComprehensionTestByIdService", () => {
+describe("getComprehensionResultByIdService", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("throws when no test is found for the given id", async () => {
-    mockPrisma.comprehensionTest.findUnique.mockResolvedValue(null);
+    mockPrisma.comprehensionResult.findUnique.mockResolvedValue(null);
 
-    await expect(getComprehensionTestByIdService("nonexistent")).rejects.toThrow(
-      "ComprehensionTest with id nonexistent not found",
+    await expect(getComprehensionResultByIdService("nonexistent")).rejects.toThrow(
+      "ComprehensionResult with id nonexistent not found",
     );
   });
 
   it("returns the comprehension test with nested assessment and answers", async () => {
-    mockPrisma.comprehensionTest.findUnique.mockResolvedValue(baseTest);
+    mockPrisma.comprehensionResult.findUnique.mockResolvedValue(baseTest);
 
-    const result = await getComprehensionTestByIdService("test-1");
+    const result = await getComprehensionResultByIdService("test-1");
 
     expect(result.id).toBe("test-1");
     expect(result.assessment.student.name).toBe("Ana Reyes");
   });
 
   it("queries by id using include for assessment and answers", async () => {
-    mockPrisma.comprehensionTest.findUnique.mockResolvedValue(baseTest);
+    mockPrisma.comprehensionResult.findUnique.mockResolvedValue(baseTest);
 
-    await getComprehensionTestByIdService("test-1");
+    await getComprehensionResultByIdService("test-1");
 
-    const query = mockPrisma.comprehensionTest.findUnique.mock.calls[0][0];
+    const query = mockPrisma.comprehensionResult.findUnique.mock.calls[0][0];
     expect(query.where).toEqual({ id: "test-1" });
     expect(query.include).toBeDefined();
   });
 
   it("propagates prisma errors", async () => {
-    mockPrisma.comprehensionTest.findUnique.mockRejectedValue(new Error("DB down"));
+    mockPrisma.comprehensionResult.findUnique.mockRejectedValue(new Error("DB down"));
 
-    await expect(getComprehensionTestByIdService("test-1")).rejects.toThrow("DB down");
+    await expect(getComprehensionResultByIdService("test-1")).rejects.toThrow("DB down");
   });
 });

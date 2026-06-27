@@ -34,8 +34,8 @@ export interface OralReadingAssessment {
   id: string;
   student: OralReadingStudent;
   passage: OralReadingPassage;
-  oralFluency: OralReadingFluency | null;
-  comprehension: OralReadingComprehension | null;
+  oralFluencyResult: OralReadingFluency | null;
+  comprehensionResult: OralReadingComprehension | null;
 }
 
 export interface OralReadingResultData {

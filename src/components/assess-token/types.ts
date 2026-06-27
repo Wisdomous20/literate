@@ -35,7 +35,7 @@ export interface ComprehensionResult {
   score: number;
   totalItems: number;
   level: string;
-  comprehensionTestId: string;
+  comprehensionResultId: string;
   tagBreakdown?: TagBreakdown;
 }
 

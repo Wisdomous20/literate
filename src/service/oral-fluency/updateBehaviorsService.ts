@@ -36,7 +36,7 @@ export async function updateBehaviorsService(
   const otherObservations = input.otherObservations?.trim() || null;
 
   const session = userId
-    ? await prisma.oralFluencySession.findFirst({
+    ? await prisma.oralFluencyResult.findFirst({
         where: {
           id: sessionId,
           assessment: {
@@ -49,7 +49,7 @@ export async function updateBehaviorsService(
         },
         select: { id: true },
       })
-    : await prisma.oralFluencySession.findUnique({
+    : await prisma.oralFluencyResult.findUnique({
         where: { id: sessionId },
         select: { id: true },
       });
@@ -64,7 +64,7 @@ export async function updateBehaviorsService(
 
   try {
     const behaviors = await prisma.$transaction(async (tx) => {
-      await tx.oralFluencySession.update({
+      await tx.oralFluencyResult.update({
         where: { id: sessionId },
         data: { otherObservations },
       });

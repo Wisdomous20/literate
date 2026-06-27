@@ -190,8 +190,8 @@ model Assessment {
 
   assessmentLink    AssessmentLink?
   oralReadingResult OralReadingResult?
-  comprehension     ComprehensionTest?
-  oralFluency       OralFluencySession?
+  comprehensionResult ComprehensionResult?
+  oralFluencyResult   OralFluencyResult?
 
   @@index([studentId])
   @@index([passageId])
@@ -221,7 +221,7 @@ model OralReadingResult {
   updatedAt           DateTime            @updatedAt
 }
 
-model OralFluencySession {
+model OralFluencyResult {
   id                  String               @id @default(cuid())
   assessmentId        String?              @unique
   audioUrl            String               @default("")
@@ -244,6 +244,8 @@ model OralFluencySession {
   miscues        OralFluencyMiscue[]
   behaviors      OralFluencyBehavior[]
   wordTimestamps WordTimestamp[]
+
+  @@map("OralFluencySession")
 }
 
 model WordTimestamp {
@@ -255,7 +257,7 @@ model WordTimestamp {
   confidence Float?
   index      Int
 
-  session OralFluencySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  oralFluencyResult OralFluencyResult @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId])
 }
@@ -271,7 +273,7 @@ model OralFluencyMiscue {
   isSelfCorrected Boolean    @default(false)
   createdAt       DateTime   @default(now())
 
-  session OralFluencySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  oralFluencyResult OralFluencyResult @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId])
 }
@@ -287,7 +289,7 @@ model OralFluencyBehavior {
   notes        String?
   createdAt    DateTime                @default(now())
 
-  session OralFluencySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  oralFluencyResult OralFluencyResult @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId])
 }
@@ -305,7 +307,7 @@ model Passage {
   updatedAt   DateTime     @updatedAt
 }
 
-model ComprehensionTest {
+model ComprehensionResult {
   id                  String                @id @default(cuid())
   assessmentId        String                @unique
   assessment          Assessment            @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
@@ -313,19 +315,21 @@ model ComprehensionTest {
   totalItems          Int
   classificationLevel LevelClassification
   answers             ComprehensionAnswer[]
+
+  @@map("ComprehensionTest")
 }
 
 model ComprehensionAnswer {
   id                  String            @id @default(cuid())
-  comprehensionTestId String
-  comprehensionTest   ComprehensionTest @relation(fields: [comprehensionTestId], references: [id], onDelete: Cascade)
+  comprehensionResultId String @map("comprehensionTestId")
+  comprehensionResult   ComprehensionResult @relation(fields: [comprehensionResultId], references: [id], onDelete: Cascade)
   question            String
   tag                 Tags
   answer              String
   isCorrect           Boolean?
   createdAt           DateTime          @default(now())
 
-  @@index([comprehensionTestId])
+  @@index([comprehensionResultId])
 }
 
 model Quiz {

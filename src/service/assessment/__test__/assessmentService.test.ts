@@ -50,9 +50,9 @@ const makeAssessment = (
   student: { id: "student-1", name: "Juan", classRoomId: "class-1" },
   oralReadingResult:
     type === "ORAL_READING" ? { classificationLevel: classification } : null,
-  oralFluency:
+  oralFluencyResult:
     type === "READING_FLUENCY" ? { classificationLevel: classification } : null,
-  comprehension:
+  comprehensionResult:
     type === "COMPREHENSION" ? { classificationLevel: classification } : null,
 });
 
@@ -243,8 +243,8 @@ describe("getAssessmentSummariesByClassService", () => {
       studentId: true,
       dateTaken: true,
       type: true,
-      oralFluency: { select: { classificationLevel: true } },
-      comprehension: { select: { classificationLevel: true } },
+      oralFluencyResult: { select: { classificationLevel: true } },
+      comprehensionResult: { select: { classificationLevel: true } },
       oralReadingResult: { select: { classificationLevel: true } },
     });
   });
@@ -387,8 +387,8 @@ describe("getAssessmentComprehensionService", () => {
   it("returns the assessment with comprehension data when found", async () => {
     const data = {
       id: "assessment-1",
-      oralFluency: { classificationLevel: "INDEPENDENT" },
-      comprehension: {
+      oralFluencyResult: { classificationLevel: "INDEPENDENT" },
+      comprehensionResult: {
         id: "comp-1",
         score: 8,
         totalItems: 10,

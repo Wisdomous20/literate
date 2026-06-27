@@ -17,7 +17,7 @@ interface CreateOralFluencyResult {
   code?: "VALIDATION_ERROR" | "NOT_FOUND" | "ANALYSIS_FAILED" | "INTERNAL_ERROR"
 }
 
-export async function createOralFluencySessionService(
+export async function createOralFluencyResultService(
   input: CreateOralFluencyInput
 ): Promise<CreateOralFluencyResult> {
   const { assessmentId, audioBuffer, fileName, audioUrl } = input
@@ -53,7 +53,7 @@ export async function createOralFluencySessionService(
   }
 
   // 2. Create session (linked to existing assessment)
-  const session = await prisma.oralFluencySession.create({
+  const session = await prisma.oralFluencyResult.create({
     data: {
       assessmentId: assessment.id,
       audioUrl,
@@ -72,7 +72,7 @@ export async function createOralFluencySessionService(
 
     // 4. Persist results in transaction
         await prisma.$transaction(async (tx) => {
-      await tx.oralFluencySession.update({
+      await tx.oralFluencyResult.update({
         where: { id: session.id },
         data: {
         transcript: analysis.transcript,
@@ -136,7 +136,7 @@ export async function createOralFluencySessionService(
 
     return { success: true, sessionId: session.id, analysis }
   } catch (error) {
-    await prisma.oralFluencySession.update({
+    await prisma.oralFluencyResult.update({
       where: { id: session.id },
       data: { status: "FAILED" },
     })

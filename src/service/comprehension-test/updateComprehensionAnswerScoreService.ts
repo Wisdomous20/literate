@@ -44,7 +44,7 @@ export async function updateComprehensionAnswerService(
   try {
     const existingAnswer = await prisma.comprehensionAnswer.findUnique({
       where: { id: comprehensionAnswerId },
-      select: { id: true, comprehensionTestId: true },
+      select: { id: true, comprehensionResultId: true },
     });
 
     if (!existingAnswer) {
@@ -64,7 +64,7 @@ export async function updateComprehensionAnswerService(
 
     // Recalculate score for the comprehension test
     const allAnswers = await prisma.comprehensionAnswer.findMany({
-      where: { comprehensionTestId: existingAnswer.comprehensionTestId },
+      where: { comprehensionResultId: existingAnswer.comprehensionResultId },
       select: { isCorrect: true },
     });
 
@@ -74,8 +74,8 @@ export async function updateComprehensionAnswerService(
     const newLevel = classifyComprehensionLevel(percentage);
 
     // Update the comprehension test score and level
-    await prisma.comprehensionTest.update({
-      where: { id: existingAnswer.comprehensionTestId },
+    await prisma.comprehensionResult.update({
+      where: { id: existingAnswer.comprehensionResultId },
       data: { score: newScore, classificationLevel: newLevel },
     });
 

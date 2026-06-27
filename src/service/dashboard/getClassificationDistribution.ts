@@ -64,8 +64,8 @@ export async function getClassificationDistribution(
       studentId: true,
       type: true,
       oralReadingResult: { select: { classificationLevel: true } },
-      oralFluency: { select: { classificationLevel: true, deletedAt: true } },
-      comprehension: { select: { classificationLevel: true } },
+      oralFluencyResult: { select: { classificationLevel: true, deletedAt: true } },
+      comprehensionResult: { select: { classificationLevel: true } },
     },
   });
 
@@ -83,12 +83,12 @@ export async function getClassificationDistribution(
         addLevel(dist, assessment.oralReadingResult?.classificationLevel);
         break;
       case "READING_FLUENCY":
-        if (assessment.oralFluency?.deletedAt === null) {
-          addLevel(dist, assessment.oralFluency.classificationLevel);
+        if (assessment.oralFluencyResult?.deletedAt === null) {
+          addLevel(dist, assessment.oralFluencyResult.classificationLevel);
         }
         break;
       case "COMPREHENSION":
-        addLevel(dist, assessment.comprehension?.classificationLevel);
+        addLevel(dist, assessment.comprehensionResult?.classificationLevel);
         break;
     }
   }

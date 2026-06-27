@@ -115,7 +115,7 @@ export async function updateMiscueService(
         ? await prisma.oralFluencyMiscue.findFirst({
             where: {
               id: miscueId!,
-              session: {
+              oralFluencyResult: {
                 assessment: {
                   student: {
                     classRoom: {
@@ -125,11 +125,11 @@ export async function updateMiscueService(
                 },
               },
             },
-            include: { session: true },
+            include: { oralFluencyResult: true },
           })
         : await prisma.oralFluencyMiscue.findUnique({
             where: { id: miscueId! },
-            include: { session: true },
+            include: { oralFluencyResult: true },
           });
 
   if (action !== "create" && !existingMiscue) {
@@ -141,7 +141,7 @@ export async function updateMiscueService(
   }
 
   if (action === "create" && userId) {
-    const session = await prisma.oralFluencySession.findFirst({
+    const session = await prisma.oralFluencyResult.findFirst({
       where: {
         id: sessionId!,
         assessment: {
@@ -182,12 +182,12 @@ export async function updateMiscueService(
   const assessmentId =
     action === "create"
       ? (
-          await prisma.oralFluencySession.findUnique({
+          await prisma.oralFluencyResult.findUnique({
             where: { id: sessionId! },
             select: { assessmentId: true },
           })
         )?.assessmentId ?? null
-      : existingMiscue!.session?.assessmentId ?? null;
+      : existingMiscue!.oralFluencyResult?.assessmentId ?? null;
 
   try {
     const transactionResult = await prisma.$transaction(async (tx) => {
@@ -239,7 +239,7 @@ export async function updateMiscueService(
         (miscue) => !miscue.isSelfCorrected,
       ).length;
 
-      const session = await tx.oralFluencySession.findUnique({
+      const session = await tx.oralFluencyResult.findUnique({
         where: { id: targetSessionId },
         select: { totalWords: true },
       });
@@ -254,7 +254,7 @@ export async function updateMiscueService(
             ) / 10
           : 0;
 
-      await tx.oralFluencySession.update({
+      await tx.oralFluencyResult.update({
         where: { id: targetSessionId },
         data: {
           totalMiscues: countedMiscues,

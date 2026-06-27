@@ -398,7 +398,7 @@ async function persistTranscriptCleanup({
 
     const metrics = computeMetrics(transcriptPlan.totalWords, remainingMiscues);
 
-    await tx.oralFluencySession.update({
+    await tx.oralFluencyResult.update({
       where: { id: sessionId },
       data: {
         totalWords: transcriptPlan.totalWords,
@@ -444,7 +444,7 @@ async function persistFullAnalysis({
     await tx.oralFluencyMiscue.deleteMany({ where: { sessionId } });
     await tx.oralFluencyBehavior.deleteMany({ where: { sessionId } });
 
-    await tx.oralFluencySession.update({
+    await tx.oralFluencyResult.update({
       where: { id: sessionId },
       data: {
         transcript: analysis.transcript,
@@ -506,7 +506,7 @@ export async function recheckAllMiscuesService(
   }
 
   try {
-    const session = await prisma.oralFluencySession.findUnique({
+    const session = await prisma.oralFluencyResult.findUnique({
       where: { id: sessionId },
       include: {
         miscues: { orderBy: { wordIndex: "asc" } },

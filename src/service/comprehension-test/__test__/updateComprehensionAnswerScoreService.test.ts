@@ -6,7 +6,7 @@ const mockPrisma = vi.hoisted(() => ({
     update: vi.fn(),
     findMany: vi.fn(),
   },
-  comprehensionTest: { update: vi.fn() },
+  comprehensionResult: { update: vi.fn() },
 }));
 
 const mockClassify = vi.hoisted(() => vi.fn());
@@ -16,7 +16,7 @@ vi.mock("../classifyComprehensionLevel", () => ({ default: mockClassify }));
 
 import { updateComprehensionAnswerService } from "../updateComprehensionAnswerScoreService";
 
-const existingAnswer = { id: "ans-1", comprehensionTestId: "test-1" };
+const existingAnswer = { id: "ans-1", comprehensionResultId: "test-1" };
 
 describe("updateComprehensionAnswerService", () => {
   beforeEach(() => vi.clearAllMocks());
@@ -65,7 +65,7 @@ describe("updateComprehensionAnswerService", () => {
       { isCorrect: false },
     ]);
     mockClassify.mockReturnValue("INSTRUCTIONAL");
-    mockPrisma.comprehensionTest.update.mockResolvedValue({});
+    mockPrisma.comprehensionResult.update.mockResolvedValue({});
 
     const result = await updateComprehensionAnswerService({
       comprehensionAnswerId: "ans-1",
@@ -84,7 +84,7 @@ describe("updateComprehensionAnswerService", () => {
       { isCorrect: false },
     ]);
     mockClassify.mockReturnValue("FRUSTRATION");
-    mockPrisma.comprehensionTest.update.mockResolvedValue({});
+    mockPrisma.comprehensionResult.update.mockResolvedValue({});
 
     const result = await updateComprehensionAnswerService({
       comprehensionAnswerId: "ans-1",
@@ -92,7 +92,7 @@ describe("updateComprehensionAnswerService", () => {
     });
 
     expect(result.updatedLevel).toBe("FRUSTRATION");
-    expect(mockPrisma.comprehensionTest.update).toHaveBeenCalledWith(
+    expect(mockPrisma.comprehensionResult.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ score: 0, classificationLevel: "FRUSTRATION" }),
       }),
@@ -104,7 +104,7 @@ describe("updateComprehensionAnswerService", () => {
     mockPrisma.comprehensionAnswer.update.mockResolvedValue({ id: "ans-1", answer: "B", isCorrect: true });
     mockPrisma.comprehensionAnswer.findMany.mockResolvedValue([]);
     mockClassify.mockReturnValue("FRUSTRATION");
-    mockPrisma.comprehensionTest.update.mockResolvedValue({});
+    mockPrisma.comprehensionResult.update.mockResolvedValue({});
 
     const result = await updateComprehensionAnswerService({
       comprehensionAnswerId: "ans-1",

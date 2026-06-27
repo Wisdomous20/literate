@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockTx = {
-  oralFluencySession: {
+  oralFluencyResult: {
     update: vi.fn(),
   },
   oralFluencyBehavior: {
@@ -12,7 +12,7 @@ const mockTx = {
 };
 
 const mockPrisma = vi.hoisted(() => ({
-  oralFluencySession: { findUnique: vi.fn() },
+  oralFluencyResult: { findUnique: vi.fn() },
   $transaction: vi.fn(),
 }));
 
@@ -24,7 +24,7 @@ function setupTransaction() {
   mockPrisma.$transaction.mockImplementation(
     (fn: (tx: typeof mockTx) => Promise<unknown>) => fn(mockTx),
   );
-  mockTx.oralFluencySession.update.mockResolvedValue({});
+  mockTx.oralFluencyResult.update.mockResolvedValue({});
   mockTx.oralFluencyBehavior.deleteMany.mockResolvedValue({ count: 0 });
   mockTx.oralFluencyBehavior.createMany.mockResolvedValue({ count: 0 });
   mockTx.oralFluencyBehavior.findMany.mockResolvedValue([
@@ -43,11 +43,11 @@ describe("updateBehaviorsService", () => {
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("VALIDATION_ERROR");
-    expect(mockPrisma.oralFluencySession.findUnique).not.toHaveBeenCalled();
+    expect(mockPrisma.oralFluencyResult.findUnique).not.toHaveBeenCalled();
   });
 
   it("returns NOT_FOUND when the session does not exist", async () => {
-    mockPrisma.oralFluencySession.findUnique.mockResolvedValue(null);
+    mockPrisma.oralFluencyResult.findUnique.mockResolvedValue(null);
 
     const result = await updateBehaviorsService({
       sessionId: "s-1",
@@ -59,7 +59,7 @@ describe("updateBehaviorsService", () => {
   });
 
   it("replaces behavior rows for the session", async () => {
-    mockPrisma.oralFluencySession.findUnique.mockResolvedValue({ id: "s-1" });
+    mockPrisma.oralFluencyResult.findUnique.mockResolvedValue({ id: "s-1" });
     setupTransaction();
 
     const result = await updateBehaviorsService({
@@ -80,7 +80,7 @@ describe("updateBehaviorsService", () => {
   });
 
   it("saves teacher-observed behavior rows", async () => {
-    mockPrisma.oralFluencySession.findUnique.mockResolvedValue({ id: "s-1" });
+    mockPrisma.oralFluencyResult.findUnique.mockResolvedValue({ id: "s-1" });
     setupTransaction();
 
     const result = await updateBehaviorsService({
@@ -103,7 +103,7 @@ describe("updateBehaviorsService", () => {
   });
 
   it("saves other observations on the session", async () => {
-    mockPrisma.oralFluencySession.findUnique.mockResolvedValue({ id: "s-1" });
+    mockPrisma.oralFluencyResult.findUnique.mockResolvedValue({ id: "s-1" });
     setupTransaction();
 
     const result = await updateBehaviorsService({
@@ -113,7 +113,7 @@ describe("updateBehaviorsService", () => {
     });
 
     expect(result.success).toBe(true);
-    expect(mockTx.oralFluencySession.update).toHaveBeenCalledWith({
+    expect(mockTx.oralFluencyResult.update).toHaveBeenCalledWith({
       where: { id: "s-1" },
       data: { otherObservations: "Voice was too soft" },
     });
@@ -121,7 +121,7 @@ describe("updateBehaviorsService", () => {
   });
 
   it("does not create rows when all behaviors are cleared", async () => {
-    mockPrisma.oralFluencySession.findUnique.mockResolvedValue({ id: "s-1" });
+    mockPrisma.oralFluencyResult.findUnique.mockResolvedValue({ id: "s-1" });
     setupTransaction();
 
     await updateBehaviorsService({
@@ -134,7 +134,7 @@ describe("updateBehaviorsService", () => {
   });
 
   it("deduplicates behavior types before saving", async () => {
-    mockPrisma.oralFluencySession.findUnique.mockResolvedValue({ id: "s-1" });
+    mockPrisma.oralFluencyResult.findUnique.mockResolvedValue({ id: "s-1" });
     setupTransaction();
 
     await updateBehaviorsService({
@@ -148,7 +148,7 @@ describe("updateBehaviorsService", () => {
   });
 
   it("returns INTERNAL_ERROR when the transaction fails", async () => {
-    mockPrisma.oralFluencySession.findUnique.mockResolvedValue({ id: "s-1" });
+    mockPrisma.oralFluencyResult.findUnique.mockResolvedValue({ id: "s-1" });
     mockPrisma.$transaction.mockRejectedValue(new Error("DB down"));
 
     const result = await updateBehaviorsService({

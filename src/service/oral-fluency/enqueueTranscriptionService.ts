@@ -61,7 +61,7 @@ export async function enqueueTranscriptionService(
       };
     }
 
-    const session = await prisma.oralFluencySession.upsert({
+    const session = await prisma.oralFluencyResult.upsert({
       where: { assessmentId },
       create: {
         assessmentId,
@@ -109,7 +109,7 @@ export async function enqueueTranscriptionService(
     };
   } catch (error) {
     if (sessionId) {
-      await prisma.oralFluencySession
+      await prisma.oralFluencyResult
         .update({
           where: { id: sessionId },
           data: { status: "FAILED" },

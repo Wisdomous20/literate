@@ -60,7 +60,7 @@ interface ComprehensionResult {
   score: number;
   totalItems: number;
   level: string;
-  comprehensionTestId: string;
+  comprehensionResultId: string;
   tagBreakdown?: TagBreakdown;
   assessmentId?: string;
 }
@@ -112,7 +112,7 @@ function saveComprehensionState(state: ComprehensionState) {
   }
 }
 
-export default function ReadingComprehensionTestPage() {
+export default function ReadingComprehensionResultPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -569,7 +569,7 @@ export default function ReadingComprehensionTestPage() {
         score: result.score,
         totalItems: result.totalItems,
         level: result.level,
-        comprehensionTestId: result.comprehensionTestId,
+        comprehensionResultId: result.comprehensionResultId,
         tagBreakdown,
         assessmentId: result.assessmentId,
       };

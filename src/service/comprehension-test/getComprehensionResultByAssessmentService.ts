@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
-export async function getComprehensionTestByAssessmentService(
+export async function getComprehensionResultByAssessmentService(
   assessmentId: string,
   userId?: string
 ) {
@@ -14,8 +14,8 @@ export async function getComprehensionTestByAssessmentService(
       answers: true,
     } as const;
 
-  const comprehensionTest = userId
-    ? await prisma.comprehensionTest.findFirst({
+  const ComprehensionResult = userId
+    ? await prisma.comprehensionResult.findFirst({
         where: {
           assessmentId,
           assessment: {
@@ -28,16 +28,16 @@ export async function getComprehensionTestByAssessmentService(
         },
         include,
       })
-    : await prisma.comprehensionTest.findUnique({
+    : await prisma.comprehensionResult.findUnique({
         where: { assessmentId },
         include,
       });
 
-  if (!comprehensionTest) {
+  if (!ComprehensionResult) {
     throw new Error(
-      `ComprehensionTest for assessment ${assessmentId} not found or access denied`
+      `ComprehensionResult for assessment ${assessmentId} not found or access denied`
     );
   }
 
-  return comprehensionTest;
+  return ComprehensionResult;
 }

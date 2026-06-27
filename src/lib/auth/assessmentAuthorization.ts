@@ -73,7 +73,7 @@ export async function hasSessionAccess(sessionId: string): Promise<boolean> {
   const userId = await getCurrentUserId();
   if (!userId) return false;
 
-  const session = await prisma.oralFluencySession.findFirst({
+  const session = await prisma.oralFluencyResult.findFirst({
     where: {
       id: sessionId,
       assessment: {

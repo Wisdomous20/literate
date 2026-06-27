@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const session = await prisma.oralFluencySession.findUnique({
+    const session = await prisma.oralFluencyResult.findUnique({
       where: { id },
       include: {
         miscues: { orderBy: { wordIndex: "asc" } },
