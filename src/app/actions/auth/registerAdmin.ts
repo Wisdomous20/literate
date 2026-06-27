@@ -4,8 +4,11 @@ import { registerAdminUser } from "@/service/auth/registerAdminUser";
 import { RegisterUserInput } from "@/types/auth";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { registerUserSchema } from "@/lib/validation/auth";
+import { requireRole } from "@/utils/roleCheck";
 
 export async function registerAdminAction(input: RegisterUserInput) {
+  await requireRole("ADMIN");
+
   const validationResult = registerUserSchema.safeParse(input);
 
   if (!validationResult.success) {

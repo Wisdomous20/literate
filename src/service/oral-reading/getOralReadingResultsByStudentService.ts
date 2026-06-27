@@ -2,13 +2,23 @@ import { prisma } from "@/lib/prisma";
 import { OralReadingResultData, OralReadingList } from "@/types/oral-reading-result";
 
 export async function getOralReadingResultsByStudentService(
-  studentId: string
+  studentId: string,
+  userId?: string
 ): Promise<OralReadingList> {
   try {
     const oralReadingResults = await prisma.oralReadingResult.findMany({
       where: {
         assessment: {
           studentId,
+          ...(userId
+            ? {
+                student: {
+                  classRoom: {
+                    userId,
+                  },
+                },
+              }
+            : {}),
         },
       },
       include: {
@@ -39,7 +49,7 @@ export async function getOralReadingResultsByStudentService(
     if (!oralReadingResults || oralReadingResults.length === 0) {
       return {
         success: false,
-        error: "No oral reading results found for this student.",
+        error: "No oral reading results found for this student or access denied.",
         code: "NOT_FOUND",
       };
     }

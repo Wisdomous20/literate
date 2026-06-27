@@ -3,8 +3,10 @@
 import { getOralReadingResultsByStudentService } from "@/service/oral-reading/getOralReadingResultsByStudentService";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { studentAssessmentIdSchema } from "@/lib/validation/assessment";
+import { requireAuth } from "@/utils/roleCheck";
 
 export async function getOralReadingResultsByStudent(studentId: string) {
+  const session = await requireAuth();
   const validationResult = studentAssessmentIdSchema.safeParse({ studentId });
 
   if (!validationResult.success) {
@@ -12,7 +14,8 @@ export async function getOralReadingResultsByStudent(studentId: string) {
   }
 
   const result = await getOralReadingResultsByStudentService(
-    validationResult.data.studentId
+    validationResult.data.studentId,
+    session.user.id
   );
 
   if (!result.success) {

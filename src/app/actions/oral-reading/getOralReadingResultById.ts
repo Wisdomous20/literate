@@ -3,8 +3,10 @@
 import { getOralReadingResultByIdService } from "@/service/oral-reading/getOralReadingResultByIdService";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { oralReadingResultIdSchema } from "@/lib/validation/assessment";
+import { requireAuth } from "@/utils/roleCheck";
 
 export async function getOralReadingResultById(oralReadingResultId: string) {
+  const session = await requireAuth();
   const validationResult = oralReadingResultIdSchema.safeParse({
     oralReadingResultId,
   });
@@ -14,7 +16,8 @@ export async function getOralReadingResultById(oralReadingResultId: string) {
   }
 
   const result = await getOralReadingResultByIdService(
-    validationResult.data.oralReadingResultId
+    validationResult.data.oralReadingResultId,
+    session.user.id
   );
 
   if (!result.success) {

@@ -20,6 +20,7 @@ export interface UpdateBehaviorsResult {
 
 export async function updateBehaviorsService(
   input: UpdateBehaviorsInput,
+  userId?: string,
 ): Promise<UpdateBehaviorsResult> {
   const sessionId = input.sessionId?.trim();
 
@@ -34,15 +35,29 @@ export async function updateBehaviorsService(
   const behaviorTypes = [...new Set(input.behaviorTypes)];
   const otherObservations = input.otherObservations?.trim() || null;
 
-  const session = await prisma.oralFluencySession.findUnique({
-    where: { id: sessionId },
-    select: { id: true },
-  });
+  const session = userId
+    ? await prisma.oralFluencySession.findFirst({
+        where: {
+          id: sessionId,
+          assessment: {
+            student: {
+              classRoom: {
+                userId,
+              },
+            },
+          },
+        },
+        select: { id: true },
+      })
+    : await prisma.oralFluencySession.findUnique({
+        where: { id: sessionId },
+        select: { id: true },
+      });
 
   if (!session) {
     return {
       success: false,
-      error: "Oral fluency session not found.",
+      error: "Oral fluency session not found or access denied.",
       code: "NOT_FOUND",
     };
   }

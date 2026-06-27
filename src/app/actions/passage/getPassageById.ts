@@ -3,12 +3,15 @@
 import { getPassageByIdService } from "@/service/admin/getPassageByIdService";
 import { getPassageByIdSchema } from "@/lib/validation/admin";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
+import { requireAuth } from "@/utils/roleCheck";
 
 interface GetPassageByIdActionInput {
   id: string;
 }
 
 export async function getPassageByIdAction(input: GetPassageByIdActionInput) {
+  await requireAuth();
+
   const validationResult = getPassageByIdSchema.safeParse(input);
 
   if (!validationResult.success) {

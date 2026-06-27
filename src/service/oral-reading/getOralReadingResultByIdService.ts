@@ -2,12 +2,11 @@ import { prisma } from "@/lib/prisma";
 import { OralReadingResultData, OralReading } from "@/types/oral-reading-result";
 
 export async function getOralReadingResultByIdService(
-  oralReadingResultId: string
+  oralReadingResultId: string,
+  userId?: string
 ): Promise<OralReading> {
   try {
-    const oralReadingResult = await prisma.oralReadingResult.findUnique({
-      where: { id: oralReadingResultId },
-      include: {
+    const include = {
         assessment: {
           include: {
             student: { select: { id: true, name: true } },
@@ -28,13 +27,31 @@ export async function getOralReadingResultByIdService(
             },
           },
         },
-      },
-    });
+      } as const;
+
+    const oralReadingResult = userId
+      ? await prisma.oralReadingResult.findFirst({
+          where: {
+            id: oralReadingResultId,
+            assessment: {
+              student: {
+                classRoom: {
+                  userId,
+                },
+              },
+            },
+          },
+          include,
+        })
+      : await prisma.oralReadingResult.findUnique({
+          where: { id: oralReadingResultId },
+          include,
+        });
 
     if (!oralReadingResult) {
       return {
         success: false,
-        error: "Oral Reading Result not found.",
+        error: "Oral Reading Result not found or access denied.",
         code: "NOT_FOUND",
       };
     }

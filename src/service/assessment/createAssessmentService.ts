@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { checkDailyLimit } from "@/service/assessment/checkDailyLimitService";
 
 interface CreateAssessmentInput {
+  userId?: string;
   studentId: string;
   type: "ORAL_READING" | "COMPREHENSION" | "READING_FLUENCY";
   passageId: string;
@@ -23,7 +24,7 @@ interface CreateAssessmentResult {
 export async function createAssessmentService(
   input: CreateAssessmentInput
 ): Promise<CreateAssessmentResult> {
-  const { studentId, type, passageId } = input;
+  const { userId, studentId, type, passageId } = input;
 
   if (!studentId || !type || !passageId) {
     return {
@@ -35,27 +36,39 @@ export async function createAssessmentService(
 
   try {
     // Look up the student's classroom to find the owning user
-    const student = await prisma.student.findUnique({
-      where: { id: studentId },
-      include: {
-        classRoom: {
-          select: { userId: true },
-        },
-      },
-    });
+    const student = userId
+      ? await prisma.student.findFirst({
+          where: {
+            id: studentId,
+            classRoom: { userId },
+          },
+          include: {
+            classRoom: {
+              select: { userId: true },
+            },
+          },
+        })
+      : await prisma.student.findUnique({
+          where: { id: studentId },
+          include: {
+            classRoom: {
+              select: { userId: true },
+            },
+          },
+        });
 
     if (!student) {
       return {
         success: false,
-        error: "Student not found.",
+        error: "Student not found or access denied.",
         code: "VALIDATION_ERROR",
       };
     }
 
-    const userId = student.classRoom.userId;
+    const owningUserId = student.classRoom.userId;
 
     // Check daily limit for free-tier users
-    const limitCheck = await checkDailyLimit(userId, type);
+    const limitCheck = await checkDailyLimit(owningUserId, type);
 
     if (!limitCheck.allowed) {
       return {

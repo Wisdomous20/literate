@@ -3,6 +3,7 @@
 import { addQuestionService } from "@/service/admin/addQuestionService";
 import { addQuestionSchema } from "@/lib/validation/admin";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
+import { requireRole } from "@/utils/roleCheck";
 
 interface AddQuestionActionInput {
   passageId: string;
@@ -14,6 +15,8 @@ interface AddQuestionActionInput {
 }
 
 export async function addQuestionAction(input: AddQuestionActionInput) {
+  await requireRole("ADMIN");
+
   const validationResult = addQuestionSchema.safeParse(input);
 
   if (!validationResult.success) {

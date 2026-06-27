@@ -3,6 +3,7 @@
 import { createQuizService } from "@/service/admin/createQuizService";
 import { createQuizSchema } from "@/lib/validation/admin";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
+import { requireRole } from "@/utils/roleCheck";
 
 interface CreateQuizActionInput {
   passageId: string;
@@ -17,6 +18,8 @@ interface CreateQuizActionInput {
 }
 
 export async function createQuizAction(input: CreateQuizActionInput) {
+  await requireRole("ADMIN");
+
   const validationResult = createQuizSchema.safeParse({
     ...input,
     totalNumber: input.questions.length,

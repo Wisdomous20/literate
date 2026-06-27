@@ -1,8 +1,11 @@
 "use server";
 
 import { getAllQuestionsService } from "@/service/admin/getAllQuestionsService";
+import { requireRole } from "@/utils/roleCheck";
 
 export async function getAllQuestionsAction() {
+  await requireRole("ADMIN");
+
   const result = await getAllQuestionsService();
 
   if (!result.success) {
