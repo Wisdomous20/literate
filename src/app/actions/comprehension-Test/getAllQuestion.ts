@@ -1,10 +1,10 @@
 "use server";
 
-import { getAllQuestionsService } from "@/service/admin/getAllQuestionsService";
-import { requireRole } from "@/utils/roleCheck";
+import { getAllQuestionsService } from "@/service/question/getAllQuestionsService";
+import { requirePassageManager } from "@/utils/roleCheck";
 
 export async function getAllQuestionsAction() {
-  await requireRole("ADMIN");
+  await requirePassageManager();
 
   const result = await getAllQuestionsService();
 

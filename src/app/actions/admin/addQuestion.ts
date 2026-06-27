@@ -1,9 +1,9 @@
 "use server";
 
-import { addQuestionService } from "@/service/admin/addQuestionService";
+import { addQuestionService } from "@/service/question/addQuestionService";
 import { addQuestionSchema } from "@/lib/validation/admin";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
-import { requireRole } from "@/utils/roleCheck";
+import { requirePassageManager } from "@/utils/roleCheck";
 
 interface AddQuestionActionInput {
   passageId: string;
@@ -15,7 +15,7 @@ interface AddQuestionActionInput {
 }
 
 export async function addQuestionAction(input: AddQuestionActionInput) {
-  await requireRole("ADMIN");
+  await requirePassageManager();
 
   const validationResult = addQuestionSchema.safeParse(input);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { X } from "lucide-react";
@@ -68,20 +68,17 @@ export function ClassificationPopup({
   const firstName = studentName.trim().split(" ")[0] || "Reader";
 
   const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
 
-  // Portal mount guard (SSR-safe)
-  const [mounted, setMounted] = useState(false);
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     const timer = setTimeout(() => onCloseRef.current(), 7000);
     return () => clearTimeout(timer);
   }, []);
 
-  if (!mounted) return null;
+  if (typeof document === "undefined") return null;
 
   return createPortal(
     <>

@@ -1,6 +1,6 @@
 "use server";
 
-import { getAllPassageService } from "@/service/admin/getAllPassageService";
+import { getAllPassageService } from "@/service/passage/getAllPassageService";
 import { requireAuth } from "@/utils/roleCheck";
 
 export async function getAllPassagesAction() {

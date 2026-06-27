@@ -1,9 +1,9 @@
 "use server";
 
-import { updateQuizService } from "@/service/admin/updateQuizService";
+import { updateQuizService } from "@/service/quiz/updateQuizService";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { updateQuizSchema } from "@/lib/validation/admin";
-import { requireRole } from "@/utils/roleCheck";
+import { requirePassageManager } from "@/utils/roleCheck";
 
 interface EditQuizActionInput {
   id: string;
@@ -19,7 +19,7 @@ interface EditQuizActionInput {
 }
 
 export async function editQuizAction(input: EditQuizActionInput) {
-  await requireRole("ADMIN");
+  await requirePassageManager();
 
   const validationResult = updateQuizSchema.safeParse(input);
 

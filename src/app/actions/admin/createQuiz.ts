@@ -1,9 +1,9 @@
 "use server";
 
-import { createQuizService } from "@/service/admin/createQuizService";
+import { createQuizService } from "@/service/quiz/createQuizService";
 import { createQuizSchema } from "@/lib/validation/admin";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
-import { requireRole } from "@/utils/roleCheck";
+import { requirePassageManager } from "@/utils/roleCheck";
 
 interface CreateQuizActionInput {
   passageId: string;
@@ -18,7 +18,7 @@ interface CreateQuizActionInput {
 }
 
 export async function createQuizAction(input: CreateQuizActionInput) {
-  await requireRole("ADMIN");
+  await requirePassageManager();
 
   const validationResult = createQuizSchema.safeParse({
     ...input,

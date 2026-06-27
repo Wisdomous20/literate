@@ -17,3 +17,15 @@ export async function requireRole(requiredRole: userType) {
   }
   return session;
 }
+
+export async function requireAnyRole(requiredRoles: userType[]) {
+  const session = await requireAuth();
+  if (!requiredRoles.includes(session.user.role as userType)) {
+    throw new Error("Forbidden");
+  }
+  return session;
+}
+
+export async function requirePassageManager() {
+  return requireAnyRole(["ADMIN", "PASSAGE_ADMIN"]);
+}

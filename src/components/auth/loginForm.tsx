@@ -46,6 +46,7 @@ export function LoginForm() {
   useEffect(() => {
     if (loginSuccess && session?.user?.role) {
       if (session.user.role === "ADMIN") router.push("/admin");
+      else if (session.user.role === "PASSAGE_ADMIN") router.push("/admin/passages");
       else router.push(safeCallbackUrl);
     }
   }, [session, loginSuccess, router, safeCallbackUrl]);

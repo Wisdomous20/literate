@@ -368,6 +368,7 @@ enum userType {
   USER
   ADMIN
   ORG_ADMIN
+  PASSAGE_ADMIN
 }
 
 enum OrganizationType {

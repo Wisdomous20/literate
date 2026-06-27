@@ -8,11 +8,13 @@ import {
   Building2,
   FileText,
   Loader2,
+  MailPlus,
   Users,
 } from "lucide-react";
 import { updateAdminUserRoleAction } from "@/app/actions/admin/updateUserRole";
 import { toggleAdminUserStatusAction } from "@/app/actions/admin/toggleUserStatus";
 import { renameOrganizationByAdminAction } from "@/app/actions/admin/renameOrganization";
+import { invitePassageAdminAction } from "@/app/actions/admin/invitePassageAdmin";
 import { useAdminManagementSnapshot } from "@/lib/hooks/useAdminManagementSnapshot";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,11 +34,14 @@ const tabs: {
   { id: "organizations", label: "Organizations", icon: Building2 },
 ];
 
-const roleOptions = ["USER", "ORG_ADMIN", "ADMIN"] as const;
+const roleOptions = ["USER", "PASSAGE_ADMIN", "ORG_ADMIN", "ADMIN"] as const;
 
 export function AdminControlCenter() {
   const [activeTab, setActiveTab] = useState<AdminTab>("passages");
   const [search, setSearch] = useState("");
+  const [passageAdminEmail, setPassageAdminEmail] = useState("");
+  const [inviteMessage, setInviteMessage] = useState<string | null>(null);
+  const [inviteError, setInviteError] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const managementQuery = useAdminManagementSnapshot();
 
@@ -90,6 +95,31 @@ export function AdminControlCenter() {
       }
     },
     onSuccess: refreshSnapshot,
+  });
+
+  const invitePassageAdminMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const result = await invitePassageAdminAction({ email });
+      if (!result.success) {
+        throw new Error(result.error ?? "Failed to send invitation");
+      }
+      if (!result.invitation) {
+        throw new Error("Invitation was not created");
+      }
+      return result.invitation;
+    },
+    onSuccess: async (invitation) => {
+      setInviteError(null);
+      setInviteMessage(`Invitation sent to ${invitation.email}.`);
+      setPassageAdminEmail("");
+      await refreshSnapshot();
+    },
+    onError: (error) => {
+      setInviteMessage(null);
+      setInviteError(
+        error instanceof Error ? error.message : "Failed to send invitation",
+      );
+    },
   });
 
   const snapshot = managementQuery.data;
@@ -147,7 +177,8 @@ export function AdminControlCenter() {
   const busy =
     roleMutation.isPending ||
     statusMutation.isPending ||
-    organizationMutation.isPending;
+    organizationMutation.isPending ||
+    invitePassageAdminMutation.isPending;
 
   return (
     <div className="flex flex-col gap-6">
@@ -244,7 +275,67 @@ export function AdminControlCenter() {
             title="Users"
             description="Update roles and account status for every user in the platform."
             count={filtered.users.length}
+            action={
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#DCD5FF] bg-[#F3F0FF] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-[#6C4EEB]">
+                <MailPlus className="h-3.5 w-3.5" aria-hidden="true" />
+                Passage admin invite
+              </span>
+            }
           />
+          <div className="mx-4 mb-2 rounded-[22px] border border-[#E1DDFB] bg-[#FCFBFF] p-4 sm:mx-6 sm:p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-xl">
+                <h3 className="text-base font-semibold text-[#323743]">
+                  Invite a passage admin
+                </h3>
+                <p className="mt-1 text-sm leading-6 text-[#575E6B]">
+                  Send a password setup link for passage, quiz, and question
+                  management only.
+                </p>
+              </div>
+              <form
+                className="flex flex-col gap-3 sm:flex-row"
+                onSubmit={async (event) => {
+                  event.preventDefault();
+                  setInviteMessage(null);
+                  setInviteError(null);
+                  try {
+                    await invitePassageAdminMutation.mutateAsync(passageAdminEmail);
+                  } catch {
+                    // onError renders the inline message.
+                  }
+                }}
+              >
+                <Input
+                  type="email"
+                  value={passageAdminEmail}
+                  onChange={(event) => setPassageAdminEmail(event.target.value)}
+                  placeholder="passage.admin@example.com"
+                  className="h-11 min-w-[280px] rounded-[14px] border-[#D6DDFB] bg-white px-4 text-sm text-[#323743] placeholder:text-[#8B91A3] focus-visible:border-[#6C4EEB] focus-visible:ring-[#6C4EEB]/20"
+                  disabled={busy}
+                  required
+                />
+                <Button
+                  type="submit"
+                  className="h-11 rounded-[14px] bg-[#6C4EEB] px-5 text-white hover:bg-[#5D43DE]"
+                  disabled={busy}
+                >
+                  {invitePassageAdminMutation.isPending ? "Sending..." : "Send Invite"}
+                </Button>
+              </form>
+            </div>
+            {(inviteMessage || inviteError) && (
+              <p
+                className={cn(
+                  "mt-3 text-sm font-medium",
+                  inviteError ? "text-red-700" : "text-emerald-700",
+                )}
+                role={inviteError ? "alert" : "status"}
+              >
+                {inviteError ?? inviteMessage}
+              </p>
+            )}
+          </div>
           <div className="overflow-x-auto px-4 pb-4 sm:px-6 sm:pb-6">
             <table className="min-w-full border-separate border-spacing-y-4">
               <thead>
