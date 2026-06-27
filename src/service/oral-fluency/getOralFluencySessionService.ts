@@ -8,7 +8,8 @@ interface GetOralFluencySessionResult {
 }
 
 export async function getOralFluencySessionService(
-  sessionId: string
+  sessionId: string,
+  userId?: string
 ): Promise<GetOralFluencySessionResult> {
   if (!sessionId) {
     return {
@@ -19,20 +20,36 @@ export async function getOralFluencySessionService(
   }
 
   try {
-    const session = await prisma.oralFluencySession.findUnique({
-      where: { id: sessionId },
-      include: {
+    const include = {
         miscues: { orderBy: { wordIndex: "asc" } },
         behaviors: true,
         wordTimestamps: { orderBy: { index: "asc" } },
         assessment: true,
-      },
-    });
+      } as const;
+
+    const session = userId
+      ? await prisma.oralFluencySession.findFirst({
+          where: {
+            id: sessionId,
+            assessment: {
+              student: {
+                classRoom: {
+                  userId,
+                },
+              },
+            },
+          },
+          include,
+        })
+      : await prisma.oralFluencySession.findUnique({
+          where: { id: sessionId },
+          include,
+        });
 
     if (!session) {
       return {
         success: false,
-        error: "Session not found.",
+        error: "Session not found or access denied.",
         code: "NOT_FOUND",
       };
     }

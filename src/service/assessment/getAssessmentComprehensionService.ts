@@ -1,14 +1,15 @@
 import { prisma } from "@/lib/prisma";
 
-export async function getAssessmentComprehensionService(assessmentId: string) {
+export async function getAssessmentComprehensionService(
+  assessmentId: string,
+  userId?: string
+) {
   if (!assessmentId) {
     return { success: false, error: "ID required." };
   }
 
   try {
-    const assessment = await prisma.assessment.findUnique({
-      where: { id: assessmentId },
-      select: {
+    const select = {
         id: true,
         // Only pull what the comprehension page actually needs
         oralFluency: { select: { classificationLevel: true } },
@@ -28,10 +29,26 @@ export async function getAssessmentComprehensionService(assessmentId: string) {
             },
           },
         },
-      },
-    });
+      } as const;
 
-    if (!assessment) return { success: false, error: "Not found." };
+    const assessment = userId
+      ? await prisma.assessment.findFirst({
+          where: {
+            id: assessmentId,
+            student: {
+              classRoom: {
+                userId,
+              },
+            },
+          },
+          select,
+        })
+      : await prisma.assessment.findUnique({
+          where: { id: assessmentId },
+          select,
+        });
+
+    if (!assessment) return { success: false, error: "Not found or access denied." };
     return { success: true, assessment };
   } catch (e) {
     console.error(e);

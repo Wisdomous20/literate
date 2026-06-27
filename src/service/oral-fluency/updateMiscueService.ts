@@ -48,6 +48,7 @@ export interface UpdateMiscueResult {
 
 export async function updateMiscueService(
   input: UpdateMiscueInput,
+  userId?: string,
 ): Promise<UpdateMiscueResult> {
   const {
     miscueId,
@@ -110,13 +111,57 @@ export async function updateMiscueService(
   const existingMiscue =
     action === "create"
       ? null
-      : await prisma.oralFluencyMiscue.findUnique({
-          where: { id: miscueId! },
-          include: { session: true },
-        });
+      : userId
+        ? await prisma.oralFluencyMiscue.findFirst({
+            where: {
+              id: miscueId!,
+              session: {
+                assessment: {
+                  student: {
+                    classRoom: {
+                      userId,
+                    },
+                  },
+                },
+              },
+            },
+            include: { session: true },
+          })
+        : await prisma.oralFluencyMiscue.findUnique({
+            where: { id: miscueId! },
+            include: { session: true },
+          });
 
   if (action !== "create" && !existingMiscue) {
-    return { success: false, error: "Miscue not found.", code: "NOT_FOUND" };
+    return {
+      success: false,
+      error: "Miscue not found or access denied.",
+      code: "NOT_FOUND",
+    };
+  }
+
+  if (action === "create" && userId) {
+    const session = await prisma.oralFluencySession.findFirst({
+      where: {
+        id: sessionId!,
+        assessment: {
+          student: {
+            classRoom: {
+              userId,
+            },
+          },
+        },
+      },
+      select: { id: true },
+    });
+
+    if (!session) {
+      return {
+        success: false,
+        error: "Oral fluency session not found or access denied.",
+        code: "NOT_FOUND",
+      };
+    }
   }
 
   if (

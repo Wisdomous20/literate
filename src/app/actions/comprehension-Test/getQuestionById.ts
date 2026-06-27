@@ -3,6 +3,7 @@
 import { getQuestionByIdService } from "@/service/admin/getQuestionByIdService";
 import { getQuestionByIdSchema } from "@/lib/validation/admin";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
+import { requireRole } from "@/utils/roleCheck";
 
 interface GetQuestionByIdActionInput {
   id: string;
@@ -11,6 +12,8 @@ interface GetQuestionByIdActionInput {
 export async function getQuestionByIdAction(
   input: GetQuestionByIdActionInput,
 ) {
+  await requireRole("ADMIN");
+
   const validationResult = getQuestionByIdSchema.safeParse(input);
 
   if (!validationResult.success) {

@@ -3,9 +3,11 @@
 import { getOralFluencyMiscues } from "@/service/oral-fluency/getMiscuesService";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { sessionIdQuerySchema } from "@/lib/validation/media";
+import { requireAuth } from "@/utils/roleCheck";
 
 
 export async function fetchOralFluencyMiscues(sessionId: string) {
+  const session = await requireAuth();
   const validationResult = sessionIdQuerySchema.safeParse({ id: sessionId });
 
   if (!validationResult.success) {
@@ -17,7 +19,10 @@ export async function fetchOralFluencyMiscues(sessionId: string) {
   }
 
   try {
-    const miscues = await getOralFluencyMiscues(validationResult.data.id);
+    const miscues = await getOralFluencyMiscues(
+      validationResult.data.id,
+      session.user.id
+    );
 
     return { success: true, error: null, data: miscues };
   } catch (error) {

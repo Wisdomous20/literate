@@ -3,6 +3,7 @@
 import { updateQuizService } from "@/service/admin/updateQuizService";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { updateQuizSchema } from "@/lib/validation/admin";
+import { requireRole } from "@/utils/roleCheck";
 
 interface EditQuizActionInput {
   id: string;
@@ -18,6 +19,8 @@ interface EditQuizActionInput {
 }
 
 export async function editQuizAction(input: EditQuizActionInput) {
+  await requireRole("ADMIN");
+
   const validationResult = updateQuizSchema.safeParse(input);
 
   if (!validationResult.success) {

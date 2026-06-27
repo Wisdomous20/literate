@@ -3,9 +3,11 @@
 import { getAllComprehensionTestsByStudentIdService } from "@/service/comprehension-test/getAllComprehensionByStudentService";
 import { studentAssessmentIdSchema } from "@/lib/validation/assessment";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
+import { requireAuth } from "@/utils/roleCheck";
 
 export async function fetchComprehensionTestsByStudentId(studentId: string) {
   try {
+    const session = await requireAuth();
     const validationResult = studentAssessmentIdSchema.safeParse({ studentId });
 
     if (!validationResult.success) {
@@ -17,7 +19,8 @@ export async function fetchComprehensionTestsByStudentId(studentId: string) {
     }
 
     const comprehensionTests = await getAllComprehensionTestsByStudentIdService(
-      validationResult.data.studentId
+      validationResult.data.studentId,
+      session.user.id
     );
     return { success: true, data: comprehensionTests };
   } catch (error) {

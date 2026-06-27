@@ -1,8 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma/client";
+import type { AssessmentType } from "@/generated/prisma/enums";
 
 interface GetAssessmentsInput {
+  userId?: string;
   studentId?: string;
-  type?: string;
+  type?: AssessmentType;
 }
 
 interface GetAssessmentsResult {
@@ -16,9 +19,16 @@ export async function getAssessmentsByStudentService(
   input: GetAssessmentsInput
 ): Promise<GetAssessmentsResult> {
   try {
-    const where: Record<string, unknown> = {};
+    const where: Prisma.AssessmentWhereInput = {};
     if (input.studentId) where.studentId = input.studentId;
     if (input.type) where.type = input.type;
+    if (input.userId) {
+      where.student = {
+        classRoom: {
+          userId: input.userId,
+        },
+      };
+    }
 
     const assessments = await prisma.assessment.findMany({
       where,

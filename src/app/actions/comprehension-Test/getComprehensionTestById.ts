@@ -3,9 +3,11 @@
 import { getComprehensionTestByIdService } from "@/service/comprehension-test/getComprehensionTestByIdService";
 import { assessmentIdSchema } from "@/lib/validation/assessment";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
+import { requireAuth } from "@/utils/roleCheck";
 
 export async function fetchComprehensionTestById(id: string) {
   try {
+    const session = await requireAuth();
     const validationResult = assessmentIdSchema.safeParse({ assessmentId: id });
 
     if (!validationResult.success) {
@@ -17,7 +19,8 @@ export async function fetchComprehensionTestById(id: string) {
     }
 
     const comprehensionTest = await getComprehensionTestByIdService(
-      validationResult.data.assessmentId
+      validationResult.data.assessmentId,
+      session.user.id
     );
     return { success: true, data: comprehensionTest };
   } catch (error) {

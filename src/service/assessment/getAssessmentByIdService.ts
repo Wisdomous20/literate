@@ -8,7 +8,8 @@ interface GetAssessmentByIdResult {
 }
 
 export async function getAssessmentByIdService(
-  id: string
+  id: string,
+  userId?: string
 ): Promise<GetAssessmentByIdResult> {
   if (!id) {
     return {
@@ -19,9 +20,7 @@ export async function getAssessmentByIdService(
   }
 
   try {
-    const assessment = await prisma.assessment.findUnique({
-      where: { id },
-      include: {
+    const include = {
         passage: true,
         oralFluency: {
           include: {
@@ -37,13 +36,29 @@ export async function getAssessmentByIdService(
         },
         oralReadingResult: true,
         student: { select: { id: true, name: true } },
-      },
-    });
+      } as const;
+
+    const assessment = userId
+      ? await prisma.assessment.findFirst({
+          where: {
+            id,
+            student: {
+              classRoom: {
+                userId,
+              },
+            },
+          },
+          include,
+        })
+      : await prisma.assessment.findUnique({
+          where: { id },
+          include,
+        });
 
     if (!assessment) {
       return {
         success: false,
-        error: "Assessment not found.",
+        error: "Assessment not found or access denied.",
         code: "NOT_FOUND",
       };
     }

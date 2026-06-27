@@ -6,8 +6,10 @@ import {
   updateBehaviorsService,
   type UpdateBehaviorsInput,
 } from "@/service/oral-fluency/updateBehaviorsService";
+import { requireAuth } from "@/utils/roleCheck";
 
 export async function updateBehaviorsAction(input: UpdateBehaviorsInput) {
+  const session = await requireAuth();
   const validationResult = updateBehaviorsSchema.safeParse(input);
 
   if (!validationResult.success) {
@@ -17,7 +19,10 @@ export async function updateBehaviorsAction(input: UpdateBehaviorsInput) {
     };
   }
 
-  const result = await updateBehaviorsService(validationResult.data);
+  const result = await updateBehaviorsService(
+    validationResult.data,
+    session.user.id
+  );
 
   if (!result.success) {
     return { success: false, error: result.error };

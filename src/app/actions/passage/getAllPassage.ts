@@ -1,8 +1,11 @@
 "use server";
 
 import { getAllPassageService } from "@/service/admin/getAllPassageService";
+import { requireAuth } from "@/utils/roleCheck";
 
 export async function getAllPassagesAction() {
+  await requireAuth();
+
   const result = await getAllPassageService();
 
   if (!result.success) {

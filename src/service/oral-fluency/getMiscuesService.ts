@@ -1,8 +1,23 @@
 import { prisma } from "@/lib/prisma";
 
-export async function getOralFluencyMiscues(sessionId: string) {
+export async function getOralFluencyMiscues(sessionId: string, userId?: string) {
   const miscues = await prisma.oralFluencyMiscue.findMany({
-    where: { sessionId },
+    where: {
+      sessionId,
+      ...(userId
+        ? {
+            session: {
+              assessment: {
+                student: {
+                  classRoom: {
+                    userId,
+                  },
+                },
+              },
+            },
+          }
+        : {}),
+    },
     orderBy: { wordIndex: "asc" },
   });
 
