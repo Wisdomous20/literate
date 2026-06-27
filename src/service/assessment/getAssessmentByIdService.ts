@@ -22,14 +22,14 @@ export async function getAssessmentByIdService(
   try {
     const include = {
         passage: true,
-        oralFluency: {
+        oralFluencyResult: {
           include: {
             miscues: { orderBy: { wordIndex: "asc" } },
             behaviors: true,
             wordTimestamps: { orderBy: { index: "asc" } },
           },
         },
-        comprehension: {
+        comprehensionResult: {
           include: {
             answers:true,
           },

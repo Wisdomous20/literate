@@ -12,8 +12,8 @@ export async function getAssessmentComprehensionService(
     const select = {
         id: true,
         // Only pull what the comprehension page actually needs
-        oralFluency: { select: { classificationLevel: true } },
-        comprehension: {
+        oralFluencyResult: { select: { classificationLevel: true } },
+        comprehensionResult: {
           select: {
             id: true,
             score: true,

@@ -239,7 +239,7 @@ export default function StudentAssessmentPage() {
         score: result.score,
         totalItems: result.totalItems,
         level: result.level,
-        comprehensionTestId: result.comprehensionTestId,
+        comprehensionResultId: result.comprehensionResultId,
         tagBreakdown: buildTagBreakdown(result.answers),
       });
       setIsSubmitted(true);

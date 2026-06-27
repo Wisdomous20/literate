@@ -891,7 +891,7 @@ export default function OralReadingTestPage() {
     sessionStorage.removeItem(AUDIO_STORAGE_KEY);
     sessionStorage.removeItem("oral-reading-assessmentId");
     sessionStorage.removeItem("oral-reading-comprehension-state");
-    sessionStorage.removeItem("oral-reading-comprehensionTestId");
+    sessionStorage.removeItem("oral-reading-comprehensionResultId");
   }, [recordedAudioURL]);
 
   useEffect(() => {

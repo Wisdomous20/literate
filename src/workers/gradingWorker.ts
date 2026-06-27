@@ -8,15 +8,15 @@ import type { GradingJobData } from "@/lib/queues";
 import { answerMatchesGuide } from "@/service/comprehension-test/answerMatching";
 
 async function processGrading(job: Job<GradingJobData>) {
-  const { assessmentId, comprehensionTestId } = job.data;
+  const { assessmentId, comprehensionResultId } = job.data;
   console.log(`[Worker:grading] Processing ${assessmentId}`);
 
   // 1. Get the comprehension test with its answers
-  const test = await prisma.comprehensionTest.findUnique({
-    where: { id: comprehensionTestId },
+  const test = await prisma.comprehensionResult.findUnique({
+    where: { id: comprehensionResultId },
     include: { answers: true },
   });
-  if (!test) throw new Error(`ComprehensionTest ${comprehensionTestId} not found`);
+  if (!test) throw new Error(`ComprehensionResult ${comprehensionResultId} not found`);
 
   // 2. Get the assessment with passage content and quiz questions
   const assessment = await prisma.assessment.findUnique({
@@ -98,8 +98,8 @@ async function processGrading(job: Job<GradingJobData>) {
   const pct = totalItems > 0 ? (correctCount / totalItems) * 100 : 0;
   const level = classifyComprehensionLevel(pct);
 
-  await prisma.comprehensionTest.update({
-    where: { id: comprehensionTestId },
+  await prisma.comprehensionResult.update({
+    where: { id: comprehensionResultId },
     data: { score: correctCount, classificationLevel: level },
   });
 

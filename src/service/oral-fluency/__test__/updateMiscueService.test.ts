@@ -7,12 +7,12 @@ const mockTx = {
     update: vi.fn(),
     findMany: vi.fn(),
   },
-  oralFluencySession: { findUnique: vi.fn(), update: vi.fn() },
+  oralFluencyResult: { findUnique: vi.fn(), update: vi.fn() },
 };
 
 const mockPrisma = vi.hoisted(() => ({
   oralFluencyMiscue: { findUnique: vi.fn() },
-  oralFluencySession: { findUnique: vi.fn() },
+  oralFluencyResult: { findUnique: vi.fn() },
   $transaction: vi.fn(),
 }));
 const mockCreateOralReadingService = vi.hoisted(() => vi.fn());
@@ -28,7 +28,7 @@ const baseMiscue = {
   id: "m-1",
   sessionId: "s-1",
   miscueType: "SUBSTITUTION",
-  session: { id: "s-1", totalWords: 10, assessmentId: "a-1" },
+  oralFluencyResult: { id: "s-1", totalWords: 10, assessmentId: "a-1" },
 };
 
 function setupTransactionWith(remainingMiscues: { isSelfCorrected: boolean }[], totalWords = 10) {
@@ -37,8 +37,8 @@ function setupTransactionWith(remainingMiscues: { isSelfCorrected: boolean }[], 
   mockTx.oralFluencyMiscue.delete.mockResolvedValue({});
   mockTx.oralFluencyMiscue.update.mockResolvedValue({});
   mockTx.oralFluencyMiscue.findMany.mockResolvedValue(remainingMiscues);
-  mockTx.oralFluencySession.findUnique.mockResolvedValue({ totalWords });
-  mockTx.oralFluencySession.update.mockResolvedValue({});
+  mockTx.oralFluencyResult.findUnique.mockResolvedValue({ totalWords });
+  mockTx.oralFluencyResult.update.mockResolvedValue({});
 }
 
 describe("updateMiscueService", () => {
@@ -216,7 +216,7 @@ describe("updateMiscueService", () => {
 
     await updateMiscueService({ miscueId: "m-1", action: "approve" });
 
-    expect(mockTx.oralFluencySession.update).toHaveBeenCalledWith(
+    expect(mockTx.oralFluencyResult.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ totalMiscues: 1, oralFluencyScore: 90 }),
       }),
@@ -243,7 +243,7 @@ describe("updateMiscueService", () => {
   });
 
   it("creates a manual miscue and recalculates metrics", async () => {
-    mockPrisma.oralFluencySession.findUnique.mockResolvedValue({
+    mockPrisma.oralFluencyResult.findUnique.mockResolvedValue({
       assessmentId: "a-1",
     });
     setupTransactionWith(
@@ -279,7 +279,7 @@ describe("updateMiscueService", () => {
   });
 
   it("allows creating an insertion with an empty expectedWord", async () => {
-    mockPrisma.oralFluencySession.findUnique.mockResolvedValue({
+    mockPrisma.oralFluencyResult.findUnique.mockResolvedValue({
       assessmentId: "a-1",
     });
     setupTransactionWith([{ isSelfCorrected: false }], 10);

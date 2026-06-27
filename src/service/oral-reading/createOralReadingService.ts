@@ -17,7 +17,7 @@ export async function createOralReadingService(
 
   if (knownComprehensionLevel) {
     // Only fetch fluency — comprehension level already known
-    const session = await prisma.oralFluencySession.findUnique({
+    const session = await prisma.oralFluencyResult.findUnique({
       where: { assessmentId },
       select: { classificationLevel: true },
     });
@@ -27,8 +27,8 @@ export async function createOralReadingService(
     const assessment = await prisma.assessment.findUnique({
       where: { id: assessmentId },
       select: {
-        oralFluency: { select: { classificationLevel: true } },
-        comprehension: { select: { classificationLevel: true } },
+        oralFluencyResult: { select: { classificationLevel: true } },
+        comprehensionResult: { select: { classificationLevel: true } },
       },
     });
 
@@ -36,8 +36,8 @@ export async function createOralReadingService(
       return { success: false, error: "Assessment not found." };
     }
 
-    fluencyLevel = assessment.oralFluency?.classificationLevel;
-    comprehensionLevel = assessment.comprehension?.classificationLevel;
+    fluencyLevel = assessment.oralFluencyResult?.classificationLevel;
+    comprehensionLevel = assessment.comprehensionResult?.classificationLevel;
   }
 
   if (!fluencyLevel || !comprehensionLevel) {

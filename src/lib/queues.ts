@@ -41,7 +41,7 @@ export interface TranscriptionJobData {
 
 export interface GradingJobData {
   assessmentId: string;
-  comprehensionTestId: string;
+  comprehensionResultId: string;
   answers: { questionId: string; answer: string }[];
 }
 

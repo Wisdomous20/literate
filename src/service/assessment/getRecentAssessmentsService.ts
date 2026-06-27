@@ -36,8 +36,8 @@ export async function getRecentAssessmentsService(
         student: {
           select: { id: true, name: true, level: true, classRoomId: true },
         },
-        oralFluency: { select: { classificationLevel: true } },
-        comprehension: { select: { classificationLevel: true } },
+        oralFluencyResult: { select: { classificationLevel: true } },
+        comprehensionResult: { select: { classificationLevel: true } },
         oralReadingResult: { select: { classificationLevel: true } },
       },
       orderBy: { dateTaken: "desc" },
@@ -51,10 +51,10 @@ export async function getRecentAssessmentsService(
 
       if (a.type === "ORAL_READING" && a.oralReadingResult) {
         classification = a.oralReadingResult.classificationLevel;
-      } else if (a.type === "READING_FLUENCY" && a.oralFluency) {
-        classification = a.oralFluency.classificationLevel ?? null;
-      } else if (a.type === "COMPREHENSION" && a.comprehension) {
-        classification = a.comprehension.classificationLevel;
+      } else if (a.type === "READING_FLUENCY" && a.oralFluencyResult) {
+        classification = a.oralFluencyResult.classificationLevel ?? null;
+      } else if (a.type === "COMPREHENSION" && a.comprehensionResult) {
+        classification = a.comprehensionResult.classificationLevel;
       }
 
       if (

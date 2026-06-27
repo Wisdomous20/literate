@@ -99,8 +99,8 @@ export interface AssessmentSummaryData {
   studentId: string;
   dateTaken: string;
   type: AssessmentType;
-  oralFluency?: Pick<OralFluencyData, "classificationLevel"> | null;
-  comprehension?: Pick<ComprehensionData, "classificationLevel"> | null;
+  oralFluencyResult?: Pick<OralFluencyData, "classificationLevel"> | null;
+  comprehensionResult?: Pick<ComprehensionData, "classificationLevel"> | null;
   oralReadingResult?: Pick<OralReadingResultData, "classificationLevel"> | null;
 }
 
@@ -112,8 +112,8 @@ export interface AssessmentData {
   type: AssessmentType;
   student: AssessmentStudentData;
   passage: PassageData;
-  oralFluency?: OralFluencyData | null;
-  comprehension?: ComprehensionData | null;
+  oralFluencyResult?: OralFluencyData | null;
+  comprehensionResult?: ComprehensionData | null;
   oralReadingResult?: OralReadingResultData | null;
 }
 

@@ -166,9 +166,9 @@ export async function POST(request: NextRequest) {
     const prelimPct = totalItems > 0 ? (mcCorrect / totalItems) * 100 : 0;
     const prelimLevel = classifyComprehensionLevel(prelimPct);
 
-    // 5. Save — ComprehensionTest has NO quizId
+    // 5. Save — ComprehensionResult has NO quizId
     //    ComprehensionAnswer uses question (string) + tag, NOT questionId
-    const comprehensionTest = await prisma.comprehensionTest.create({
+    const ComprehensionResult = await prisma.comprehensionResult.create({
       data: {
         assessmentId,
         score: mcCorrect,
@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       assessmentId,
-      comprehensionTestId: comprehensionTest.id,
+      comprehensionResultId: ComprehensionResult.id,
       score: mcCorrect,
       totalItems,
       percentage: Math.round(prelimPct),

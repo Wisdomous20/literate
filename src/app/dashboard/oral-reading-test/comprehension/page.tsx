@@ -30,7 +30,7 @@ interface ComprehensionResult {
   score: number;
   totalItems: number;
   level: string;
-  comprehensionTestId: string;
+  comprehensionResultId: string;
   tagBreakdown?: TagBreakdown;
 }
 
@@ -86,7 +86,7 @@ function computeTagBreakdown(
 }
 
 function buildResultFromAssessment(assessment: {
-  comprehension: {
+  comprehensionResult: {
     id: string;
     score: number;
     totalItems: number;
@@ -99,13 +99,13 @@ function buildResultFromAssessment(assessment: {
     }[];
   };
 }): { result: ComprehensionResult; restoredAnswers: Record<string, string> } {
-  const comp = assessment.comprehension;
+  const comp = assessment.comprehensionResult;
   const tagBreakdown = computeTagBreakdown(comp.answers);
   const result: ComprehensionResult = {
     score: comp.score,
     totalItems: comp.totalItems,
     level: comp.classificationLevel ?? "",
-    comprehensionTestId: comp.id,
+    comprehensionResultId: comp.id,
     tagBreakdown,
   };
   const restoredAnswers: Record<string, string> = {};
@@ -230,7 +230,7 @@ export default function OralReadingComprehensionPage() {
           existingRes &&
           existingRes.success &&
           "assessment" in existingRes &&
-          existingRes.assessment?.comprehension
+          existingRes.assessment?.comprehensionResult
         ) {
           const { result: restoredResult, restoredAnswers } =
             buildResultFromAssessment(
@@ -243,10 +243,10 @@ export default function OralReadingComprehensionPage() {
           setIsSubmitted(true);
           setAnswers(restoredAnswers);
 
-          if (restoredResult.comprehensionTestId) {
+          if (restoredResult.comprehensionResultId) {
             sessionStorage.setItem(
-              "oral-reading-comprehensionTestId",
-              restoredResult.comprehensionTestId,
+              "oral-reading-comprehensionResultId",
+              restoredResult.comprehensionResultId,
             );
           }
 
@@ -259,7 +259,7 @@ export default function OralReadingComprehensionPage() {
           });
 
           const fluencyClassification =
-            existingRes.assessment?.oralFluency?.classificationLevel;
+            existingRes.assessment?.oralFluencyResult?.classificationLevel;
           syncMainSession(restoredResult, fluencyClassification);
         }
 
@@ -370,22 +370,22 @@ export default function OralReadingComprehensionPage() {
         if (
           res.success &&
           "assessment" in res &&
-          res.assessment?.comprehension
+          res.assessment?.comprehensionResult
         ) {
           const { result: existingResult } = buildResultFromAssessment(
             res.assessment as Parameters<typeof buildResultFromAssessment>[0],
           );
 
           setComprehensionResult(existingResult);
-          if (existingResult.comprehensionTestId) {
+          if (existingResult.comprehensionResultId) {
             sessionStorage.setItem(
-              "oral-reading-comprehensionTestId",
-              existingResult.comprehensionTestId,
+              "oral-reading-comprehensionResultId",
+              existingResult.comprehensionResultId,
             );
           }
 
           const fluencyClassification =
-            res.assessment?.oralFluency?.classificationLevel;
+            res.assessment?.oralFluencyResult?.classificationLevel;
           syncMainSession(existingResult, fluencyClassification);
 
           setIsSubmitted(true);
@@ -461,17 +461,17 @@ export default function OralReadingComprehensionPage() {
         score: result.score,
         totalItems: result.totalItems,
         level: result.level,
-        comprehensionTestId: result.comprehensionTestId,
+        comprehensionResultId: result.comprehensionResultId,
         tagBreakdown,
       };
 
       setComprehensionResult(comprehensionData);
 
-      // Store comprehensionTestId for the report page
-      if (result.comprehensionTestId) {
+      // Store comprehensionResultId for the report page
+      if (result.comprehensionResultId) {
         sessionStorage.setItem(
-          "oral-reading-comprehensionTestId",
-          result.comprehensionTestId,
+          "oral-reading-comprehensionResultId",
+          result.comprehensionResultId,
         );
       }
 

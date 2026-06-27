@@ -227,7 +227,7 @@ export default function ReadingLevelReportPage() {
       exportFluencyReportPdf(fluencyData, `Oral_Fluency_Report_${safeName}`);
     }
 
-    const test = (assessment as Record<string, unknown>)?.comprehension as
+    const test = (assessment as Record<string, unknown>)?.comprehensionResult as
       | Record<string, unknown>
       | undefined;
     const passage = (assessment as Record<string, unknown>)?.passage as

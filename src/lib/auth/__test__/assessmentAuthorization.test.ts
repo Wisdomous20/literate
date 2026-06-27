@@ -5,7 +5,7 @@ const mockPrisma = vi.hoisted(() => ({
   student: { findFirst: vi.fn() },
   assessment: { findFirst: vi.fn() },
   assessmentLink: { findFirst: vi.fn() },
-  oralFluencySession: { findFirst: vi.fn() },
+  oralFluencyResult: { findFirst: vi.fn() },
 }));
 
 vi.mock("next-auth", () => ({ getServerSession: mockGetServerSession }));
@@ -90,7 +90,7 @@ describe("assessment authorization", () => {
 
   it("denies session access outside the authenticated teacher's classroom", async () => {
     mockGetServerSession.mockResolvedValue({ user: { id: "teacher-1" } });
-    mockPrisma.oralFluencySession.findFirst.mockResolvedValue(null);
+    mockPrisma.oralFluencyResult.findFirst.mockResolvedValue(null);
 
     await expect(hasSessionAccess("session-2")).resolves.toBe(false);
   });

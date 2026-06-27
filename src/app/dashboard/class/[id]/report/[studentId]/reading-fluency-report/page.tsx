@@ -141,7 +141,7 @@ export default function ReadingFluencyReportPage() {
   // Convert OralFluencyMiscue to MiscueResult
   const originalMiscues: MiscueResult[] = useMemo(() => {
     const miscues: OralFluencyMiscue[] =
-      assessment?.oralFluency?.miscues ?? [];
+      assessment?.oralFluencyResult?.miscues ?? [];
     return miscues.map((m) => ({
       miscueType: m.miscueType,
       expectedWord: m.expectedWord,
@@ -154,10 +154,10 @@ export default function ReadingFluencyReportPage() {
 
   const activeMiscues = localMiscues ?? originalMiscues;
 
-  const totalWords = assessment?.oralFluency?.totalWords ?? 0;
-  const sessionId = assessment?.oralFluency?.id;
+  const totalWords = assessment?.oralFluencyResult?.totalWords ?? 0;
+  const sessionId = assessment?.oralFluencyResult?.id;
   const activeBehaviors =
-    localBehaviors ?? assessment?.oralFluency?.behaviors ?? [];
+    localBehaviors ?? assessment?.oralFluencyResult?.behaviors ?? [];
 
   const invalidateAssessments = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ["assessments", studentId] });
@@ -328,13 +328,13 @@ export default function ReadingFluencyReportPage() {
   }
 
   const currentTotalMiscues =
-    localTotalMiscues ?? (assessment.oralFluency?.totalMiscues ?? 0);
+    localTotalMiscues ?? (assessment.oralFluencyResult?.totalMiscues ?? 0);
   const currentOralFluencyScore =
-    localOralFluencyScore ?? (assessment.oralFluency?.oralFluencyScore ?? 0);
+    localOralFluencyScore ?? (assessment.oralFluencyResult?.oralFluencyScore ?? 0);
   const currentClassificationLevel =
     localClassificationLevel ??
-    (assessment.oralFluency?.classificationLevel ?? "");
-  const duration = resolveReadingDurationSeconds(assessment.oralFluency?.duration);
+    (assessment.oralFluencyResult?.classificationLevel ?? "");
+  const duration = resolveReadingDurationSeconds(assessment.oralFluencyResult?.duration);
   const readingTimeSeconds = getDisplayReadingTimeSeconds(duration);
   const wordsCorrect = Math.max(0, totalWords - currentTotalMiscues);
   const wcpm =
@@ -354,7 +354,7 @@ export default function ReadingFluencyReportPage() {
   const passage = assessment.passage;
   const numberOfWords = passage?.content
     ? passage.content.split(/\s+/).filter(Boolean).length
-    : (assessment.oralFluency?.totalWords ?? 0);
+    : (assessment.oralFluencyResult?.totalWords ?? 0);
 
   const behaviorItems = buildBehaviorItems(activeBehaviors);
 
@@ -481,7 +481,7 @@ export default function ReadingFluencyReportPage() {
               <BehaviorChecklist
                 behaviors={behaviorItems}
                 otherObservations={
-                  localOtherObservations ?? assessment.oralFluency?.otherObservations ?? ""
+                  localOtherObservations ?? assessment.oralFluencyResult?.otherObservations ?? ""
                 }
                 onSave={sessionId ? handleSaveBehaviors : undefined}
               />

@@ -12,7 +12,7 @@ const mockTx = {
     deleteMany: vi.fn(),
     createMany: vi.fn(),
   },
-  oralFluencySession: {
+  oralFluencyResult: {
     update: vi.fn(),
   },
   wordTimestamp: {
@@ -22,7 +22,7 @@ const mockTx = {
 };
 
 const mockPrisma = vi.hoisted(() => ({
-  oralFluencySession: { findUnique: vi.fn() },
+  oralFluencyResult: { findUnique: vi.fn() },
   $transaction: vi.fn(),
 }));
 
@@ -127,7 +127,7 @@ describe("recheckAllMiscuesService", () => {
     mockTx.oralFluencyMiscue.createMany.mockResolvedValue({});
     mockTx.oralFluencyBehavior.deleteMany.mockResolvedValue({});
     mockTx.oralFluencyBehavior.createMany.mockResolvedValue({});
-    mockTx.oralFluencySession.update.mockResolvedValue({});
+    mockTx.oralFluencyResult.update.mockResolvedValue({});
     mockTx.wordTimestamp.deleteMany.mockResolvedValue({});
     mockTx.wordTimestamp.createMany.mockResolvedValue({});
     mockAnalyzeOralFluency.mockReset();
@@ -139,11 +139,11 @@ describe("recheckAllMiscuesService", () => {
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("VALIDATION_ERROR");
-    expect(mockPrisma.oralFluencySession.findUnique).not.toHaveBeenCalled();
+    expect(mockPrisma.oralFluencyResult.findUnique).not.toHaveBeenCalled();
   });
 
   it("returns NOT_FOUND when the session does not exist", async () => {
-    mockPrisma.oralFluencySession.findUnique.mockResolvedValue(null);
+    mockPrisma.oralFluencyResult.findUnique.mockResolvedValue(null);
 
     const result = await recheckAllMiscuesService("missing");
 
@@ -163,7 +163,7 @@ describe("recheckAllMiscuesService", () => {
       isSelfCorrected: false,
     };
 
-    mockPrisma.oralFluencySession.findUnique.mockResolvedValue(
+    mockPrisma.oralFluencyResult.findUnique.mockResolvedValue(
       buildSession({ miscues: [currentMiscue] }),
     );
     mockTx.oralFluencyMiscue.findMany.mockResolvedValue([]);
@@ -202,7 +202,7 @@ describe("recheckAllMiscuesService", () => {
       miscueType: "SUBSTITUTION" as const,
     };
 
-    mockPrisma.oralFluencySession.findUnique.mockResolvedValue(
+    mockPrisma.oralFluencyResult.findUnique.mockResolvedValue(
       buildSession({
         transcript: "the dog",
         passage: "the cat",
@@ -230,7 +230,7 @@ describe("recheckAllMiscuesService", () => {
   });
 
   it("does not create new miscues during the cleanup pass", async () => {
-    mockPrisma.oralFluencySession.findUnique.mockResolvedValue(
+    mockPrisma.oralFluencyResult.findUnique.mockResolvedValue(
       buildSession({
         transcript: "the bat",
         passage: "the cat",
@@ -256,7 +256,7 @@ describe("recheckAllMiscuesService", () => {
   });
 
   it("rejects access when the session belongs to a different teacher", async () => {
-    mockPrisma.oralFluencySession.findUnique.mockResolvedValue(buildSession({}));
+    mockPrisma.oralFluencyResult.findUnique.mockResolvedValue(buildSession({}));
 
     const result = await recheckAllMiscuesService("s-1", "teacher-99");
 
@@ -277,7 +277,7 @@ describe("recheckAllMiscuesService", () => {
       isSelfCorrected: false,
     };
 
-    mockPrisma.oralFluencySession.findUnique.mockResolvedValue(
+    mockPrisma.oralFluencyResult.findUnique.mockResolvedValue(
       buildSession({
         transcript: "the dog",
         passage: "the cat",

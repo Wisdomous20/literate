@@ -58,7 +58,7 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const session = await prisma.oralFluencySession.findUnique({
+  const session = await prisma.oralFluencyResult.findUnique({
     where: { id: validationResult.data.id },
     select: { audioUrl: true },
   });

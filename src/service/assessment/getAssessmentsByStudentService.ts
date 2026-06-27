@@ -36,13 +36,13 @@ export async function getAssessmentsByStudentService(
         passage: {
           select: { id: true, title: true, language: true, level: true, content: true, testType: true },
         },
-        oralFluency: {
+        oralFluencyResult: {
           include: {
             miscues: true,
             behaviors: true,
           },
         },
-        comprehension: {
+        comprehensionResult: {
           include: {
             answers: true,
           },

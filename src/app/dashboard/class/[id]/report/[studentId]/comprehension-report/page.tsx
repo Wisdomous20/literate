@@ -86,7 +86,7 @@ export default function ReadingComprehensionReportPage() {
     ? `Grade ${assessment.student.level}`
     : "";
   const passage = assessment.passage;
-  const comprehension = assessment.comprehension;
+  const comprehension = assessment.comprehensionResult;
   const numberOfWords = passage?.content
     ? passage.content.split(/\s+/).filter(Boolean).length
     : 0;

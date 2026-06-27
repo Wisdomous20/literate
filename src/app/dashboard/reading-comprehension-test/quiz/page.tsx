@@ -32,7 +32,7 @@ interface ComprehensionResult {
   score: number;
   totalItems: number;
   level: string;
-  comprehensionTestId: string;
+  comprehensionResultId: string;
   tagBreakdown?: TagBreakdown;
   assessmentId?: string;
 }
@@ -348,7 +348,7 @@ export default function ReadingComprehensionQuestionsPage() {
         score: result.score,
         totalItems: result.totalItems,
         level: result.level,
-        comprehensionTestId: result.comprehensionTestId,
+        comprehensionResultId: result.comprehensionResultId,
         tagBreakdown,
         assessmentId: result.assessmentId,
       };

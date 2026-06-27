@@ -1,11 +1,11 @@
 "use server";
 
-import { getComprehensionTestByAssessmentService } from "@/service/comprehension-test/getComprehensionTestByAssessmentService";
+import { getComprehensionResultByAssessmentService } from "@/service/comprehension-test/getComprehensionResultByAssessmentService";
 import { assessmentIdSchema } from "@/lib/validation/assessment";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { requireAuth } from "@/utils/roleCheck";
 
-export async function fetchComprehensionTestByAssessmentId(assessmentId: string) {
+export async function fetchComprehensionResultByAssessmentId(assessmentId: string) {
   try {
     const session = await requireAuth();
     const validationResult = assessmentIdSchema.safeParse({ assessmentId });
@@ -18,11 +18,11 @@ export async function fetchComprehensionTestByAssessmentId(assessmentId: string)
       };
     }
 
-    const comprehensionTest = await getComprehensionTestByAssessmentService(
+    const ComprehensionResult = await getComprehensionResultByAssessmentService(
       validationResult.data.assessmentId,
       session.user.id
     );
-    return { success: true, data: comprehensionTest };
+    return { success: true, data: ComprehensionResult };
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to fetch comprehension test";

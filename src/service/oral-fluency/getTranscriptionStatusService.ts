@@ -60,7 +60,7 @@ export async function getTranscriptionStatusService(
   }
 
   try {
-    const session = await prisma.oralFluencySession.findUnique({
+    const session = await prisma.oralFluencyResult.findUnique({
       where: { assessmentId },
       include: {
         miscues: true,

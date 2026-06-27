@@ -131,7 +131,7 @@ export async function submitComprehensionService(
     const percentage = totalItems > 0 ? (score / totalItems) * 100 : 0;
     const level = classifyComprehensionLevel(percentage);
 
-    const comprehensionTest = await prisma.comprehensionTest.create({
+    const ComprehensionResult = await prisma.comprehensionResult.create({
       data: {
         assessmentId,
         score,
@@ -152,7 +152,7 @@ export async function submitComprehensionService(
     return {
   success: true,
   assessmentId,
-  comprehensionTestId: comprehensionTest.id,
+  comprehensionResultId: ComprehensionResult.id,
   score,
   totalItems,
   percentage: Math.round(percentage),

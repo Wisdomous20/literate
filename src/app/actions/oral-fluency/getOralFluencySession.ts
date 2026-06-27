@@ -1,11 +1,11 @@
 "use server";
 
-import { getOralFluencySessionService} from "@/service/oral-fluency/getOralFluencySessionService";
+import { getOralFluencyResultService} from "@/service/oral-fluency/getOralFluencyResultService";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { sessionIdQuerySchema } from "@/lib/validation/media";
 import { requireAuth } from "@/utils/roleCheck";
 
-export async function getOralFluencySessionAction(sessionId: string) {
+export async function getOralFluencyResultAction(sessionId: string) {
   const session = await requireAuth();
   const validationResult = sessionIdQuerySchema.safeParse({ id: sessionId });
 
@@ -13,7 +13,7 @@ export async function getOralFluencySessionAction(sessionId: string) {
     throw new Error(getFirstZodErrorMessage(validationResult.error));
   }
 
-  const result = await getOralFluencySessionService(
+  const result = await getOralFluencyResultService(
     validationResult.data.id,
     session.user.id
   );
