@@ -16,6 +16,16 @@ export function alignWords(
   passageWords: string[],
   spokenWords: SpokenWordEntry[]
 ): AlignedWord[] {
+  // Normalize spoken words to temporal order. STT can emit closely-spoken
+  // words out of sequence (e.g. "high tree" arriving as "tree" then "high"),
+  // which would otherwise anchor an inserted word after the wrong passage word
+  // — "the tree, [high]" instead of "the [high] tree,". Sorting by start time
+  // is a stable sort, so words with equal or missing timestamps keep their
+  // original order.
+  spokenWords = [...spokenWords].sort(
+    (a, b) => (a.start ?? 0) - (b.start ?? 0)
+  )
+
   const n = passageWords.length
   const m = spokenWords.length
 
