@@ -32,7 +32,7 @@ async function findManageableSubscriptionForUser(userId: string) {
       userId,
       role: { in: ["OWNER", "ADMIN"] },
       organization: {
-        subscription: {
+        currentSubscription: {
           is: {
             xenditPlanId: { not: null },
           },
@@ -42,7 +42,7 @@ async function findManageableSubscriptionForUser(userId: string) {
     include: {
       organization: {
         include: {
-          subscription: true,
+          currentSubscription: true,
         },
       },
     },
@@ -51,8 +51,8 @@ async function findManageableSubscriptionForUser(userId: string) {
 
   return (
     memberships.find((membership) => membership.organization.type === "PERSONAL")
-      ?.organization.subscription ??
-    memberships[0]?.organization.subscription ??
+      ?.organization.currentSubscription ??
+    memberships[0]?.organization.currentSubscription ??
     null
   );
 }

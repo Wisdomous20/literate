@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getSchoolYear } from "@/utils/getSchoolYear";
+import { hasActiveSubscription } from "@/utils/subscriptionCheck";
+import { FREE_TIER_LIMITS } from "@/service/assessment/checkDailyLimitService";
 
 interface CreateClassInput {
   name: string;
@@ -15,7 +17,7 @@ interface CreateClassResult {
     schoolYear: string;
   };
   error?: string;
-  code?: "VALIDATION_ERROR" | "INTERNAL_ERROR";
+  code?: "VALIDATION_ERROR" | "INTERNAL_ERROR" | "FREE_LIMIT_REACHED";
 }
 
 export async function createClassService(
@@ -37,6 +39,22 @@ export async function createClassService(
       error: "User ID is required",
       code: "VALIDATION_ERROR",
     };
+  }
+
+  // Free-tier cap: at most MAX_CLASSES non-archived classes. Counting allows the
+  // first class (0 → 1), so registration/invite bootstrap still succeeds.
+  const isPaid = await hasActiveSubscription(userId);
+  if (!isPaid) {
+    const existingClasses = await prisma.classRoom.count({
+      where: { userId, archived: false },
+    });
+    if (existingClasses >= FREE_TIER_LIMITS.MAX_CLASSES) {
+      return {
+        success: false,
+        error: "Free plan includes 1 class. Upgrade to add more.",
+        code: "FREE_LIMIT_REACHED",
+      };
+    }
   }
 
   // Determine the school year based on the current date

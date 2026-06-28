@@ -7,7 +7,7 @@ import { registerUserSchema } from "@/lib/validation/auth";
 import { requireRole } from "@/utils/roleCheck";
 
 export async function registerAdminAction(input: RegisterUserInput) {
-  await requireRole("ADMIN");
+  await requireRole("SUPER_ADMIN");
 
   const validationResult = registerUserSchema.safeParse(input);
 

@@ -6,7 +6,7 @@ import { invitePassageAdminService } from "@/service/passage-admin/invitePassage
 import { requireRole } from "@/utils/roleCheck";
 
 export async function invitePassageAdminAction(input: { email: string }) {
-  const session = await requireRole("ADMIN");
+  const session = await requireRole("SUPER_ADMIN");
   const validationResult = adminInvitePassageAdminSchema.safeParse(input);
 
   if (!validationResult.success) {

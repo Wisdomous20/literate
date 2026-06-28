@@ -295,7 +295,7 @@ describe("registerAdminUser", () => {
     expect(result.success).toBe(true);
     const createCall = mockPrisma.user.create.mock.calls[0][0];
     expect(createCall.data.isVerified).toBe(true);
-    expect(createCall.data.role).toBe("ADMIN");
+    expect(createCall.data.role).toBe("SUPER_ADMIN");
   });
 });
 

@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockPrisma = vi.hoisted(() => ({
-  subscription: { findFirst: vi.fn(), findUnique: vi.fn() },
-  organizationMember: { findFirst: vi.fn() },
+  organizationMember: { findMany: vi.fn() },
+  subscription: { updateMany: vi.fn() },
 }));
 
 vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));
@@ -12,106 +12,99 @@ import {
   getEffectiveActiveSubscription,
 } from "../resolveUserSubscription";
 
-const activeDirectSubscription = {
-  id: "sub-1",
-  userId: "user-1",
-  organizationId: null,
-  planType: "SOLO",
+const future = new Date("2099-01-01");
+const past = new Date("2000-01-01");
+
+function membership(orgType: "PERSONAL" | "TEAM", subscription: unknown, role = "OWNER") {
+  return {
+    role,
+    organization: { type: orgType, currentSubscription: subscription },
+  };
+}
+
+const activeOrgSub = {
+  id: "org-sub-1",
   status: "ACTIVE",
-  maxMembers: 1,
-  xenditPlanId: "plan-abc",
-  xenditCustomerId: "cust-abc",
-  currentPeriodEnd: new Date("2099-01-01"),
-  currentPeriodStart: new Date("2098-01-01"),
-  cancelAtPeriodEnd: false,
-  createdAt: new Date("2098-01-01"),
-  updatedAt: new Date("2098-01-01"),
+  currentPeriodEnd: future,
+  plan: { code: "KASALO" },
+  organization: { type: "TEAM" },
 };
 
-const activeOrgSubscription = {
-  id: "org-sub-1",
-  userId: "owner-1",
-  organizationId: "org-1",
-  planType: "KASALO",
+const activeDirectSub = {
+  id: "sub-1",
   status: "ACTIVE",
-  maxMembers: 10,
-  xenditPlanId: "org-plan-abc",
-  xenditCustomerId: "org-cust-abc",
-  currentPeriodEnd: new Date("2099-01-01"),
-  currentPeriodStart: new Date("2098-01-01"),
-  cancelAtPeriodEnd: false,
-  createdAt: new Date("2098-01-01"),
-  updatedAt: new Date("2098-01-01"),
+  currentPeriodEnd: future,
+  plan: { code: "SOLO" },
+  organization: { type: "PERSONAL" },
 };
 
 describe("resolveUserSubscription", () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  it("prefers active org coverage over an active direct subscription", async () => {
-    mockPrisma.organizationMember.findFirst.mockResolvedValue({
-      organization: {
-        subscription: activeOrgSubscription,
-      },
-    });
-
-    const result = await getEffectiveActiveSubscription("user-1");
-
-    expect(result?.subscription).toEqual(activeOrgSubscription);
-    expect(result?.source).toBe("ORGANIZATION");
-    expect(result?.canManage).toBe(false);
-    expect(mockPrisma.subscription.findFirst).not.toHaveBeenCalled();
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockPrisma.subscription.updateMany.mockResolvedValue({ count: 1 });
   });
 
-  it("falls back to an active direct subscription when no active org seat exists", async () => {
-    mockPrisma.organizationMember.findFirst.mockResolvedValue(null);
-    mockPrisma.subscription.findFirst.mockResolvedValue(activeDirectSubscription);
+  it("prefers active PERSONAL coverage over an active org seat", async () => {
+    mockPrisma.organizationMember.findMany.mockResolvedValue([
+      membership("TEAM", activeOrgSub),
+      membership("PERSONAL", activeDirectSub),
+    ]);
 
     const result = await getEffectiveActiveSubscription("user-1");
 
-    expect(result?.subscription).toEqual(activeDirectSubscription);
+    expect(result?.subscription.id).toBe("sub-1");
     expect(result?.source).toBe("DIRECT");
-    expect(result?.canManage).toBe(true);
   });
 
-  it("treats an org owner as able to manage the org subscription", async () => {
-    mockPrisma.organizationMember.findFirst.mockResolvedValue({
-      organization: {
-        subscription: {
-          ...activeOrgSubscription,
-          userId: "user-1",
-        },
-      },
-    });
+  it("resolves the org seat when there is no personal coverage", async () => {
+    mockPrisma.organizationMember.findMany.mockResolvedValue([
+      membership("TEAM", activeOrgSub),
+    ]);
 
     const result = await getEffectiveActiveSubscription("user-1");
 
+    expect(result?.subscription.id).toBe("org-sub-1");
     expect(result?.source).toBe("ORGANIZATION");
     expect(result?.canManage).toBe(true);
   });
 
-  it("returns the direct subscription for display when no active entitlement exists", async () => {
-    mockPrisma.organizationMember.findFirst.mockResolvedValue(null);
-    mockPrisma.subscription.findFirst.mockResolvedValue(null);
-    mockPrisma.subscription.findUnique.mockResolvedValue({
-      ...activeDirectSubscription,
-      status: "CANCELED",
-      currentPeriodEnd: new Date("2024-01-01"),
-    });
+  it("returns null when no membership has a current subscription", async () => {
+    mockPrisma.organizationMember.findMany.mockResolvedValue([]);
 
-    const result = await getDisplayedSubscription("user-1");
-
-    expect(result?.subscription).toMatchObject({ id: "sub-1", status: "CANCELED" });
-    expect(result?.source).toBe("DIRECT");
-    expect(result?.canManage).toBe(true);
+    expect(await getEffectiveActiveSubscription("user-1")).toBeNull();
   });
 
-  it("returns null when the user has neither org nor direct subscription data", async () => {
-    mockPrisma.organizationMember.findFirst.mockResolvedValue(null);
-    mockPrisma.subscription.findFirst.mockResolvedValue(null);
-    mockPrisma.subscription.findUnique.mockResolvedValue(null);
+  it("lazily marks a lapsed ACTIVE row EXPIRED on the displayed-subscription path", async () => {
+    const lapsed = {
+      id: "sub-lapsed",
+      status: "ACTIVE",
+      currentPeriodEnd: past,
+      plan: { code: "SOLO" },
+      organization: { type: "PERSONAL" },
+    };
+    // No active coverage → effective query returns nothing; displayed fallback hits it.
+    mockPrisma.organizationMember.findMany
+      .mockResolvedValueOnce([]) // activeOnly = true
+      .mockResolvedValueOnce([membership("PERSONAL", lapsed)]); // activeOnly = false
 
     const result = await getDisplayedSubscription("user-1");
 
-    expect(result).toBeNull();
+    expect(result?.subscription.id).toBe("sub-lapsed");
+    expect(mockPrisma.subscription.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: "sub-lapsed" }),
+        data: { status: "EXPIRED" },
+      }),
+    );
+  });
+
+  it("does not reconcile a still-valid displayed subscription", async () => {
+    mockPrisma.organizationMember.findMany
+      .mockResolvedValueOnce([]) // no active coverage via the strict query
+      .mockResolvedValueOnce([membership("PERSONAL", activeDirectSub)]);
+
+    await getDisplayedSubscription("user-1");
+
+    expect(mockPrisma.subscription.updateMany).not.toHaveBeenCalled();
   });
 });

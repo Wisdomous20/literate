@@ -7,7 +7,7 @@ import { requireRole } from "@/utils/roleCheck";
 
 export async function removeMembershipByAdminAction(membershipId: string) {
   try {
-    await requireRole("ADMIN");
+    await requireRole("SUPER_ADMIN");
   } catch {
     return { success: false, error: "Forbidden" };
   }

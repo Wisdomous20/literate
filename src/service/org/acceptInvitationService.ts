@@ -21,6 +21,12 @@ interface AcceptInvitationSuccess {
   success: true;
   email: string;
   createdAccount: boolean;
+  /**
+   * When an existing Solo subscriber accepted, the date their Solo plan stays
+   * active through (auto-renewal stopped, no credit). Lets the UI confirm
+   * "auto-renewal stopped; active until {date}."
+   */
+  soloActiveUntil?: Date | null;
 }
 
 interface AcceptInvitationFailure {
@@ -80,7 +86,7 @@ export async function acceptInvitationService(
       const organization = await tx.organization.findUnique({
         where: { id: invitation.payload.organizationId },
         include: {
-          subscription: { select: { maxMembersSnapshot: true } },
+          currentSubscription: { select: { maxMembersSnapshot: true } },
           _count: {
             select: {
               members: { where: { user: { isDisabled: false } } },
@@ -112,7 +118,7 @@ export async function acceptInvitationService(
 
       }
 
-      const maxMembers = organization.subscription?.maxMembersSnapshot || 1;
+      const maxMembers = organization.currentSubscription?.maxMembersSnapshot || 1;
       if (organization._count.members >= maxMembers) {
         return {
           success: false as const,
@@ -132,7 +138,7 @@ export async function acceptInvitationService(
             password: await bcrypt.hash(input.password!, 10),
             isVerified: true,
             isDisabled: false,
-            role: "USER",
+            role: "TEACHER",
           },
           select: { id: true },
         });
@@ -160,6 +166,8 @@ export async function acceptInvitationService(
       console.error("Failed to consume accepted organization invitation:", error);
     });
 
+    let soloActiveUntil: Date | null | undefined;
+
     if (!existingUser) {
       try {
         const schoolYear = getSchoolYear();
@@ -172,7 +180,10 @@ export async function acceptInvitationService(
       }
     } else {
       try {
-        await stopSubscriptionRenewalService(result.userId);
+        const stopResult = await stopSubscriptionRenewalService(result.userId);
+        if (stopResult.success) {
+          soloActiveUntil = stopResult.currentPeriodEnd;
+        }
       } catch (error) {
         console.error("Failed to stop personal renewal on organization accept:", error);
       }
@@ -182,6 +193,7 @@ export async function acceptInvitationService(
       success: true,
       email: invitation.payload.email,
       createdAccount: !existingUser,
+      soloActiveUntil,
     };
   } catch (error) {
     console.error("Failed to accept organization invitation:", error);

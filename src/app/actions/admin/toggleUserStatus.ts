@@ -12,7 +12,7 @@ export async function toggleAdminUserStatusAction(
   let session;
 
   try {
-    session = await requireRole("ADMIN");
+    session = await requireRole("SUPER_ADMIN");
   } catch {
     return { success: false, error: "Forbidden" };
   }

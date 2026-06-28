@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { xenditRequest } from "@/lib/xendit";
 import { prisma } from "@/lib/prisma";
 import { calculatePrice, getMaxMembers, PLANS, PlanKey } from "@/config/plans";
+import { changeSubscriptionPlanService } from "@/service/subscription/changeSubscriptionPlanService";
 
 interface CreateSubscriptionInput {
   userId: string;
@@ -11,7 +12,13 @@ interface CreateSubscriptionInput {
   memberCount?: number;
 }
 
-export async function createSubscriptionService(input: CreateSubscriptionInput) {
+export type SubscribeResult =
+  | { success: true; url: string; credit?: number; newCharge?: number }
+  | { success: false; error: string };
+
+export async function createSubscriptionService(
+  input: CreateSubscriptionInput
+): Promise<SubscribeResult> {
   const { userId, userName, userEmail } = input;
   const { planType, memberCount } = input;
 
@@ -64,11 +71,23 @@ export async function createSubscriptionService(input: CreateSubscriptionInput) 
       type: organizationType,
     });
 
-    const existingSub = await prisma.subscription.findUnique({
+    // If the org already has a live plan, this purchase is a tier change — route
+    // it through the proration flow instead of overwriting the active row.
+    const orgWithCurrent = await prisma.organization.findUnique({
+      where: { id: organization.id },
+      include: { currentSubscription: true },
+    });
+    if (orgWithCurrent?.currentSubscription?.status === "ACTIVE") {
+      return changeSubscriptionPlanService(userId, planType, memberCount);
+    }
+
+    // Reuse an existing Xendit customer from any prior subscription on this org.
+    const priorSub = await prisma.subscription.findFirst({
       where: { organizationId: organization.id },
+      orderBy: { createdAt: "desc" },
     });
 
-    let xenditCustomerId = existingSub?.xenditCustomerId;
+    let xenditCustomerId = priorSub?.xenditCustomerId;
 
     // Step 1: Create or retrieve Xendit customer
     if (!xenditCustomerId) {
@@ -141,20 +160,12 @@ export async function createSubscriptionService(input: CreateSubscriptionInput) 
       },
     });
 
-    // Step 3: Save subscription record
-    await prisma.subscription.upsert({
-      where: { organizationId: organization.id },
-      create: {
+    // Step 3: Save subscription record. A brand-new period is always its own row;
+    // the recurring.plan.activated webhook sets Organization.currentSubscriptionId
+    // once payment is authorized.
+    await prisma.subscription.create({
+      data: {
         organizationId: organization.id,
-        planId: planRecord.id,
-        status: "PENDING",
-        maxMembersSnapshot: maxMembers,
-        priceAmountSnapshot: amount,
-        currencySnapshot: "PHP",
-        xenditCustomerId,
-        xenditPlanId: plan.id,
-      },
-      update: {
         planId: planRecord.id,
         status: "PENDING",
         maxMembersSnapshot: maxMembers,

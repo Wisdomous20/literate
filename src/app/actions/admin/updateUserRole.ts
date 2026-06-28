@@ -9,7 +9,7 @@ export async function updateAdminUserRoleAction(userId: string, role: string) {
   let session;
 
   try {
-    session = await requireRole("ADMIN");
+    session = await requireRole("SUPER_ADMIN");
   } catch {
     return { success: false, error: "Forbidden" };
   }

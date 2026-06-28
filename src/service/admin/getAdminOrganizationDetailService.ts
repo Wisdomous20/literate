@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma/client";
 import type { userType } from "@/generated/prisma/enums";
 import { countPendingOrgInvitations } from "@/service/org/orgInvitationRedisService";
 
@@ -30,6 +31,11 @@ interface AdminOrganizationDetailResult {
   error?: string;
 }
 
+type UserRoleRow = {
+  id: string;
+  role: userType;
+};
+
 export async function getAdminOrganizationDetailService(
   organizationId: string
 ): Promise<AdminOrganizationDetailResult> {
@@ -40,7 +46,7 @@ export async function getAdminOrganizationDetailService(
         id: true,
         name: true,
         createdAt: true,
-        subscription: {
+        currentSubscription: {
           select: {
             maxMembersSnapshot: true,
             plan: {
@@ -62,7 +68,6 @@ export async function getAdminOrganizationDetailService(
                 firstName: true,
                 lastName: true,
                 email: true,
-                role: true,
                 isDisabled: true,
               },
             },
@@ -74,6 +79,17 @@ export async function getAdminOrganizationDetailService(
     if (!organization) {
       return { success: false, error: "Organization not found." };
     }
+
+    const userIds = organization.members.map((membership) => membership.userId);
+    const userRoles =
+      userIds.length > 0
+        ? await prisma.$queryRaw<UserRoleRow[]>(Prisma.sql`
+            SELECT id, role::text AS role
+            FROM "users"
+            WHERE id IN (${Prisma.join(userIds)})
+          `)
+        : [];
+    const rolesByUserId = new Map(userRoles.map((user) => [user.id, user.role]));
 
     const ownerMembership =
       organization.members.find((membership) => membership.role === "OWNER") ??
@@ -88,7 +104,7 @@ export async function getAdminOrganizationDetailService(
           .join(" ")
           .trim() || "Unnamed user",
       email: membership.user.email ?? "No email",
-      role: membership.user.role,
+      role: rolesByUserId.get(membership.userId) ?? "TEACHER",
       isDisabled: membership.user.isDisabled,
       isOwner: membership.role === "OWNER",
       joinedAt: membership.joinedAt,
@@ -109,8 +125,8 @@ export async function getAdminOrganizationDetailService(
             .join(" ")
             .trim() || "Unnamed owner",
         ownerEmail: ownerMembership?.user.email ?? "No email",
-        subscriptionPlan: organization.subscription?.plan.code ?? null,
-        maxMembers: organization.subscription?.maxMembersSnapshot ?? null,
+        subscriptionPlan: organization.currentSubscription?.plan.code ?? null,
+        maxMembers: organization.currentSubscription?.maxMembersSnapshot ?? null,
         activeMemberCount: members.filter((member) => !member.isDisabled).length,
         totalMemberCount: members.length,
         pendingInvitations: await countPendingOrgInvitations(organization.id),

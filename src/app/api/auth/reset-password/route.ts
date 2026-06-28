@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
     await prisma.user.update({
       where: { email: result.email },
       data: { password: hashedPassword },
+      select: { id: true },
     })
 
     // Delete the used token

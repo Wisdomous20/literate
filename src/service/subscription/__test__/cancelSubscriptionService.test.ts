@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockXenditRequest = vi.hoisted(() => vi.fn());
 
 const mockPrisma = vi.hoisted(() => ({
-  subscription: { findUnique: vi.fn(), update: vi.fn() },
+  organizationMember: { findMany: vi.fn() },
+  subscription: { update: vi.fn() },
 }));
 
 vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));
@@ -13,17 +14,22 @@ import { cancelSubscriptionService } from "../cancelSubscriptionService";
 
 const activeSubscription = {
   id: "sub-1",
-  userId: "user-1",
-  planType: "SOLO",
   status: "ACTIVE",
   xenditPlanId: "plan-abc",
 };
+
+/** The service resolves the manageable PERSONAL subscription via findMany. */
+function resolveSubscription(subscription: unknown) {
+  mockPrisma.organizationMember.findMany.mockResolvedValue([
+    { role: "OWNER", organization: { type: "PERSONAL", currentSubscription: subscription } },
+  ]);
+}
 
 describe("cancelSubscriptionService", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("returns failure when no subscription exists for the user", async () => {
-    mockPrisma.subscription.findUnique.mockResolvedValue(null);
+    mockPrisma.organizationMember.findMany.mockResolvedValue([]);
 
     const result = await cancelSubscriptionService("user-1");
 
@@ -33,7 +39,7 @@ describe("cancelSubscriptionService", () => {
   });
 
   it("returns failure when the subscription has no xenditPlanId", async () => {
-    mockPrisma.subscription.findUnique.mockResolvedValue({ ...activeSubscription, xenditPlanId: null });
+    resolveSubscription({ ...activeSubscription, xenditPlanId: null });
 
     const result = await cancelSubscriptionService("user-1");
 
@@ -43,7 +49,7 @@ describe("cancelSubscriptionService", () => {
   });
 
   it("calls the Xendit deactivate endpoint with the plan id", async () => {
-    mockPrisma.subscription.findUnique.mockResolvedValue(activeSubscription);
+    resolveSubscription(activeSubscription);
     mockXenditRequest.mockResolvedValue({});
     mockPrisma.subscription.update.mockResolvedValue({});
 
@@ -56,20 +62,20 @@ describe("cancelSubscriptionService", () => {
   });
 
   it("marks the subscription as CANCELED after a successful Xendit call", async () => {
-    mockPrisma.subscription.findUnique.mockResolvedValue(activeSubscription);
+    resolveSubscription(activeSubscription);
     mockXenditRequest.mockResolvedValue({});
     mockPrisma.subscription.update.mockResolvedValue({});
 
     await cancelSubscriptionService("user-1");
 
     expect(mockPrisma.subscription.update).toHaveBeenCalledWith({
-      where: { userId: "user-1" },
+      where: { id: "sub-1" },
       data: { status: "CANCELED" },
     });
   });
 
   it("returns success after cancellation", async () => {
-    mockPrisma.subscription.findUnique.mockResolvedValue(activeSubscription);
+    resolveSubscription(activeSubscription);
     mockXenditRequest.mockResolvedValue({});
     mockPrisma.subscription.update.mockResolvedValue({});
 
@@ -79,7 +85,7 @@ describe("cancelSubscriptionService", () => {
   });
 
   it("returns failure when the Xendit call throws", async () => {
-    mockPrisma.subscription.findUnique.mockResolvedValue(activeSubscription);
+    resolveSubscription(activeSubscription);
     mockXenditRequest.mockRejectedValue(new Error("Xendit error"));
 
     const result = await cancelSubscriptionService("user-1");

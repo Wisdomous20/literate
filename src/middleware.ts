@@ -31,27 +31,27 @@ export async function middleware(request: NextRequest) {
 
   // Already logged in → redirect away from auth pages
   if (isAuthRoute && token) {
-    if (token.role === "PASSAGE_ADMIN") {
+    if (token.role === "PASSAGE_MANAGER") {
       return NextResponse.redirect(new URL("/admin/passages", request.url));
     }
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  if (isDashboardRoute && token?.role === "PASSAGE_ADMIN") {
+  if (isDashboardRoute && token?.role === "PASSAGE_MANAGER") {
     return NextResponse.redirect(new URL("/admin/passages", request.url));
   }
 
-  if (isPassageActivityRoute && token?.role === "PASSAGE_ADMIN") {
+  if (isPassageActivityRoute && token?.role === "PASSAGE_MANAGER") {
     return NextResponse.redirect(new URL("/admin/passages", request.url));
   }
 
   // Admin routes → only ADMIN role
   if (
     isAdminRoute &&
-    token?.role !== "ADMIN" &&
-    !(isPassageAdminRoute && token?.role === "PASSAGE_ADMIN")
+    token?.role !== "SUPER_ADMIN" &&
+    !(isPassageAdminRoute && token?.role === "PASSAGE_MANAGER")
   ) {
-    if (token?.role === "PASSAGE_ADMIN") {
+    if (token?.role === "PASSAGE_MANAGER") {
       return NextResponse.redirect(new URL("/admin/passages", request.url));
     }
     return NextResponse.redirect(new URL("/dashboard", request.url));

@@ -55,7 +55,7 @@ export async function acceptPassageAdminInvitationService(
     return { success: false, error: "First and last name are required" };
   }
 
-  if (existingUser?.role === "ADMIN") {
+  if (existingUser?.role === "SUPER_ADMIN") {
     return { success: false, error: "This user already has full admin access." };
   }
 
@@ -83,7 +83,7 @@ export async function acceptPassageAdminInvitationService(
           where: { id: existingUser.id },
           data: {
             password: passwordHash,
-            role: "PASSAGE_ADMIN",
+            role: "PASSAGE_MANAGER",
             isVerified: true,
             isDisabled: false,
           },
@@ -98,7 +98,7 @@ export async function acceptPassageAdminInvitationService(
           lastName: input.lastName!.trim(),
           email: invitation.payload.email,
           password: passwordHash,
-          role: "PASSAGE_ADMIN",
+          role: "PASSAGE_MANAGER",
           isVerified: true,
           isDisabled: false,
         },

@@ -45,9 +45,11 @@ const invitation = {
 
 const organization = {
   id: "org-1",
-  subscription: { maxMembers: 5 },
+  currentSubscription: { maxMembersSnapshot: 5 },
   _count: { members: 1 },
 };
+
+const soloPeriodEnd = new Date("2027-01-01T00:00:00Z");
 
 describe("acceptInvitationService", () => {
   beforeEach(() => {
@@ -56,7 +58,11 @@ describe("acceptInvitationService", () => {
     mockClaimOrgInvitation.mockResolvedValue("claim-1");
     mockReleaseOrgInvitationClaim.mockResolvedValue(undefined);
     mockConsumeOrgInvitation.mockResolvedValue(undefined);
-    mockStopSubscriptionRenewal.mockResolvedValue(undefined);
+    mockStopSubscriptionRenewal.mockResolvedValue({
+      success: true,
+      alreadyStopped: false,
+      currentPeriodEnd: soloPeriodEnd,
+    });
     mockHashPassword.mockResolvedValue("hashed-password");
     transactionClient.organization.findUnique.mockResolvedValue(organization);
     transactionClient.organizationMember.findUnique.mockResolvedValue(null);
@@ -107,7 +113,7 @@ describe("acceptInvitationService", () => {
     mockPrisma.user.findFirst.mockResolvedValue(null);
     transactionClient.organization.findUnique.mockResolvedValue({
       ...organization,
-      subscription: { maxMembers: 1 },
+      currentSubscription: { maxMembersSnapshot: 1 },
       _count: { members: 1 },
     });
 
@@ -136,6 +142,7 @@ describe("acceptInvitationService", () => {
       success: true,
       email: "member@example.com",
       createdAccount: false,
+      soloActiveUntil: soloPeriodEnd,
     });
     expect(transactionClient.organizationMember.create).toHaveBeenCalledWith({
       data: { userId: "user-existing", organizationId: "org-1", role: "USER" },

@@ -28,7 +28,7 @@ export async function invitePassageAdminService(input: InvitePassageAdminInput) 
     }),
   ]);
 
-  if (existingUser?.role === "ADMIN") {
+  if (existingUser?.role === "SUPER_ADMIN") {
     return {
       success: false,
       error: "This user already has full admin access.",
