@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mockTranscribeAudioWithConsensus = vi.hoisted(() => vi.fn());
+const mockTranscribeAudio = vi.hoisted(() => vi.fn());
 const mockAlignWords = vi.hoisted(() => vi.fn());
 const mockPhoneticPostCorrection = vi.hoisted(() => vi.fn());
 const mockDetectMiscues = vi.hoisted(() => vi.fn());
@@ -9,8 +9,8 @@ const mockAnalyzePitch = vi.hoisted(() => vi.fn());
 const mockPostCorrectTranscription = vi.hoisted(() => vi.fn());
 const mockInitPhoneticDict = vi.hoisted(() => vi.fn());
 
-vi.mock("@/service/transcription/dualTranscriptionService", () => ({
-  transcribeAudioWithConsensus: mockTranscribeAudioWithConsensus,
+vi.mock("@/service/googleService/googleSTTService", () => ({
+  transcribeAudio: mockTranscribeAudio,
 }));
 vi.mock("../alignmentService", () => ({
   alignWords: mockAlignWords,
@@ -45,7 +45,7 @@ describe("analyzeOralFluency", () => {
   });
 
   it("treats a silent recording as unread even if STT hallucinates passage words", async () => {
-    mockTranscribeAudioWithConsensus.mockResolvedValue({
+    mockTranscribeAudio.mockResolvedValue({
       text: "the cat sat on the mat",
       words: [
         { word: "the", start: 0, end: 0.2 },
