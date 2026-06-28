@@ -91,6 +91,25 @@ describe("alignWords", () => {
     expect(result.every((w) => w.match === "EXACT")).toBe(true);
   });
 
+  it("orders an inserted word by timestamp even when STT emits it out of sequence", () => {
+    // The child read "the high tree" but STT returned the words array with
+    // "tree" before "high" (high's start time is still earlier). The insertion
+    // must be placed before "tree", not after it.
+    const result = alignWords(
+      ["from", "the", "tree"],
+      [
+        spoken("from", 1.5, 1.8),
+        spoken("the", 1.8, 2.1),
+        spoken("tree", 2.4, 2.7),
+        spoken("high", 2.1, 2.4),
+      ],
+    );
+
+    expect(result.map((w) => w.spoken)).toEqual(["from", "the", "high", "tree"]);
+    const insertion = result.find((w) => w.match === "INSERTION");
+    expect(insertion?.spoken).toBe("high");
+  });
+
   it("does not create a false leading omission when repeated opening words can align in multiple places", () => {
     const result = alignWords(
       ["the", "the", "the", "the", "the", "cat"],
