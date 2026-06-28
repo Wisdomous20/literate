@@ -2,9 +2,9 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-import { createShareableLinkService } from "@/service/assessment-link/createShareableLinkService";
+import { createShareableLinkService } from "@/service/assessment/createShareableLinkService";
 import type { AssessmentType } from "@/generated/prisma/enums";
-import { createShareableLinkSchema } from "@/lib/validation/org";
+import { createShareableLinkSchema } from "@/lib/validation/assessment";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { buildApplicationUrl } from "@/lib/applicationUrl";
 

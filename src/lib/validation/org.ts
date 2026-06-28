@@ -2,7 +2,6 @@ import { z } from "zod";
 import {
   emailString,
   idString,
-  isoDateString,
   passwordString,
   requiredString,
 } from "@/lib/validation/common";
@@ -76,12 +75,4 @@ export const updateMemberRoleSchema = z.object({
   organizationId: idString("Organization ID"),
   requestedByUserId: idString("User ID"),
   role: z.enum(["ADMIN", "USER"]),
-});
-
-export const createShareableLinkSchema = z.object({
-  teacherId: idString("Teacher ID"),
-  studentId: idString("Student ID"),
-  passageId: idString("Passage ID"),
-  type: z.enum(["ORAL_READING", "COMPREHENSION", "READING_FLUENCY"]),
-  expiresAt: isoDateString("Deadline").optional(),
 });

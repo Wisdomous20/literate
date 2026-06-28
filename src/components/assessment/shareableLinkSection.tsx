@@ -9,7 +9,7 @@ import {
   Clock,
   AlertCircle,
 } from "lucide-react";
-import { createShareableLink } from "@/app/actions/assessment-link/createShareableLink";
+import { createShareableLink } from "@/app/actions/assessment/createShareableLink";
 import type { AssessmentType } from "@/generated/prisma/enums";
 
 interface ShareableLinkSectionProps {
