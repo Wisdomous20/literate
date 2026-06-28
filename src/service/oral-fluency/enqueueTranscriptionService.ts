@@ -5,6 +5,7 @@ import { isUploadedAudioObjectPath } from "@/lib/media/audioObjectPath";
 
 export interface EnqueueTranscriptionInput {
   assessmentId: string;
+  userId?: string;
   audioUrl: string;
   fileName?: string;
 }
@@ -48,10 +49,22 @@ export async function enqueueTranscriptionService(
   }
 
   try {
-    const assessment = await prisma.assessment.findUnique({
-      where: { id: assessmentId },
-      select: { id: true },
-    });
+    const assessment = input.userId
+      ? await prisma.assessment.findFirst({
+          where: {
+            id: assessmentId,
+            student: {
+              classRoom: {
+                userId: input.userId,
+              },
+            },
+          },
+          select: { id: true },
+        })
+      : await prisma.assessment.findUnique({
+          where: { id: assessmentId },
+          select: { id: true },
+        });
 
     if (!assessment) {
       return {

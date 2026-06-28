@@ -6,6 +6,7 @@ import { Tags } from "@/generated/prisma/enums";
 import { comprehensionSubmitSchema } from "@/lib/validation/assessment";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import {
+  getCurrentUserId,
   hasAssessmentAccess,
   hasStudentAccess,
 } from "@/lib/auth/assessmentAuthorization";
@@ -30,12 +31,15 @@ export async function POST(request: NextRequest) {
       validationResult.data;
     let assessmentId: string;
     let resolvedPassageId: string;
+    const assessmentToken = request.headers.get("x-assessment-token");
 
     if (existingAssessmentId) {
+      const userId = await getCurrentUserId();
       if (
         !(await hasAssessmentAccess(
           existingAssessmentId,
-          request.headers.get("x-assessment-token"),
+          assessmentToken,
+          userId,
         ))
       ) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -63,11 +67,18 @@ export async function POST(request: NextRequest) {
       assessmentId = assessment.id;
       resolvedPassageId = assessment.passageId;
     } else {
-      if (!studentId || !passageId || !(await hasStudentAccess(studentId))) {
+      const userId = await getCurrentUserId();
+      if (
+        !userId ||
+        !studentId ||
+        !passageId ||
+        !(await hasStudentAccess(studentId, userId))
+      ) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
 
       const assessmentResult = await createAssessmentService({
+        userId,
         studentId,
         passageId,
         type: "COMPREHENSION",

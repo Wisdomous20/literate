@@ -26,15 +26,20 @@ interface GetClassByIdResult {
 }
 
 export async function getClassByIdService(
-  classRoomId: string
+  classRoomId: string,
+  userId: string,
 ): Promise<GetClassByIdResult> {
   if (!classRoomId) {
     return { success: false, error: "Class ID is required", code: "VALIDATION_ERROR" };
   }
 
+  if (!userId) {
+    return { success: false, error: "User ID is required", code: "VALIDATION_ERROR" };
+  }
+
   try {
-    const classItem = await prisma.classRoom.findUnique({
-      where: { id: classRoomId },
+    const classItem = await prisma.classRoom.findFirst({
+      where: { id: classRoomId, userId },
       select: {
         id: true,
         name: true,
@@ -56,7 +61,11 @@ export async function getClassByIdService(
     });
 
     if (!classItem) {
-      return { success: false, error: "Class not found", code: "NOT_FOUND" };
+      return {
+        success: false,
+        error: "Class not found or access denied",
+        code: "NOT_FOUND",
+      };
     }
 
     return { success: true, classItem };

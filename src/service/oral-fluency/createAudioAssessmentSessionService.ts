@@ -4,6 +4,7 @@ import { enqueueTranscriptionService } from "./enqueueTranscriptionService";
 type AudioAssessmentType = "ORAL_READING" | "READING_FLUENCY";
 
 export interface CreateAudioAssessmentSessionInput {
+  userId: string;
   studentId: string;
   passageId: string;
   type: AudioAssessmentType;
@@ -29,6 +30,7 @@ export async function createAudioAssessmentSessionService(
   input: CreateAudioAssessmentSessionInput,
 ): Promise<CreateAudioAssessmentSessionResult> {
   const assessmentResult = await createAssessmentService({
+    userId: input.userId,
     studentId: input.studentId,
     passageId: input.passageId,
     type: input.type,
@@ -45,6 +47,7 @@ export async function createAudioAssessmentSessionService(
   const assessmentId = assessmentResult.assessment.id;
   const enqueueResult = await enqueueTranscriptionService({
     assessmentId,
+    userId: input.userId,
     audioUrl: input.audioUrl,
     fileName: input.fileName,
   });

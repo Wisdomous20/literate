@@ -21,5 +21,8 @@ export async function getClassById(classRoomId: string) {
     };
   }
 
-  return await getClassByIdService(validationResult.data.classRoomId);
+  return await getClassByIdService(
+    validationResult.data.classRoomId,
+    session.user.id,
+  );
 }

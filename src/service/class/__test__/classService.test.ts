@@ -109,48 +109,57 @@ describe("getClassByIdService", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("returns VALIDATION_ERROR when classRoomId is empty", async () => {
-    const result = await getClassByIdService("");
+    const result = await getClassByIdService("", "user-1");
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("VALIDATION_ERROR");
-    expect(mockPrisma.classRoom.findUnique).not.toHaveBeenCalled();
+    expect(mockPrisma.classRoom.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("returns VALIDATION_ERROR when userId is empty", async () => {
+    const result = await getClassByIdService("class-1", "");
+
+    expect(result.success).toBe(false);
+    expect(result.code).toBe("VALIDATION_ERROR");
+    expect(mockPrisma.classRoom.findFirst).not.toHaveBeenCalled();
   });
 
   it("returns NOT_FOUND when no class matches the id", async () => {
-    mockPrisma.classRoom.findUnique.mockResolvedValue(null);
+    mockPrisma.classRoom.findFirst.mockResolvedValue(null);
 
-    const result = await getClassByIdService("nonexistent");
+    const result = await getClassByIdService("nonexistent", "user-1");
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("NOT_FOUND");
   });
 
   it("returns the class with its students on success", async () => {
-    mockPrisma.classRoom.findUnique.mockResolvedValue({
+    mockPrisma.classRoom.findFirst.mockResolvedValue({
       ...baseClass,
       students: baseStudents,
     });
 
-    const result = await getClassByIdService("class-1");
+    const result = await getClassByIdService("class-1", "user-1");
 
     expect(result.success).toBe(true);
     expect(result.classItem).toMatchObject({ id: "class-1", name: "Grade 3 - Section A" });
     expect(result.classItem?.students).toHaveLength(2);
   });
 
-  it("only queries active (non-archived) students", async () => {
-    mockPrisma.classRoom.findUnique.mockResolvedValue({ ...baseClass, students: [] });
+  it("scopes the class query to the requesting user and active students", async () => {
+    mockPrisma.classRoom.findFirst.mockResolvedValue({ ...baseClass, students: [] });
 
-    await getClassByIdService("class-1");
+    await getClassByIdService("class-1", "user-1");
 
-    const query = mockPrisma.classRoom.findUnique.mock.calls[0][0];
+    const query = mockPrisma.classRoom.findFirst.mock.calls[0][0];
+    expect(query.where).toMatchObject({ id: "class-1", userId: "user-1" });
     expect(query.select.students.where).toMatchObject({ archived: false });
   });
 
   it("returns INTERNAL_ERROR when prisma throws", async () => {
-    mockPrisma.classRoom.findUnique.mockRejectedValue(new Error("DB down"));
+    mockPrisma.classRoom.findFirst.mockRejectedValue(new Error("DB down"));
 
-    const result = await getClassByIdService("class-1");
+    const result = await getClassByIdService("class-1", "user-1");
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("INTERNAL_ERROR");
