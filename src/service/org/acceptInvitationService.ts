@@ -7,6 +7,7 @@ import {
   releaseOrgInvitationClaim,
 } from "@/service/org/orgInvitationRedisService";
 import { stopSubscriptionRenewalService } from "@/service/subscription/stopSubscriptionRenewalService";
+import { getSchoolYear } from "@/utils/getSchoolYear";
 
 interface AcceptInvitationInput {
   token: string;
@@ -161,10 +162,7 @@ export async function acceptInvitationService(
 
     if (!existingUser) {
       try {
-        const now = new Date();
-        const year = now.getFullYear();
-        const schoolYear =
-          now.getMonth() < 6 ? `${year - 1}-${year}` : `${year}-${year + 1}`;
+        const schoolYear = getSchoolYear();
 
         await prisma.classRoom.create({
           data: { name: "My Class", userId: result.userId, schoolYear },

@@ -22,17 +22,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { getQuizByPassageAction } from "@/app/actions/comprehension-Test/getQuizByPassage";
 import { createStudent } from "@/app/actions/student/createStudent";
 import { exportComprehensionReportPdf } from "@/lib/exportComprehensionReportPdf";
-
-function getCurrentSchoolYear(): string {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth();
-  if (currentMonth >= 7) {
-    return `${currentYear}-${currentYear + 1}`;
-  } else {
-    return `${currentYear - 1}-${currentYear}`;
-  }
-}
+import { getSchoolYear } from "@/utils/getSchoolYear";
 
 const STORAGE_KEY = "reading-comprehension-session";
 const COMP_STATE_KEY = "reading-comprehension-comp-state";
@@ -116,7 +106,7 @@ export default function ReadingComprehensionResultPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const schoolYear = getCurrentSchoolYear();
+  const schoolYear = getSchoolYear();
   const { data: classListData = [], isLoading: isLoadingClasses } =
     useClassList(schoolYear);
 

@@ -15,18 +15,18 @@ import { CreateClassModal } from "./createClassModal";
 import { createClass } from "@/app/actions/class/createClass";
 import { useClassList } from "@/lib/hooks/useClassList";
 import { cn } from "@/lib/utils";
+import { getSchoolYear } from "@/utils/getSchoolYear";
 
 type ClassCardVariant = "blue" | "yellow" | "cyan";
 
-function getCurrentSchoolYear(): string {
-  const now = new Date();
-  const y = now.getFullYear();
-  return now.getMonth() >= 7 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
+function getNextSchoolYear(): string {
+  const [startYear] = getSchoolYear().split("-").map(Number);
+  return `${startYear + 1}-${startYear + 2}`;
 }
 
-function getNextSchoolYear(): string {
-  const [startYear] = getCurrentSchoolYear().split("-").map(Number);
-  return `${startYear + 1}-${startYear + 2}`;
+function getPreviousSchoolYear(): string {
+  const [startYear] = getSchoolYear().split("-").map(Number);
+  return `${startYear - 1}-${startYear}`;
 }
 
 interface ClassInventoryProps {
@@ -59,17 +59,19 @@ export function ClassInventory({
 
   const error = fetchError?.message ?? null;
 
-  const currentYear = getCurrentSchoolYear();
+  const currentYear = getSchoolYear();
   const nextYear = getNextSchoolYear();
+  const previousYear = getPreviousSchoolYear();
   const now = new Date();
-  const nextYearStart = new Date(Number(nextYear.split("-")[0]), 7, 1);
+  // The school year starts in June, so the next year only becomes selectable
+  // once June 1 of its starting year arrives. (Month index 5 = June.)
+  const nextYearStart = new Date(Number(nextYear.split("-")[0]), 5, 1);
   const isNextYearDisabled = now < nextYearStart;
 
   const yearsWithData = useMemo(() => {
-    const years = [currentYear];
-    if (!years.includes(nextYear)) years.push(nextYear);
-    return years.sort((a, b) => b.localeCompare(a));
-  }, [currentYear, nextYear]);
+    const years = [previousYear, currentYear, nextYear];
+    return Array.from(new Set(years)).sort((a, b) => b.localeCompare(a));
+  }, [previousYear, currentYear, nextYear]);
 
   const classes = (rawClasses ?? []).map(
     (
@@ -173,6 +175,7 @@ export function ClassInventory({
                   {yearsWithData.map((year) => {
                     const isCurrent = year === currentYear;
                     const isNext = year === nextYear;
+                    const isPrevious = year === previousYear;
                     const disabled = isNext && isNextYearDisabled;
                     return (
                       <button
@@ -195,6 +198,7 @@ export function ClassInventory({
                         {year}
                         {isCurrent && " (Current)"}
                         {isNext && isNextYearDisabled && " (Upcoming)"}
+                        {isPrevious && " (Previous)"}
                       </button>
                     );
                   })}

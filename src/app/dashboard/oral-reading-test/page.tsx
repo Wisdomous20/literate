@@ -37,18 +37,7 @@ import {
   updateFirstMatchingSpokenWord,
   updateFirstMatchingMiscueType,
 } from "@/lib/miscueEditing";
-
-function getCurrentSchoolYear(): string {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth();
-
-  if (currentMonth >= 7) {
-    return `${currentYear}-${currentYear + 1}`;
-  } else {
-    return `${currentYear - 1}-${currentYear}`;
-  }
-}
+import { getSchoolYear } from "@/utils/getSchoolYear";
 
 const STORAGE_KEY = "oral-reading-session";
 const AUDIO_STORAGE_KEY = "oral-reading-audio";
@@ -133,7 +122,7 @@ export default function OralReadingTestPage() {
   const queryClient = useQueryClient();
   const isRestoredRef = useRef(true);
 
-  const schoolYear = getCurrentSchoolYear();
+  const schoolYear = getSchoolYear();
   const { data: classListData = [], isLoading: isLoadingClasses } =
     useClassList(schoolYear);
 

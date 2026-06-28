@@ -8,16 +8,11 @@ import { ClassificationChart } from "@/components/dashboard/classificationChart"
 import { WordOfTheDay } from "@/components/dashboard/wordOfTheDay";
 import { LayoutDashboard } from "lucide-react";
 import { ToastNotification } from "@/components/oral-reading-test/toastNotification";
-
-function getCurrentSchoolYear(): string {
-  const now = new Date();
-  const y = now.getFullYear();
-  return now.getMonth() >= 7 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
-}
+import { getSchoolYear } from "@/utils/getSchoolYear";
 
 export default function DashboardPage() {
   const [selectedYear, setSelectedYear] = useState<string>(
-    getCurrentSchoolYear(),
+    getSchoolYear(),
   );
   const [toast, setToast] = useState<{
     message: string;

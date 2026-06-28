@@ -41,6 +41,7 @@ interface AllClassesPageProps {
   isNextYearDisabled?: boolean;
   showToast?: (message: string, type: "success" | "error") => void;
   currentYear?: string;
+  previousYear?: string;
 }
 
 const CLASSES_PER_PAGE = 15;
@@ -58,6 +59,7 @@ export default function AllClassesPage({
   isNextYearDisabled,
   showToast,
   currentYear,
+  previousYear,
 }: AllClassesPageProps) {
   const router = useRouter();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -118,6 +120,7 @@ export default function AllClassesPage({
                   {schoolYears.map((year) => {
                     const isCurrent = year === currentYear;
                     const isNext = nextYear === year;
+                    const isPrevious = year === previousYear;
                     const disabled = isNext && !!isNextYearDisabled;
                     return (
                       <button
@@ -142,6 +145,7 @@ export default function AllClassesPage({
                         {year}
                         {isCurrent && " (Current)"}
                         {isNext && isNextYearDisabled && " (Upcoming)"}
+                        {isPrevious && " (Previous)"}
                       </button>
                     );
                   })}
