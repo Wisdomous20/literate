@@ -103,9 +103,7 @@ function loadSession(): Partial<SessionState> {
 function saveSession(state: SessionState) {
   if (typeof window === "undefined") return;
   try {
-    const existing = sessionStorage.getItem(STORAGE_KEY);
-    const merged = existing ? { ...JSON.parse(existing), ...state } : state;
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch {}
 }
 
@@ -720,7 +718,11 @@ export default function OralReadingTestPage() {
       setAnalysisResult(null);
       setRecheckSummaryText(null);
       setSessionId("");
+      setAssessmentId("");
       setIsTranscribing(false);
+      lastHandledTranscriptionStatusRef.current = null;
+      setHighlightedTypes(new Set());
+      sessionStorage.removeItem("oral-reading-assessmentId");
       if (recordedAudioURL) {
         URL.revokeObjectURL(recordedAudioURL);
         setRecordedAudioURL(null);
@@ -732,8 +734,17 @@ export default function OralReadingTestPage() {
   const handleStartReading = useCallback(() => {
     if (!hasPassage || !studentName.trim() || !gradeLevel || !selectedClassName)
       return;
+    lastHandledTranscriptionStatusRef.current = null;
     setIsFullScreen(true);
     setHasRecording(false);
+    setRecordedAudioBlob(null);
+    setAnalysisResult(null);
+    setRecheckSummaryText(null);
+    setSessionId("");
+    setAssessmentId("");
+    setIsTranscribing(false);
+    setHighlightedTypes(new Set());
+    sessionStorage.removeItem("oral-reading-assessmentId");
     if (recordedAudioURL) {
       URL.revokeObjectURL(recordedAudioURL);
       setRecordedAudioURL(null);

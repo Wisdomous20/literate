@@ -513,8 +513,15 @@ export default function ReadingFluencyTestPage() {
   const handleStartReading = useCallback(() => {
     if (!hasPassage || !studentName.trim() || !gradeLevel || !selectedClassName)
       return;
+    lastHandledTranscriptionStatusRef.current = null;
     setIsFullScreen(true);
     setHasRecording(false);
+    setRecordedAudioBlob(null);
+    setAnalysisResult(null);
+    setRecheckSummaryText(null);
+    setSessionId("");
+    setAssessmentId("");
+    setHighlightedTypes(new Set());
     if (recordedAudioURL) {
       URL.revokeObjectURL(recordedAudioURL);
       setRecordedAudioURL(null);
