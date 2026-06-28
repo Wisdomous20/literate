@@ -11,7 +11,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));
 import { createOrganizationService } from "../createOrganizationService";
 
 const orgAdmin = { role: "ORG_ADMIN" };
-const regularUser = { role: "USER" };
+const regularUser = { role: "TEACHER" };
 const baseOrg = { id: "org-1", name: "Sunshine School", ownerId: "user-1" };
 
 describe("createOrganizationService", () => {

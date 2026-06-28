@@ -10,7 +10,7 @@ export async function renameOrganizationByAdminAction(
   name: string
 ) {
   try {
-    await requireRole("ADMIN");
+    await requireRole("SUPER_ADMIN");
   } catch {
     return { success: false, error: "Forbidden" };
   }

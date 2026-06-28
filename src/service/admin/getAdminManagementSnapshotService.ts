@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma/client";
 import type { userType } from "@/generated/prisma/enums";
 import { countPendingOrgInvitations } from "@/service/org/orgInvitationRedisService";
 
@@ -66,27 +67,37 @@ interface AdminManagementSnapshotResult {
   error?: string;
 }
 
+type SnapshotUser = {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+  role: userType;
+  isDisabled: boolean;
+  isVerified: boolean;
+  createdAt: Date;
+  membershipCount: number;
+};
+
 export async function getAdminManagementSnapshotService(): Promise<AdminManagementSnapshotResult> {
   try {
     const [users, organizations, memberships, passages] = await Promise.all([
-      prisma.user.findMany({
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          role: true,
-          isDisabled: true,
-          isVerified: true,
-          createdAt: true,
-          _count: {
-            select: {
-              orgMemberships: true,
-            },
-          },
-        },
-        orderBy: [{ createdAt: "desc" }],
-      }),
+      prisma.$queryRaw<SnapshotUser[]>(Prisma.sql`
+        SELECT
+          u.id,
+          u."firstName",
+          u."lastName",
+          u.email,
+          u.role::text AS role,
+          u."isDisabled",
+          u."isVerified",
+          u."createdAt",
+          COUNT(om.id)::int AS "membershipCount"
+        FROM "users" u
+        LEFT JOIN "OrganizationMember" om ON om."userId" = u.id
+        GROUP BY u.id
+        ORDER BY u."createdAt" DESC
+      `),
       prisma.organization.findMany({
         select: {
           id: true,
@@ -131,7 +142,6 @@ export async function getAdminManagementSnapshotService(): Promise<AdminManageme
               firstName: true,
               lastName: true,
               email: true,
-              role: true,
               isDisabled: true,
             },
           },
@@ -165,6 +175,7 @@ export async function getAdminManagementSnapshotService(): Promise<AdminManageme
     const ownerMemberships = memberships.filter(
       (membership) => membership.role === "OWNER"
     );
+    const usersById = new Map(users.map((user) => [user.id, user]));
 
     return {
       success: true,
@@ -191,7 +202,7 @@ export async function getAdminManagementSnapshotService(): Promise<AdminManageme
           ownedOrganizationCount: ownerMemberships.filter(
             (membership) => membership.userId === user.id
           ).length,
-          membershipCount: user._count.orgMemberships,
+          membershipCount: user.membershipCount,
           createdAt: user.createdAt,
         })),
         organizations: await Promise.all(organizations.map(async (organization) => {
@@ -233,7 +244,7 @@ export async function getAdminManagementSnapshotService(): Promise<AdminManageme
               .join(" ")
               .trim() || "Unnamed user",
           userEmail: membership.user.email ?? "No email",
-          userRole: membership.user.role,
+          userRole: usersById.get(membership.userId)?.role ?? "TEACHER",
           organizationId: membership.organizationId,
           organizationName: membership.organization.name,
           isOwnerMembership: membership.role === "OWNER",

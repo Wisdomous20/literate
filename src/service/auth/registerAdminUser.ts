@@ -66,7 +66,7 @@ export async function registerAdminUser(input: RegisterUserInput): Promise<Regis
       email,
       password: hashedPassword,
       isVerified: true, // Admins are pre-verified
-      role: "ADMIN", // Set role to ADMIN
+      role: "SUPER_ADMIN", // Set role to SUPER_ADMIN
     },
     select: {
       id: true,

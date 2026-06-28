@@ -38,7 +38,7 @@ const tabs: {
   { id: "organizations", label: "Organizations", icon: Building2 },
 ];
 
-const roleOptions = ["USER", "PASSAGE_ADMIN", "ORG_ADMIN", "ADMIN"] as const;
+const roleOptions = ["TEACHER", "PASSAGE_MANAGER", "ORG_ADMIN", "SUPER_ADMIN"] as const;
 
 export function AdminControlCenter() {
   const [activeTab, setActiveTab] = useState<AdminTab>("passages");
@@ -158,7 +158,7 @@ export function AdminControlCenter() {
         matches(passage.title, passage.language, passage.testType, passage.level)
       ),
       passageAdmins: snapshot.users.filter((user) =>
-        user.role === "PASSAGE_ADMIN" && matches(user.name, user.email)
+        user.role === "PASSAGE_MANAGER" && matches(user.name, user.email)
       ),
     };
   }, [normalizedSearch, snapshot]);
@@ -523,7 +523,7 @@ export function AdminControlCenter() {
                             try {
                               await roleMutation.mutateAsync({
                                 userId: user.id,
-                                role: "USER",
+                                role: "TEACHER",
                               });
                             } catch (error) {
                               alert(

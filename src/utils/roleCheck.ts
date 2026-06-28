@@ -27,5 +27,5 @@ export async function requireAnyRole(requiredRoles: userType[]) {
 }
 
 export async function requirePassageManager() {
-  return requireAnyRole(["ADMIN", "PASSAGE_ADMIN"]);
+  return requireAnyRole(["SUPER_ADMIN", "PASSAGE_MANAGER"]);
 }

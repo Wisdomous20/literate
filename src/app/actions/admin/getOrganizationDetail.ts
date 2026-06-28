@@ -5,7 +5,7 @@ import { requireRole } from "@/utils/roleCheck";
 
 export async function getAdminOrganizationDetailAction(organizationId: string) {
   try {
-    await requireRole("ADMIN");
+    await requireRole("SUPER_ADMIN");
   } catch {
     return { success: false, error: "Forbidden" };
   }

@@ -4,7 +4,7 @@ import { getActivityLogs } from "@/service/activity/activityLogService";
 import { requireRole } from "@/utils/roleCheck";
 
 export async function getActivityLogsAction() {
-  const session = await requireRole("ADMIN");
+  const session = await requireRole("SUPER_ADMIN");
   const logs = await getActivityLogs({
     actor: {
       id: session.user.id,

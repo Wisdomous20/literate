@@ -15,7 +15,7 @@ datasource db {
 
 model User {
   id             String               @id @default(cuid())
-  role           userType             @default(USER)
+  role           userType             @default(TEACHER)
   firstName      String?
   lastName       String?
   email          String?              @unique
@@ -388,10 +388,10 @@ enum AssessmentType {
 }
 
 enum userType {
-  USER
-  ADMIN
+  TEACHER
+  SUPER_ADMIN
   ORG_ADMIN
-  PASSAGE_ADMIN
+  PASSAGE_MANAGER
 }
 
 enum OrganizationType {

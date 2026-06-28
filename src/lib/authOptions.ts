@@ -1,5 +1,6 @@
 import { NextAuthOptions, User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { Prisma } from "../generated/prisma/client";
 import { prisma } from "./prisma";
 import { getRedis } from "./redis";
 import { loginUser } from "@/service/auth/login";
@@ -11,6 +12,33 @@ const REFRESH_TOKEN_TTL_REMEMBER = 30 * 24 * 60 * 60; // 30 days
 const REFRESH_TOKEN_TTL_DEFAULT = 2 * 60 * 60; // 2 hours
 const SESSION_MAX_AGE_REMEMBER = 30 * 24 * 60 * 60;
 const SESSION_MAX_AGE_DEFAULT = 2 * 60 * 60;
+const VALID_USER_TYPES = new Set<string>(Object.values(userType));
+
+type AuthUserState = {
+  role: userType;
+  isDisabled: boolean;
+};
+
+async function getAuthUserState(userId: string): Promise<AuthUserState | null> {
+  const users = await prisma.$queryRaw<
+    Array<{ role: string; isDisabled: boolean }>
+  >(Prisma.sql`
+    SELECT role::text AS role, "isDisabled" AS "isDisabled"
+    FROM "users"
+    WHERE id = ${userId}
+    LIMIT 1
+  `);
+
+  const user = users[0];
+  if (!user || !VALID_USER_TYPES.has(user.role)) {
+    return null;
+  }
+
+  return {
+    role: user.role as userType,
+    isDisabled: user.isDisabled,
+  };
+}
 
 async function createRefreshToken(
   userId: string,
@@ -99,16 +127,13 @@ export const authOptions: NextAuthOptions = {
           throw new Error(result.error || "Invalid credentials");
         }
 
-        const user = await prisma.user.findUnique({
-          where: { id: result.user.id },
-          select: { role: true },
-        });
+        const user = await getAuthUserState(result.user.id);
 
         if (!user) {
           throw new Error("User not found");
         }
 
-        const role = user.role as userType;
+        const role = user.role;
         const rememberMe = credentials.rememberMe === "true";
 
         // Create refresh token in Redis
@@ -181,10 +206,7 @@ export const authOptions: NextAuthOptions = {
       }
 
       // Fetch latest user data (role could have changed)
-      const freshUser = await prisma.user.findUnique({
-        where: { id: refreshData.userId },
-        select: { role: true, isDisabled: true },
-      });
+      const freshUser = await getAuthUserState(refreshData.userId);
 
       if (!freshUser || freshUser.isDisabled) {
         return { ...token, error: "RefreshTokenExpired" };

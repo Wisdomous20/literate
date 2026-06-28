@@ -138,7 +138,7 @@ export async function acceptInvitationService(
             password: await bcrypt.hash(input.password!, 10),
             isVerified: true,
             isDisabled: false,
-            role: "USER",
+            role: "TEACHER",
           },
           select: { id: true },
         });

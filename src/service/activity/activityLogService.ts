@@ -122,7 +122,7 @@ export async function getActivityLogs(input: {
 }) {
   const limit = Math.min(Math.max(input.limit ?? 80, 1), 200);
   const where =
-    input.actor?.role === "PASSAGE_ADMIN"
+    input.actor?.role === "PASSAGE_MANAGER"
       ? { actorUserId: input.actor.id }
       : undefined;
 
