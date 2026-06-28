@@ -22,7 +22,7 @@ interface GetClassByIdResult {
   success: boolean;
   classItem?: ClassWithStudents;
   error?: string;
-  code?: "VALIDATION_ERROR" | "NOT_FOUND" | "INTERNAL_ERROR";
+  code?: "VALIDATION_ERROR" | "FORBIDDEN" | "NOT_FOUND" | "INTERNAL_ERROR";
 }
 
 export async function getClassByIdService(
@@ -63,8 +63,8 @@ export async function getClassByIdService(
     if (!classItem) {
       return {
         success: false,
-        error: "Class not found or access denied",
-        code: "NOT_FOUND",
+        error: "Forbidden",
+        code: "FORBIDDEN",
       };
     }
 

@@ -4,7 +4,7 @@ interface GetOralFluencyResultResult {
   success: boolean;
   session?: unknown;
   error?: string;
-  code?: "VALIDATION_ERROR" | "NOT_FOUND" | "INTERNAL_ERROR";
+  code?: "VALIDATION_ERROR" | "FORBIDDEN" | "NOT_FOUND" | "INTERNAL_ERROR";
 }
 
 export async function getOralFluencyResultService(
@@ -50,7 +50,7 @@ export async function getOralFluencyResultService(
       return {
         success: false,
         error: "Session not found or access denied.",
-        code: "NOT_FOUND",
+        code: userId ? "FORBIDDEN" : "NOT_FOUND",
       };
     }
 

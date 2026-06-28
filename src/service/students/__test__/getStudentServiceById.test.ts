@@ -19,13 +19,13 @@ const baseStudent = {
 describe("getStudentServiceById", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("returns STUDENT_NOT_FOUND when no matching student exists", async () => {
+  it("returns FORBIDDEN when no matching student exists for the requesting user", async () => {
     mockPrisma.student.findFirst.mockResolvedValue(null);
 
     const result = await getStudentServiceById("user-1", "nonexistent");
 
     expect(result.success).toBe(false);
-    expect(result.code).toBe("STUDENT_NOT_FOUND");
+    expect(result.code).toBe("FORBIDDEN");
   });
 
   it("returns the student with assessments on success", async () => {

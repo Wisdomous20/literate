@@ -45,13 +45,13 @@ describe("updateStudentService", () => {
     expect(result.error).toMatch(/Nothing to update/);
   });
 
-  it("returns STUDENT_NOT_FOUND when the student does not belong to the user", async () => {
+  it("returns FORBIDDEN when the student does not belong to the user", async () => {
     mockPrisma.student.findFirst.mockResolvedValue(null);
 
     const result = await updateStudentService(baseInput);
 
     expect(result.success).toBe(false);
-    expect(result.code).toBe("STUDENT_NOT_FOUND");
+    expect(result.code).toBe("FORBIDDEN");
     expect(mockPrisma.student.update).not.toHaveBeenCalled();
   });
 

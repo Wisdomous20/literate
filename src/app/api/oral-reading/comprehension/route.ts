@@ -5,7 +5,10 @@ import { createOralReadingService } from "@/service/oral-reading/createOralReadi
 import { Tags } from "@/generated/prisma/enums";
 import { oralReadingComprehensionSubmitSchema } from "@/lib/validation/assessment";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
-import { hasAssessmentAccess } from "@/lib/auth/assessmentAuthorization";
+import {
+  getCurrentUser,
+  hasAssessmentAccess,
+} from "@/lib/auth/assessmentAuthorization";
 import { answerMatchesGuide } from "@/service/comprehension-test/answerMatching";
 import { gradeEssayAnswer } from "@/service/comprehension-test/gradeEssayService";
 
@@ -23,18 +26,37 @@ export async function POST(request: NextRequest) {
 
     const { assessmentId, answers } = validationResult.data;
 
+    const assessmentToken = request.headers.get("x-assessment-token");
+    const currentUser = await getCurrentUser();
     if (
       !(await hasAssessmentAccess(
         assessmentId,
-        request.headers.get("x-assessment-token"),
+        assessmentToken,
+        currentUser?.id,
       ))
     ) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: currentUser ? "Forbidden" : "Unauthorized" },
+        { status: currentUser ? 403 : 401 },
+      );
     }
 
     // 1. Get assessment + passage + quiz
-    const assessment = await prisma.assessment.findUnique({
-      where: { id: assessmentId },
+    const assessment = await prisma.assessment.findFirst({
+      where: {
+        id: assessmentId,
+        ...(currentUser && !assessmentToken
+          ? {
+              student: {
+                archived: false,
+                classRoom: {
+                  userId: currentUser.id,
+                  archived: false,
+                },
+              },
+            }
+          : {}),
+      },
       include: {
         passage: {
           include: {

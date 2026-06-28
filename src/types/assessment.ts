@@ -133,6 +133,7 @@ export interface StudentTableItem {
   gradeLevel: string;
   lastAssessment: string | null;
   assessmentType: string;
+  assessmentId?: string;
 }
 
 export interface AssessmentCard {

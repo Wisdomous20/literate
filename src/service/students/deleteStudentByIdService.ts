@@ -15,7 +15,7 @@ interface DeleteStudentResult {
     archived: boolean;
   };
   error?: string;
-  code?: "VALIDATION_ERROR" | "STUDENT_NOT_FOUND" | "INTERNAL_ERROR";
+  code?: "VALIDATION_ERROR" | "FORBIDDEN" | "STUDENT_NOT_FOUND" | "INTERNAL_ERROR";
 }
 
 export async function deleteStudentByIdService(
@@ -51,8 +51,8 @@ export async function deleteStudentByIdService(
     if (!existing) {
       return {
         success: false,
-        error: "Student not found or access denied",
-        code: "STUDENT_NOT_FOUND",
+        error: "Forbidden",
+        code: "FORBIDDEN",
       };
     }
 

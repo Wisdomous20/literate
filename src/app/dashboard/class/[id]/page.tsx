@@ -206,7 +206,7 @@ export default function ClassListsPage() {
   ): StudentTableItem[] => {
     if (assessmentType === "ALL") {
       return studentList
-        .map((student) => {
+        .map((student): StudentTableItem => {
           const assessments = [...(studentAssessments[student.id] || [])].sort(
             (a, b) =>
               new Date(b.dateTaken).getTime() - new Date(a.dateTaken).getTime(),
@@ -229,6 +229,7 @@ export default function ClassListsPage() {
               ? new Date(latest.dateTaken).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
               : null,
             assessmentType: latest ? latest.type : "Awaiting Assessment",
+            assessmentId: latest?.id,
           };
         })
         .filter((s) =>
@@ -236,7 +237,7 @@ export default function ClassListsPage() {
         );
     } else {
       return studentList
-        .map((student) => {
+        .map((student): StudentTableItem | null => {
           const assessments = (studentAssessments[student.id] || []).filter(
             (a) => a.type === assessmentType,
           );
@@ -253,6 +254,7 @@ export default function ClassListsPage() {
               ? new Date(latest.dateTaken).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
               : null,
             assessmentType: assessmentType as string,
+            assessmentId: latest?.id,
           };
         })
         .filter((s): s is StudentTableItem => s !== null)

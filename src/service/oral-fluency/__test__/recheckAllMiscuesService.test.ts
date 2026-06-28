@@ -22,7 +22,7 @@ const mockTx = {
 };
 
 const mockPrisma = vi.hoisted(() => ({
-  oralFluencyResult: { findUnique: vi.fn() },
+  oralFluencyResult: { findUnique: vi.fn(), findFirst: vi.fn() },
   $transaction: vi.fn(),
 }));
 
@@ -163,7 +163,7 @@ describe("recheckAllMiscuesService", () => {
       isSelfCorrected: false,
     };
 
-    mockPrisma.oralFluencyResult.findUnique.mockResolvedValue(
+    mockPrisma.oralFluencyResult.findFirst.mockResolvedValue(
       buildSession({ miscues: [currentMiscue] }),
     );
     mockTx.oralFluencyMiscue.findMany.mockResolvedValue([]);
@@ -202,7 +202,7 @@ describe("recheckAllMiscuesService", () => {
       miscueType: "SUBSTITUTION" as const,
     };
 
-    mockPrisma.oralFluencyResult.findUnique.mockResolvedValue(
+    mockPrisma.oralFluencyResult.findFirst.mockResolvedValue(
       buildSession({
         transcript: "the dog",
         passage: "the cat",
@@ -230,7 +230,7 @@ describe("recheckAllMiscuesService", () => {
   });
 
   it("does not create new miscues during the cleanup pass", async () => {
-    mockPrisma.oralFluencyResult.findUnique.mockResolvedValue(
+    mockPrisma.oralFluencyResult.findFirst.mockResolvedValue(
       buildSession({
         transcript: "the bat",
         passage: "the cat",
@@ -256,7 +256,7 @@ describe("recheckAllMiscuesService", () => {
   });
 
   it("rejects access when the session belongs to a different teacher", async () => {
-    mockPrisma.oralFluencyResult.findUnique.mockResolvedValue(buildSession({}));
+    mockPrisma.oralFluencyResult.findFirst.mockResolvedValue(null);
 
     const result = await recheckAllMiscuesService("s-1", "teacher-99");
 
@@ -277,7 +277,7 @@ describe("recheckAllMiscuesService", () => {
       isSelfCorrected: false,
     };
 
-    mockPrisma.oralFluencyResult.findUnique.mockResolvedValue(
+    mockPrisma.oralFluencyResult.findFirst.mockResolvedValue(
       buildSession({
         transcript: "the dog",
         passage: "the cat",

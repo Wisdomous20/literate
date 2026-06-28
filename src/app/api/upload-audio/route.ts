@@ -4,8 +4,8 @@ import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { uploadAudioService } from "@/service/media/uploadAudioService";
 import { serviceErrorResponse } from "@/app/api/_utils/serviceErrorResponse";
 import {
+  getCurrentUser,
   hasAssessmentAccess,
-  hasAuthenticatedSession,
 } from "@/lib/auth/assessmentAuthorization";
 
 export async function POST(request: NextRequest) {
@@ -13,15 +13,23 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const assessmentId = formData.get("assessmentId");
     const assessmentToken = request.headers.get("x-assessment-token");
+    const currentUser = await getCurrentUser();
     const hasAccess =
       typeof assessmentId === "string"
-        ? await hasAssessmentAccess(assessmentId, assessmentToken)
-        : await hasAuthenticatedSession();
+        ? await hasAssessmentAccess(
+            assessmentId,
+            assessmentToken,
+            currentUser?.id,
+          )
+        : Boolean(currentUser);
 
     if (!hasAccess) {
       return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 },
+        {
+          success: false,
+          error: currentUser ? "Forbidden" : "Unauthorized",
+        },
+        { status: currentUser ? 403 : 401 },
       );
     }
 

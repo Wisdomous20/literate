@@ -11,7 +11,7 @@ interface GetStudentResult {
     assessments?: any[];
   };
   error?: string;
-  code?: "VALIDATION_ERROR" | "STUDENT_NOT_FOUND" | "INTERNAL_ERROR";
+  code?: "VALIDATION_ERROR" | "FORBIDDEN" | "STUDENT_NOT_FOUND" | "INTERNAL_ERROR";
 }
 
 export async function getStudentServiceById(
@@ -36,8 +36,8 @@ export async function getStudentServiceById(
     if (!student) {
       return {
         success: false,
-        error: "Student not found or access denied",
-        code: "STUDENT_NOT_FOUND",
+        error: "Forbidden",
+        code: "FORBIDDEN",
       };
     }
 

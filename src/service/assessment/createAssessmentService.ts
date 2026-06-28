@@ -18,7 +18,11 @@ interface CreateAssessmentResult {
     dateTaken: Date;
   };
   error?: string;
-  code?: "VALIDATION_ERROR" | "DAILY_LIMIT_REACHED" | "INTERNAL_ERROR";
+  code?:
+    | "VALIDATION_ERROR"
+    | "FORBIDDEN"
+    | "DAILY_LIMIT_REACHED"
+    | "INTERNAL_ERROR";
 }
 
 export async function createAssessmentService(
@@ -40,7 +44,8 @@ export async function createAssessmentService(
       ? await prisma.student.findFirst({
           where: {
             id: studentId,
-            classRoom: { userId },
+            archived: false,
+            classRoom: { userId, archived: false },
           },
           include: {
             classRoom: {
@@ -61,7 +66,7 @@ export async function createAssessmentService(
       return {
         success: false,
         error: "Student not found or access denied.",
-        code: "VALIDATION_ERROR",
+        code: userId ? "FORBIDDEN" : "VALIDATION_ERROR",
       };
     }
 

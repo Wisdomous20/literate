@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { sessionIdQuerySchema } from "@/lib/validation/media";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
-import { hasSessionAccess } from "@/lib/auth/assessmentAuthorization";
+import {
+  getCurrentUser,
+  hasSessionAccess,
+} from "@/lib/auth/assessmentAuthorization";
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,12 +23,25 @@ export async function GET(request: NextRequest) {
 
     const { id } = validationResult.data
 
-    if (!(await hasSessionAccess(id))) {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+    if (!(await hasSessionAccess(id, currentUser.id))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
 
-    const session = await prisma.oralFluencyResult.findUnique({
-      where: { id },
+    const session = await prisma.oralFluencyResult.findFirst({
+      where: {
+        id,
+        assessment: {
+          student: {
+            classRoom: {
+              userId: currentUser.id,
+            },
+          },
+        },
+      },
       include: {
         miscues: { orderBy: { wordIndex: "asc" } },
         behaviors: true,

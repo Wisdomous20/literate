@@ -8,7 +8,7 @@ import {
 } from "@/app/api/_utils/audioRequestPayload";
 import { serviceErrorResponse } from "@/app/api/_utils/serviceErrorResponse";
 import {
-  getCurrentUserId,
+  getCurrentUser,
   hasStudentAccess,
 } from "@/lib/auth/assessmentAuthorization";
 
@@ -29,13 +29,16 @@ export async function POST(request: NextRequest) {
     const { studentId, passageId, audioUrl, fileName = "recording.wav" } =
       validationResult.data;
 
-    const userId = await getCurrentUserId();
-    if (!userId || !(await hasStudentAccess(studentId, userId))) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (!(await hasStudentAccess(studentId, currentUser.id))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const result = await createAudioAssessmentSessionService({
-      userId,
+      userId: currentUser.id,
       studentId,
       passageId,
       type: "ORAL_READING",

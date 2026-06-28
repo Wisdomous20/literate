@@ -52,7 +52,7 @@ export async function getOralReadingResultByIdService(
       return {
         success: false,
         error: "Oral Reading Result not found or access denied.",
-        code: "NOT_FOUND",
+        code: userId ? "FORBIDDEN" : "NOT_FOUND",
       };
     }
 

@@ -21,6 +21,7 @@ export interface CreateAudioAssessmentSessionResult {
   error?: string;
   code?:
     | "VALIDATION_ERROR"
+    | "FORBIDDEN"
     | "DAILY_LIMIT_REACHED"
     | "NOT_FOUND"
     | "INTERNAL_ERROR";

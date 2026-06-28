@@ -36,7 +36,7 @@ export interface UpdateMiscueInput {
 export interface UpdateMiscueResult {
   success: boolean;
   error?: string;
-  code?: "VALIDATION_ERROR" | "NOT_FOUND" | "INTERNAL_ERROR";
+  code?: "VALIDATION_ERROR" | "FORBIDDEN" | "NOT_FOUND" | "INTERNAL_ERROR";
   miscueId?: string;
   updatedMetrics?: {
     totalMiscues: number;
@@ -136,12 +136,14 @@ export async function updateMiscueService(
     return {
       success: false,
       error: "Miscue not found or access denied.",
-      code: "NOT_FOUND",
+      code: userId ? "FORBIDDEN" : "NOT_FOUND",
     };
   }
 
+  let scopedCreatedSession: { id: string; assessmentId: string | null } | null =
+    null;
   if (action === "create" && userId) {
-    const session = await prisma.oralFluencyResult.findFirst({
+    scopedCreatedSession = await prisma.oralFluencyResult.findFirst({
       where: {
         id: sessionId!,
         assessment: {
@@ -152,14 +154,14 @@ export async function updateMiscueService(
           },
         },
       },
-      select: { id: true },
+      select: { id: true, assessmentId: true },
     });
 
-    if (!session) {
+    if (!scopedCreatedSession) {
       return {
         success: false,
         error: "Oral fluency session not found or access denied.",
-        code: "NOT_FOUND",
+        code: "FORBIDDEN",
       };
     }
   }
@@ -181,12 +183,14 @@ export async function updateMiscueService(
     action === "create" ? sessionId! : existingMiscue!.sessionId;
   const assessmentId =
     action === "create"
-      ? (
-          await prisma.oralFluencyResult.findUnique({
-            where: { id: sessionId! },
-            select: { assessmentId: true },
-          })
-        )?.assessmentId ?? null
+      ? userId
+        ? scopedCreatedSession?.assessmentId ?? null
+        : (
+            await prisma.oralFluencyResult.findUnique({
+              where: { id: sessionId! },
+              select: { assessmentId: true },
+            })
+          )?.assessmentId ?? null
       : existingMiscue!.oralFluencyResult?.assessmentId ?? null;
 
   try {

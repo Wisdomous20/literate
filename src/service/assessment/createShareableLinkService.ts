@@ -28,20 +28,23 @@ export async function createShareableLinkService(
     };
   }
 
-  // Validate student belongs to this teacher
-  const student = await prisma.student.findUnique({
-    where: { id: studentId },
-    include: { classRoom: { select: { userId: true } } },
+  const student = await prisma.student.findFirst({
+    where: {
+      id: studentId,
+      archived: false,
+      classRoom: {
+        userId: teacherId,
+        archived: false,
+      },
+    },
+    select: { id: true },
   });
 
   if (!student) {
-    return { success: false as const, error: "Student not found." };
-  }
-
-  if (student.classRoom.userId !== teacherId) {
     return {
       success: false as const,
-      error: "Student does not belong to your class.",
+      error: "Forbidden",
+      code: "FORBIDDEN" as const,
     };
   }
 
