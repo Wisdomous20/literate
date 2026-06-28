@@ -35,13 +35,13 @@ describe("deleteStudentByIdService", () => {
     expect(mockPrisma.student.findFirst).not.toHaveBeenCalled();
   });
 
-  it("returns STUDENT_NOT_FOUND when the student does not belong to the user", async () => {
+  it("returns FORBIDDEN when the student does not belong to the user", async () => {
     mockPrisma.student.findFirst.mockResolvedValue(null);
 
     const result = await deleteStudentByIdService({ userId: "user-1", studentId: "student-1" });
 
     expect(result.success).toBe(false);
-    expect(result.code).toBe("STUDENT_NOT_FOUND");
+    expect(result.code).toBe("FORBIDDEN");
     expect(mockPrisma.student.update).not.toHaveBeenCalled();
   });
 

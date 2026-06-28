@@ -506,39 +506,62 @@ export async function recheckAllMiscuesService(
   }
 
   try {
-    const session = await prisma.oralFluencyResult.findUnique({
-      where: { id: sessionId },
-      include: {
-        miscues: { orderBy: { wordIndex: "asc" } },
-        behaviors: true,
-        wordTimestamps: { orderBy: { index: "asc" } },
-        assessment: {
-          select: {
-            id: true,
-            passage: { select: { content: true, language: true } },
-            student: {
-              select: {
-                classRoom: { select: { userId: true } },
+    const session = userId
+      ? await prisma.oralFluencyResult.findFirst({
+          where: {
+            id: sessionId,
+            assessment: {
+              student: {
+                classRoom: {
+                  userId,
+                },
               },
             },
           },
-        },
-      },
-    });
+          include: {
+            miscues: { orderBy: { wordIndex: "asc" } },
+            behaviors: true,
+            wordTimestamps: { orderBy: { index: "asc" } },
+            assessment: {
+              select: {
+                id: true,
+                passage: { select: { content: true, language: true } },
+                student: {
+                  select: {
+                    classRoom: { select: { userId: true } },
+                  },
+                },
+              },
+            },
+          },
+        })
+      : await prisma.oralFluencyResult.findUnique({
+          where: { id: sessionId },
+          include: {
+            miscues: { orderBy: { wordIndex: "asc" } },
+            behaviors: true,
+            wordTimestamps: { orderBy: { index: "asc" } },
+            assessment: {
+              select: {
+                id: true,
+                passage: { select: { content: true, language: true } },
+                student: {
+                  select: {
+                    classRoom: { select: { userId: true } },
+                  },
+                },
+              },
+            },
+          },
+        });
 
     if (!session) {
       return {
         success: false,
-        error: "Session not found.",
-        code: "NOT_FOUND",
-      };
-    }
-
-    if (userId && session.assessment?.student.classRoom.userId !== userId) {
-      return {
-        success: false,
-        error: "You do not have access to this oral reading session.",
-        code: "FORBIDDEN",
+        error: userId
+          ? "You do not have access to this oral reading session."
+          : "Session not found.",
+        code: userId ? "FORBIDDEN" : "NOT_FOUND",
       };
     }
 

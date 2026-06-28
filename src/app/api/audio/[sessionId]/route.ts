@@ -1,7 +1,10 @@
 import { Readable } from "node:stream";
 import { NextRequest, NextResponse } from "next/server";
 import { storage, GCS_BUCKET } from "@/lib/gcs";
-import { hasSessionAccess } from "@/lib/auth/assessmentAuthorization";
+import {
+  getCurrentUser,
+  hasSessionAccess,
+} from "@/lib/auth/assessmentAuthorization";
 import { sessionIdQuerySchema } from "@/lib/validation/media";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { prisma } from "@/lib/prisma";
@@ -54,12 +57,25 @@ export async function GET(
     );
   }
 
-  if (!(await hasSessionAccess(validationResult.data.id))) {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (!(await hasSessionAccess(validationResult.data.id, currentUser.id))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
-  const session = await prisma.oralFluencyResult.findUnique({
-    where: { id: validationResult.data.id },
+  const session = await prisma.oralFluencyResult.findFirst({
+    where: {
+      id: validationResult.data.id,
+      assessment: {
+        student: {
+          classRoom: {
+            userId: currentUser.id,
+          },
+        },
+      },
+    },
     select: { audioUrl: true },
   });
   const objectPath = session?.audioUrl

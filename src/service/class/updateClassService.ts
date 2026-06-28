@@ -17,7 +17,7 @@ interface UpdateClassResult {
     archived: boolean;
   };
   error?: string;
-  code?: "VALIDATION_ERROR" | "CLASS_NOT_FOUND" | "INTERNAL_ERROR";
+  code?: "VALIDATION_ERROR" | "FORBIDDEN" | "CLASS_NOT_FOUND" | "INTERNAL_ERROR";
 }
 
 export async function updateClassService(
@@ -52,7 +52,7 @@ export async function updateClassService(
     });
 
     if (!existing) {
-      return { success: false, error: "Class not found or access denied", code: "CLASS_NOT_FOUND" };
+      return { success: false, error: "Forbidden", code: "FORBIDDEN" };
     }
 
     const updateData: { name?: string; archived?: boolean } = {};

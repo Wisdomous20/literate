@@ -1,10 +1,34 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { prisma } from "@/lib/prisma";
+import type { userType } from "@/generated/prisma/enums";
+
+export type CurrentUser = {
+  id: string;
+  role: userType;
+};
+
+export async function getCurrentUser(): Promise<CurrentUser | null> {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return null;
+
+  return {
+    id: session.user.id,
+    role: session.user.role as userType,
+  };
+}
+
+export async function requireCurrentUser(): Promise<CurrentUser> {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
+    throw new Error("Unauthorized");
+  }
+
+  return currentUser;
+}
 
 export async function getCurrentUserId(): Promise<string | null> {
-  const session = await getServerSession(authOptions);
-  return session?.user?.id ?? null;
+  return (await getCurrentUser())?.id ?? null;
 }
 
 export async function hasAuthenticatedSession(): Promise<boolean> {

@@ -6,6 +6,7 @@ interface ServiceError {
 }
 
 export function serviceErrorStatus(code?: string): number {
+  if (code === "FORBIDDEN") return 403;
   if (code === "NOT_FOUND") return 404;
   if (code === "INTERNAL_ERROR") return 500;
   return 400;

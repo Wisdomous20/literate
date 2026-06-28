@@ -50,7 +50,7 @@ export async function getOralReadingResultsByStudentService(
       return {
         success: false,
         error: "No oral reading results found for this student or access denied.",
-        code: "NOT_FOUND",
+        code: userId ? "FORBIDDEN" : "NOT_FOUND",
       };
     }
 

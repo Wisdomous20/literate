@@ -11,7 +11,10 @@ import {
   readTranscriptionPayload,
 } from "@/app/api/_utils/audioRequestPayload";
 import { serviceErrorResponse } from "@/app/api/_utils/serviceErrorResponse";
-import { hasAssessmentAccess } from "@/lib/auth/assessmentAuthorization";
+import {
+  getCurrentUser,
+  hasAssessmentAccess,
+} from "@/lib/auth/assessmentAuthorization";
 
 export const maxDuration = 10;
 
@@ -30,13 +33,19 @@ export async function POST(request: NextRequest) {
     const { assessmentId, audioUrl, fileName = "recording.wav" } =
       validationResult.data;
 
+    const assessmentToken = request.headers.get("x-assessment-token");
+    const currentUser = await getCurrentUser();
     if (
       !(await hasAssessmentAccess(
         assessmentId,
-        request.headers.get("x-assessment-token"),
+        assessmentToken,
+        currentUser?.id,
       ))
     ) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: currentUser ? "Forbidden" : "Unauthorized" },
+        { status: currentUser ? 403 : 401 },
+      );
     }
 
     const result = await enqueueTranscriptionService({
@@ -84,13 +93,18 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const currentUser = await getCurrentUser();
   if (
     !(await hasAssessmentAccess(
       validationResult.data.assessmentId,
       request.headers.get("x-assessment-token"),
+      currentUser?.id,
     ))
   ) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: currentUser ? "Forbidden" : "Unauthorized" },
+      { status: currentUser ? 403 : 401 },
+    );
   }
 
   const result = await getTranscriptionStatusService(

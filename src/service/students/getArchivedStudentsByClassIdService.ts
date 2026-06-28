@@ -17,7 +17,7 @@ interface GetArchivedStudentsByClassIdResult {
   success: boolean;
   students?: ArchivedStudentItem[];
   error?: string;
-  code?: "VALIDATION_ERROR" | "CLASS_NOT_FOUND" | "INTERNAL_ERROR";
+  code?: "VALIDATION_ERROR" | "FORBIDDEN" | "CLASS_NOT_FOUND" | "INTERNAL_ERROR";
 }
 
 export async function getArchivedStudentsByClassIdService(
@@ -45,8 +45,8 @@ export async function getArchivedStudentsByClassIdService(
     if (!classExists) {
       return {
         success: false,
-        error: "Class not found",
-        code: "CLASS_NOT_FOUND",
+        error: "Forbidden",
+        code: "FORBIDDEN",
       };
     }
 

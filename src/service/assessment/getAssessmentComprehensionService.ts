@@ -48,7 +48,13 @@ export async function getAssessmentComprehensionService(
           select,
         });
 
-    if (!assessment) return { success: false, error: "Not found or access denied." };
+    if (!assessment) {
+      return {
+        success: false,
+        error: userId ? "Forbidden" : "Not found or access denied.",
+        code: userId ? "FORBIDDEN" : "NOT_FOUND",
+      };
+    }
     return { success: true, assessment };
   } catch (e) {
     console.error(e);

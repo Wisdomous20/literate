@@ -4,7 +4,7 @@ interface GetAssessmentByIdResult {
   success: boolean;
   assessment?: unknown;
   error?: string;
-  code?: "VALIDATION_ERROR" | "NOT_FOUND" | "INTERNAL_ERROR";
+  code?: "VALIDATION_ERROR" | "FORBIDDEN" | "NOT_FOUND" | "INTERNAL_ERROR";
 }
 
 export async function getAssessmentByIdService(
@@ -59,7 +59,7 @@ export async function getAssessmentByIdService(
       return {
         success: false,
         error: "Assessment not found or access denied.",
-        code: "NOT_FOUND",
+        code: userId ? "FORBIDDEN" : "NOT_FOUND",
       };
     }
 

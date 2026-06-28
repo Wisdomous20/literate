@@ -6,7 +6,7 @@ import { Tags } from "@/generated/prisma/enums";
 import { comprehensionSubmitSchema } from "@/lib/validation/assessment";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import {
-  getCurrentUserId,
+  getCurrentUser,
   hasAssessmentAccess,
   hasStudentAccess,
 } from "@/lib/auth/assessmentAuthorization";
@@ -34,19 +34,36 @@ export async function POST(request: NextRequest) {
     const assessmentToken = request.headers.get("x-assessment-token");
 
     if (existingAssessmentId) {
-      const userId = await getCurrentUserId();
+      const currentUser = await getCurrentUser();
       if (
         !(await hasAssessmentAccess(
           existingAssessmentId,
           assessmentToken,
-          userId,
+          currentUser?.id,
         ))
       ) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return NextResponse.json(
+          { error: currentUser ? "Forbidden" : "Unauthorized" },
+          { status: currentUser ? 403 : 401 },
+        );
       }
 
       const assessment = await prisma.assessment.findFirst({
-        where: { id: existingAssessmentId, type: "COMPREHENSION" },
+        where: {
+          id: existingAssessmentId,
+          type: "COMPREHENSION",
+          ...(currentUser && !assessmentToken
+            ? {
+                student: {
+                  archived: false,
+                  classRoom: {
+                    userId: currentUser.id,
+                    archived: false,
+                  },
+                },
+              }
+            : {}),
+        },
         select: { id: true, studentId: true, passageId: true },
       });
 
@@ -67,18 +84,16 @@ export async function POST(request: NextRequest) {
       assessmentId = assessment.id;
       resolvedPassageId = assessment.passageId;
     } else {
-      const userId = await getCurrentUserId();
-      if (
-        !userId ||
-        !studentId ||
-        !passageId ||
-        !(await hasStudentAccess(studentId, userId))
-      ) {
+      const currentUser = await getCurrentUser();
+      if (!currentUser || !studentId || !passageId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      if (!(await hasStudentAccess(studentId, currentUser.id))) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
 
       const assessmentResult = await createAssessmentService({
-        userId,
+        userId: currentUser.id,
         studentId,
         passageId,
         type: "COMPREHENSION",

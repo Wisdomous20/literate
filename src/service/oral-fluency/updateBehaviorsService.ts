@@ -10,7 +10,7 @@ export interface UpdateBehaviorsInput {
 export interface UpdateBehaviorsResult {
   success: boolean;
   error?: string;
-  code?: "VALIDATION_ERROR" | "NOT_FOUND" | "INTERNAL_ERROR";
+  code?: "VALIDATION_ERROR" | "FORBIDDEN" | "NOT_FOUND" | "INTERNAL_ERROR";
   behaviors?: {
     id: string;
     behaviorType: OralFluencyBehaviorType;
@@ -58,7 +58,7 @@ export async function updateBehaviorsService(
     return {
       success: false,
       error: "Oral fluency session not found or access denied.",
-      code: "NOT_FOUND",
+      code: userId ? "FORBIDDEN" : "NOT_FOUND",
     };
   }
 

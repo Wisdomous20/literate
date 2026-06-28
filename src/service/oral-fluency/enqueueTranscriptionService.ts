@@ -17,7 +17,7 @@ export interface EnqueueTranscriptionResult {
   status?: "PENDING";
   jobId?: string;
   error?: string;
-  code?: "VALIDATION_ERROR" | "NOT_FOUND" | "INTERNAL_ERROR";
+  code?: "VALIDATION_ERROR" | "FORBIDDEN" | "NOT_FOUND" | "INTERNAL_ERROR";
 }
 
 function normalizeFileName(fileName?: string): string {
@@ -70,7 +70,7 @@ export async function enqueueTranscriptionService(
       return {
         success: false,
         error: "Assessment not found.",
-        code: "NOT_FOUND",
+        code: input.userId ? "FORBIDDEN" : "NOT_FOUND",
       };
     }
 

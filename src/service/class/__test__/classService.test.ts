@@ -124,13 +124,13 @@ describe("getClassByIdService", () => {
     expect(mockPrisma.classRoom.findFirst).not.toHaveBeenCalled();
   });
 
-  it("returns NOT_FOUND when no class matches the id", async () => {
+  it("returns FORBIDDEN when no class matches the id for the requesting user", async () => {
     mockPrisma.classRoom.findFirst.mockResolvedValue(null);
 
     const result = await getClassByIdService("nonexistent", "user-1");
 
     expect(result.success).toBe(false);
-    expect(result.code).toBe("NOT_FOUND");
+    expect(result.code).toBe("FORBIDDEN");
   });
 
   it("returns the class with its students on success", async () => {
@@ -261,7 +261,7 @@ describe("updateClassService", () => {
     expect(result.code).toBe("VALIDATION_ERROR");
   });
 
-  it("returns CLASS_NOT_FOUND when class does not belong to the user", async () => {
+  it("returns FORBIDDEN when class does not belong to the user", async () => {
     mockPrisma.classRoom.findFirst.mockResolvedValue(null);
 
     const result = await updateClassService({
@@ -271,7 +271,7 @@ describe("updateClassService", () => {
     });
 
     expect(result.success).toBe(false);
-    expect(result.code).toBe("CLASS_NOT_FOUND");
+    expect(result.code).toBe("FORBIDDEN");
     expect(mockPrisma.classRoom.update).not.toHaveBeenCalled();
   });
 
@@ -345,13 +345,13 @@ describe("deleteClassService", () => {
     expect(mockPrisma.classRoom.findFirst).not.toHaveBeenCalled();
   });
 
-  it("returns CLASS_NOT_FOUND when class does not belong to the user", async () => {
+  it("returns FORBIDDEN when class does not belong to the user", async () => {
     mockPrisma.classRoom.findFirst.mockResolvedValue(null);
 
     const result = await deleteClassService({ userId: "user-1", classRoomId: "class-1" });
 
     expect(result.success).toBe(false);
-    expect(result.code).toBe("CLASS_NOT_FOUND");
+    expect(result.code).toBe("FORBIDDEN");
     expect(mockPrisma.classRoom.update).not.toHaveBeenCalled();
   });
 

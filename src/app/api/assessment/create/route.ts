@@ -3,7 +3,7 @@ import { createAssessmentService } from "@/service/assessment/createAssessmentSe
 import { createAssessmentSchema } from "@/lib/validation/assessment";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import {
-  getCurrentUserId,
+  getCurrentUser,
   hasStudentAccess,
 } from "@/lib/auth/assessmentAuthorization";
 
@@ -19,13 +19,16 @@ export async function POST(request: NextRequest) {
     }
     const { studentId, passageId, type } = validationResult.data;
 
-    const userId = await getCurrentUserId();
-    if (!userId || !(await hasStudentAccess(studentId, userId))) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (!(await hasStudentAccess(studentId, currentUser.id))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const result = await createAssessmentService({
-      userId,
+      userId: currentUser.id,
       studentId,
       passageId,
       type,
