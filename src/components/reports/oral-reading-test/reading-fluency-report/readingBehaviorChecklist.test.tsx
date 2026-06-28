@@ -59,6 +59,30 @@ describe("BehaviorChecklist", () => {
     );
   });
 
+  it("keeps in-progress checks when the parent re-renders with a new behaviors array", async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn();
+
+    // The parent pages rebuild the behaviors array on every render. Simulate
+    // that by re-rendering with a fresh (value-equal) array mid-edit.
+    const { rerender } = render(
+      <BehaviorChecklist behaviors={buildReadingBehaviorItems([])} onSave={onSave} />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+    const voice = screen.getByRole("button", { name: /voice is hardly audible/i });
+    await user.click(voice);
+
+    // New array reference, same persisted (unchecked) data — must NOT reset.
+    rerender(
+      <BehaviorChecklist behaviors={buildReadingBehaviorItems([])} onSave={onSave} />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /save observation/i }));
+
+    expect(onSave).toHaveBeenCalledWith(["VOICE_HARDLY_AUDIBLE"], "");
+  });
+
   it("loads and saves other observations", async () => {
     const user = userEvent.setup();
     const onSave = vi.fn();

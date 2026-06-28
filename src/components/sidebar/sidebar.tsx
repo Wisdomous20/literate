@@ -30,12 +30,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-
-function getCurrentSchoolYear(): string {
-  const now = new Date();
-  const y = now.getFullYear();
-  return now.getMonth() >= 7 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
-}
+import { getSchoolYear } from "@/utils/getSchoolYear";
 
 const menuItems = [
   {
@@ -247,7 +242,7 @@ export function Sidebar() {
   });
 
   const firstName = session?.user?.name?.split(" ")[0] || "User";
-  const schoolYear = getCurrentSchoolYear();
+  const schoolYear = getSchoolYear();
   const isOrgAdmin =
     session?.user?.role === "ORG_ADMIN" || hasOrgManagementAccess;
   const routeActiveHref = [...[

@@ -29,18 +29,7 @@ import {
   exportFluencyReportPdf,
   buildFluencyReportData,
 } from "@/lib/exportFluencyReportPdf";
-
-function getCurrentSchoolYear(): string {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth();
-
-  if (currentMonth >= 7) {
-    return `${currentYear}-${currentYear + 1}`;
-  } else {
-    return `${currentYear - 1}-${currentYear}`;
-  }
-}
+import { getSchoolYear } from "@/utils/getSchoolYear";
 
 const STORAGE_KEY = "reading-fluency-session";
 const AUDIO_STORAGE_KEY = "reading-fluency-audio";
@@ -175,7 +164,7 @@ export default function ReadingFluencyTestPage() {
     enabled: hasRecording && !!assessmentId && !analysisResult,
   });
 
-  const schoolYear = getCurrentSchoolYear();
+  const schoolYear = getSchoolYear();
   const { data: classListData = [], isLoading: isLoadingClasses } =
     useClassList(schoolYear);
 

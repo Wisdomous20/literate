@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Pencil } from "lucide-react";
 import {
   buildReadingBehaviorItems,
@@ -44,12 +44,32 @@ export default function BehaviorChecklist({
   );
   const [savedObservations, setSavedObservations] = useState(otherObservations);
 
-  useEffect(() => {
-    setCheckedItems(behaviors.map((b) => b.checked ?? false));
-    setSavedChecked(behaviors.map((b) => b.checked ?? false));
-  }, [behaviors]);
+  // Read latest edit-mode flag inside effects without making it a dependency,
+  // so exiting edit mode (e.g. after Save) does not itself trigger a resync.
+  const isEditModeRef = useRef(isEditMode);
+  isEditModeRef.current = isEditMode;
+
+  // Signature of the incoming saved selection. Parent pages rebuild the
+  // `behaviors` array on every render, so depending on the array reference
+  // would resync on unrelated re-renders (React Query refetches, etc.) and
+  // wipe whatever the teacher just checked. Keying off the values means we
+  // only resync when the persisted data actually changes.
+  const checkedSignature = useMemo(
+    () =>
+      behaviors.map((b) => `${b.key ?? b.label}:${b.checked ? 1 : 0}`).join("|"),
+    [behaviors],
+  );
 
   useEffect(() => {
+    // Never clobber in-progress edits.
+    if (isEditModeRef.current) return;
+    setCheckedItems(behaviors.map((b) => b.checked ?? false));
+    setSavedChecked(behaviors.map((b) => b.checked ?? false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkedSignature]);
+
+  useEffect(() => {
+    if (isEditModeRef.current) return;
     setObservations(otherObservations);
     setSavedObservations(otherObservations);
   }, [otherObservations]);

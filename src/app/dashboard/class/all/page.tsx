@@ -6,34 +6,40 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CreateClassModal } from "@/components/dashboard/createClassModal";
 import { useClassList } from "@/lib/hooks/useClassList";
 import { ToastNotification } from "@/components/oral-reading-test/toastNotification";
-
-function getCurrentSchoolYear(): string {
-  const now = new Date();
-  const y = now.getFullYear();
-  return now.getMonth() >= 7 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
-}
+import { getSchoolYear } from "@/utils/getSchoolYear";
 
 function getNextSchoolYear(): string {
-  const [startYear] = getCurrentSchoolYear().split("-").map(Number);
+  const [startYear] = getSchoolYear().split("-").map(Number);
   return `${startYear + 1}-${startYear + 2}`;
 }
 
-const currentYear = getCurrentSchoolYear();
-const nextYear = getNextSchoolYear();
-const now = new Date();
-const nextYearStart = new Date(Number(nextYear.split("-")[0]), 7, 1); // August 1st
-const isNextYearDisabled = now < nextYearStart;
+function getPreviousSchoolYear(): string {
+  const [startYear] = getSchoolYear().split("-").map(Number);
+  return `${startYear - 1}-${startYear}`;
+}
 
-const yearsWithData = [currentYear];
-if (!yearsWithData.includes(nextYear)) yearsWithData.push(nextYear);
-yearsWithData.sort((a, b) => b.localeCompare(a));
+const currentYear = getSchoolYear();
+const nextYear = getNextSchoolYear();
+const previousYear = getPreviousSchoolYear();
+const now = new Date();
+// The school year starts in June, so the next year only becomes selectable
+// once June 1 of its starting year arrives. (Month index 5 = June.)
+const nextYearStart = new Date(Number(nextYear.split("-")[0]), 5, 1);
+const isNextYearDisabled = now < nextYearStart;
 
 export default function Page() {
   const years = useMemo(
-    () => [getCurrentSchoolYear(), getNextSchoolYear()],
+    () =>
+      Array.from(
+        new Set([
+          getNextSchoolYear(),
+          getSchoolYear(),
+          getPreviousSchoolYear(),
+        ]),
+      ).sort((a, b) => b.localeCompare(a)),
     [],
   );
-  const [selectedYear, setSelectedYear] = useState<string>(years[0]);
+  const [selectedYear, setSelectedYear] = useState<string>(getSchoolYear());
   const [showCreate, setShowCreate] = useState(false);
   const queryClient = useQueryClient();
   const [toast, setToast] = useState<{
@@ -132,6 +138,7 @@ export default function Page() {
         isNextYearDisabled={isNextYearDisabled}
         showToast={showToast}
         currentYear={currentYear}
+        previousYear={previousYear}
       />
     </div>
   );
