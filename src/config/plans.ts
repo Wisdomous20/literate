@@ -10,7 +10,7 @@ export const PLANS = {
   KASALO: {
     name: "Kasalo",
     type: "KASALO" as const,
-    maxMembers: 5,
+    maxMembers: 10,
     basePrice: 5000,
     isOrg: true,
     description: "For small teams — up to 5 members",
@@ -18,7 +18,7 @@ export const PLANS = {
   PANALO: {
     name: "Panalo",
     type: "PANALO" as const,
-    maxMembers: 15,
+    maxMembers: 20,
     basePrice: 15000,
     isOrg: true,
     description: "For schools — up to 15 members",
