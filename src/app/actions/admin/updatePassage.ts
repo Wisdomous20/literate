@@ -1,10 +1,10 @@
 "use server";
 
-import { updatePassageService } from "@/service/admin/UpdatePassageService";
+import { updatePassageService } from "@/service/passage/updatePassageService";
 import {  testType } from "@/generated/prisma/enums";
 import { updatePassageSchema } from "@/lib/validation/admin";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
-import { requireRole } from "@/utils/roleCheck";
+import { requirePassageManager } from "@/utils/roleCheck";
 
 interface UpdatePassageActionInput {
   id: string;
@@ -16,7 +16,7 @@ interface UpdatePassageActionInput {
 }
 
 export async function updatePassageAction(input: UpdatePassageActionInput) {
-  await requireRole("ADMIN");
+  await requirePassageManager();
 
   const validationResult = updatePassageSchema.safeParse(input);
 

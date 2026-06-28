@@ -1,6 +1,6 @@
 "use server";
 
-import { getPassageByIdService } from "@/service/admin/getPassageByIdService";
+import { getPassageByIdService } from "@/service/passage/getPassageByIdService";
 import { getPassageByIdSchema } from "@/lib/validation/admin";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { requireAuth } from "@/utils/roleCheck";

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import type { userType } from "@/generated/prisma/enums";
 import { countPendingOrgInvitations } from "@/service/org/orgInvitationRedisService";
 
 export interface AdminManagementSnapshot {
@@ -16,7 +17,7 @@ export interface AdminManagementSnapshot {
     id: string;
     name: string;
     email: string;
-    role: "USER" | "ADMIN" | "ORG_ADMIN";
+    role: userType;
     isDisabled: boolean;
     isVerified: boolean;
     ownedOrganizationCount: number;
@@ -42,7 +43,7 @@ export interface AdminManagementSnapshot {
     userId: string;
     userName: string;
     userEmail: string;
-    userRole: "USER" | "ADMIN" | "ORG_ADMIN";
+    userRole: userType;
     organizationId: string;
     organizationName: string;
     isOwnerMembership: boolean;

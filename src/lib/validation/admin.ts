@@ -1,9 +1,11 @@
 import { z } from "zod";
 import { testType, userType } from "@/generated/prisma/enums";
 import {
+  emailString,
   idString,
   nonNegativeInt,
   optionalTrimmedString,
+  passwordString,
   positiveInt,
   requiredString,
 } from "@/lib/validation/common";
@@ -240,4 +242,19 @@ export const adminRenameOrganizationSchema = z.object({
 
 export const adminRemoveMembershipSchema = z.object({
   membershipId: idString("Membership ID"),
+});
+
+export const adminInvitePassageAdminSchema = z.object({
+  email: emailString(),
+});
+
+export const passageAdminInvitationTokenSchema = z.object({
+  token: requiredString("Invitation token"),
+});
+
+export const acceptPassageAdminInvitationSchema = z.object({
+  token: requiredString("Invitation token"),
+  password: passwordString(),
+  firstName: optionalTrimmedString(),
+  lastName: optionalTrimmedString(),
 });

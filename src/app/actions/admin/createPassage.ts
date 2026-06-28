@@ -1,10 +1,10 @@
 "use server";
 
-import { createPassageService } from "@/service/admin/createPassageService";
+import { createPassageService } from "@/service/passage/createPassageService";
 import {  testType } from "@/generated/prisma/enums";
 import { createPassageSchema } from "@/lib/validation/admin";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
-import { requireRole } from "@/utils/roleCheck";
+import { requirePassageManager } from "@/utils/roleCheck";
 
 interface CreatePassageActionInput {
   title: string;
@@ -16,7 +16,7 @@ interface CreatePassageActionInput {
 }
 
 export async function createPassageAction(input: CreatePassageActionInput) {
-  await requireRole("ADMIN");
+  await requirePassageManager();
 
   const validationResult = createPassageSchema.safeParse(input);
 

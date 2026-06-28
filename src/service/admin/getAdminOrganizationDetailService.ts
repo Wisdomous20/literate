@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import type { userType } from "@/generated/prisma/enums";
 import { countPendingOrgInvitations } from "@/service/org/orgInvitationRedisService";
 
 interface AdminOrganizationDetailResult {
@@ -20,7 +21,7 @@ interface AdminOrganizationDetailResult {
       userId: string;
       name: string;
       email: string;
-      role: "USER" | "ADMIN" | "ORG_ADMIN";
+      role: userType;
       isDisabled: boolean;
       isOwner: boolean;
       joinedAt: Date;

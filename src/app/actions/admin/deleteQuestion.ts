@@ -1,16 +1,16 @@
 "use server";
 
-import { deleteQuestionService } from "@/service/admin/deleteQuestionService";
+import { deleteQuestionService } from "@/service/question/deleteQuestionService";
 import { deleteQuestionSchema } from "@/lib/validation/admin";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
-import { requireRole } from "@/utils/roleCheck";
+import { requirePassageManager } from "@/utils/roleCheck";
 
 interface DeleteQuestionActionInput {
   id: string;
 }
 
 export async function deleteQuestionAction(input: DeleteQuestionActionInput) {
-  await requireRole("ADMIN");
+  await requirePassageManager();
 
   const validationResult = deleteQuestionSchema.safeParse(input);
 

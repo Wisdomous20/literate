@@ -1,9 +1,9 @@
 "use server";
 
-import { updateQuestionService } from "@/service/admin/updateQuestionService";
+import { updateQuestionService } from "@/service/question/updateQuestionService";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { updateQuestionSchema } from "@/lib/validation/admin";
-import { requireRole } from "@/utils/roleCheck";
+import { requirePassageManager } from "@/utils/roleCheck";
 
 interface UpdateQuestionActionInput {
   id: string;
@@ -17,7 +17,7 @@ interface UpdateQuestionActionInput {
 export async function updateQuestionAction(
   input: UpdateQuestionActionInput,
 ) {
-  await requireRole("ADMIN");
+  await requirePassageManager();
 
   const validationResult = updateQuestionSchema.safeParse(input);
 

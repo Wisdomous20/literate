@@ -17,7 +17,7 @@ import { createPassageService } from "../createPassageService";
 import { deletePassageService } from "../deletePassageService";
 import { getAllPassageService } from "../getAllPassageService";
 import { getPassageByIdService } from "../getPassageByIdService";
-import { updatePassageService } from "../UpdatePassageService";
+import { updatePassageService } from "../updatePassageService";
 
 const basePassage = {
   id: "passage-1",
