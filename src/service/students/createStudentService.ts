@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { hasActiveSubscription } from "@/utils/subscriptionCheck";
+import { FREE_TIER_LIMITS } from "@/service/assessment/checkDailyLimitService";
 
 interface CreateStudentInput {
   name: string;
@@ -17,7 +19,7 @@ interface CreateStudentResult {
     classRoomId: string;
   };
   error?: string;
-  code?: "VALIDATION_ERROR" | "CLASS_NOT_FOUND" | "INTERNAL_ERROR";
+  code?: "VALIDATION_ERROR" | "CLASS_NOT_FOUND" | "INTERNAL_ERROR" | "FREE_LIMIT_REACHED";
 }
 
 export async function createStudentService(
@@ -85,6 +87,21 @@ export async function createStudentService(
         error: "Student already exists in this class for the specified school year",
         code: "VALIDATION_ERROR",
       };
+    }
+
+    // Free-tier cap: at most MAX_STUDENTS across all the user's classes.
+    const isPaid = await hasActiveSubscription(userId);
+    if (!isPaid) {
+      const existingStudents = await prisma.student.count({
+        where: { classRoom: { userId } },
+      });
+      if (existingStudents >= FREE_TIER_LIMITS.MAX_STUDENTS) {
+        return {
+          success: false,
+          error: "Free plan includes 1 student. Upgrade to add more.",
+          code: "FREE_LIMIT_REACHED",
+        };
+      }
     }
 
     const student = await prisma.student.create({

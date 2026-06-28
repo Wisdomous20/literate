@@ -2,10 +2,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockPrisma = vi.hoisted(() => ({
   classRoom: { findFirst: vi.fn() },
-  student: { findFirst: vi.fn(), create: vi.fn() },
+  student: { findFirst: vi.fn(), create: vi.fn(), count: vi.fn() },
 }));
 
+const mockHasActiveSubscription = vi.hoisted(() => vi.fn());
+
 vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));
+vi.mock("@/utils/subscriptionCheck", () => ({
+  hasActiveSubscription: mockHasActiveSubscription,
+}));
 
 import { createStudentService } from "../createStudentService";
 
@@ -21,7 +26,12 @@ const baseClass = { id: "class-1", name: "Grade 3 - A", userId: "user-1", school
 const baseStudent = { id: "student-1", name: "Ana Reyes", level: 3, classRoomId: "class-1" };
 
 describe("createStudentService", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Default to a paid user so the free-tier gate is skipped unless overridden.
+    mockHasActiveSubscription.mockResolvedValue(true);
+    mockPrisma.student.count.mockResolvedValue(0);
+  });
 
   it("returns VALIDATION_ERROR when name is empty", async () => {
     const result = await createStudentService({ ...baseInput, name: "" });
@@ -122,5 +132,45 @@ describe("createStudentService", () => {
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("INTERNAL_ERROR");
+  });
+
+  it("blocks a free user who already has 1 student", async () => {
+    mockHasActiveSubscription.mockResolvedValue(false);
+    mockPrisma.classRoom.findFirst.mockResolvedValue(baseClass);
+    mockPrisma.student.findFirst.mockResolvedValue(null);
+    mockPrisma.student.count.mockResolvedValue(1);
+
+    const result = await createStudentService(baseInput);
+
+    expect(result.success).toBe(false);
+    expect(result.code).toBe("FREE_LIMIT_REACHED");
+    expect(mockPrisma.student.create).not.toHaveBeenCalled();
+    expect(mockPrisma.student.count).toHaveBeenCalledWith({
+      where: { classRoom: { userId: "user-1" } },
+    });
+  });
+
+  it("allows a free user's first student (0 → 1)", async () => {
+    mockHasActiveSubscription.mockResolvedValue(false);
+    mockPrisma.classRoom.findFirst.mockResolvedValue(baseClass);
+    mockPrisma.student.findFirst.mockResolvedValue(null);
+    mockPrisma.student.count.mockResolvedValue(0);
+    mockPrisma.student.create.mockResolvedValue(baseStudent);
+
+    const result = await createStudentService(baseInput);
+
+    expect(result.success).toBe(true);
+  });
+
+  it("does not gate a paid user regardless of student count", async () => {
+    mockHasActiveSubscription.mockResolvedValue(true);
+    mockPrisma.classRoom.findFirst.mockResolvedValue(baseClass);
+    mockPrisma.student.findFirst.mockResolvedValue(null);
+    mockPrisma.student.count.mockResolvedValue(99);
+    mockPrisma.student.create.mockResolvedValue(baseStudent);
+
+    const result = await createStudentService(baseInput);
+
+    expect(result.success).toBe(true);
   });
 });

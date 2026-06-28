@@ -40,7 +40,7 @@ export async function getAdminOrganizationDetailService(
         id: true,
         name: true,
         createdAt: true,
-        subscription: {
+        currentSubscription: {
           select: {
             maxMembersSnapshot: true,
             plan: {
@@ -109,8 +109,8 @@ export async function getAdminOrganizationDetailService(
             .join(" ")
             .trim() || "Unnamed owner",
         ownerEmail: ownerMembership?.user.email ?? "No email",
-        subscriptionPlan: organization.subscription?.plan.code ?? null,
-        maxMembers: organization.subscription?.maxMembersSnapshot ?? null,
+        subscriptionPlan: organization.currentSubscription?.plan.code ?? null,
+        maxMembers: organization.currentSubscription?.maxMembersSnapshot ?? null,
         activeMemberCount: members.filter((member) => !member.isDisabled).length,
         totalMemberCount: members.length,
         pendingInvitations: await countPendingOrgInvitations(organization.id),

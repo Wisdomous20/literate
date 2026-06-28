@@ -7,13 +7,18 @@ const mockPrisma = vi.hoisted(() => ({
     findMany: vi.fn(),
     findFirst: vi.fn(),
     update: vi.fn(),
+    count: vi.fn(),
   },
 }));
 
 const mockGetSchoolYear = vi.hoisted(() => vi.fn());
+const mockHasActiveSubscription = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));
 vi.mock("@/utils/getSchoolYear", () => ({ getSchoolYear: mockGetSchoolYear }));
+vi.mock("@/utils/subscriptionCheck", () => ({
+  hasActiveSubscription: mockHasActiveSubscription,
+}));
 
 import { createClassService } from "../createClassService";
 import { getClassByIdService } from "../getClassByIdService";
@@ -41,6 +46,9 @@ describe("createClassService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetSchoolYear.mockReturnValue("2025-2026");
+    // Default to a paid user so the free-tier gate is skipped unless overridden.
+    mockHasActiveSubscription.mockResolvedValue(true);
+    mockPrisma.classRoom.count.mockResolvedValue(0);
   });
 
   it("returns VALIDATION_ERROR when name is empty", async () => {
@@ -100,6 +108,40 @@ describe("createClassService", () => {
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("INTERNAL_ERROR");
+  });
+
+  it("blocks a free user who already has 1 class", async () => {
+    mockHasActiveSubscription.mockResolvedValue(false);
+    mockPrisma.classRoom.count.mockResolvedValue(1);
+
+    const result = await createClassService({ name: "Grade 4", userId: "user-1" });
+
+    expect(result.success).toBe(false);
+    expect(result.code).toBe("FREE_LIMIT_REACHED");
+    expect(mockPrisma.classRoom.create).not.toHaveBeenCalled();
+  });
+
+  it("allows a free user's first class (registration bootstrap, 0 → 1)", async () => {
+    mockHasActiveSubscription.mockResolvedValue(false);
+    mockPrisma.classRoom.count.mockResolvedValue(0);
+    mockPrisma.classRoom.create.mockResolvedValue(baseClass);
+
+    const result = await createClassService({ name: "My Class", userId: "user-1" });
+
+    expect(result.success).toBe(true);
+    expect(mockPrisma.classRoom.count).toHaveBeenCalledWith({
+      where: { userId: "user-1", archived: false },
+    });
+  });
+
+  it("does not gate a paid user regardless of class count", async () => {
+    mockHasActiveSubscription.mockResolvedValue(true);
+    mockPrisma.classRoom.count.mockResolvedValue(50);
+    mockPrisma.classRoom.create.mockResolvedValue(baseClass);
+
+    const result = await createClassService({ name: "Grade 9", userId: "user-1" });
+
+    expect(result.success).toBe(true);
   });
 });
 

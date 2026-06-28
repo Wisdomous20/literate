@@ -4,6 +4,8 @@ import { xenditRequest } from "@/lib/xendit";
 export interface StopRenewalSuccess {
   success: true;
   alreadyStopped: boolean;
+  /** End of the paid period the plan stays active through (null if unknown). */
+  currentPeriodEnd?: Date | null;
 }
 
 export interface StopRenewalFailure {
@@ -23,12 +25,20 @@ export async function stopSubscriptionRenewalService(
   }
 
   if (subscription.cancelAtPeriodEnd) {
-    return { success: true, alreadyStopped: true };
+    return {
+      success: true,
+      alreadyStopped: true,
+      currentPeriodEnd: subscription.currentPeriodEnd,
+    };
   }
 
   if (subscription.status !== "ACTIVE" && subscription.status !== "PAST_DUE") {
     // Already canceled/expired/pending — nothing to stop.
-    return { success: true, alreadyStopped: true };
+    return {
+      success: true,
+      alreadyStopped: true,
+      currentPeriodEnd: subscription.currentPeriodEnd,
+    };
   }
 
   try {
@@ -42,7 +52,11 @@ export async function stopSubscriptionRenewalService(
       data: { cancelAtPeriodEnd: true },
     });
 
-    return { success: true, alreadyStopped: false };
+    return {
+      success: true,
+      alreadyStopped: false,
+      currentPeriodEnd: subscription.currentPeriodEnd,
+    };
   } catch (error) {
     console.error("Stop subscription renewal error:", error);
     return { success: false, error: "Failed to stop renewal" };
@@ -55,7 +69,7 @@ async function findManageableSubscriptionForUser(userId: string) {
       userId,
       role: { in: ["OWNER", "ADMIN"] },
       organization: {
-        subscription: {
+        currentSubscription: {
           is: {
             xenditPlanId: { not: null },
           },
@@ -65,7 +79,7 @@ async function findManageableSubscriptionForUser(userId: string) {
     include: {
       organization: {
         include: {
-          subscription: true,
+          currentSubscription: true,
         },
       },
     },
@@ -74,8 +88,8 @@ async function findManageableSubscriptionForUser(userId: string) {
 
   return (
     memberships.find((membership) => membership.organization.type === "PERSONAL")
-      ?.organization.subscription ??
-    memberships[0]?.organization.subscription ??
+      ?.organization.currentSubscription ??
+    memberships[0]?.organization.currentSubscription ??
     null
   );
 }

@@ -12,6 +12,14 @@ interface CreateInvoiceInput {
   providerPaymentId?: string | null;
   providerPayload?: unknown;
   issuedAt?: Date;
+  /**
+   * Optional money overrides for a plan-change invoice carrying a proration
+   * credit. When omitted, the invoice uses the subscription snapshot price for
+   * all three (subtotal = total = amountPaid, no discount) — the renewal case.
+   */
+  subtotalAmount?: number;
+  discountAmount?: number;
+  totalAmount?: number;
 }
 
 export async function createInvoiceAndSendEmail(input: CreateInvoiceInput) {
@@ -54,8 +62,16 @@ export async function createInvoiceAndSendEmail(input: CreateInvoiceInput) {
   const issuedAt = input.issuedAt ?? new Date();
   const owner = subscription.organization.members[0]?.user ?? null;
   const recipientEmail = owner?.email ?? null;
-  const amount = subscription.priceAmountSnapshot;
   const currency = subscription.currencySnapshot;
+
+  // Renewal/new-plan default: full snapshot price, no discount. Plan changes pass
+  // explicit overrides so the invoice shows full price, the proration credit, and
+  // the net charge.
+  const subtotalAmount = input.subtotalAmount ?? Number(subscription.priceAmountSnapshot);
+  const discountAmount = input.discountAmount ?? 0;
+  const totalAmount = input.totalAmount ?? subtotalAmount - discountAmount;
+  // `amount` is the figure actually charged / emailed to the customer.
+  const amount = totalAmount;
   const encryptionKeyVersion = getBillingEncryptionKeyVersion();
   const billingSnapshot = {
     organizationId: subscription.organizationId,
@@ -88,9 +104,10 @@ export async function createInvoiceAndSendEmail(input: CreateInvoiceInput) {
       invoiceNumber: createInvoiceNumber(),
       status: "PAID",
       currency,
-      subtotalAmount: amount,
+      subtotalAmount,
+      discountAmount,
       taxAmount: 0,
-      totalAmount: amount,
+      totalAmount,
       amountPaid: amount,
       billingSnapshotEncrypted,
       billingSnapshotKeyVersion: billingSnapshotEncrypted ? encryptionKeyVersion : null,

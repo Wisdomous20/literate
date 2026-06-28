@@ -92,7 +92,7 @@ export async function getAdminManagementSnapshotService(): Promise<AdminManageme
           id: true,
           name: true,
           createdAt: true,
-          subscription: {
+          currentSubscription: {
             select: {
               maxMembersSnapshot: true,
               plan: {
@@ -160,7 +160,7 @@ export async function getAdminManagementSnapshotService(): Promise<AdminManageme
     const totalUsers = users.length;
     const disabledUsers = users.filter((user) => user.isDisabled).length;
     const organizationsWithSubscription = organizations.filter(
-      (organization) => organization.subscription !== null
+      (organization) => organization.currentSubscription !== null
     ).length;
     const ownerMemberships = memberships.filter(
       (membership) => membership.role === "OWNER"
@@ -217,8 +217,8 @@ export async function getAdminManagementSnapshotService(): Promise<AdminManageme
             ownerEmail: ownerMembership?.user.email ?? "No email",
             memberCount: organization.members.length,
             activeMemberCount,
-            subscriptionPlan: organization.subscription?.plan.code ?? null,
-            maxMembers: organization.subscription?.maxMembersSnapshot ?? null,
+            subscriptionPlan: organization.currentSubscription?.plan.code ?? null,
+            maxMembers: organization.currentSubscription?.maxMembersSnapshot ?? null,
             pendingInvitations,
             createdAt: organization.createdAt,
           };

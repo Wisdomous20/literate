@@ -31,7 +31,7 @@ export async function addOrgMemberService(input: AddMemberInput) {
   const org = await prisma.organization.findUnique({
     where: { id: input.organizationId },
     include: {
-      subscription: true,
+      currentSubscription: true,
       _count: {
         select: {
           members: { where: { user: { isDisabled: false } } },
@@ -75,7 +75,7 @@ export async function addOrgMemberService(input: AddMemberInput) {
     }
   }
 
-  const maxMembers = org.subscription?.maxMembersSnapshot || 1;
+  const maxMembers = org.currentSubscription?.maxMembersSnapshot || 1;
   const invitationResult = await createOrgInvitation({
     email: normalizedEmail,
     organizationId: input.organizationId,

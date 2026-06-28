@@ -26,6 +26,13 @@ const recurringPlanMetadataSchema = z.object({
   organizationId: z.string().optional(),
   planId: z.string().optional(),
   planType: planTypeSchema.optional(),
+  // Plan-change markers used to complete the upgrade/downgrade swap on activation.
+  planChange: z.string().optional(),
+  previousSubscriptionId: z.string().optional(),
+  previousXenditPlanId: z.string().optional(),
+  subtotalAmount: z.string().optional(),
+  discountAmount: z.string().optional(),
+  totalAmount: z.string().optional(),
 });
 
 const recurringPlanDataSchema = z.object({

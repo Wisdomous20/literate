@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { xenditRequest } from "@/lib/xendit";
 import { xenditWebhookSchema } from "@/lib/validation/subscription";
 import {
   createXenditWebhookDeliveryId,
@@ -62,21 +63,75 @@ export async function POST(req: NextRequest) {
             Number.isSafeInteger(requestedMaxMembers) && requestedMaxMembers > 0
               ? requestedMaxMembers
               : 1;
-          const updatedSubscription = await prisma.subscription.update({
-            where: { xenditPlanId: planId },
-            data: {
-              status: "ACTIVE",
-              maxMembersSnapshot: maxMembers,
-              currentPeriodStart: new Date(),
-              currentPeriodEnd: getNextYear(),
-            },
+
+          const isPlanChange = metadata?.planChange === "true";
+          const previousXenditPlanId =
+            typeof metadata?.previousXenditPlanId === "string"
+              ? metadata.previousXenditPlanId
+              : null;
+
+          // Activate the new row, supersede the old one, and repoint the org's
+          // current-subscription pointer in a single transaction so "the org's
+          // active subscription" is never ambiguous mid-swap.
+          const updatedSubscription = await prisma.$transaction(async (tx) => {
+            const updated = await tx.subscription.update({
+              where: { xenditPlanId: planId },
+              data: {
+                status: "ACTIVE",
+                maxMembersSnapshot: maxMembers,
+                currentPeriodStart: new Date(),
+                currentPeriodEnd: getNextYear(),
+              },
+            });
+
+            if (isPlanChange && previousXenditPlanId) {
+              await tx.subscription.updateMany({
+                where: {
+                  xenditPlanId: previousXenditPlanId,
+                  status: { in: ["ACTIVE", "PAST_DUE"] },
+                },
+                data: { status: "SUPERSEDED" },
+              });
+            }
+
+            // Point the org at the newly active subscription (covers both the
+            // first activation for a new org and the post-change swap).
+            await tx.organization.update({
+              where: { id: updated.organizationId },
+              data: { currentSubscriptionId: updated.id },
+            });
+
+            return updated;
           });
+
+          // Stop the old recurring plan from billing again. Idempotent: a replay
+          // or an already-inactive plan is harmless.
+          if (isPlanChange && previousXenditPlanId) {
+            try {
+              await xenditRequest(
+                `/recurring/plans/${previousXenditPlanId}/deactivate`,
+                "POST",
+              );
+            } catch (error) {
+              console.error(
+                "[Xendit Webhook] Failed to deactivate superseded plan:",
+                error,
+              );
+            }
+          }
 
           await createInvoiceAndSendEmail({
             subscriptionId: updatedSubscription.id,
             providerInvoiceId: createProviderInvoiceId(event, planId),
             providerPaymentId: getPayloadId(payload.data),
             providerPayload: payload.data,
+            ...(isPlanChange
+              ? {
+                  subtotalAmount: parseMetadataAmount(metadata?.subtotalAmount),
+                  discountAmount: parseMetadataAmount(metadata?.discountAmount),
+                  totalAmount: parseMetadataAmount(metadata?.totalAmount),
+                }
+              : {}),
           });
         }
         break;
@@ -160,6 +215,12 @@ function getNextYear(): Date {
 function createProviderInvoiceId(event: string, planId: string): string {
   const datePart = new Date().toISOString().slice(0, 10);
   return `xendit:${event}:${planId}:${datePart}`;
+}
+
+function parseMetadataAmount(value: unknown): number | undefined {
+  if (typeof value !== "string") return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
 }
 
 function getPayloadId(data: unknown): string | null {

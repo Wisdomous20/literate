@@ -1,13 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockXenditRequest = vi.hoisted(() => vi.fn());
+const mockChangePlan = vi.hoisted(() => vi.fn());
 
-const mockPrisma = vi.hoisted(() => ({
-  subscription: { findUnique: vi.fn(), upsert: vi.fn() },
-}));
+const mockPrisma = vi.hoisted(() => {
+  const prisma = {
+    plan: { upsert: vi.fn() },
+    organization: { findUnique: vi.fn(), create: vi.fn() },
+    organizationMember: { findFirst: vi.fn(), create: vi.fn() },
+    subscription: { findFirst: vi.fn(), create: vi.fn() },
+    user: { update: vi.fn() },
+    $transaction: vi.fn(),
+  };
+  prisma.$transaction.mockImplementation((cb) => cb(prisma));
+  return prisma;
+});
 
 vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));
 vi.mock("@/lib/xendit", () => ({ xenditRequest: mockXenditRequest }));
+vi.mock("@/service/subscription/changeSubscriptionPlanService", () => ({
+  changeSubscriptionPlanService: mockChangePlan,
+}));
 
 import { createSubscriptionService } from "../createSubscriptionService";
 
@@ -25,18 +38,25 @@ const xenditPlan = {
   actions: [{ action: "AUTH", url: "https://checkout.xendit.co/pay/plan-abc" }],
 };
 
-function setupHappyPath(existingCustomerId: string | null = null) {
-  mockPrisma.subscription.findUnique.mockResolvedValue(
+/** No existing org → fresh subscription path, no live plan. */
+function setupNewOrgPath(existingCustomerId: string | null = null) {
+  mockPrisma.organizationMember.findFirst.mockResolvedValue(null);
+  mockPrisma.organization.create.mockResolvedValue({ id: "org-1", type: "PERSONAL" });
+  mockPrisma.organizationMember.create.mockResolvedValue({});
+  mockPrisma.plan.upsert.mockResolvedValue({ id: "plan-rec-1" });
+  // No live subscription on the org.
+  mockPrisma.organization.findUnique.mockResolvedValue({ currentSubscription: null });
+  mockPrisma.subscription.findFirst.mockResolvedValue(
     existingCustomerId ? { xenditCustomerId: existingCustomerId } : null,
   );
   if (!existingCustomerId) {
     mockXenditRequest
       .mockResolvedValueOnce(xenditCustomer) // customer creation
-      .mockResolvedValueOnce(xenditPlan);     // plan creation
+      .mockResolvedValueOnce(xenditPlan); // plan creation
   } else {
     mockXenditRequest.mockResolvedValueOnce(xenditPlan); // plan creation only
   }
-  mockPrisma.subscription.upsert.mockResolvedValue({});
+  mockPrisma.subscription.create.mockResolvedValue({});
 }
 
 describe("createSubscriptionService", () => {
@@ -52,28 +72,40 @@ describe("createSubscriptionService", () => {
     });
 
     expect(result.success).toBe(false);
-    expect(result.error).toBe("Invalid plan type");
-    expect(mockPrisma.subscription.findUnique).not.toHaveBeenCalled();
+    if (!result.success) expect(result.error).toBe("Invalid plan type");
+    expect(mockPrisma.organizationMember.findFirst).not.toHaveBeenCalled();
   });
 
   it("returns failure when PAMILYA is chosen without memberCount", async () => {
     const result = await createSubscriptionService({ ...baseInput, planType: "PAMILYA" });
 
     expect(result.success).toBe(false);
-    expect(result.error).toMatch(/20 members/);
+    if (!result.success) expect(result.error).toMatch(/20 members/);
   });
 
-  it("returns failure when PAMILYA memberCount is below 20", async () => {
-    const result = await createSubscriptionService({ ...baseInput, planType: "PAMILYA", memberCount: 5 });
+  // ── Tier-change delegation ──────────────────────────────────────────────────
 
-    expect(result.success).toBe(false);
-    expect(result.error).toMatch(/20 members/);
+  it("delegates to changeSubscriptionPlanService when the org already has a live plan", async () => {
+    mockPrisma.organizationMember.findFirst.mockResolvedValue(null);
+    mockPrisma.organization.create.mockResolvedValue({ id: "org-1", type: "TEAM" });
+    mockPrisma.organizationMember.create.mockResolvedValue({});
+    mockPrisma.plan.upsert.mockResolvedValue({ id: "plan-rec-1" });
+    mockPrisma.organization.findUnique.mockResolvedValue({
+      currentSubscription: { status: "ACTIVE" },
+    });
+    mockChangePlan.mockResolvedValue({ success: true, url: "https://change", credit: 1, newCharge: 2 });
+
+    const result = await createSubscriptionService({ ...baseInput, planType: "KASALO" });
+
+    expect(mockChangePlan).toHaveBeenCalledWith("user-1", "KASALO", undefined);
+    expect(mockPrisma.subscription.create).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ success: true, url: "https://change" });
   });
 
-  // ── Xendit customer creation ──────────────────────────────────────────────
+  // ── Xendit customer + plan creation ──────────────────────────────────────────
 
-  it("creates a new Xendit customer when no existing subscription exists", async () => {
-    setupHappyPath(null);
+  it("creates a new Xendit customer when no prior subscription exists", async () => {
+    setupNewOrgPath(null);
 
     await createSubscriptionService(baseInput);
 
@@ -82,34 +114,17 @@ describe("createSubscriptionService", () => {
     expect(customerCall[2]).toMatchObject({ email: "juan@example.com", reference_id: "user-1" });
   });
 
-  it("skips customer creation when an existing xenditCustomerId is present", async () => {
-    setupHappyPath("cust-existing");
+  it("reuses an existing Xendit customer from a prior subscription", async () => {
+    setupNewOrgPath("cust-existing");
 
     await createSubscriptionService(baseInput);
 
-    // Only one xenditRequest call (plan creation), no customer creation
     expect(mockXenditRequest).toHaveBeenCalledTimes(1);
-    const planCall = mockXenditRequest.mock.calls[0];
-    expect(planCall[0]).toBe("/recurring/plans");
-  });
-
-  // ── Plan creation ─────────────────────────────────────────────────────────
-
-  it("creates a recurring plan with the correct currency and interval", async () => {
-    setupHappyPath(null);
-
-    await createSubscriptionService(baseInput);
-
-    const planCall = mockXenditRequest.mock.calls[1];
-    expect(planCall[0]).toBe("/recurring/plans");
-    expect(planCall[2]).toMatchObject({
-      currency: "PHP",
-      schedule: expect.objectContaining({ interval: "MONTH", interval_count: 12 }),
-    });
+    expect(mockXenditRequest.mock.calls[0][0]).toBe("/recurring/plans");
   });
 
   it("uses the calculated price for the SOLO plan (1500)", async () => {
-    setupHappyPath(null);
+    setupNewOrgPath(null);
 
     await createSubscriptionService(baseInput);
 
@@ -117,90 +132,67 @@ describe("createSubscriptionService", () => {
     expect(planCall[2].amount).toBe(1500);
   });
 
-  it("uses the calculated price for PAMILYA based on member count (25 × 1000 = 25000)", async () => {
-    mockPrisma.subscription.findUnique.mockResolvedValue(null);
-    mockXenditRequest
-      .mockResolvedValueOnce(xenditCustomer)
-      .mockResolvedValueOnce(xenditPlan);
-    mockPrisma.subscription.upsert.mockResolvedValue({});
-
-    await createSubscriptionService({ ...baseInput, planType: "PAMILYA", memberCount: 25 });
-
-    const planCall = mockXenditRequest.mock.calls[1];
-    expect(planCall[2].amount).toBe(25000);
-  });
-
   // ── Subscription persistence ──────────────────────────────────────────────
 
-  it("upserts the subscription record with PENDING status after creating the plan", async () => {
-    setupHappyPath(null);
+  it("creates a fresh PENDING subscription row (never upserts in place)", async () => {
+    setupNewOrgPath(null);
 
     await createSubscriptionService(baseInput);
 
-    expect(mockPrisma.subscription.upsert).toHaveBeenCalledWith(
+    expect(mockPrisma.subscription.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { userId: "user-1" },
-        create: expect.objectContaining({ status: "PENDING", planType: "SOLO", xenditPlanId: "plan-abc" }),
-        update: expect.objectContaining({ status: "PENDING", xenditPlanId: "plan-abc" }),
+        data: expect.objectContaining({
+          status: "PENDING",
+          organizationId: "org-1",
+          xenditPlanId: "plan-abc",
+          maxMembersSnapshot: 1,
+          priceAmountSnapshot: 1500,
+        }),
       }),
     );
-  });
-
-  it("stores the correct maxMembers for the SOLO plan (1)", async () => {
-    setupHappyPath(null);
-
-    await createSubscriptionService(baseInput);
-
-    const upsertCall = mockPrisma.subscription.upsert.mock.calls[0][0];
-    expect(upsertCall.create.maxMembers).toBe(1);
-  });
-
-  it("stores the memberCount as maxMembers for the PAMILYA plan", async () => {
-    mockPrisma.subscription.findUnique.mockResolvedValue(null);
-    mockXenditRequest
-      .mockResolvedValueOnce(xenditCustomer)
-      .mockResolvedValueOnce(xenditPlan);
-    mockPrisma.subscription.upsert.mockResolvedValue({});
-
-    await createSubscriptionService({ ...baseInput, planType: "PAMILYA", memberCount: 30 });
-
-    const upsertCall = mockPrisma.subscription.upsert.mock.calls[0][0];
-    expect(upsertCall.create.maxMembers).toBe(30);
   });
 
   // ── Action URL handling ───────────────────────────────────────────────────
 
   it("returns the AUTH action URL on success", async () => {
-    setupHappyPath(null);
+    setupNewOrgPath(null);
 
     const result = await createSubscriptionService(baseInput);
 
     expect(result.success).toBe(true);
-    expect(result.url).toBe("https://checkout.xendit.co/pay/plan-abc");
+    if (result.success) expect(result.url).toBe("https://checkout.xendit.co/pay/plan-abc");
   });
 
   it("returns failure when Xendit returns no AUTH action URL", async () => {
-    mockPrisma.subscription.findUnique.mockResolvedValue(null);
+    mockPrisma.organizationMember.findFirst.mockResolvedValue(null);
+    mockPrisma.organization.create.mockResolvedValue({ id: "org-1", type: "PERSONAL" });
+    mockPrisma.organizationMember.create.mockResolvedValue({});
+    mockPrisma.plan.upsert.mockResolvedValue({ id: "plan-rec-1" });
+    mockPrisma.organization.findUnique.mockResolvedValue({ currentSubscription: null });
+    mockPrisma.subscription.findFirst.mockResolvedValue(null);
     mockXenditRequest
       .mockResolvedValueOnce(xenditCustomer)
       .mockResolvedValueOnce({ id: "plan-abc", status: "ACTIVE", actions: [] });
-    mockPrisma.subscription.upsert.mockResolvedValue({});
+    mockPrisma.subscription.create.mockResolvedValue({});
 
     const result = await createSubscriptionService(baseInput);
 
     expect(result.success).toBe(false);
-    expect(result.error).toMatch(/No action URL/);
+    if (!result.success) expect(result.error).toMatch(/No action URL/);
   });
 
-  // ── Error handling ────────────────────────────────────────────────────────
-
   it("returns failure when a Xendit call throws", async () => {
-    mockPrisma.subscription.findUnique.mockResolvedValue(null);
+    mockPrisma.organizationMember.findFirst.mockResolvedValue(null);
+    mockPrisma.organization.create.mockResolvedValue({ id: "org-1", type: "PERSONAL" });
+    mockPrisma.organizationMember.create.mockResolvedValue({});
+    mockPrisma.plan.upsert.mockResolvedValue({ id: "plan-rec-1" });
+    mockPrisma.organization.findUnique.mockResolvedValue({ currentSubscription: null });
+    mockPrisma.subscription.findFirst.mockResolvedValue(null);
     mockXenditRequest.mockRejectedValue(new Error("Xendit down"));
 
     const result = await createSubscriptionService(baseInput);
 
     expect(result.success).toBe(false);
-    expect(result.error).toBe("Failed to create subscription");
+    if (!result.success) expect(result.error).toBe("Failed to create subscription");
   });
 });

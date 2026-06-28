@@ -12,6 +12,16 @@ export const FREE_TIER_DAILY_LIMITS: Record<string, number> = {
   READING_FLUENCY: 1,
 };
 
+/**
+ * Resource caps for free-tier users (no active subscription). Paid users are
+ * unlimited. Counting (not a bypass flag) keeps the registration default class
+ * and the invited-user default class working (0 → 1).
+ */
+export const FREE_TIER_LIMITS = {
+  MAX_CLASSES: 1,
+  MAX_STUDENTS: 1,
+} as const;
+
 interface DailyUsage {
   ORAL_READING: number;
   COMPREHENSION: number;
@@ -177,6 +187,39 @@ export async function getDailyLimitStatus(userId: string) {
         0,
         limits.READING_FLUENCY - usage.READING_FLUENCY
       ),
+    },
+  };
+}
+
+export interface ResourceLimitStatus {
+  isFreeUser: boolean;
+  classes: { count: number; max: number };
+  students: { count: number; max: number };
+}
+
+/**
+ * Class/student resource usage and caps for a user. Paid users get Infinity
+ * caps; the frontend uses this to disable "Create class" / "Add student" and
+ * show an upgrade CTA instead of failing on submit.
+ */
+export async function getResourceLimitStatus(
+  userId: string
+): Promise<ResourceLimitStatus> {
+  const [isPaid, classCount, studentCount] = await Promise.all([
+    hasActiveSubscription(userId),
+    prisma.classRoom.count({ where: { userId, archived: false } }),
+    prisma.student.count({ where: { classRoom: { userId } } }),
+  ]);
+
+  return {
+    isFreeUser: !isPaid,
+    classes: {
+      count: classCount,
+      max: isPaid ? Infinity : FREE_TIER_LIMITS.MAX_CLASSES,
+    },
+    students: {
+      count: studentCount,
+      max: isPaid ? Infinity : FREE_TIER_LIMITS.MAX_STUDENTS,
     },
   };
 }
