@@ -358,6 +358,24 @@ model Question {
   @@index([quizId])
 }
 
+model ActivityLog {
+  id          String   @id @default(cuid())
+  actorUserId String
+  actorEmail  String?
+  actorRole   userType
+  action      String
+  entityType  String
+  entityId    String?
+  entityTitle String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([actorUserId, createdAt])
+  @@index([actorRole, createdAt])
+  @@index([entityType, entityId])
+  @@map("activity_logs")
+}
+
 enum AssessmentType {
   ORAL_READING
   COMPREHENSION

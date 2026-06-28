@@ -6,6 +6,11 @@ interface DeleteQuestionInput {
 
 interface DeleteQuestionResult {
   success: boolean;
+  question?: {
+    id: string;
+    questionText: string;
+    quizId: string;
+  };
   error?: string;
   code?: "NOT_FOUND" | "VALIDATION_ERROR" | "INTERNAL_ERROR";
 }
@@ -38,8 +43,13 @@ export async function deleteQuestionService(
     }
 
     // Delete the question
-    await prisma.question.delete({
+    const deletedQuestion = await prisma.question.delete({
       where: { id },
+      select: {
+        id: true,
+        questionText: true,
+        quizId: true,
+      },
     });
 
     // Update the quiz's totalNumber
@@ -52,7 +62,7 @@ export async function deleteQuestionService(
       },
     });
 
-    return { success: true };
+    return { success: true, question: deletedQuestion };
   } catch (error) {
     console.error("Error deleting question:", error);
     return {

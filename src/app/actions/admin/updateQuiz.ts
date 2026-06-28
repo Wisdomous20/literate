@@ -4,6 +4,7 @@ import { updateQuizService } from "@/service/quiz/updateQuizService";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { updateQuizSchema } from "@/lib/validation/admin";
 import { requirePassageManager } from "@/utils/roleCheck";
+import { recordActivityLog } from "@/service/activity/activityLogService";
 
 interface EditQuizActionInput {
   id: string;
@@ -19,7 +20,7 @@ interface EditQuizActionInput {
 }
 
 export async function editQuizAction(input: EditQuizActionInput) {
-  await requirePassageManager();
+  const session = await requirePassageManager();
 
   const validationResult = updateQuizSchema.safeParse(input);
 
@@ -32,6 +33,21 @@ export async function editQuizAction(input: EditQuizActionInput) {
 
   if (!result.success) {
     throw new Error(result.error || "Failed to edit quiz.");
+  }
+
+  if (result.quiz) {
+    await recordActivityLog({
+      actor: {
+        id: session.user.id,
+        email: session.user.email,
+        role: session.user.role,
+      },
+      action: "QUIZ_UPDATED",
+      entityType: "quiz",
+      entityId: result.quiz.id,
+      entityTitle: `Quiz ${result.quiz.id}`,
+      metadata: validationResult.data,
+    });
   }
 
   return result.quiz;

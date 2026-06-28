@@ -252,8 +252,18 @@ describe("deleteQuestionService", () => {
     const result = await deleteQuestionService({ id: baseQuestion.id });
 
     expect(result.success).toBe(true);
+    expect(result.question).toMatchObject({
+      id: baseQuestion.id,
+      questionText: baseQuestion.questionText,
+      quizId: baseQuestion.quizId,
+    });
     expect(mockPrisma.question.delete).toHaveBeenCalledWith({
       where: { id: baseQuestion.id },
+      select: {
+        id: true,
+        questionText: true,
+        quizId: true,
+      },
     });
     expect(mockPrisma.quiz.update).toHaveBeenCalledWith({
       where: { id: baseQuestion.quizId },

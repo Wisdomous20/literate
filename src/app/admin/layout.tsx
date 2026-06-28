@@ -1,15 +1,22 @@
 "use client";
 
 import { signOut } from "next-auth/react";
+import { usePathname } from "next/navigation";
+import { PassageAdminShell } from "@/components/admin-dash/passages/passageAdminShell";
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/login" });
   };
+
+  if (pathname.startsWith("/admin/passages")) {
+    return <PassageAdminShell>{children}</PassageAdminShell>;
+  }
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(124,198,254,0.22),transparent_24%),radial-gradient(circle_at_top_right,rgba(36,83,166,0.14),transparent_20%),linear-gradient(180deg,#F4F8FC_0%,#ECF3FA_100%)]">
