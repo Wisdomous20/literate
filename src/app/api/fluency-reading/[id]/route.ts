@@ -7,7 +7,10 @@ import {
   readCreateAudioAssessmentPayload,
 } from "@/app/api/_utils/audioRequestPayload";
 import { serviceErrorResponse } from "@/app/api/_utils/serviceErrorResponse";
-import { hasStudentAccess } from "@/lib/auth/assessmentAuthorization";
+import {
+  getCurrentUserId,
+  hasStudentAccess,
+} from "@/lib/auth/assessmentAuthorization";
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,11 +27,13 @@ export async function POST(request: NextRequest) {
     const { studentId, passageId, audioUrl, fileName = "recording.wav" } =
       validationResult.data;
 
-    if (!(await hasStudentAccess(studentId))) {
+    const userId = await getCurrentUserId();
+    if (!userId || !(await hasStudentAccess(studentId, userId))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const result = await createAudioAssessmentSessionService({
+      userId,
       studentId,
       passageId,
       type: "READING_FLUENCY",

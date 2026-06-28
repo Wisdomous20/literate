@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAssessmentService } from "@/service/assessment/createAssessmentService";
 import { createAssessmentSchema } from "@/lib/validation/assessment";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
-import { hasStudentAccess } from "@/lib/auth/assessmentAuthorization";
+import {
+  getCurrentUserId,
+  hasStudentAccess,
+} from "@/lib/auth/assessmentAuthorization";
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,11 +19,13 @@ export async function POST(request: NextRequest) {
     }
     const { studentId, passageId, type } = validationResult.data;
 
-    if (!(await hasStudentAccess(studentId))) {
+    const userId = await getCurrentUserId();
+    if (!userId || !(await hasStudentAccess(studentId, userId))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const result = await createAssessmentService({
+      userId,
       studentId,
       passageId,
       type,

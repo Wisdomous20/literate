@@ -81,6 +81,7 @@ export async function createShareableLinkService(
 
   // Create assessment via existing service
   const assessmentResult = await createAssessmentService({
+    userId: teacherId,
     studentId,
     passageId,
     type,
