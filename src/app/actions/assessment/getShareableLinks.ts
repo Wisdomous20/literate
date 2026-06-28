@@ -2,7 +2,7 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-import { getShareableLinksService } from "@/service/assessment-link/getShareableLinksService";
+import { getShareableLinksService } from "@/service/assessment/getShareableLinksService";
 
 export async function getShareableLinks() {
   const session = await getServerSession(authOptions);

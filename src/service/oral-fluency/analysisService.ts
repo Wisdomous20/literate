@@ -1,5 +1,5 @@
 import { OralFluencyAnalysis } from "@/types/oral-reading"
-import { transcribeAudioWithConsensus } from "@/service/transcription/dualTranscriptionService"
+import { transcribeAudio } from "@/service/googleService/googleSTTService"
 import { alignWords } from "./alignmentService"
 import { phoneticPostCorrection } from "./phoneticPostCorrection"
 import { detectMiscues } from "./miscueDetectionService"
@@ -63,7 +63,7 @@ export async function analyzeOralFluency(
   }
 
   // 1. Start network-bound STT before CPU-bound pitch analysis.
-  const sttPromise    = transcribeAudioWithConsensus(audioBuffer, fileName, language, passageText)
+  const sttPromise    = transcribeAudio(audioBuffer, fileName, language, passageText)
   const pitchAnalysis = analyzePitch(audioBuffer)
   const sttResult     = await sttPromise
 

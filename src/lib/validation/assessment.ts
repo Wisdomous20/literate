@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   idString,
+  isoDateString,
   optionalTrimmedString,
   requiredString,
 } from "@/lib/validation/common";
@@ -17,6 +18,14 @@ export const createAssessmentSchema = z.object({
   studentId: requiredString("studentId"),
   passageId: requiredString("passageId"),
   type: assessmentTypeSchema,
+});
+
+export const createShareableLinkSchema = z.object({
+  teacherId: idString("Teacher ID"),
+  studentId: idString("Student ID"),
+  passageId: idString("Passage ID"),
+  type: assessmentTypeSchema,
+  expiresAt: isoDateString("Deadline").optional(),
 });
 
 const assessmentTypeFilterValues = [
