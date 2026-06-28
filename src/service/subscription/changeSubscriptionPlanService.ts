@@ -120,8 +120,9 @@ export async function changeSubscriptionPlanService(
         failed_attempt_notifications: [1, 3],
       },
       // The prorated amount is charged immediately as a one-time payment below; the
-      // recurring plan itself takes no immediate full-amount action.
-      immediate_action_type: "NONE",
+      // recurring plan itself takes no immediate full-amount action. Xendit only
+      // accepts FULL_AMOUNT here, so omitting the field is how we say "no immediate
+      // recurring charge" — the first full cycle bills at anchor_date.
       notification_config: {
         recurring_created: ["EMAIL"],
         recurring_succeeded: ["EMAIL"],

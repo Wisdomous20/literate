@@ -1,9 +1,10 @@
 import { prisma } from "@/lib/prisma";
+import type { Plan } from "../../generated/prisma/client";
 
 type SubscriptionRecord = NonNullable<
   Awaited<ReturnType<typeof prisma.subscription.findFirst>>
 > & {
-  plan: { code: string };
+  plan: Plan;
   organization: { type: "PERSONAL" | "TEAM" };
 };
 
