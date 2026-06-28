@@ -11,9 +11,11 @@ export async function middleware(request: NextRequest) {
 
   const isAdminRoute = pathname.startsWith("/admin");
   const isPassageAdminRoute = pathname.startsWith("/admin/passages");
+  const isPassageActivityRoute = pathname.startsWith("/admin/passages/activity");
+  const isDashboardRoute = pathname.startsWith("/dashboard");
   const isOrgRoute = pathname.startsWith("/org");
   const isProtectedRoute =
-    pathname.startsWith("/dashboard") || isAdminRoute || isOrgRoute;
+    isDashboardRoute || isAdminRoute || isOrgRoute;
   const isAuthRoute =
     pathname.startsWith("/login") || pathname.startsWith("/register");
 
@@ -29,7 +31,18 @@ export async function middleware(request: NextRequest) {
 
   // Already logged in → redirect away from auth pages
   if (isAuthRoute && token) {
+    if (token.role === "PASSAGE_ADMIN") {
+      return NextResponse.redirect(new URL("/admin/passages", request.url));
+    }
     return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  if (isDashboardRoute && token?.role === "PASSAGE_ADMIN") {
+    return NextResponse.redirect(new URL("/admin/passages", request.url));
+  }
+
+  if (isPassageActivityRoute && token?.role === "PASSAGE_ADMIN") {
+    return NextResponse.redirect(new URL("/admin/passages", request.url));
   }
 
   // Admin routes → only ADMIN role
@@ -38,6 +51,9 @@ export async function middleware(request: NextRequest) {
     token?.role !== "ADMIN" &&
     !(isPassageAdminRoute && token?.role === "PASSAGE_ADMIN")
   ) {
+    if (token?.role === "PASSAGE_ADMIN") {
+      return NextResponse.redirect(new URL("/admin/passages", request.url));
+    }
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 

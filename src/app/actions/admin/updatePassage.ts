@@ -5,6 +5,7 @@ import {  testType } from "@/generated/prisma/enums";
 import { updatePassageSchema } from "@/lib/validation/admin";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { requirePassageManager } from "@/utils/roleCheck";
+import { recordActivityLog } from "@/service/activity/activityLogService";
 
 interface UpdatePassageActionInput {
   id: string;
@@ -16,7 +17,7 @@ interface UpdatePassageActionInput {
 }
 
 export async function updatePassageAction(input: UpdatePassageActionInput) {
-  await requirePassageManager();
+  const session = await requirePassageManager();
 
   const validationResult = updatePassageSchema.safeParse(input);
 
@@ -29,6 +30,21 @@ export async function updatePassageAction(input: UpdatePassageActionInput) {
 
   if (!result.success) {
     throw new Error(result.error || "Failed to update passage.");
+  }
+
+  if (result.passage) {
+    await recordActivityLog({
+      actor: {
+        id: session.user.id,
+        email: session.user.email,
+        role: session.user.role,
+      },
+      action: "PASSAGE_UPDATED",
+      entityType: "passage",
+      entityId: result.passage.id,
+      entityTitle: result.passage.title,
+      metadata: validationResult.data,
+    });
   }
 
   return result.passage;

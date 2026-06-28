@@ -72,7 +72,7 @@ export function CreatePassageForm() {
         testType: testType as "PRE_TEST" | "POST_TEST",
       });
       await queryClient.invalidateQueries({ queryKey: ["passages"] });
-      router.push("/admin");
+      router.push("/admin/passages");
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to create passage";
@@ -84,7 +84,7 @@ export function CreatePassageForm() {
   };
 
   const handleCancel = () => {
-    router.push("/admin");
+    router.push("/admin/passages");
   };
 
   return (

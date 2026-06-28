@@ -6,6 +6,10 @@ interface DeletePassageInput {
 
 interface DeletePassageResult {
   success: boolean;
+  passage?: {
+    id: string;
+    title: string;
+  };
   error?: string;
   code?: "NOT_FOUND" | "INTERNAL_ERROR";
 }
@@ -38,11 +42,15 @@ export async function deletePassageService(
     }
 
     // Delete the passage
-    await prisma.passage.delete({
+    const deletedPassage = await prisma.passage.delete({
       where: { id },
+      select: {
+        id: true,
+        title: true,
+      },
     });
 
-    return { success: true };
+    return { success: true, passage: deletedPassage };
   } catch (error) {
     console.error("Error deleting passage:", error);
     return {

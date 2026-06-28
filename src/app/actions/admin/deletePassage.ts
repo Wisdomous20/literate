@@ -4,13 +4,14 @@ import { deletePassageService } from "@/service/passage/deletePassageService";
 import { deletePassageSchema } from "@/lib/validation/admin";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { requirePassageManager } from "@/utils/roleCheck";
+import { recordActivityLog } from "@/service/activity/activityLogService";
 
 interface DeletePassageActionInput {
   id: string;
 }
 
 export async function deletePassageAction(input: DeletePassageActionInput) {
-  await requirePassageManager();
+  const session = await requirePassageManager();
 
   const validationResult = deletePassageSchema.safeParse(input);
 
@@ -23,6 +24,20 @@ export async function deletePassageAction(input: DeletePassageActionInput) {
 
   if (!result.success) {
     throw new Error(result.error || "Failed to delete passage.");
+  }
+
+  if (result.passage) {
+    await recordActivityLog({
+      actor: {
+        id: session.user.id,
+        email: session.user.email,
+        role: session.user.role,
+      },
+      action: "PASSAGE_DELETED",
+      entityType: "passage",
+      entityId: result.passage.id,
+      entityTitle: result.passage.title,
+    });
   }
 
   return { success: true };

@@ -4,6 +4,7 @@ import { createQuizService } from "@/service/quiz/createQuizService";
 import { createQuizSchema } from "@/lib/validation/admin";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { requirePassageManager } from "@/utils/roleCheck";
+import { recordActivityLog } from "@/service/activity/activityLogService";
 
 interface CreateQuizActionInput {
   passageId: string;
@@ -18,7 +19,7 @@ interface CreateQuizActionInput {
 }
 
 export async function createQuizAction(input: CreateQuizActionInput) {
-  await requirePassageManager();
+  const session = await requirePassageManager();
 
   const validationResult = createQuizSchema.safeParse({
     ...input,
@@ -34,6 +35,25 @@ export async function createQuizAction(input: CreateQuizActionInput) {
 
   if (!result.success) {
     throw new Error(result.error || "Failed to create quiz.");
+  }
+
+  if (result.quiz) {
+    await recordActivityLog({
+      actor: {
+        id: session.user.id,
+        email: session.user.email,
+        role: session.user.role,
+      },
+      action: "QUIZ_CREATED",
+      entityType: "quiz",
+      entityId: result.quiz.id,
+      entityTitle: `Quiz for passage ${result.quiz.passageId}`,
+      metadata: {
+        passageId: result.quiz.passageId,
+        totalNumber: result.quiz.totalNumber,
+        totalScore: result.quiz.totalScore,
+      },
+    });
   }
 
   return result.quiz;

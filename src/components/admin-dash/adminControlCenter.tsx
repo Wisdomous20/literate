@@ -5,10 +5,12 @@ import { useMemo, useState } from "react";
 import type { ComponentType } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
+  Activity,
   Building2,
   FileText,
   Loader2,
   MailPlus,
+  ShieldCheck,
   Users,
 } from "lucide-react";
 import { updateAdminUserRoleAction } from "@/app/actions/admin/updateUserRole";
@@ -18,9 +20,10 @@ import { invitePassageAdminAction } from "@/app/actions/admin/invitePassageAdmin
 import { useAdminManagementSnapshot } from "@/lib/hooks/useAdminManagementSnapshot";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ActivityLogView } from "@/components/admin-dash/passages/activityLogView";
 import { cn } from "@/lib/utils";
 
-type AdminTab = "users" | "organizations" | "passages";
+type AdminTab = "users" | "organizations" | "passages" | "passageAdmins";
 
 const queryKey = ["admin", "management-snapshot"];
 
@@ -30,6 +33,7 @@ const tabs: {
   icon: ComponentType<{ className?: string }>;
 }[] = [
   { id: "passages", label: "Passages", icon: FileText },
+  { id: "passageAdmins", label: "Passage Admins", icon: ShieldCheck },
   { id: "users", label: "Users", icon: Users },
   { id: "organizations", label: "Organizations", icon: Building2 },
 ];
@@ -153,6 +157,9 @@ export function AdminControlCenter() {
       passages: snapshot.passages.filter((passage) =>
         matches(passage.title, passage.language, passage.testType, passage.level)
       ),
+      passageAdmins: snapshot.users.filter((user) =>
+        user.role === "PASSAGE_ADMIN" && matches(user.name, user.email)
+      ),
     };
   }, [normalizedSearch, snapshot]);
 
@@ -275,67 +282,7 @@ export function AdminControlCenter() {
             title="Users"
             description="Update roles and account status for every user in the platform."
             count={filtered.users.length}
-            action={
-              <span className="inline-flex items-center gap-2 rounded-full border border-[#DCD5FF] bg-[#F3F0FF] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-[#6C4EEB]">
-                <MailPlus className="h-3.5 w-3.5" aria-hidden="true" />
-                Passage admin invite
-              </span>
-            }
           />
-          <div className="mx-4 mb-2 rounded-[22px] border border-[#E1DDFB] bg-[#FCFBFF] p-4 sm:mx-6 sm:p-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-xl">
-                <h3 className="text-base font-semibold text-[#323743]">
-                  Invite a passage admin
-                </h3>
-                <p className="mt-1 text-sm leading-6 text-[#575E6B]">
-                  Send a password setup link for passage, quiz, and question
-                  management only.
-                </p>
-              </div>
-              <form
-                className="flex flex-col gap-3 sm:flex-row"
-                onSubmit={async (event) => {
-                  event.preventDefault();
-                  setInviteMessage(null);
-                  setInviteError(null);
-                  try {
-                    await invitePassageAdminMutation.mutateAsync(passageAdminEmail);
-                  } catch {
-                    // onError renders the inline message.
-                  }
-                }}
-              >
-                <Input
-                  type="email"
-                  value={passageAdminEmail}
-                  onChange={(event) => setPassageAdminEmail(event.target.value)}
-                  placeholder="passage.admin@example.com"
-                  className="h-11 min-w-[280px] rounded-[14px] border-[#D6DDFB] bg-white px-4 text-sm text-[#323743] placeholder:text-[#8B91A3] focus-visible:border-[#6C4EEB] focus-visible:ring-[#6C4EEB]/20"
-                  disabled={busy}
-                  required
-                />
-                <Button
-                  type="submit"
-                  className="h-11 rounded-[14px] bg-[#6C4EEB] px-5 text-white hover:bg-[#5D43DE]"
-                  disabled={busy}
-                >
-                  {invitePassageAdminMutation.isPending ? "Sending..." : "Send Invite"}
-                </Button>
-              </form>
-            </div>
-            {(inviteMessage || inviteError) && (
-              <p
-                className={cn(
-                  "mt-3 text-sm font-medium",
-                  inviteError ? "text-red-700" : "text-emerald-700",
-                )}
-                role={inviteError ? "alert" : "status"}
-              >
-                {inviteError ?? inviteMessage}
-              </p>
-            )}
-          </div>
           <div className="overflow-x-auto px-4 pb-4 sm:px-6 sm:pb-6">
             <table className="min-w-full border-separate border-spacing-y-4">
               <thead>
@@ -439,6 +386,216 @@ export function AdminControlCenter() {
               </tbody>
             </table>
             {filtered.users.length === 0 && <EmptyState label="users" />}
+          </div>
+        </section>
+      )}
+
+      {activeTab === "passageAdmins" && (
+        <section className="space-y-5">
+          <div className="rounded-[28px] border border-[#D9E5F5] bg-white shadow-[0_20px_60px_rgba(15,23,42,0.07)]">
+            <SectionHeader
+              eyebrow="Content Access"
+              title="Passage Admins"
+              description="Invite and manage accounts that can only maintain passages, quizzes, and questions."
+              count={filtered.passageAdmins.length}
+              action={
+                <span className="inline-flex items-center gap-2 rounded-full border border-[#DCD5FF] bg-[#F3F0FF] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-[#6C4EEB]">
+                  <MailPlus className="h-3.5 w-3.5" aria-hidden="true" />
+                  Invite only
+                </span>
+              }
+            />
+
+            <div className="grid gap-5 p-4 sm:p-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(420px,1.1fr)]">
+              <div className="rounded-[22px] border border-[#E1DDFB] bg-[#FCFBFF] p-5">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[16px] bg-[#F3F0FF] text-[#6C4EEB]">
+                    <ShieldCheck className="h-5 w-5" aria-hidden="true" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold text-[#323743]">
+                      Invite a passage admin
+                    </h3>
+                    <p className="mt-1 text-sm leading-6 text-[#575E6B]">
+                      Send a password setup link for content management only.
+                    </p>
+                  </div>
+                </div>
+
+                <form
+                  className="mt-5 flex flex-col gap-3"
+                  onSubmit={async (event) => {
+                    event.preventDefault();
+                    setInviteMessage(null);
+                    setInviteError(null);
+                    try {
+                      await invitePassageAdminMutation.mutateAsync(passageAdminEmail);
+                    } catch {
+                      // onError renders the inline message.
+                    }
+                  }}
+                >
+                  <Input
+                    type="email"
+                    value={passageAdminEmail}
+                    onChange={(event) => setPassageAdminEmail(event.target.value)}
+                    placeholder="passage.admin@example.com"
+                    className="h-11 rounded-[14px] border-[#D6DDFB] bg-white px-4 text-sm text-[#323743] placeholder:text-[#8B91A3] focus-visible:border-[#6C4EEB] focus-visible:ring-[#6C4EEB]/20"
+                    disabled={busy}
+                    required
+                  />
+                  <Button
+                    type="submit"
+                    className="h-11 rounded-[14px] bg-[#6C4EEB] px-5 text-white hover:bg-[#5D43DE]"
+                    disabled={busy}
+                  >
+                    {invitePassageAdminMutation.isPending
+                      ? "Sending..."
+                      : "Send Invite"}
+                  </Button>
+                </form>
+
+                {(inviteMessage || inviteError) && (
+                  <p
+                    className={cn(
+                      "mt-3 text-sm font-medium",
+                      inviteError ? "text-red-700" : "text-emerald-700",
+                    )}
+                    role={inviteError ? "alert" : "status"}
+                  >
+                    {inviteError ?? inviteMessage}
+                  </p>
+                )}
+              </div>
+
+              <div className="rounded-[22px] border border-[#E4EBF5] bg-[#FBFCFE] p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-base font-semibold text-[#323743]">
+                      Passage-admin accounts
+                    </h3>
+                    <p className="mt-1 text-sm text-[#575E6B]">
+                      Review status and revoke access when needed.
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-[#575E6B]">
+                    {filtered.passageAdmins.length} active role
+                  </span>
+                </div>
+
+                <div className="mt-4 divide-y divide-[#E7EEF7]">
+                  {filtered.passageAdmins.map((user) => (
+                    <div
+                      key={user.id}
+                      className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-[#323743]">
+                          {user.name}
+                        </p>
+                        <p className="mt-1 truncate text-sm text-[#575E6B]">
+                          {user.email}
+                        </p>
+                        <div className="mt-2 flex gap-2 text-[11px] font-semibold uppercase tracking-[0.08em]">
+                          <span
+                            className={cn(
+                              "rounded-full px-2.5 py-1",
+                              user.isDisabled
+                                ? "bg-red-100 text-red-700"
+                                : "bg-emerald-100 text-emerald-700",
+                            )}
+                          >
+                            {user.isDisabled ? "Disabled" : "Active"}
+                          </span>
+                          <span className="rounded-full bg-[#F3F0FF] px-2.5 py-1 text-[#6C4EEB]">
+                            Passage Admin
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-10 rounded-full border-[#DCD5FF] bg-white px-4 text-[#6C4EEB]"
+                          disabled={busy}
+                          onClick={async () => {
+                            try {
+                              await roleMutation.mutateAsync({
+                                userId: user.id,
+                                role: "USER",
+                              });
+                            } catch (error) {
+                              alert(
+                                error instanceof Error
+                                  ? error.message
+                                  : "Failed to revoke access",
+                              );
+                            }
+                          }}
+                        >
+                          Revoke Role
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={user.isDisabled ? "default" : "outline"}
+                          className={cn(
+                            "h-10 rounded-full px-4",
+                            user.isDisabled
+                              ? "bg-[#6C4EEB] text-white hover:bg-[#5D43DE]"
+                              : "border-red-200 bg-red-50 text-red-700 hover:bg-red-100",
+                          )}
+                          disabled={busy}
+                          onClick={async () => {
+                            try {
+                              await statusMutation.mutateAsync({
+                                userId: user.id,
+                                disable: !user.isDisabled,
+                              });
+                            } catch (error) {
+                              alert(
+                                error instanceof Error
+                                  ? error.message
+                                  : "Failed to update user status",
+                              );
+                            }
+                          }}
+                        >
+                          {user.isDisabled ? "Enable" : "Disable"}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {filtered.passageAdmins.length === 0 && (
+                    <div className="rounded-[18px] border border-dashed border-[#DCD5FF] bg-white px-4 py-8 text-center text-sm text-[#575E6B]">
+                      No passage admins match your search.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-[#D9E5F5] bg-white p-4 shadow-[0_20px_60px_rgba(15,23,42,0.07)] sm:p-6">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6E85A0]">
+                  Activity Logs
+                </p>
+                <h3 className="mt-2 text-2xl font-semibold text-[#0F2744]">
+                  Passage-admin movement
+                </h3>
+                <p className="mt-2 max-w-3xl text-sm leading-7 text-[#64809F]">
+                  Track content changes across passages, quizzes, and questions.
+                </p>
+              </div>
+              <span className="inline-flex items-center gap-2 rounded-full bg-[#F4F8FD] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-[#33507A]">
+                <Activity className="h-3.5 w-3.5" aria-hidden="true" />
+                Activity
+              </span>
+            </div>
+            <ActivityLogView showHeader={false} />
           </div>
         </section>
       )}

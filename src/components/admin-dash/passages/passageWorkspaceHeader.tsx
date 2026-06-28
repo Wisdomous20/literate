@@ -23,7 +23,7 @@ export function PassageWorkspaceHeader({
       <div className="mx-auto flex max-w-7xl flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 items-start gap-3">
           <button
-            onClick={() => router.push("/admin")}
+            onClick={() => router.push("/admin/passages")}
             className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0C2D57] text-white shadow-[0_10px_24px_rgba(12,45,87,0.24)] transition hover:bg-[#163D70]"
             aria-label="Back to passages"
             title="Back to passages"

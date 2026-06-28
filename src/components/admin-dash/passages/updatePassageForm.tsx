@@ -118,7 +118,7 @@ export function UpdatePassageForm({
   };
 
   const handleCancel = () => {
-    router.push("/admin");
+    router.push("/admin/passages");
   };
 
   return (

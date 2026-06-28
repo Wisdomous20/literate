@@ -12,7 +12,7 @@ export default function EditPassagePage() {
   const { data: passage, isLoading, error } = usePassageById(passageId);
 
   const handleSuccess = () => {
-    router.push(`/admin`);
+    router.push("/admin/passages");
   };
 
   if (isLoading) {

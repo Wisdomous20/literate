@@ -4,6 +4,7 @@ import { addQuestionService } from "@/service/question/addQuestionService";
 import { addQuestionSchema } from "@/lib/validation/admin";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { requirePassageManager } from "@/utils/roleCheck";
+import { recordActivityLog } from "@/service/activity/activityLogService";
 
 interface AddQuestionActionInput {
   passageId: string;
@@ -15,7 +16,7 @@ interface AddQuestionActionInput {
 }
 
 export async function addQuestionAction(input: AddQuestionActionInput) {
-  await requirePassageManager();
+  const session = await requirePassageManager();
 
   const validationResult = addQuestionSchema.safeParse(input);
 
@@ -28,6 +29,26 @@ export async function addQuestionAction(input: AddQuestionActionInput) {
 
   if (!result.success) {
     throw new Error(result.error || "Failed to add question.");
+  }
+
+  if (result.question) {
+    await recordActivityLog({
+      actor: {
+        id: session.user.id,
+        email: session.user.email,
+        role: session.user.role,
+      },
+      action: "QUESTION_CREATED",
+      entityType: "question",
+      entityId: result.question.id,
+      entityTitle: result.question.questionText,
+      metadata: {
+        passageId: validationResult.data.passageId,
+        quizId: result.question.quizId,
+        type: result.question.type,
+        tags: result.question.tags,
+      },
+    });
   }
 
   return result.question;

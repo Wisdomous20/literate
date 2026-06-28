@@ -110,8 +110,16 @@ describe("deletePassageService", () => {
     const result = await deletePassageService({ id: basePassage.id });
 
     expect(result.success).toBe(true);
+    expect(result.passage).toMatchObject({
+      id: basePassage.id,
+      title: basePassage.title,
+    });
     expect(mockPrisma.passage.delete).toHaveBeenCalledWith({
       where: { id: basePassage.id },
+      select: {
+        id: true,
+        title: true,
+      },
     });
   });
 
