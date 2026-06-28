@@ -58,6 +58,7 @@ export function StudentTable({
   studentAssessments,
   onUpdateStudent,
   onArchiveStudent,
+  assessmentType = "ALL",
   viewMode = "card",
 }: StudentTableProps) {
   const params = useParams();
@@ -127,33 +128,11 @@ export function StudentTable({
     if (assessments.length === 0) return;
     setClickedStudentId(student.id);
     window.setTimeout(() => {
-      const latestAssessmentId =
-        student.assessmentId ??
-        [...assessments]
-          .filter((assessment) => assessment.type === student.assessmentType)
-          .sort(
-            (a, b) =>
-              new Date(b.dateTaken).getTime() -
-              new Date(a.dateTaken).getTime(),
-          )[0]?.id;
-
-      const reportPathByType: Record<string, string> = {
-        ORAL_READING: "summary",
-        COMPREHENSION: "comprehension-report",
-        READING_FLUENCY: "reading-fluency-report",
-      };
-      const reportPath = reportPathByType[student.assessmentType];
-
-      if (latestAssessmentId && reportPath) {
-        router.push(
-          `/dashboard/class/${classRoomId}/report/${student.id}/${reportPath}?id=${latestAssessmentId}`,
-        );
-        return;
-      }
-
+      const selectedAssessmentType =
+        assessmentType || student.assessmentType || "ALL";
       router.push(
         `/dashboard/class/${classRoomId}/report/${student.id}?assessmentType=${encodeURIComponent(
-          student.assessmentType,
+          selectedAssessmentType,
         )}`,
       );
     }, 120);

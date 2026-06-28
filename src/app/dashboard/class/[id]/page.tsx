@@ -466,6 +466,7 @@ export default function ClassListsPage() {
               studentAssessments={studentAssessments}
               onUpdateStudent={handleUpdateStudent}
               onArchiveStudent={handleArchiveStudent}
+              assessmentType={assessmentType}
               viewMode={viewMode}
             />
           </div>

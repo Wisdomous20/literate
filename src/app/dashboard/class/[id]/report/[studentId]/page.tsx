@@ -25,9 +25,13 @@ export default function AssessmentReportPage() {
   const classRoomId = params.id as string;
   const studentId = params.studentId as string;
   const assessmentTypeParam = searchParams.get("assessmentType");
-  const assessmentTypeLabel = assessmentTypeParam
-    ? (assessmentTypeLabels[assessmentTypeParam] ?? assessmentTypeParam)
-    : "Unknown Assessment Type";
+  const selectedAssessmentType =
+    assessmentTypeParam && assessmentTypeParam !== "ALL"
+      ? assessmentTypeParam
+      : null;
+  const assessmentTypeLabel = selectedAssessmentType
+    ? (assessmentTypeLabels[selectedAssessmentType] ?? selectedAssessmentType)
+    : "All Assessments";
 
   const { data: allAssessments = [], isLoading } =
     useAssessmentsByStudent(studentId);
@@ -47,39 +51,36 @@ export default function AssessmentReportPage() {
     : "";
 
   const seen = new Set<string>();
-  const assessments = assessmentTypeParam
-    ? (() => {
-        const filteredAssessments = allAssessments
-          .filter((a) => {
-            if (a.type !== assessmentTypeParam) return false;
-            if (seen.has(a.id)) return false;
-            seen.add(a.id);
-            return true;
-          })
-          .sort(
-            (a, b) =>
-              new Date(b.dateTaken).getTime() -
-              new Date(a.dateTaken).getTime(),
-          );
+  const filteredAssessments = allAssessments
+    .filter((assessment) => {
+      if (selectedAssessmentType && assessment.type !== selectedAssessmentType) {
+        return false;
+      }
+      if (seen.has(assessment.id)) return false;
+      seen.add(assessment.id);
+      return true;
+    })
+    .sort(
+      (a, b) =>
+        new Date(b.dateTaken).getTime() - new Date(a.dateTaken).getTime(),
+    );
 
-        return filteredAssessments.map((a, idx) => ({
-          attempt: filteredAssessments.length - idx,
-          assessmentType: assessmentTypeLabels[a.type] ?? a.type,
-          testType: formatTestType(a.passage?.testType),
-          assessmentDate: a.dateTaken
-            ? new Date(a.dateTaken).toLocaleDateString("en-US", {
-                month: "long",
-                day: "numeric",
-                year: "numeric",
-              })
-            : "",
-          schoolYear: "",
-          id: a.id,
-          type: a.type,
-          language: a.passage?.language ?? "—",
-        }));
-      })()
-    : [];
+  const assessments = filteredAssessments.map((assessment, idx) => ({
+    attempt: filteredAssessments.length - idx,
+    assessmentType: assessmentTypeLabels[assessment.type] ?? assessment.type,
+    testType: formatTestType(assessment.passage?.testType),
+    assessmentDate: assessment.dateTaken
+      ? new Date(assessment.dateTaken).toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        })
+      : "",
+    schoolYear: "",
+    id: assessment.id,
+    type: assessment.type,
+    language: assessment.passage?.language ?? "-",
+  }));
 
   const handleRowClick = (assessment: { id: string; type: string }) => {
     if (assessment.type === "ORAL_READING") {
