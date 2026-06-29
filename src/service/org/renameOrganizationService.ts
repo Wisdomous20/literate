@@ -1,22 +1,22 @@
 import { prisma } from "@/lib/prisma";
-import { findAdminOrganizationForUser } from "@/service/org/orgAuthorization";
+import { getOrgAdminContext } from "@/service/org/orgAuthorization";
 
 export async function renameOrganizationService(
   newName: string,
-  requestedByUserId: string
+  organizationId: string,
+  requestedByUserId: string,
 ) {
   if (!newName?.trim()) {
     return { success: false, error: "Organization name is required" };
   }
 
-  const org = await findAdminOrganizationForUser(requestedByUserId);
-
-  if (!org) {
-    return { success: false, error: "No organization found" };
+  const adminContext = await getOrgAdminContext(organizationId, requestedByUserId);
+  if (!adminContext.success) {
+    return { success: false, error: adminContext.error };
   }
 
   const updated = await prisma.organization.update({
-    where: { id: org.id },
+    where: { id: organizationId },
     data: { name: newName.trim() },
   });
 

@@ -68,11 +68,13 @@ export default function OrganizationPage() {
     mutationFn: async ({
       memberId,
       disable,
+      organizationId,
     }: {
       memberId: string;
       disable: boolean;
+      organizationId: string;
     }) => {
-      const res = await toggleMemberAction(memberId, disable);
+      const res = await toggleMemberAction(memberId, disable, organizationId);
       if (!res.success) {
         throw new Error(res.error ?? "Failed to update member");
       }
@@ -86,11 +88,13 @@ export default function OrganizationPage() {
     mutationFn: async ({
       memberId,
       role,
+      organizationId,
     }: {
       memberId: string;
       role: "ADMIN" | "USER";
+      organizationId: string;
     }) => {
-      const res = await updateMemberRoleAction(memberId, role);
+      const res = await updateMemberRoleAction(memberId, role, organizationId);
       if (!res.success) {
         throw new Error(res.error ?? "Failed to update member role");
       }
@@ -101,8 +105,14 @@ export default function OrganizationPage() {
   });
 
   const removeMemberMutation = useMutation({
-    mutationFn: async ({ memberId }: { memberId: string }) => {
-      const res = await removeMemberAction(memberId);
+    mutationFn: async ({
+      memberId,
+      organizationId,
+    }: {
+      memberId: string;
+      organizationId: string;
+    }) => {
+      const res = await removeMemberAction(memberId, organizationId);
       if (!res.success) {
         throw new Error(res.error ?? "Failed to remove member");
       }
@@ -114,26 +124,6 @@ export default function OrganizationPage() {
 
   const refresh = async () => {
     await queryClient.invalidateQueries({ queryKey: organizationQueryKey });
-  };
-
-  const generatePassword = async (member: Member) => {
-    const res = await generateMemberPasswordAction(member.id);
-    if (!res.success) {
-      alert(res.error);
-      return;
-    }
-
-    if (
-      "password" in res &&
-      res.password &&
-      "email" in res &&
-      res.email
-    ) {
-      setTempPassword({
-        email: res.email,
-        password: res.password,
-      });
-    }
   };
 
   if (organizationQuery.isLoading) {
@@ -187,6 +177,26 @@ export default function OrganizationPage() {
   const seatsRemaining = Math.max(org.maxMembers - org.currentMembers, 0);
   const disabledMembers = Math.max(org.totalMembers - org.currentMembers, 0);
 
+  const generatePassword = async (member: Member) => {
+    const res = await generateMemberPasswordAction(member.id, org.id);
+    if (!res.success) {
+      alert(res.error);
+      return;
+    }
+
+    if (
+      "password" in res &&
+      res.password &&
+      "email" in res &&
+      res.email
+    ) {
+      setTempPassword({
+        email: res.email,
+        password: res.password,
+      });
+    }
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <DashboardHeader title="Organization" />
@@ -203,6 +213,7 @@ export default function OrganizationPage() {
             <OrgSummaryCard org={org} onRenamed={refresh} />
 
             <AddMemberCard
+              organizationId={org.id}
               seatsRemaining={seatsRemaining}
               onInvited={(info) => {
                 setInvitationSent(info);
@@ -217,6 +228,7 @@ export default function OrganizationPage() {
               try {
                 await updateRoleMutation.mutateAsync({
                   memberId: member.id,
+                  organizationId: org.id,
                   role,
                 });
               } catch (error) {
@@ -231,6 +243,7 @@ export default function OrganizationPage() {
               try {
                 await toggleMemberMutation.mutateAsync({
                   memberId: member.id,
+                  organizationId: org.id,
                   disable,
                 });
               } catch (error) {
@@ -243,6 +256,7 @@ export default function OrganizationPage() {
               try {
                 await removeMemberMutation.mutateAsync({
                   memberId: member.id,
+                  organizationId: org.id,
                 });
               } catch (error) {
                 alert(
@@ -268,6 +282,7 @@ export default function OrganizationPage() {
       />
       <ResetPasswordDialog
         member={passwordTarget}
+        organizationId={org.id}
         onClose={() => setPasswordTarget(null)}
       />
     </div>

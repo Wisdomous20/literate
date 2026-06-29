@@ -7,11 +7,13 @@ import type { InvitationSentInfo } from "./types";
 
 interface AddMemberCardProps {
   onInvited: (info: InvitationSentInfo) => void;
+  organizationId: string;
   seatsRemaining: number;
 }
 
 export function AddMemberCard({
   onInvited,
+  organizationId,
   seatsRemaining,
 }: AddMemberCardProps) {
   const [email, setEmail] = useState("");
@@ -29,6 +31,7 @@ export function AddMemberCard({
 
     const res = await addMemberAction({
       email: email.trim(),
+      organizationId,
     });
 
     setSubmitting(false);

@@ -4,7 +4,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { updateMemberRoleSchema } from "@/lib/validation/org";
-import { findAdminOrganizationForUser } from "@/service/org/orgAuthorization";
 import {
   updateMemberRoleService,
   type OrganizationMemberRoleValue,
@@ -13,6 +12,7 @@ import {
 export async function updateMemberRoleAction(
   memberId: string,
   role: OrganizationMemberRoleValue,
+  organizationId: string,
 ) {
   const session = await getServerSession(authOptions);
 
@@ -20,15 +20,9 @@ export async function updateMemberRoleAction(
     return { success: false, error: "Unauthorized" };
   }
 
-  const org = await findAdminOrganizationForUser(session.user.id);
-
-  if (!org) {
-    return { success: false, error: "No organization found" };
-  }
-
   const validationResult = updateMemberRoleSchema.safeParse({
     memberId,
-    organizationId: org.id,
+    organizationId,
     requestedByUserId: session.user.id,
     role,
   });

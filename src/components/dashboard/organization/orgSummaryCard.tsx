@@ -27,7 +27,7 @@ export function OrgSummaryCard({ onRenamed, org }: OrgSummaryCardProps) {
     setSaving(true);
     setError(null);
 
-    const res = await renameOrgAction(draft.trim());
+    const res = await renameOrgAction(draft.trim(), org.id);
     setSaving(false);
 
     if (!res.success) {

@@ -133,9 +133,11 @@ export function TempPasswordDialog({
 
 export function ResetPasswordDialog({
   member,
+  organizationId,
   onClose,
 }: {
   member: Member | null;
+  organizationId: string;
   onClose: () => void;
 }) {
   const [value, setValue] = useState("");
@@ -163,7 +165,7 @@ export function ResetPasswordDialog({
     setSubmitting(true);
     setError(null);
 
-    const res = await updateMemberPasswordAction(member.id, value);
+    const res = await updateMemberPasswordAction(member.id, value, organizationId);
     setSubmitting(false);
 
     if (!res.success) {
