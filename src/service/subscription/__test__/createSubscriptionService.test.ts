@@ -77,7 +77,19 @@ describe("createSubscriptionService", () => {
     const result = await createSubscriptionService({ ...baseInput, planType: "PAMILYA" });
 
     expect(result.success).toBe(false);
-    if (!result.success) expect(result.error).toMatch(/20 members/);
+    if (!result.success) expect(result.error).toMatch(/20 to 50 members/);
+  });
+
+  it("returns failure when PAMILYA memberCount exceeds the 50-seat cap", async () => {
+    const result = await createSubscriptionService({
+      ...baseInput,
+      planType: "PAMILYA",
+      memberCount: 51,
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toMatch(/20 to 50 members/);
+    expect(mockPrisma.organizationMember.findFirst).not.toHaveBeenCalled();
   });
 
   // ── Tier-change delegation ──────────────────────────────────────────────────
@@ -182,6 +194,48 @@ describe("createSubscriptionService", () => {
   });
 
   // ── Subscription persistence ──────────────────────────────────────────────
+
+  it("allows a 50-seat PAMILYA checkout and stores the capped plan capacity", async () => {
+    setupNewOrgPath(null);
+
+    await createSubscriptionService({
+      ...baseInput,
+      planType: "PAMILYA",
+      memberCount: 50,
+    });
+
+    expect(mockPrisma.plan.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          code: "PAMILYA",
+          maxMembers: 50,
+          priceAmount: 20000,
+        }),
+        update: expect.objectContaining({
+          maxMembers: 50,
+          priceAmount: 20000,
+        }),
+      }),
+    );
+
+    const sessionCall = mockXenditRequest.mock.calls[0];
+    expect(sessionCall[2]).toMatchObject({
+      amount: 50000,
+      metadata: {
+        maxMembers: "50",
+        planType: "PAMILYA",
+      },
+    });
+
+    expect(mockPrisma.subscription.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          maxMembersSnapshot: 50,
+          priceAmountSnapshot: 50000,
+        }),
+      }),
+    );
+  });
 
   it("creates a fresh PENDING subscription row (never upserts in place)", async () => {
     setupNewOrgPath(null);

@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { AnimatedSection } from "./AnimatedSection";
-import type { PlanKey } from "@/config/plans";
+import {
+  PAMILYA_MAX_MEMBERS,
+  PAMILYA_MIN_MEMBERS,
+  type PlanKey,
+} from "@/config/plans";
 
 const plans = [
   {
@@ -62,15 +66,15 @@ const plans = [
     name: "KAPAMILYA",
     tagline: "For large organizations",
     price: "₱1,100",
-    period: "per user/school year",
+    period: "per user / school year",
     inclusions: [
       "Complete access and unlimited usage",
-      "20+ users",
+      `${PAMILYA_MIN_MEMBERS}-${PAMILYA_MAX_MEMBERS} users`,
       "Volume pricing",
     ],
     highlight: false,
     cta: "Choose Plan",
-    users: "20+ users",
+    users: `${PAMILYA_MIN_MEMBERS}-${PAMILYA_MAX_MEMBERS} users`,
     planKey: "PAMILYA" as PlanKey,
   },
 ];

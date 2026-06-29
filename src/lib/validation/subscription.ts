@@ -1,5 +1,10 @@
 import { z } from "zod";
 import { positiveInt } from "@/lib/validation/common";
+import {
+  PAMILYA_MAX_MEMBERS,
+  PAMILYA_MEMBER_LIMIT_MESSAGE,
+  PAMILYA_MIN_MEMBERS,
+} from "@/config/plans";
 
 const planTypeValues = ["SOLO", "KASALO", "PANALO", "PAMILYA"] as const;
 
@@ -11,11 +16,15 @@ export const subscribeSchema = z
     memberCount: positiveInt("Member count").optional(),
   })
   .superRefine((data, ctx) => {
-    if (data.planType === "PAMILYA" && (data.memberCount ?? 0) < 20) {
+    if (
+      data.planType === "PAMILYA" &&
+      ((data.memberCount ?? 0) < PAMILYA_MIN_MEMBERS ||
+        (data.memberCount ?? 0) > PAMILYA_MAX_MEMBERS)
+    ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["memberCount"],
-        message: "Pamilya plan requires at least 20 members",
+        message: PAMILYA_MEMBER_LIMIT_MESSAGE,
       });
     }
   });

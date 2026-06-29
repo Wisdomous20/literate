@@ -6,7 +6,11 @@ import { Check, Loader2, AlertCircle, X } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import { subscribeAction } from "@/app/actions/subscription/subscribe";
 import { syncPaymentSessionSubscriptionAction } from "@/app/actions/subscription/syncPaymentSession";
-import { PlanKey } from "@/config/plans";
+import {
+  PAMILYA_MAX_MEMBERS,
+  PAMILYA_MIN_MEMBERS,
+  PlanKey,
+} from "@/config/plans";
 
 interface Plan {
   id: string;
@@ -18,8 +22,6 @@ interface Plan {
   features: string[];
   requiresMemberCount?: boolean;
 }
-
-const PAMILYA_MIN_MEMBERS = 20;
 
 const PLANS: Plan[] = [
   {
@@ -68,7 +70,7 @@ const PLANS: Plan[] = [
     priceNote: "per user / school year",
     features: [
       "Complete access",
-      "20+ Users",
+      "20-50 Users",
       "Unlimited assessments",
       "Team collaboration",
     ],
@@ -147,10 +149,12 @@ function SubscriptionPageContent() {
 
     if (
       selectedPlan.requiresMemberCount &&
-      (!memberCount || memberCount < PAMILYA_MIN_MEMBERS)
+      (!memberCount ||
+        memberCount < PAMILYA_MIN_MEMBERS ||
+        memberCount > PAMILYA_MAX_MEMBERS)
     ) {
       setErrorMessage(
-        `KAPAMILYA requires at least ${PAMILYA_MIN_MEMBERS} members.`
+        `KAPAMILYA supports ${PAMILYA_MIN_MEMBERS} to ${PAMILYA_MAX_MEMBERS} members.`
       );
       return;
     }
@@ -223,9 +227,9 @@ function SubscriptionPageContent() {
                   <span className="text-2xl font-extrabold text-[#6666FF]">
                     {plan.price}
                   </span>
-                  <span className="text-sm font-medium text-[#6666FF]">
+                  {/* <span className="text-sm font-medium text-[#6666FF]">
                     {plan.priceNote}
-                  </span>
+                  </span> */}
                 </div>
 
                 {/* Features */}
@@ -269,12 +273,13 @@ function SubscriptionPageContent() {
               Number of users
             </label>
             <p className="mt-1 text-xs text-[#6666FF]">
-              Minimum {PAMILYA_MIN_MEMBERS} users at ₱1,100 each
+              Choose {PAMILYA_MIN_MEMBERS}-{PAMILYA_MAX_MEMBERS} ₱1,100/year per user.
             </p>
             <input
               id="memberCount"
               type="number"
               min={PAMILYA_MIN_MEMBERS}
+              max={PAMILYA_MAX_MEMBERS}
               value={memberCount}
               onChange={(e) => {
                 const next = parseInt(e.target.value, 10);

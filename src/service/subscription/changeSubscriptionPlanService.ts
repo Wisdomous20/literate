@@ -1,6 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { buildApplicationUrl } from "@/lib/applicationUrl";
-import { calculatePrice, getMaxMembers, PLANS, PlanKey } from "@/config/plans";
+import {
+  calculatePrice,
+  getMaxMembers,
+  PAMILYA_MAX_MEMBERS,
+  PAMILYA_MEMBER_LIMIT_MESSAGE,
+  PAMILYA_MIN_MEMBERS,
+  PLANS,
+  PlanKey,
+} from "@/config/plans";
 import { computeProrationCredit, roundCurrency } from "./proration";
 import { createXenditSubscriptionSession } from "@/service/subscription/xenditSubscriptionSession";
 import { createInvoiceAndSendEmail } from "@/service/subscription/invoiceService";
@@ -28,8 +36,13 @@ export async function changeSubscriptionPlanService(
     return { success: false, error: "Invalid plan type" };
   }
 
-  if (newPlanType === "PAMILYA" && (!memberCount || memberCount < 20)) {
-    return { success: false, error: "Pamilya plan requires at least 20 members" };
+  if (
+    newPlanType === "PAMILYA" &&
+    (!memberCount ||
+      memberCount < PAMILYA_MIN_MEMBERS ||
+      memberCount > PAMILYA_MAX_MEMBERS)
+  ) {
+    return { success: false, error: PAMILYA_MEMBER_LIMIT_MESSAGE };
   }
 
   const orgType = newPlanType === "SOLO" ? "PERSONAL" : "TEAM";
@@ -44,7 +57,7 @@ export async function changeSubscriptionPlanService(
   const fullPrice = calculatePrice(newPlanType, memberCount);
   const maxMembers = getMaxMembers(newPlanType, memberCount);
   const planMaxMembers =
-    newPlanType === "PAMILYA" ? PLANS.PAMILYA.minMembers : PLANS[newPlanType].maxMembers;
+    newPlanType === "PAMILYA" ? PLANS.PAMILYA.maxMembers : PLANS[newPlanType].maxMembers;
   const planPriceAmount =
     newPlanType === "PAMILYA"
       ? calculatePrice(newPlanType, PLANS.PAMILYA.minMembers)
