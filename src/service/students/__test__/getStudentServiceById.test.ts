@@ -11,7 +11,7 @@ import { getStudentServiceById } from "../getStudentServiceById";
 const baseStudent = {
   id: "student-1",
   name: "Ana Reyes",
-  classRoomId: "class-1",
+  classId: "class-1",
   level: 3,
   assessments: [],
 };
@@ -45,7 +45,7 @@ describe("getStudentServiceById", () => {
     const query = mockPrisma.student.findFirst.mock.calls[0][0];
     expect(query.where).toMatchObject({
       id: "student-1",
-      classRoom: { userId: "user-99" },
+      class: { userId: "user-99" },
     });
   });
 

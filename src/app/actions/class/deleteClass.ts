@@ -4,10 +4,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { deleteClassService } from "@/service/class/deleteClassService";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
-import { deleteClassSchema } from "@/lib/validation/classroom";
+import { deleteClassSchema } from "@/lib/validation/class";
 import { revalidatePath } from "next/cache";
 
-export async function deleteClass(classRoomId: string) {
+export async function deleteClass(classId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return { success: false, error: "Unauthorized" };
@@ -15,7 +15,7 @@ export async function deleteClass(classRoomId: string) {
 
   const validationResult = deleteClassSchema.safeParse({
     userId: session.user.id,
-    classRoomId,
+    classId,
   });
 
   if (!validationResult.success) {

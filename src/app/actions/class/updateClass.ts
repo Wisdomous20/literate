@@ -4,11 +4,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { updateClassService } from "@/service/class/updateClassService";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
-import { updateClassSchema } from "@/lib/validation/classroom";
+import { updateClassSchema } from "@/lib/validation/class";
 import { revalidatePath } from "next/cache";
 
 export async function updateClass(
-  classRoomId: string,
+  classId: string,
   name?: string,
   archived?: boolean
 ) {
@@ -19,7 +19,7 @@ export async function updateClass(
 
   const validationResult = updateClassSchema.safeParse({
     userId: session.user.id,
-    classRoomId,
+    classId,
     name,
     archived,
   });
@@ -36,7 +36,7 @@ export async function updateClass(
   if (result.success) {
     revalidatePath("/dashboard/class/all");
     revalidatePath("/dashboard/class/archive");
-    revalidatePath(`/dashboard/class/${classRoomId}`);
+    revalidatePath(`/dashboard/class/${classId}`);
   }
 
   return result;

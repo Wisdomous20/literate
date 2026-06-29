@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockPrisma = vi.hoisted(() => ({
-  classRoom: { count: vi.fn() },
+  class: { count: vi.fn() },
   student: { count: vi.fn() },
 }));
 const mockHasActiveSubscription = vi.hoisted(() => vi.fn());
@@ -21,7 +21,7 @@ describe("getResourceLimitStatus", () => {
 
   it("reports free-tier caps for an unsubscribed user", async () => {
     mockHasActiveSubscription.mockResolvedValue(false);
-    mockPrisma.classRoom.count.mockResolvedValue(1);
+    mockPrisma.class.count.mockResolvedValue(1);
     mockPrisma.student.count.mockResolvedValue(0);
 
     const status = await getResourceLimitStatus("user-1");
@@ -32,14 +32,14 @@ describe("getResourceLimitStatus", () => {
       students: { count: 0, max: FREE_TIER_LIMITS.MAX_STUDENTS },
     });
     // Only non-archived classes count toward the cap.
-    expect(mockPrisma.classRoom.count).toHaveBeenCalledWith({
+    expect(mockPrisma.class.count).toHaveBeenCalledWith({
       where: { userId: "user-1", archived: false },
     });
   });
 
   it("reports unlimited (Infinity) caps for a paid user", async () => {
     mockHasActiveSubscription.mockResolvedValue(true);
-    mockPrisma.classRoom.count.mockResolvedValue(12);
+    mockPrisma.class.count.mockResolvedValue(12);
     mockPrisma.student.count.mockResolvedValue(340);
 
     const status = await getResourceLimitStatus("user-1");

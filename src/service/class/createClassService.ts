@@ -45,7 +45,7 @@ export async function createClassService(
   // first class (0 → 1), so registration/invite bootstrap still succeeds.
   const isPaid = await hasActiveSubscription(userId);
   if (!isPaid) {
-    const existingClasses = await prisma.classRoom.count({
+    const existingClasses = await prisma.class.count({
       where: { userId, archived: false },
     });
     if (existingClasses >= FREE_TIER_LIMITS.MAX_CLASSES) {
@@ -60,7 +60,7 @@ export async function createClassService(
   // Determine the school year based on the current date
   const schoolYear = getSchoolYear();
   try {
-    const newClass = await prisma.classRoom.create({
+    const newClass = await prisma.class.create({
       data: {
         name: name.trim(),
         userId,

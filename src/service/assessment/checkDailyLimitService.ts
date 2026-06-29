@@ -54,24 +54,24 @@ function getTodayRange() {
 export async function getDailyUsage(userId: string): Promise<DailyUsage> {
   const { startOfDay, endOfDay } = getTodayRange();
 
-  // Get all classrooms owned by this user
-  const classRooms = await prisma.classRoom.findMany({
+  // Get all classes owned by this user
+  const classes = await prisma.class.findMany({
     where: { userId },
     select: { id: true },
   });
 
-  const classRoomIds = classRooms.map((c) => c.id);
+  const classIds = classes.map((c) => c.id);
 
-  if (classRoomIds.length === 0) {
+  if (classIds.length === 0) {
     return { ORAL_READING: 0, COMPREHENSION: 0, READING_FLUENCY: 0 };
   }
 
-  // Count assessments by type created today for students in the user's classrooms
+  // Count assessments by type created today for students in the user's classes
   const counts = await prisma.assessment.groupBy({
     by: ["type"],
     where: {
       student: {
-        classRoomId: { in: classRoomIds },
+        classId: { in: classIds },
       },
       dateTaken: {
         gte: startOfDay,
@@ -207,8 +207,8 @@ export async function getResourceLimitStatus(
 ): Promise<ResourceLimitStatus> {
   const [isPaid, classCount, studentCount] = await Promise.all([
     hasActiveSubscription(userId),
-    prisma.classRoom.count({ where: { userId, archived: false } }),
-    prisma.student.count({ where: { classRoom: { userId } } }),
+    prisma.class.count({ where: { userId, archived: false } }),
+    prisma.student.count({ where: { class: { userId } } }),
   ]);
 
   return {

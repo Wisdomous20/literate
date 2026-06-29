@@ -108,7 +108,7 @@ function buildSession({
     assessment: {
       id: "a-1",
       passage: { content: passage, language: "english" },
-      student: { classRoom: { userId: "teacher-1" } },
+      student: { class: { userId: "teacher-1" } },
     },
   };
 }

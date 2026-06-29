@@ -67,7 +67,7 @@ describe("getClassificationDistribution", () => {
           student: expect.objectContaining({
             archived: false,
             level: 5,
-            classRoom: {
+            class: {
               userId: "user-1",
               schoolYear: "2025-2026",
               archived: false,

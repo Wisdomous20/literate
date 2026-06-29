@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { createClassService } from "@/service/class/createClassService";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
-import { createClassSchema } from "@/lib/validation/classroom";
+import { createClassSchema } from "@/lib/validation/class";
 import { revalidatePath } from "next/cache";
 
 export async function createClass(name: string) {

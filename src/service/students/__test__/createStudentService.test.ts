@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockPrisma = vi.hoisted(() => ({
-  classRoom: { findFirst: vi.fn() },
+  class: { findFirst: vi.fn() },
   student: { findFirst: vi.fn(), create: vi.fn(), count: vi.fn() },
 }));
 
@@ -23,7 +23,7 @@ const baseInput = {
 };
 
 const baseClass = { id: "class-1", name: "Grade 3 - A", userId: "user-1", schoolYear: "2025-2026" };
-const baseStudent = { id: "student-1", name: "Ana Reyes", level: 3, classRoomId: "class-1" };
+const baseStudent = { id: "student-1", name: "Ana Reyes", level: 3, classId: "class-1" };
 
 describe("createStudentService", () => {
   beforeEach(() => {
@@ -38,7 +38,7 @@ describe("createStudentService", () => {
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("VALIDATION_ERROR");
-    expect(mockPrisma.classRoom.findFirst).not.toHaveBeenCalled();
+    expect(mockPrisma.class.findFirst).not.toHaveBeenCalled();
   });
 
   it("returns VALIDATION_ERROR when name is only whitespace", async () => {
@@ -70,7 +70,7 @@ describe("createStudentService", () => {
   });
 
   it("returns CLASS_NOT_FOUND when no matching class exists", async () => {
-    mockPrisma.classRoom.findFirst.mockResolvedValue(null);
+    mockPrisma.class.findFirst.mockResolvedValue(null);
 
     const result = await createStudentService(baseInput);
 
@@ -80,7 +80,7 @@ describe("createStudentService", () => {
   });
 
   it("returns VALIDATION_ERROR when the student already exists in the class", async () => {
-    mockPrisma.classRoom.findFirst.mockResolvedValue(baseClass);
+    mockPrisma.class.findFirst.mockResolvedValue(baseClass);
     mockPrisma.student.findFirst.mockResolvedValue({ id: "student-1" });
 
     const result = await createStudentService(baseInput);
@@ -92,7 +92,7 @@ describe("createStudentService", () => {
   });
 
   it("creates and returns the student on success", async () => {
-    mockPrisma.classRoom.findFirst.mockResolvedValue(baseClass);
+    mockPrisma.class.findFirst.mockResolvedValue(baseClass);
     mockPrisma.student.findFirst.mockResolvedValue(null);
     mockPrisma.student.create.mockResolvedValue(baseStudent);
 
@@ -103,7 +103,7 @@ describe("createStudentService", () => {
   });
 
   it("trims the student name before storing", async () => {
-    mockPrisma.classRoom.findFirst.mockResolvedValue(baseClass);
+    mockPrisma.class.findFirst.mockResolvedValue(baseClass);
     mockPrisma.student.findFirst.mockResolvedValue(null);
     mockPrisma.student.create.mockResolvedValue(baseStudent);
 
@@ -114,19 +114,19 @@ describe("createStudentService", () => {
   });
 
   it("looks up the class using the trimmed className and schoolYear", async () => {
-    mockPrisma.classRoom.findFirst.mockResolvedValue(baseClass);
+    mockPrisma.class.findFirst.mockResolvedValue(baseClass);
     mockPrisma.student.findFirst.mockResolvedValue(null);
     mockPrisma.student.create.mockResolvedValue(baseStudent);
 
     await createStudentService({ ...baseInput, className: "  Grade 3 - A  ", schoolYear: "  2025-2026  " });
 
-    const classQuery = mockPrisma.classRoom.findFirst.mock.calls[0][0];
+    const classQuery = mockPrisma.class.findFirst.mock.calls[0][0];
     expect(classQuery.where.name).toBe("Grade 3 - A");
     expect(classQuery.where.schoolYear).toBe("2025-2026");
   });
 
   it("returns INTERNAL_ERROR when prisma throws", async () => {
-    mockPrisma.classRoom.findFirst.mockRejectedValue(new Error("DB down"));
+    mockPrisma.class.findFirst.mockRejectedValue(new Error("DB down"));
 
     const result = await createStudentService(baseInput);
 
@@ -136,7 +136,7 @@ describe("createStudentService", () => {
 
   it("blocks a free user who already has 1 student", async () => {
     mockHasActiveSubscription.mockResolvedValue(false);
-    mockPrisma.classRoom.findFirst.mockResolvedValue(baseClass);
+    mockPrisma.class.findFirst.mockResolvedValue(baseClass);
     mockPrisma.student.findFirst.mockResolvedValue(null);
     mockPrisma.student.count.mockResolvedValue(1);
 
@@ -149,13 +149,13 @@ describe("createStudentService", () => {
     );
     expect(mockPrisma.student.create).not.toHaveBeenCalled();
     expect(mockPrisma.student.count).toHaveBeenCalledWith({
-      where: { classRoom: { userId: "user-1" } },
+      where: { class: { userId: "user-1" } },
     });
   });
 
   it("allows a free user's first student (0 → 1)", async () => {
     mockHasActiveSubscription.mockResolvedValue(false);
-    mockPrisma.classRoom.findFirst.mockResolvedValue(baseClass);
+    mockPrisma.class.findFirst.mockResolvedValue(baseClass);
     mockPrisma.student.findFirst.mockResolvedValue(null);
     mockPrisma.student.count.mockResolvedValue(0);
     mockPrisma.student.create.mockResolvedValue(baseStudent);
@@ -167,7 +167,7 @@ describe("createStudentService", () => {
 
   it("does not gate a paid user regardless of student count", async () => {
     mockHasActiveSubscription.mockResolvedValue(true);
-    mockPrisma.classRoom.findFirst.mockResolvedValue(baseClass);
+    mockPrisma.class.findFirst.mockResolvedValue(baseClass);
     mockPrisma.student.findFirst.mockResolvedValue(null);
     mockPrisma.student.count.mockResolvedValue(99);
     mockPrisma.student.create.mockResolvedValue(baseStudent);

@@ -1,11 +1,24 @@
 import { PrismaClient } from "../generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
+const PRISMA_CLIENT_SCHEMA_VERSION = "2026-06-29-class-model-rename";
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+  prismaSchemaVersion: string | undefined;
+};
 
 function getPrismaClient() {
-  if (globalForPrisma.prisma) {
+  if (
+    globalForPrisma.prisma &&
+    globalForPrisma.prismaSchemaVersion === PRISMA_CLIENT_SCHEMA_VERSION &&
+    "class" in globalForPrisma.prisma
+  ) {
     return globalForPrisma.prisma;
+  }
+
+  if (globalForPrisma.prisma) {
+    void globalForPrisma.prisma.$disconnect().catch(() => undefined);
   }
 
   const adapter = new PrismaPg({
@@ -15,6 +28,7 @@ function getPrismaClient() {
   const client = new PrismaClient({ adapter });
 
   globalForPrisma.prisma = client;
+  globalForPrisma.prismaSchemaVersion = PRISMA_CLIENT_SCHEMA_VERSION;
   return client;
 }
 

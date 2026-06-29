@@ -41,9 +41,9 @@ export function QuickActions({ schoolYear, minimal }: QuickActionsProps) {
       COMPREHENSION: "comprehension-report",
     };
     const reportType = reportTypeMap[item.assessmentType];
-    if (reportType && item.classRoomId && item.studentId && item.id) {
+    if (reportType && item.classId && item.studentId && item.id) {
       router.push(
-        `/dashboard/class/${item.classRoomId}/report/${item.studentId}/${reportType}?id=${item.id}`
+        `/dashboard/class/${item.classId}/report/${item.studentId}/${reportType}?id=${item.id}`
       );
     }
   };

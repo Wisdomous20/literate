@@ -6,14 +6,14 @@ import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { getAssessmentsByClassSchema } from "@/lib/validation/assessment";
 import { getAssessmentSummariesByClassService } from "@/service/assessment/getAssessmentSummariesByClassService";
 
-export async function getAssessmentSummariesByClass(classRoomId: string) {
+export async function getAssessmentSummariesByClass(classId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     throw new Error("Unauthorized");
   }
 
   const validationResult = getAssessmentsByClassSchema.safeParse({
-    classRoomId,
+    classId,
   });
 
   if (!validationResult.success) {
@@ -21,7 +21,7 @@ export async function getAssessmentSummariesByClass(classRoomId: string) {
   }
 
   const result = await getAssessmentSummariesByClassService(
-    validationResult.data.classRoomId,
+    validationResult.data.classId,
     session.user.id,
   );
 

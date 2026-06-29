@@ -79,10 +79,10 @@ export default function ArchivedClassesPage() {
     setTimeout(() => setToast(null), 4000);
   };
 
-  const handleRestore = async (classRoomId: string) => {
+  const handleRestore = async (classId: string) => {
     try {
-      setRestoringId(classRoomId);
-      const result = await updateClass(classRoomId, undefined, false);
+      setRestoringId(classId);
+      const result = await updateClass(classId, undefined, false);
 
       if (!result.success) {
         showToast(result.error || "Failed to restore class.", "error");

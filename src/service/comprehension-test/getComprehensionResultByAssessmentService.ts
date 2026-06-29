@@ -20,7 +20,7 @@ export async function getComprehensionResultByAssessmentService(
           assessmentId,
           assessment: {
             student: {
-              classRoom: {
+              class: {
                 userId,
               },
             },

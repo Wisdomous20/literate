@@ -276,7 +276,7 @@ export function ClassInventory({
                 className="rounded-2xl overflow-hidden border border-b-[6px] border-[#5D5DFB] bg-white min-h-35 shadow-lg shadow-[#5D5DFB]/10"
               >
                 <ClassCard
-                  classRoomId={classItem.id}
+                  classId={classItem.id}
                   name={classItem.name}
                   studentCount={classItem.studentCount}
                   variant={classItem.variant}

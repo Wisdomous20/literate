@@ -137,7 +137,7 @@ function MemberRow({
     if (removing || member.isOwner) return;
 
     const confirmed = window.confirm(
-      `Remove ${fullName || member.email} from this organization? Their account, classrooms, students, and assessments will remain, but they will lose organization subscription access.`
+      `Remove ${fullName || member.email} from this organization? Their account, classes, students, and assessments will remain, but they will lose organization subscription access.`
     );
     if (!confirmed) return;
 

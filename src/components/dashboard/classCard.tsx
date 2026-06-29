@@ -15,7 +15,7 @@ interface ClassCardProps {
   studentCount: number;
   variant?: ClassCardVariant;
   onClick?: () => void;
-  classRoomId: string;
+  classId: string;
   onClassUpdated?: () => void;
 }
 
@@ -53,7 +53,7 @@ export function ClassCard({
   studentCount,
   variant = "blue",
   onClick,
-  classRoomId,
+  classId,
   onClassUpdated,
 }: ClassCardProps) {
   const styles = variantStyles[variant];
@@ -82,7 +82,7 @@ export function ClassCard({
   const handleArchive = async () => {
     setIsArchiving(true);
     try {
-      const result = await deleteClass(classRoomId);
+      const result = await deleteClass(classId);
       if (result.success) {
         setIsArchiveModalOpen(false);
         setIsMenuOpen(false);
@@ -231,7 +231,7 @@ export function ClassCard({
 
       <UpdateClassModal
         isOpen={isUpdateModalOpen}
-        classRoomId={classRoomId}
+        classId={classId}
         currentName={name}
         onClose={() => setIsUpdateModalOpen(false)}
         onUpdateSuccess={() => {

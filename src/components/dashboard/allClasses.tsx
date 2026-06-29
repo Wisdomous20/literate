@@ -209,7 +209,7 @@ export default function AllClassesPage({
                   className="rounded-2xl overflow-hidden border border-b-[6px] border-[#6666FF] bg-white min-h-35 shadow-lg shadow-[#6666FF]/10"
                 >
                   <ClassCard
-                    classRoomId={c.id}
+                    classId={c.id}
                     name={c.name}
                     studentCount={c.studentCount}
                     variant={getVariant(idx)}

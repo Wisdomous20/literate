@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { getStudentServiceById } from "@/service/students/getStudentServiceById";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
-import { getStudentByIdSchema } from "@/lib/validation/classroom";
+import { getStudentByIdSchema } from "@/lib/validation/class";
 
 export async function getStudentAction(studentId: string) {
   const session = await getServerSession(authOptions);

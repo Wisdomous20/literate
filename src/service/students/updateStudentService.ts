@@ -13,7 +13,7 @@ interface UpdateStudentResult {
   student?: {
     id: string;
     name: string;
-    classRoomId: string;
+    classId: string;
     level?: number;
   };
   error?: string;
@@ -62,7 +62,7 @@ export async function updateStudentService(
     const existing = await prisma.student.findFirst({
       where: {
         id: studentId,
-        classRoom: { userId },
+        class: { userId },
       },
       select: { id: true },
     });
@@ -87,7 +87,7 @@ export async function updateStudentService(
         id: true,
         name: true,
         level: true,
-        classRoomId: true,
+        classId: true,
       },
     });
 

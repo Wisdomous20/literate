@@ -30,7 +30,7 @@ describe("assessment authorization", () => {
     expect(mockPrisma.student.findFirst).not.toHaveBeenCalled();
   });
 
-  it("allows a teacher to access a student in their active classroom", async () => {
+  it("allows a teacher to access a student in their active class", async () => {
     mockGetServerSession.mockResolvedValue({ user: { id: "teacher-1" } });
     mockPrisma.student.findFirst.mockResolvedValue({ id: "student-1" });
 
@@ -39,13 +39,13 @@ describe("assessment authorization", () => {
       expect.objectContaining({
         where: expect.objectContaining({
           id: "student-1",
-          classRoom: expect.objectContaining({ userId: "teacher-1" }),
+          class: expect.objectContaining({ userId: "teacher-1" }),
         }),
       }),
     );
   });
 
-  it("denies a teacher access to a student outside their classroom", async () => {
+  it("denies a teacher access to a student outside their class", async () => {
     mockGetServerSession.mockResolvedValue({ user: { id: "teacher-1" } });
     mockPrisma.student.findFirst.mockResolvedValue(null);
 
@@ -88,7 +88,7 @@ describe("assessment authorization", () => {
     ).resolves.toBe(false);
   });
 
-  it("denies session access outside the authenticated teacher's classroom", async () => {
+  it("denies session access outside the authenticated teacher's class", async () => {
     mockGetServerSession.mockResolvedValue({ user: { id: "teacher-1" } });
     mockPrisma.oralFluencyResult.findFirst.mockResolvedValue(null);
 

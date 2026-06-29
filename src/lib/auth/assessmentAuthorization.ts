@@ -46,7 +46,7 @@ export async function hasStudentAccess(
     where: {
       id: studentId,
       archived: false,
-      classRoom: {
+      class: {
         userId,
         archived: false,
       },
@@ -70,7 +70,7 @@ export async function hasAssessmentAccess(
         id: assessmentId,
         student: {
           archived: false,
-          classRoom: {
+          class: {
             userId,
             archived: false,
           },
@@ -110,7 +110,7 @@ export async function hasSessionAccess(
       assessment: {
         student: {
           archived: false,
-          classRoom: {
+          class: {
             userId,
             archived: false,
           },

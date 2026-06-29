@@ -7,7 +7,7 @@ import { updateClass } from "@/app/actions/class/updateClass";
 
 interface UpdateClassModalProps {
   isOpen: boolean;
-  classRoomId: string;
+  classId: string;
   currentName: string;
   onClose: () => void;
   onUpdateSuccess?: () => void;
@@ -15,7 +15,7 @@ interface UpdateClassModalProps {
 
 export function UpdateClassModal({
   isOpen,
-  classRoomId,
+  classId,
   currentName,
   onClose,
   onUpdateSuccess,
@@ -78,7 +78,7 @@ export function UpdateClassModal({
     setError(null);
 
     try {
-      const result = await updateClass(classRoomId, className);
+      const result = await updateClass(classId, className);
       if (result.success) {
         onUpdateSuccess?.();
         onClose();

@@ -15,7 +15,7 @@ const transactionClient = vi.hoisted(() => ({
 
 const mockPrisma = vi.hoisted(() => ({
   user: { findFirst: vi.fn() },
-  classRoom: { create: vi.fn() },
+  class: { create: vi.fn() },
   $transaction: vi.fn((callback) => callback(transactionClient)),
 }));
 
@@ -68,7 +68,7 @@ describe("acceptInvitationService", () => {
     transactionClient.organizationMember.findUnique.mockResolvedValue(null);
     transactionClient.organizationMember.create.mockResolvedValue({ id: "member-1" });
     transactionClient.user.create.mockResolvedValue({ id: "user-1" });
-    mockPrisma.classRoom.create.mockResolvedValue({ id: "class-1" });
+    mockPrisma.class.create.mockResolvedValue({ id: "class-1" });
   });
 
   it("rejects an existing account when a different account is signed in", async () => {
@@ -175,7 +175,7 @@ describe("acceptInvitationService", () => {
       }),
       select: { id: true },
     });
-    expect(mockPrisma.classRoom.create).toHaveBeenCalledWith({
+    expect(mockPrisma.class.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ userId: "user-1" }),
     });
   });

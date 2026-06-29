@@ -35,7 +35,7 @@ export async function getOralReadingResultByIdService(
             id: oralReadingResultId,
             assessment: {
               student: {
-                classRoom: {
+                class: {
                   userId,
                 },
               },

@@ -36,7 +36,7 @@ export const createStudentSchema = z.object({
 export const updateClassSchema = z
   .object({
     userId: idString("User ID"),
-    classRoomId: idString("Class ID"),
+    classId: idString("Class ID"),
     name: optionalTrimmedString(),
     archived: optionalBoolean(),
   })
@@ -44,17 +44,17 @@ export const updateClassSchema = z
     (data) => data.name !== undefined || data.archived !== undefined,
     {
       message: "Nothing to update",
-      path: ["classRoomId"],
+      path: ["classId"],
     }
   );
 
 export const deleteClassSchema = z.object({
   userId: idString("User ID"),
-  classRoomId: idString("Class ID"),
+  classId: idString("Class ID"),
 });
 
 export const getClassByIdSchema = z.object({
-  classRoomId: idString("Class ID"),
+  classId: idString("Class ID"),
 });
 
 export const getClassListSchema = z.object({

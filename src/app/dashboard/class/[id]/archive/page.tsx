@@ -19,7 +19,7 @@ export default function ArchivedStudentsPage() {
   const params = useParams();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const classRoomId = params.id as string;
+  const classId = params.id as string;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -29,12 +29,12 @@ export default function ArchivedStudentsPage() {
     type: "success" | "error";
   } | null>(null);
 
-  const { data: classData } = useClassById(classRoomId);
+  const { data: classData } = useClassById(classId);
   const {
     data: archivedStudents = [],
     isLoading,
     error,
-  } = useArchivedStudentsByClassId(classRoomId);
+  } = useArchivedStudentsByClassId(classId);
 
   const studentsPerPage = 10;
   const filteredStudents = useMemo(
@@ -71,10 +71,10 @@ export default function ArchivedStudentsPage() {
         return;
       }
 
-      queryClient.invalidateQueries({ queryKey: ["archived-students", classRoomId] });
-      queryClient.invalidateQueries({ queryKey: ["class", classRoomId] });
+      queryClient.invalidateQueries({ queryKey: ["archived-students", classId] });
+      queryClient.invalidateQueries({ queryKey: ["class", classId] });
       queryClient.invalidateQueries({
-        queryKey: ["assessment-summaries", classRoomId],
+        queryKey: ["assessment-summaries", classId],
       });
       showToast("Student restored successfully!", "success");
     } catch (err) {
@@ -103,7 +103,7 @@ export default function ArchivedStudentsPage() {
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => router.push(`/dashboard/class/${classRoomId}`)}
+                onClick={() => router.push(`/dashboard/class/${classId}`)}
                 className="inline-flex items-center gap-1.5 rounded-full border border-[#6666FF]/40 bg-white px-4 py-2 text-xs font-semibold text-[#6666FF] transition-transform hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />

@@ -172,7 +172,7 @@ export async function acceptInvitationService(
       try {
         const schoolYear = getSchoolYear();
 
-        await prisma.classRoom.create({
+        await prisma.class.create({
           data: { name: "My Class", userId: result.userId, schoolYear },
         });
       } catch (error) {

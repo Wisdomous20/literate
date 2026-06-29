@@ -44,7 +44,7 @@ export async function getClassificationDistribution(
 
   const assessmentScope = {
     student: {
-      classRoom: {
+      class: {
         userId,
         schoolYear,
         archived: false,

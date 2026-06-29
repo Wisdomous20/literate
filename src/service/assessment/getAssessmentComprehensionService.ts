@@ -36,7 +36,7 @@ export async function getAssessmentComprehensionService(
           where: {
             id: assessmentId,
             student: {
-              classRoom: {
+              class: {
                 userId,
               },
             },

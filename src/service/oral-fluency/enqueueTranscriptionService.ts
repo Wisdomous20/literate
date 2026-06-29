@@ -54,7 +54,7 @@ export async function enqueueTranscriptionService(
           where: {
             id: assessmentId,
             student: {
-              classRoom: {
+              class: {
                 userId: input.userId,
               },
             },

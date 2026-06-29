@@ -34,7 +34,7 @@ export async function getArchivedClassServiceBySchoolYear(
   }
 
   try {
-    const classes = await prisma.classRoom.findMany({
+    const classes = await prisma.class.findMany({
       where: {
         userId,
         schoolYear,

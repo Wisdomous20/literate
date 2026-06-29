@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { updateStudentService } from "@/service/students/updateStudentService";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
-import { updateStudentSchema } from "@/lib/validation/classroom";
+import { updateStudentSchema } from "@/lib/validation/class";
 import { revalidatePath } from "next/cache";
 
 export async function updateStudent(

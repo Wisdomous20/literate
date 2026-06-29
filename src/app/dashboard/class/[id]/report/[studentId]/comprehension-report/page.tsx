@@ -40,14 +40,14 @@ function getLevelColorClass(level: string): string {
 export default function ReadingComprehensionReportPage() {
   const params = useParams();
   const searchParams = useSearchParams();
-  const classRoomId = params.id as string;
+  const classId = params.id as string;
   const studentId = params.studentId as string;
   const assessmentId = searchParams.get("id");
 
   const { data: allAssessments = [], isLoading } =
     useAssessmentsByStudent(studentId);
 
-  const { data: classData } = useClassById(classRoomId);
+  const { data: classData } = useClassById(classId);
 
   const assessment = useMemo(
     () =>

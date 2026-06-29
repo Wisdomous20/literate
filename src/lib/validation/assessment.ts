@@ -61,7 +61,7 @@ export const getAssessmentsByStudentSchema = z.object({
 });
 
 export const getAssessmentsByClassSchema = z.object({
-  classRoomId: idString("Class ID"),
+  classId: idString("Class ID"),
 });
 
 export const studentAssessmentIdSchema = z.object({

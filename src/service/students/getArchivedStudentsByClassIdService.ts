@@ -4,13 +4,13 @@ interface ArchivedStudentItem {
   id: string;
   name: string;
   level?: number;
-  classRoomId: string;
+  classId: string;
   archived: boolean;
 }
 
 interface GetArchivedStudentsByClassIdInput {
   userId: string;
-  classRoomId: string;
+  classId: string;
 }
 
 interface GetArchivedStudentsByClassIdResult {
@@ -23,9 +23,9 @@ interface GetArchivedStudentsByClassIdResult {
 export async function getArchivedStudentsByClassIdService(
   input: GetArchivedStudentsByClassIdInput,
 ): Promise<GetArchivedStudentsByClassIdResult> {
-  const { userId, classRoomId } = input;
+  const { userId, classId } = input;
 
-  if (!userId || !classRoomId) {
+  if (!userId || !classId) {
     return {
       success: false,
       error: "User ID and class ID are required",
@@ -34,9 +34,9 @@ export async function getArchivedStudentsByClassIdService(
   }
 
   try {
-    const classExists = await prisma.classRoom.findFirst({
+    const classExists = await prisma.class.findFirst({
       where: {
-        id: classRoomId,
+        id: classId,
         userId,
       },
       select: { id: true },
@@ -52,14 +52,14 @@ export async function getArchivedStudentsByClassIdService(
 
     const students = await prisma.student.findMany({
       where: {
-        classRoomId,
+        classId,
         archived: true,
       },
       select: {
         id: true,
         name: true,
         level: true,
-        classRoomId: true,
+        classId: true,
         archived: true,
       },
       orderBy: {

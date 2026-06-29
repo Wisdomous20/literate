@@ -3,7 +3,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
-import { getClassListSchema } from "@/lib/validation/classroom";
+import { getClassListSchema } from "@/lib/validation/class";
 import { getArchivedClassServiceBySchoolYear } from "@/service/class/getArchivedClassServiceBySchoolYear";
 
 export async function getArchivedClassListBySchoolYear(schoolYear: string) {
