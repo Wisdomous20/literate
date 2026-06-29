@@ -23,7 +23,7 @@ export function PassageAdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(179,164,241,0.22),transparent_24%),linear-gradient(180deg,#FCFBFF_0%,#F5F2FF_100%)]">
-      <header className="sticky top-0 z-30 border-b border-[#E1DDFB]/90 bg-white/90 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-[#E1DDFB]/90 bg-white">
         <div className="mx-auto flex min-h-[4.75rem] max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#6C4EEB]">

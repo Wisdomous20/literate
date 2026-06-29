@@ -149,12 +149,14 @@ export function AccountMenu({ accent = "navy" }: { accent?: Accent }) {
         )}
       </div>
 
-      {showPasswordModal && (
-        <ChangePasswordModal
-          accent={accent}
-          onClose={() => setShowPasswordModal(false)}
-        />
-      )}
+      {showPasswordModal &&
+        createPortal(
+          <ChangePasswordModal
+            accent={accent}
+            onClose={() => setShowPasswordModal(false)}
+          />,
+          document.body,
+        )}
     </>
   );
 }
@@ -176,9 +178,6 @@ function ChangePasswordModal({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -236,9 +235,7 @@ function ChangePasswordModal({
     });
   }
 
-  if (!mounted) return null;
-
-  return createPortal(
+  return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div
         className="fixed inset-0 bg-black/50"
@@ -419,7 +416,6 @@ function ChangePasswordModal({
           </div>
         )}
       </div>
-    </div>,
-    document.body,
+    </div>
   );
 }

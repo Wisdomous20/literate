@@ -17,7 +17,7 @@ export default function AdminLayout({
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(124,198,254,0.22),transparent_24%),radial-gradient(circle_at_top_right,rgba(36,83,166,0.14),transparent_20%),linear-gradient(180deg,#F4F8FC_0%,#ECF3FA_100%)]">
-      <header className="sticky top-0 z-30 border-b border-[#D6E3F8]/90 bg-white/88 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-[#D6E3F8]/90 bg-white">
         <div className="mx-auto flex h-[4.5rem] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#64809F]">
