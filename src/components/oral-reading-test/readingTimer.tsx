@@ -9,6 +9,7 @@ import {
   ChevronDown,
   RotateCcw,
   ArrowRight,
+  Info,
 } from "lucide-react";
 
 import { formatAudioClock } from "@/lib/readingDuration";
@@ -320,6 +321,19 @@ export function ReadingTimer({
           </div>
         )}
       </div>
+
+      {hasPassage && (
+        <div className="mt-2 flex w-fit max-w-[min(92vw,560px)] items-center gap-2 rounded-full border border-[#D8D0FF] bg-[#FAF9FF] px-3.5 py-2 text-left shadow-[0_1px_0_rgba(108,78,235,0.08)]">
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#EDE8FF]">
+            <Info className="h-3.5 w-3.5 text-[#6666FF]" />
+          </span>
+          <p className="text-[11px] font-medium leading-4 text-[#4B4B7D]">
+            <span className="font-bold text-[#31318A]">Accuracy note:</span>{" "}
+            oral reading and fluency results are best when the full passage is
+            read.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

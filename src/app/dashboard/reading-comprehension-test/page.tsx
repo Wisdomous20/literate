@@ -410,9 +410,60 @@ export default function ReadingComprehensionResultPage() {
     sessionStorage.removeItem("reading-comprehension-state");
   }, []);
 
-  const handleContinueToComprehension = useCallback(() => {
+  const handleContinueToComprehension = useCallback(async () => {
     if (!hasPassage || !studentName.trim() || !gradeLevel || !selectedClassName)
       return;
+    if (!selectedPassage || isLoadingQuestions) return;
+
+    setIsLoadingQuestions(true);
+    setQuestionsLoadError(null);
+
+    try {
+      const result = await getQuizByPassageAction(selectedPassage);
+      if (!result.success || !("quiz" in result) || !result.quiz) {
+        setToast({
+          message:
+            ("error" in result && result.error) ||
+            "Failed to load quiz questions.",
+          type: "error",
+        });
+        return;
+      }
+
+      const { quiz } = result;
+      const mappedQuestions: QuestionData[] = quiz.questions.map(
+        (
+          q: {
+            id: string;
+            questionText: string;
+            tags: string | null;
+            type: string;
+            options: unknown;
+          },
+          idx: number,
+        ) => ({
+          id: q.id,
+          questionNumber: idx + 1,
+          questionText: q.questionText,
+          type: q.type as "MULTIPLE_CHOICE" | "ESSAY",
+          tags: q.tags ?? undefined,
+          options: Array.isArray(q.options) ? (q.options as string[]) : undefined,
+        }),
+      );
+
+      setQuizId(quiz.id as string);
+      setQuestions(mappedQuestions);
+    } catch (err) {
+      console.error("Failed to fetch questions:", err);
+      setToast({
+        message: "Something went wrong while loading questions.",
+        type: "error",
+      });
+      return;
+    } finally {
+      setIsLoadingQuestions(false);
+    }
+
     if (passageRef.current) {
       setPassageInitialHeight(
         passageRef.current.getBoundingClientRect().height,
@@ -422,7 +473,14 @@ export default function ReadingComprehensionResultPage() {
     setTimeout(() => {
       questionsRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 100);
-  }, [hasPassage, studentName, gradeLevel, selectedClassName]);
+  }, [
+    hasPassage,
+    studentName,
+    gradeLevel,
+    selectedClassName,
+    selectedPassage,
+    isLoadingQuestions,
+  ]);
 
   const handleSelectOption = useCallback(
     (questionId: string, option: string) => {
@@ -851,7 +909,8 @@ export default function ReadingComprehensionResultPage() {
                   (!hasPassage ||
                   !studentName.trim() ||
                   !gradeLevel ||
-                  !selectedClassName
+                  !selectedClassName ||
+                  isLoadingQuestions
                     ? "bg-[#C4C4FF]/70"
                     : "bg-[#B3A4F1]/55")
                 }
@@ -863,26 +922,32 @@ export default function ReadingComprehensionResultPage() {
                   !hasPassage ||
                   !studentName.trim() ||
                   !gradeLevel ||
-                  !selectedClassName
+                  !selectedClassName ||
+                  isLoadingQuestions
                 }
                 className={
                   "relative rounded-full px-7 py-2 text-xs font-semibold text-white transition-transform duration-200 md:px-9 md:py-2.5 md:text-sm flex items-center gap-2 " +
                   (!hasPassage ||
                   !studentName.trim() ||
                   !gradeLevel ||
-                  !selectedClassName
+                  !selectedClassName ||
+                  isLoadingQuestions
                     ? "cursor-not-allowed bg-[#6666FF]/30 opacity-60 shadow-none"
                     : "bg-[#6666FF] shadow-[0_2px_8px_rgba(102,102,255,0.4)] hover:bg-[#5555EE] hover:-translate-y-0.5 active:translate-y-0")
                 }
                 title={
-                  !studentName.trim() || !gradeLevel || !selectedClassName
+                  isLoadingQuestions
+                    ? "Checking quiz questions"
+                    : !studentName.trim() || !gradeLevel || !selectedClassName
                     ? "Enter student information first"
                     : !hasPassage
                       ? "Add a passage first"
                       : undefined
                 }
               >
-                Continue to Comprehension
+                {isLoadingQuestions
+                  ? "Checking Questions..."
+                  : "Continue to Comprehension"}
                 <ArrowRight className="h-4 w-4" />
               </button>
             </div>

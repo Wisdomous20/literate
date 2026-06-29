@@ -170,12 +170,12 @@ export default function ReadingComprehensionQuestionsPage() {
   };
 
   useEffect(() => {
-    if (isSubmitted || isPaused) return;
+    if (isSubmitted || isPaused || questions.length === 0) return;
     const interval = setInterval(() => {
       setElapsedSeconds((prev) => prev + 1);
     }, 1000);
     return () => clearInterval(interval);
-  }, [isSubmitted, isPaused]);
+  }, [isSubmitted, isPaused, questions.length]);
 
   useEffect(() => {
     if (isLoading || !passageId) return;

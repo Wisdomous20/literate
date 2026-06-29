@@ -1,22 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockXenditRequest = vi.hoisted(() => vi.fn());
+const mockCreateInvoice = vi.hoisted(() => vi.fn());
 const mockPrisma = vi.hoisted(() => ({
   organizationMember: { findFirst: vi.fn() },
+  organization: { update: vi.fn() },
   plan: { upsert: vi.fn() },
-  subscription: { create: vi.fn(), update: vi.fn() },
+  subscription: { create: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
+  $transaction: vi.fn(),
 }));
+mockPrisma.$transaction.mockImplementation((cb) => cb(mockPrisma));
 
 vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));
 vi.mock("@/lib/xendit", () => ({ xenditRequest: mockXenditRequest }));
+vi.mock("@/service/subscription/invoiceService", () => ({
+  createInvoiceAndSendEmail: mockCreateInvoice,
+}));
 
 import { changeSubscriptionPlanService } from "../changeSubscriptionPlanService";
 
 const DAY = 24 * 60 * 60 * 1000;
 
 const xenditPlan = {
-  id: "plan-new",
-  actions: [{ action: "AUTH", url: "https://checkout.xendit.co/pay/plan-new" }],
+  payment_session_id: "ps-new",
+  payment_link_url: "https://checkout.xendit.co/pay/plan-new",
+  customer_id: "cust-1",
 };
 
 /** Active subscription on a TEAM org with ~half the period remaining. */
@@ -38,6 +46,11 @@ function activeTeamSubscription(priceAmountSnapshot: number) {
 function setupCurrentSubscription(priceAmountSnapshot: number) {
   mockPrisma.organizationMember.findFirst.mockResolvedValue({
     role: "OWNER",
+    user: {
+      firstName: "Juan",
+      lastName: "Dela Cruz",
+      email: "juan@example.com",
+    },
     organization: {
       id: "org-1",
       type: "TEAM",
@@ -75,20 +88,28 @@ describe("changeSubscriptionPlanService", () => {
       organizationId: "org-1",
       status: "PENDING",
       priceAmountSnapshot: 15000, // full PANALO price snapshot
-      xenditPlanId: "plan-new",
+      xenditPlanId: "ps-new",
     });
   });
 
-  it("bills the recurring plan at full price (discount never leaks into renewals)", async () => {
+  it("charges the prorated amount immediately and keeps full-price snapshots", async () => {
     setupCurrentSubscription(5000);
 
-    await changeSubscriptionPlanService("user-1", "PANALO");
+    const result = await changeSubscriptionPlanService("user-1", "PANALO");
+    if (!result.success) throw new Error("expected success");
 
     const planCall = mockXenditRequest.mock.calls.find(
-      (c) => c[0] === "/recurring/plans",
+      (c) => c[0] === "/sessions",
     );
-    expect(planCall?.[2].amount).toBe(15000);
-    // Anchors renewals to the current period boundary and tags the swap metadata.
+    expect(planCall?.[2].amount).toBeCloseTo(result.newCharge, 2);
+    expect(planCall?.[2].session_type).toBe("PAY");
+    expect(planCall?.[2].allow_save_payment_method).toBe("FORCED");
+    expect(planCall?.[2].channel_properties.cards).toMatchObject({
+      card_on_file_type: "RECURRING",
+      recurring_configuration: {
+        recurring_frequency: 365,
+      },
+    });
     expect(planCall?.[2].metadata).toMatchObject({
       planChange: "true",
       previousXenditPlanId: "plan-old",
@@ -114,10 +135,12 @@ describe("changeSubscriptionPlanService", () => {
     if (!result.success) throw new Error("expected success");
     expect(result.credit).toBeGreaterThan(5000);
     expect(result.newCharge).toBe(0);
-    // Recurring still bills full KASALO price.
-    const planCall = mockXenditRequest.mock.calls.find(
-      (c) => c[0] === "/recurring/plans",
+    expect(mockXenditRequest).not.toHaveBeenCalled();
+    expect(mockCreateInvoice).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subtotalAmount: 5000,
+        totalAmount: 0,
+      }),
     );
-    expect(planCall?.[2].amount).toBe(5000);
   });
 });

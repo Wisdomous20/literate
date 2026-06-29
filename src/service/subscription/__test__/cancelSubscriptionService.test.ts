@@ -15,7 +15,7 @@ import { cancelSubscriptionService } from "../cancelSubscriptionService";
 const activeSubscription = {
   id: "sub-1",
   status: "ACTIVE",
-  xenditPlanId: "plan-abc",
+  xenditPlanId: "repl_plan-abc",
 };
 
 /** The service resolves the manageable PERSONAL subscription via findMany. */
@@ -56,7 +56,7 @@ describe("cancelSubscriptionService", () => {
     await cancelSubscriptionService("user-1");
 
     expect(mockXenditRequest).toHaveBeenCalledWith(
-      "/recurring/plans/plan-abc/deactivate",
+      "/recurring/plans/repl_plan-abc/deactivate",
       "POST",
     );
   });
@@ -93,5 +93,19 @@ describe("cancelSubscriptionService", () => {
     expect(result.success).toBe(false);
     expect(result.error).toBe("Failed to cancel subscription");
     expect(mockPrisma.subscription.update).not.toHaveBeenCalled();
+  });
+
+  it("does not call recurring deactivation for payment-session based subscriptions", async () => {
+    resolveSubscription({ ...activeSubscription, xenditPlanId: "ps-abc" });
+    mockPrisma.subscription.update.mockResolvedValue({});
+
+    const result = await cancelSubscriptionService("user-1");
+
+    expect(result.success).toBe(true);
+    expect(mockXenditRequest).not.toHaveBeenCalled();
+    expect(mockPrisma.subscription.update).toHaveBeenCalledWith({
+      where: { id: "sub-1" },
+      data: { status: "CANCELED" },
+    });
   });
 });

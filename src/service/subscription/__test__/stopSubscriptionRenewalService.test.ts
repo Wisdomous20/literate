@@ -16,7 +16,7 @@ const periodEnd = new Date("2027-01-01T00:00:00Z");
 
 const activeSub = {
   id: "sub-1",
-  xenditPlanId: "plan-1",
+  xenditPlanId: "repl_plan-1",
   status: "ACTIVE",
   cancelAtPeriodEnd: false,
   currentPeriodEnd: periodEnd,
@@ -73,7 +73,7 @@ describe("stopSubscriptionRenewalService", () => {
       alreadyStopped: false,
       currentPeriodEnd: periodEnd,
     });
-    expect(mockXendit).toHaveBeenCalledWith("/recurring/plans/plan-1/deactivate", "POST");
+    expect(mockXendit).toHaveBeenCalledWith("/recurring/plans/repl_plan-1/deactivate", "POST");
     expect(mockPrisma.subscription.update).toHaveBeenCalledWith({
       where: { id: "sub-1" },
       data: { cancelAtPeriodEnd: true },
@@ -88,5 +88,18 @@ describe("stopSubscriptionRenewalService", () => {
 
     expect(result).toEqual({ success: false, error: "Failed to stop renewal" });
     expect(mockPrisma.subscription.update).not.toHaveBeenCalled();
+  });
+
+  it("does not call recurring deactivation for payment-session based subscriptions", async () => {
+    resolveSubscription({ ...activeSub, xenditPlanId: "ps-123" });
+
+    const result = await stopSubscriptionRenewalService("user-1");
+
+    expect(result.success).toBe(true);
+    expect(mockXendit).not.toHaveBeenCalled();
+    expect(mockPrisma.subscription.update).toHaveBeenCalledWith({
+      where: { id: "sub-1" },
+      data: { cancelAtPeriodEnd: true },
+    });
   });
 });

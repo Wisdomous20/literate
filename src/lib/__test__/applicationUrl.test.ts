@@ -19,4 +19,13 @@ describe("buildApplicationUrl", () => {
       "https://example.com/assess/token",
     );
   });
+
+  it("preserves query strings in the target path", () => {
+    expect(
+      buildApplicationUrl(
+        "/dashboard/subscription?subscription=success",
+        "https://example.com/",
+      ),
+    ).toBe("https://example.com/dashboard/subscription?subscription=success");
+  });
 });

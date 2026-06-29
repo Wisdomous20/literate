@@ -20,9 +20,7 @@ export function buildApplicationUrl(
 
   const basePath = base.pathname.replace(/\/+$/, "");
   const relativePath = path.replace(/^\/+/, "");
-  base.pathname = `${basePath}/${relativePath}`;
-  base.search = "";
-  base.hash = "";
+  const target = new URL(relativePath, `${base.origin}${basePath}/`);
 
-  return base.toString();
+  return target.toString();
 }

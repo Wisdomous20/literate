@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { xenditRequest } from "@/lib/xendit";
 import { xenditWebhookSchema } from "@/lib/validation/subscription";
@@ -53,7 +54,94 @@ export async function POST(req: NextRequest) {
 
   try {
     switch (event) {
-      case "recurring.plan.activated": {
+      case "payment_session.completed":
+      case "payment_session.succeeded": {
+        const paymentSessionId =
+          payload.data.payment_session_id ??
+          payload.data.id ??
+          payload.data.reference_id ??
+          payload.data.metadata?.checkoutReferenceId;
+        const metadata = payload.data.metadata;
+
+        if (paymentSessionId) {
+          const requestedMaxMembers = Number(metadata?.maxMembers);
+          const maxMembers =
+            Number.isSafeInteger(requestedMaxMembers) && requestedMaxMembers > 0
+              ? requestedMaxMembers
+              : 1;
+          const isPlanChange = metadata?.planChange === "true";
+          const previousXenditPlanId =
+            typeof metadata?.previousXenditPlanId === "string"
+              ? metadata.previousXenditPlanId
+              : null;
+          const organizationId =
+            typeof metadata?.organizationId === "string"
+              ? metadata.organizationId
+              : null;
+          const planId =
+            typeof metadata?.planId === "string" ? metadata.planId : null;
+
+          const updatedSubscription = await prisma.$transaction(async (tx) => {
+            const target = await findPendingSubscriptionForPaymentSession(tx, {
+              paymentSessionId,
+              organizationId,
+              planId,
+            });
+
+            if (!target) {
+              throw new Error(
+                `Pending subscription not found for payment session ${paymentSessionId}`,
+              );
+            }
+
+            const updated = await tx.subscription.update({
+              where: { id: target.id },
+              data: {
+                status: "ACTIVE",
+                xenditPlanId: paymentSessionId,
+                maxMembersSnapshot: maxMembers,
+                currentPeriodStart: new Date(),
+                currentPeriodEnd: getNextYear(),
+              },
+            });
+
+            if (isPlanChange && previousXenditPlanId) {
+              await tx.subscription.updateMany({
+                where: {
+                  xenditPlanId: previousXenditPlanId,
+                  status: { in: ["ACTIVE", "PAST_DUE"] },
+                },
+                data: { status: "SUPERSEDED" },
+              });
+            }
+
+            await tx.organization.update({
+              where: { id: updated.organizationId },
+              data: { currentSubscriptionId: updated.id },
+            });
+
+            return updated;
+          });
+
+          await createInvoiceAndSendEmail({
+            subscriptionId: updatedSubscription.id,
+            providerInvoiceId: createProviderInvoiceId(event, paymentSessionId),
+            providerPaymentId: getPayloadId(payload.data),
+            providerPayload: payload.data,
+            ...(isPlanChange
+              ? {
+                  subtotalAmount: parseMetadataAmount(metadata?.subtotalAmount),
+                  discountAmount: parseMetadataAmount(metadata?.discountAmount),
+                  totalAmount: parseMetadataAmount(metadata?.totalAmount),
+                }
+              : {}),
+          });
+        }
+        break;
+      }
+
+      case "recurring.plan.activated":
+      case "recurring.plan.activation": {
         const planId = payload.data.id;
         const metadata = payload.data.metadata;
 
@@ -215,6 +303,38 @@ function getNextYear(): Date {
 function createProviderInvoiceId(event: string, planId: string): string {
   const datePart = new Date().toISOString().slice(0, 10);
   return `xendit:${event}:${planId}:${datePart}`;
+}
+
+async function findPendingSubscriptionForPaymentSession(
+  tx: Prisma.TransactionClient,
+  input: {
+    paymentSessionId: string;
+    organizationId: string | null;
+    planId: string | null;
+  },
+) {
+  const direct = await tx.subscription.findFirst({
+    where: {
+      xenditPlanId: input.paymentSessionId,
+      status: "PENDING",
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (direct) return direct;
+
+  if (!input.organizationId || !input.planId) {
+    return null;
+  }
+
+  return tx.subscription.findFirst({
+    where: {
+      organizationId: input.organizationId,
+      planId: input.planId,
+      status: "PENDING",
+    },
+    orderBy: { createdAt: "desc" },
+  });
 }
 
 function parseMetadataAmount(value: unknown): number | undefined {

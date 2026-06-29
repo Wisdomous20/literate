@@ -33,6 +33,17 @@ describe("getQuizByPassageService", () => {
     expect(result.error).toBe("No quiz found for this passage.");
   });
 
+  it("returns failure when the quiz has no questions", async () => {
+    mockPrisma.quiz.findUnique.mockResolvedValue({ id: "quiz-1", questions: [] });
+
+    const result = await getQuizByPassageService("passage-1");
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe(
+      "This passage has no quiz questions. Please add questions first.",
+    );
+  });
+
   it("returns the quiz with its questions on success", async () => {
     mockPrisma.quiz.findUnique.mockResolvedValue(baseQuiz);
 

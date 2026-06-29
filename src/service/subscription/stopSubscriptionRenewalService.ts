@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { xenditRequest } from "@/lib/xendit";
+import { isXenditRecurringPlanId } from "@/service/subscription/xenditProviderIds";
 
 export interface StopRenewalSuccess {
   success: true;
@@ -42,10 +43,12 @@ export async function stopSubscriptionRenewalService(
   }
 
   try {
-    await xenditRequest(
-      `/recurring/plans/${subscription.xenditPlanId}/deactivate`,
-      "POST"
-    );
+    if (isXenditRecurringPlanId(subscription.xenditPlanId)) {
+      await xenditRequest(
+        `/recurring/plans/${subscription.xenditPlanId}/deactivate`,
+        "POST"
+      );
+    }
 
     await prisma.subscription.update({
       where: { id: subscription.id },

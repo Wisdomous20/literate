@@ -144,6 +144,9 @@ describe("createStudentService", () => {
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("FREE_LIMIT_REACHED");
+    expect(result.error).toBe(
+      "Free users can only have one student. Upgrade to add more.",
+    );
     expect(mockPrisma.student.create).not.toHaveBeenCalled();
     expect(mockPrisma.student.count).toHaveBeenCalledWith({
       where: { classRoom: { userId: "user-1" } },
