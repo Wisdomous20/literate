@@ -66,8 +66,8 @@ const PLANS: Plan[] = [
     planKey: "PAMILYA",
     name: "KAPAMILYA",
     tagline: "For large institutions",
-    price: "₱50,000",
-    priceNote: "/ school year",
+    price: "₱1,100",
+    priceNote: "per user / school year",
     features: [
       "Complete access",
       "20-50 Users",
@@ -273,7 +273,7 @@ function SubscriptionPageContent() {
               Number of users
             </label>
             <p className="mt-1 text-xs text-[#6666FF]">
-              Choose {PAMILYA_MIN_MEMBERS}-{PAMILYA_MAX_MEMBERS} ₱50,000/year for 20-50 users.
+              Choose {PAMILYA_MIN_MEMBERS}-{PAMILYA_MAX_MEMBERS} ₱1,100/year per user.
             </p>
             <input
               id="memberCount"
