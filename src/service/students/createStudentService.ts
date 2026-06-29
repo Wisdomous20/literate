@@ -98,7 +98,7 @@ export async function createStudentService(
       if (existingStudents >= FREE_TIER_LIMITS.MAX_STUDENTS) {
         return {
           success: false,
-          error: "Free plan includes 1 student. Upgrade to add more.",
+          error: "Free users can only have one student. Upgrade to add more.",
           code: "FREE_LIMIT_REACHED",
         };
       }

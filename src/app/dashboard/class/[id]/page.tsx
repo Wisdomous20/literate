@@ -137,7 +137,7 @@ export default function ClassListsPage() {
           queryKey: ["assessment-summaries", classRoomId],
         });
       } else {
-        showToast("Failed to create student.", "error");
+        showToast(result.error || "Failed to create student.", "error");
       }
     } catch (err) {
       console.error("Failed to create student:", err);
