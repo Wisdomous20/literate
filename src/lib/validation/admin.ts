@@ -248,11 +248,26 @@ export const adminInvitePassageAdminSchema = z.object({
   email: emailString(),
 });
 
+export const adminInviteSuperAdminSchema = z.object({
+  email: emailString(),
+});
+
 export const passageAdminInvitationTokenSchema = z.object({
   token: requiredString("Invitation token"),
 });
 
+export const superAdminInvitationTokenSchema = z.object({
+  token: requiredString("Invitation token"),
+});
+
 export const acceptPassageAdminInvitationSchema = z.object({
+  token: requiredString("Invitation token"),
+  password: passwordString(),
+  firstName: optionalTrimmedString(),
+  lastName: optionalTrimmedString(),
+});
+
+export const acceptSuperAdminInvitationSchema = z.object({
   token: requiredString("Invitation token"),
   password: passwordString(),
   firstName: optionalTrimmedString(),

@@ -8,6 +8,7 @@ import {
   Activity,
   Building2,
   FileText,
+  KeyRound,
   Loader2,
   MailPlus,
   ShieldCheck,
@@ -17,13 +18,19 @@ import { updateAdminUserRoleAction } from "@/app/actions/admin/updateUserRole";
 import { toggleAdminUserStatusAction } from "@/app/actions/admin/toggleUserStatus";
 import { renameOrganizationByAdminAction } from "@/app/actions/admin/renameOrganization";
 import { invitePassageAdminAction } from "@/app/actions/admin/invitePassageAdmin";
+import { inviteSuperAdminAction } from "@/app/actions/admin/inviteSuperAdmin";
 import { useAdminManagementSnapshot } from "@/lib/hooks/useAdminManagementSnapshot";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ActivityLogView } from "@/components/admin-dash/passages/activityLogView";
 import { cn } from "@/lib/utils";
 
-type AdminTab = "users" | "organizations" | "passages" | "passageAdmins";
+type AdminTab =
+  | "users"
+  | "organizations"
+  | "passages"
+  | "passageAdmins"
+  | "superAdmins";
 
 const queryKey = ["admin", "management-snapshot"];
 
@@ -34,6 +41,7 @@ const tabs: {
 }[] = [
   { id: "passages", label: "Passages", icon: FileText },
   { id: "passageAdmins", label: "Passage Admins", icon: ShieldCheck },
+  { id: "superAdmins", label: "Super Admins", icon: KeyRound },
   { id: "users", label: "Users", icon: Users },
   { id: "organizations", label: "Organizations", icon: Building2 },
 ];
@@ -44,8 +52,15 @@ export function AdminControlCenter() {
   const [activeTab, setActiveTab] = useState<AdminTab>("passages");
   const [search, setSearch] = useState("");
   const [passageAdminEmail, setPassageAdminEmail] = useState("");
+  const [superAdminEmail, setSuperAdminEmail] = useState("");
   const [inviteMessage, setInviteMessage] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState<string | null>(null);
+  const [superAdminInviteMessage, setSuperAdminInviteMessage] = useState<
+    string | null
+  >(null);
+  const [superAdminInviteError, setSuperAdminInviteError] = useState<
+    string | null
+  >(null);
   const queryClient = useQueryClient();
   const managementQuery = useAdminManagementSnapshot();
 
@@ -126,6 +141,31 @@ export function AdminControlCenter() {
     },
   });
 
+  const inviteSuperAdminMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const result = await inviteSuperAdminAction({ email });
+      if (!result.success) {
+        throw new Error(result.error ?? "Failed to send invitation");
+      }
+      if (!result.invitation) {
+        throw new Error("Invitation was not created");
+      }
+      return result.invitation;
+    },
+    onSuccess: async (invitation) => {
+      setSuperAdminInviteError(null);
+      setSuperAdminInviteMessage(`Invitation sent to ${invitation.email}.`);
+      setSuperAdminEmail("");
+      await refreshSnapshot();
+    },
+    onError: (error) => {
+      setSuperAdminInviteMessage(null);
+      setSuperAdminInviteError(
+        error instanceof Error ? error.message : "Failed to send invitation",
+      );
+    },
+  });
+
   const snapshot = managementQuery.data;
   const normalizedSearch = search.trim().toLowerCase();
 
@@ -160,6 +200,9 @@ export function AdminControlCenter() {
       passageAdmins: snapshot.users.filter((user) =>
         user.role === "PASSAGE_MANAGER" && matches(user.name, user.email)
       ),
+      superAdmins: snapshot.users.filter((user) =>
+        user.role === "SUPER_ADMIN" && matches(user.name, user.email)
+      ),
     };
   }, [normalizedSearch, snapshot]);
 
@@ -185,7 +228,8 @@ export function AdminControlCenter() {
     roleMutation.isPending ||
     statusMutation.isPending ||
     organizationMutation.isPending ||
-    invitePassageAdminMutation.isPending;
+    invitePassageAdminMutation.isPending ||
+    inviteSuperAdminMutation.isPending;
 
   return (
     <div className="flex flex-col gap-6">
@@ -690,6 +734,191 @@ export function AdminControlCenter() {
               </article>
             ))}
             {filtered.organizations.length === 0 && <EmptyState label="organizations" />}
+          </div>
+        </section>
+      )}
+
+      {activeTab === "superAdmins" && (
+        <section className="rounded-[28px] border border-[#D9E5F5] bg-white shadow-[0_20px_60px_rgba(15,23,42,0.07)]">
+          <SectionHeader
+            eyebrow="Platform Access"
+            title="Super Admins"
+            description="Invite and manage accounts with full control over users, organizations, content, and platform settings."
+            count={filtered.superAdmins.length}
+            action={
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#BFD2EA] bg-[#EAF2FF] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-[#0C2D57]">
+                <MailPlus className="h-3.5 w-3.5" aria-hidden="true" />
+                Invite only
+              </span>
+            }
+          />
+
+          <div className="grid gap-5 p-4 sm:p-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(420px,1.1fr)]">
+            <div className="rounded-[22px] border border-[#D9E5F5] bg-[#FBFCFE] p-5">
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[16px] bg-[#EAF2FF] text-[#0C2D57]">
+                  <KeyRound className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-[#323743]">
+                    Invite a super admin
+                  </h3>
+                  <p className="mt-1 text-sm leading-6 text-[#575E6B]">
+                    Send a password setup link for full platform administration.
+                  </p>
+                </div>
+              </div>
+
+              <form
+                className="mt-5 flex flex-col gap-3"
+                onSubmit={async (event) => {
+                  event.preventDefault();
+                  setSuperAdminInviteMessage(null);
+                  setSuperAdminInviteError(null);
+                  try {
+                    await inviteSuperAdminMutation.mutateAsync(superAdminEmail);
+                  } catch {
+                    // onError renders the inline message.
+                  }
+                }}
+              >
+                <Input
+                  type="email"
+                  value={superAdminEmail}
+                  onChange={(event) => setSuperAdminEmail(event.target.value)}
+                  placeholder="super.admin@example.com"
+                  className="h-11 rounded-[14px] border-[#C9D8EC] bg-white px-4 text-sm text-[#323743] placeholder:text-[#8B91A3] focus-visible:border-[#0C2D57] focus-visible:ring-[#0C2D57]/20"
+                  disabled={busy}
+                  required
+                />
+                <Button
+                  type="submit"
+                  className="h-11 rounded-[14px] bg-[#0C2D57] px-5 text-white hover:bg-[#163D70]"
+                  disabled={busy}
+                >
+                  {inviteSuperAdminMutation.isPending ? "Sending..." : "Send Invite"}
+                </Button>
+              </form>
+
+              {(superAdminInviteMessage || superAdminInviteError) && (
+                <p
+                  className={cn(
+                    "mt-3 text-sm font-medium",
+                    superAdminInviteError ? "text-red-700" : "text-emerald-700",
+                  )}
+                  role={superAdminInviteError ? "alert" : "status"}
+                >
+                  {superAdminInviteError ?? superAdminInviteMessage}
+                </p>
+              )}
+            </div>
+
+            <div className="rounded-[22px] border border-[#E4EBF5] bg-[#FBFCFE] p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-semibold text-[#323743]">
+                    Super-admin accounts
+                  </h3>
+                  <p className="mt-1 text-sm text-[#575E6B]">
+                    Review status and remove full access when needed.
+                  </p>
+                </div>
+                <span className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-[#575E6B]">
+                  {filtered.superAdmins.length} active role
+                </span>
+              </div>
+
+              <div className="mt-4 divide-y divide-[#E7EEF7]">
+                {filtered.superAdmins.map((user) => (
+                  <div
+                    key={user.id}
+                    className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-[#323743]">
+                        {user.name}
+                      </p>
+                      <p className="mt-1 truncate text-sm text-[#575E6B]">
+                        {user.email}
+                      </p>
+                      <div className="mt-2 flex gap-2 text-[11px] font-semibold uppercase tracking-[0.08em]">
+                        <span
+                          className={cn(
+                            "rounded-full px-2.5 py-1",
+                            user.isDisabled
+                              ? "bg-red-100 text-red-700"
+                              : "bg-emerald-100 text-emerald-700",
+                          )}
+                        >
+                          {user.isDisabled ? "Disabled" : "Active"}
+                        </span>
+                        <span className="rounded-full bg-[#EAF2FF] px-2.5 py-1 text-[#0C2D57]">
+                          Super Admin
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-10 rounded-full border-[#C9D8EC] bg-white px-4 text-[#0C2D57]"
+                        disabled={busy}
+                        onClick={async () => {
+                          try {
+                            await roleMutation.mutateAsync({
+                              userId: user.id,
+                              role: "TEACHER",
+                            });
+                          } catch (error) {
+                            alert(
+                              error instanceof Error
+                                ? error.message
+                                : "Failed to revoke access",
+                            );
+                          }
+                        }}
+                      >
+                        Revoke Role
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={user.isDisabled ? "default" : "outline"}
+                        className={cn(
+                          "h-10 rounded-full px-4",
+                          user.isDisabled
+                            ? "bg-[#0C2D57] text-white hover:bg-[#163D70]"
+                            : "border-red-200 bg-red-50 text-red-700 hover:bg-red-100",
+                        )}
+                        disabled={busy}
+                        onClick={async () => {
+                          try {
+                            await statusMutation.mutateAsync({
+                              userId: user.id,
+                              disable: !user.isDisabled,
+                            });
+                          } catch (error) {
+                            alert(
+                              error instanceof Error
+                                ? error.message
+                                : "Failed to update user status",
+                            );
+                          }
+                        }}
+                      >
+                        {user.isDisabled ? "Enable" : "Disable"}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+
+                {filtered.superAdmins.length === 0 && (
+                  <div className="rounded-[18px] border border-dashed border-[#C9D8EC] bg-white px-4 py-8 text-center text-sm text-[#575E6B]">
+                    No super admins match your search.
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </section>
       )}
