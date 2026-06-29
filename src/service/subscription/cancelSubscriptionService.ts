@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { xenditRequest } from "@/lib/xendit";
+import { isXenditRecurringPlanId } from "@/service/subscription/xenditProviderIds";
 
 export async function cancelSubscriptionService(userId: string) {
   const subscription = await findManageableSubscriptionForUser(userId);
@@ -9,10 +10,12 @@ export async function cancelSubscriptionService(userId: string) {
   }
 
   try {
-    await xenditRequest(
-      `/recurring/plans/${subscription.xenditPlanId}/deactivate`,
-      "POST"
-    );
+    if (isXenditRecurringPlanId(subscription.xenditPlanId)) {
+      await xenditRequest(
+        `/recurring/plans/${subscription.xenditPlanId}/deactivate`,
+        "POST"
+      );
+    }
 
     await prisma.subscription.update({
       where: { id: subscription.id },

@@ -137,4 +137,36 @@ describe("xendit webhook — plan change swap", () => {
     expect(mockPrisma.subscription.updateMany).not.toHaveBeenCalled();
     expect(mockXenditRequest).not.toHaveBeenCalled();
   });
+
+  it("activates a subscription after a successful payment session", async () => {
+    await POST(
+      request({
+        event: "payment_session.completed",
+        data: {
+          payment_session_id: "ps-new",
+          metadata: { maxMembers: "10" },
+        },
+      }),
+    );
+
+    expect(mockPrisma.subscription.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { xenditPlanId: "ps-new" },
+        data: expect.objectContaining({
+          status: "ACTIVE",
+          maxMembersSnapshot: 10,
+        }),
+      }),
+    );
+    expect(mockPrisma.organization.update).toHaveBeenCalledWith({
+      where: { id: "org-1" },
+      data: { currentSubscriptionId: "sub-new" },
+    });
+    expect(mockCreateInvoice).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subscriptionId: "sub-new",
+        providerInvoiceId: expect.stringContaining("payment_session.completed"),
+      }),
+    );
+  });
 });

@@ -44,9 +44,29 @@ const recurringCycleDataSchema = z.object({
   plan_id: z.string().min(1),
 }).passthrough();
 
+const paymentSessionDataSchema = z
+  .object({
+    id: z.string().optional(),
+    payment_session_id: z.string().optional(),
+    metadata: recurringPlanMetadataSchema.optional(),
+  })
+  .passthrough();
+
 export const xenditWebhookSchema = z.discriminatedUnion("event", [
   z.object({
+    event: z.literal("payment_session.completed"),
+    data: paymentSessionDataSchema,
+  }),
+  z.object({
+    event: z.literal("payment_session.succeeded"),
+    data: paymentSessionDataSchema,
+  }),
+  z.object({
     event: z.literal("recurring.plan.activated"),
+    data: recurringPlanDataSchema,
+  }),
+  z.object({
+    event: z.literal("recurring.plan.activation"),
     data: recurringPlanDataSchema,
   }),
   z.object({

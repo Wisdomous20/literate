@@ -32,10 +32,10 @@ const baseInput = {
 };
 
 const xenditCustomer = { id: "cust-abc" };
-const xenditPlan = {
-  id: "plan-abc",
-  status: "ACTIVE",
-  actions: [{ action: "AUTH", url: "https://checkout.xendit.co/pay/plan-abc" }],
+const xenditSession = {
+  payment_session_id: "ps-abc",
+  payment_link_url: "https://checkout.xendit.co/pay/plan-abc",
+  customer_id: "cust-abc",
 };
 
 /** No existing org → fresh subscription path, no live plan. */
@@ -49,13 +49,10 @@ function setupNewOrgPath(existingCustomerId: string | null = null) {
   mockPrisma.subscription.findFirst.mockResolvedValue(
     existingCustomerId ? { xenditCustomerId: existingCustomerId } : null,
   );
-  if (!existingCustomerId) {
-    mockXenditRequest
-      .mockResolvedValueOnce(xenditCustomer) // customer creation
-      .mockResolvedValueOnce(xenditPlan); // plan creation
-  } else {
-    mockXenditRequest.mockResolvedValueOnce(xenditPlan); // plan creation only
-  }
+  mockXenditRequest.mockResolvedValueOnce({
+    ...xenditSession,
+    customer_id: existingCustomerId ?? xenditCustomer.id,
+  });
   mockPrisma.subscription.create.mockResolvedValue({});
 }
 
@@ -104,14 +101,19 @@ describe("createSubscriptionService", () => {
 
   // ── Xendit customer + plan creation ──────────────────────────────────────────
 
-  it("creates a new Xendit customer when no prior subscription exists", async () => {
+  it("creates a hosted session with inline customer data when no prior customer exists", async () => {
     setupNewOrgPath(null);
 
     await createSubscriptionService(baseInput);
 
-    const customerCall = mockXenditRequest.mock.calls[0];
-    expect(customerCall[0]).toBe("/customers");
-    expect(customerCall[2]).toMatchObject({ email: "juan@example.com", reference_id: "user-1" });
+    const sessionCall = mockXenditRequest.mock.calls[0];
+    expect(sessionCall[0]).toBe("/sessions");
+    expect(sessionCall[2]).toMatchObject({
+      customer: {
+        email: "juan@example.com",
+        reference_id: "user-1",
+      },
+    });
   });
 
   it("reuses an existing Xendit customer from a prior subscription", async () => {
@@ -120,7 +122,10 @@ describe("createSubscriptionService", () => {
     await createSubscriptionService(baseInput);
 
     expect(mockXenditRequest).toHaveBeenCalledTimes(1);
-    expect(mockXenditRequest.mock.calls[0][0]).toBe("/recurring/plans");
+    expect(mockXenditRequest.mock.calls[0][0]).toBe("/sessions");
+    expect(mockXenditRequest.mock.calls[0][2]).toMatchObject({
+      customer_id: "cust-existing",
+    });
   });
 
   it("uses the calculated price for the SOLO plan (1500)", async () => {
@@ -128,8 +133,21 @@ describe("createSubscriptionService", () => {
 
     await createSubscriptionService(baseInput);
 
-    const planCall = mockXenditRequest.mock.calls[1];
+    const planCall = mockXenditRequest.mock.calls[0];
     expect(planCall[2].amount).toBe(1500);
+    expect(planCall[2].session_type).toBe("PAY");
+    expect(planCall[2].allow_save_payment_method).toBe("FORCED");
+    expect(planCall[2].reference_id.length).toBeLessThanOrEqual(64);
+    expect(planCall[2].payment_method_configuration.reference_id.length).toBeLessThanOrEqual(64);
+    expect(planCall[2].channel_properties.cards).toMatchObject({
+      card_on_file_type: "RECURRING",
+      recurring_configuration: {
+        recurring_frequency: 365,
+      },
+    });
+    expect(
+      planCall[2].channel_properties.cards.recurring_configuration.recurring_expiry,
+    ).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
   // ── Subscription persistence ──────────────────────────────────────────────
@@ -144,7 +162,7 @@ describe("createSubscriptionService", () => {
         data: expect.objectContaining({
           status: "PENDING",
           organizationId: "org-1",
-          xenditPlanId: "plan-abc",
+          xenditPlanId: "ps-abc",
           maxMembersSnapshot: 1,
           priceAmountSnapshot: 1500,
         }),
@@ -170,15 +188,17 @@ describe("createSubscriptionService", () => {
     mockPrisma.plan.upsert.mockResolvedValue({ id: "plan-rec-1" });
     mockPrisma.organization.findUnique.mockResolvedValue({ currentSubscription: null });
     mockPrisma.subscription.findFirst.mockResolvedValue(null);
-    mockXenditRequest
-      .mockResolvedValueOnce(xenditCustomer)
-      .mockResolvedValueOnce({ id: "plan-abc", status: "ACTIVE", actions: [] });
+    mockXenditRequest.mockResolvedValueOnce({ payment_session_id: "ps-abc" });
     mockPrisma.subscription.create.mockResolvedValue({});
 
     const result = await createSubscriptionService(baseInput);
 
     expect(result.success).toBe(false);
-    if (!result.success) expect(result.error).toMatch(/No action URL/);
+    if (!result.success) {
+      expect(result.error).toBe(
+        "Failed to create subscription: Xendit did not return a payment link",
+      );
+    }
   });
 
   it("returns failure when a Xendit call throws", async () => {
@@ -193,6 +213,6 @@ describe("createSubscriptionService", () => {
     const result = await createSubscriptionService(baseInput);
 
     expect(result.success).toBe(false);
-    if (!result.success) expect(result.error).toBe("Failed to create subscription");
+    if (!result.success) expect(result.error).toBe("Failed to create subscription: Xendit down");
   });
 });
