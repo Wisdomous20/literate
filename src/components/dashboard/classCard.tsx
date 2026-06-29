@@ -58,9 +58,9 @@ export function ClassCard({
 }: ClassCardProps) {
   const styles = variantStyles[variant];
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -79,23 +79,23 @@ export function ClassCard({
     setIsMenuOpen(!isMenuOpen);
   };
 
-  const handleDelete = async () => {
-    setIsDeleting(true);
+  const handleArchive = async () => {
+    setIsArchiving(true);
     try {
       const result = await deleteClass(classRoomId);
       if (result.success) {
-        setIsDeleteModalOpen(false);
+        setIsArchiveModalOpen(false);
         setIsMenuOpen(false);
         onClassUpdated?.();
         router.refresh();
       } else {
-        alert(result.error || "Failed to delete class");
+        alert(result.error || "Failed to archive class");
       }
     } catch (err) {
-      alert("Error deleting class");
+      alert("Error archiving class");
       console.error(err);
     } finally {
-      setIsDeleting(false);
+      setIsArchiving(false);
     }
   };
 
@@ -174,53 +174,54 @@ export function ClassCard({
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setIsDeleteModalOpen(true);
+                  setIsArchiveModalOpen(true);
                   setIsMenuOpen(false);
                 }}
                 className="w-full border-t border-gray-100 px-3 py-2 text-left text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
               >
-                Delete
+                Archive
               </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Delete confirmation modal */}
-      {isDeleteModalOpen &&
+      {/* Archive confirmation modal */}
+      {isArchiveModalOpen &&
         typeof window !== "undefined" &&
         createPortal(
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
             <div className="mx-4 w-full max-w-sm rounded-xl bg-white shadow-xl">
               <div className="border-b border-gray-100 px-5 py-4">
                 <h2 className="text-sm font-semibold text-gray-900">
-                  Delete Class
+                  Archive Class
                 </h2>
               </div>
               <div className="px-5 py-4">
                 <p className="text-sm text-gray-600">
-                  Are you sure you want to delete{" "}
+                  Are you sure you want to archive{" "}
                   <strong className="text-gray-900 block truncate max-w-full">
                     {name}?
                   </strong>{" "}
+                  This will remove it from active class lists without deleting its data.
                 </p>
               </div>
               <div className="flex justify-end gap-2 border-t border-gray-100 px-5 py-3">
                 <button
                   type="button"
-                  onClick={() => setIsDeleteModalOpen(false)}
-                  disabled={isDeleting}
+                  onClick={() => setIsArchiveModalOpen(false)}
+                  disabled={isArchiving}
                   className="rounded-lg bg-gray-100 px-4 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-200 disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
-                  onClick={handleDelete}
-                  disabled={isDeleting}
+                  onClick={handleArchive}
+                  disabled={isArchiving}
                   className="rounded-lg bg-red-600 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
                 >
-                  {isDeleting ? "Deleting..." : "Delete"}
+                  {isArchiving ? "Archiving..." : "Archive"}
                 </button>
               </div>
             </div>
