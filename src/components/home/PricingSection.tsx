@@ -65,8 +65,8 @@ const plans = [
   {
     name: "KAPAMILYA",
     tagline: "For large organizations",
-    price: "₱1,100",
-    period: "per user/school year",
+    price: "₱50,000",
+    period: "/school year",
     inclusions: [
       "Complete access and unlimited usage",
       `${PAMILYA_MIN_MEMBERS}-${PAMILYA_MAX_MEMBERS} users`,
