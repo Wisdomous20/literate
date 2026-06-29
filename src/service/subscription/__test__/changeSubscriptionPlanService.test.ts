@@ -65,6 +65,14 @@ function setupCurrentSubscription(priceAmountSnapshot: number) {
 describe("changeSubscriptionPlanService", () => {
   beforeEach(() => vi.clearAllMocks());
 
+  it("returns failure when PAMILYA memberCount exceeds the 50-seat cap", async () => {
+    const result = await changeSubscriptionPlanService("user-1", "PAMILYA", 51);
+
+    expect(result.success).toBe(false);
+    expect(mockPrisma.organizationMember.findFirst).not.toHaveBeenCalled();
+    if (!result.success) expect(result.error).toMatch(/20 to 50 members/);
+  });
+
   it("returns failure when the user has no active subscription", async () => {
     mockPrisma.organizationMember.findFirst.mockResolvedValue(null);
 
@@ -89,6 +97,41 @@ describe("changeSubscriptionPlanService", () => {
       status: "PENDING",
       priceAmountSnapshot: 15000, // full PANALO price snapshot
       xenditPlanId: "ps-new",
+    });
+  });
+
+  it("allows a 50-seat PAMILYA plan change and stores the capped plan capacity", async () => {
+    setupCurrentSubscription(5000);
+
+    const result = await changeSubscriptionPlanService("user-1", "PAMILYA", 50);
+
+    expect(result.success).toBe(true);
+    expect(mockPrisma.plan.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          code: "PAMILYA",
+          maxMembers: 50,
+          priceAmount: 20000,
+        }),
+        update: expect.objectContaining({
+          maxMembers: 50,
+          priceAmount: 20000,
+        }),
+      }),
+    );
+
+    const createArg = mockPrisma.subscription.create.mock.calls[0][0];
+    expect(createArg.data).toMatchObject({
+      maxMembersSnapshot: 50,
+      priceAmountSnapshot: 50000,
+    });
+
+    const planCall = mockXenditRequest.mock.calls.find(
+      (c) => c[0] === "/sessions",
+    );
+    expect(planCall?.[2].metadata).toMatchObject({
+      maxMembers: "50",
+      subtotalAmount: "50000",
     });
   });
 
