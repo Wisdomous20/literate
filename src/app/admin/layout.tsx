@@ -1,8 +1,8 @@
 "use client";
 
-import { signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { PassageAdminShell } from "@/components/admin-dash/passages/passageAdminShell";
+import { AccountMenu } from "@/components/admin-dash/accountMenu";
 
 export default function AdminLayout({
   children,
@@ -10,9 +10,6 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const handleLogout = async () => {
-    await signOut({ callbackUrl: "/login" });
-  };
 
   if (pathname.startsWith("/admin/passages")) {
     return <PassageAdminShell>{children}</PassageAdminShell>;
@@ -30,12 +27,7 @@ export default function AdminLayout({
               Admin Console
             </h1>
           </div>
-          <button
-            onClick={handleLogout}
-            className="rounded-full bg-[#0C2D57] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#163D70]"
-          >
-            Logout
-          </button>
+          <AccountMenu accent="navy" />
         </div>
       </header>
       <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">

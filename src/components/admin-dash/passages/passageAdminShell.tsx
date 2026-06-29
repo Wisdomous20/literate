@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
-import { BookOpenText, LogOut } from "lucide-react";
+import { BookOpenText } from "lucide-react";
+import { AccountMenu } from "@/components/admin-dash/accountMenu";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -58,14 +58,7 @@ export function PassageAdminShell({ children }: { children: React.ReactNode }) {
               })}
             </nav>
 
-            <button
-              type="button"
-              onClick={() => void signOut({ callbackUrl: "/login" })}
-              className="inline-flex h-11 items-center gap-2 rounded-[14px] border border-[#E1DDFB] bg-white px-4 text-sm font-semibold text-[#575E6B] transition hover:text-[#323743] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#6C4EEB]/20"
-            >
-              <LogOut className="h-4 w-4" aria-hidden="true" />
-              Logout
-            </button>
+            <AccountMenu accent="violet" />
           </div>
         </div>
       </header>
