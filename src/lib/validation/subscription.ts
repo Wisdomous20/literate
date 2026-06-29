@@ -33,6 +33,7 @@ const recurringPlanMetadataSchema = z.object({
   subtotalAmount: z.string().optional(),
   discountAmount: z.string().optional(),
   totalAmount: z.string().optional(),
+  checkoutReferenceId: z.string().optional(),
 });
 
 const recurringPlanDataSchema = z.object({
@@ -48,6 +49,7 @@ const paymentSessionDataSchema = z
   .object({
     id: z.string().optional(),
     payment_session_id: z.string().optional(),
+    reference_id: z.string().optional(),
     metadata: recurringPlanMetadataSchema.optional(),
   })
   .passthrough();

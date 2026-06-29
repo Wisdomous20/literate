@@ -1,10 +1,11 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Check, Loader2, AlertCircle, X } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboardHeader";
 import { subscribeAction } from "@/app/actions/subscription/subscribe";
+import { syncPaymentSessionSubscriptionAction } from "@/app/actions/subscription/syncPaymentSession";
 import { PlanKey } from "@/config/plans";
 
 interface Plan {
@@ -86,6 +87,7 @@ export default function SubscriptionPage() {
 function SubscriptionPageContent() {
   const searchParams = useSearchParams();
   const requestedPlan = searchParams.get("plan");
+  const shouldSyncReturnedPayment = searchParams.get("subscription") === "success";
   const requestedPlanId = PLANS.find(
     (plan) => plan.planKey === requestedPlan,
   )?.id;
@@ -94,9 +96,49 @@ function SubscriptionPageContent() {
   );
   const [memberCount, setMemberCount] = useState<number>(PAMILYA_MIN_MEMBERS);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSyncingPayment, setIsSyncingPayment] = useState(shouldSyncReturnedPayment);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(
+    shouldSyncReturnedPayment ? "Confirming your payment..." : null,
+  );
 
   const selectedPlan = PLANS.find((p) => p.id === selectedPlanId) ?? null;
+
+  useEffect(() => {
+    if (!shouldSyncReturnedPayment) return;
+
+    let cancelled = false;
+
+    syncPaymentSessionSubscriptionAction()
+      .then((result) => {
+        if (cancelled) return;
+
+        if (!result.success) {
+          setStatusMessage(null);
+          setErrorMessage(result.error ?? "Payment succeeded, but the plan could not be updated.");
+          return;
+        }
+
+        setStatusMessage(
+          result.updated
+            ? "Payment confirmed. Your subscription has been updated."
+            : "Payment is still being confirmed. Refresh this page in a moment if your plan has not changed.",
+        );
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.error("Payment sync error:", error);
+        setStatusMessage(null);
+        setErrorMessage("Payment succeeded, but the plan could not be updated.");
+      })
+      .finally(() => {
+        if (!cancelled) setIsSyncingPayment(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [shouldSyncReturnedPayment]);
 
   async function handleProceedToPayment() {
     if (!selectedPlan || isSubmitting) return;
@@ -244,6 +286,14 @@ function SubscriptionPageContent() {
         )}
 
         {/* Error banner */}
+        {statusMessage && (
+          <div className="mt-8 flex w-full max-w-md items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            {isSyncingPayment && <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin" />}
+            {!isSyncingPayment && <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />}
+            <span className="flex-1">{statusMessage}</span>
+          </div>
+        )}
+
         {errorMessage && (
           <div className="mt-8 flex w-full max-w-md items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             <AlertCircle className="h-4 w-4 shrink-0 text-red-500 mt-0.5" />

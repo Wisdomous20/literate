@@ -8,7 +8,7 @@ const mockRelease = vi.hoisted(() => vi.fn());
 
 const mockPrisma = vi.hoisted(() => {
   const prisma = {
-    subscription: { update: vi.fn(), updateMany: vi.fn() },
+    subscription: { findFirst: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
     organization: { update: vi.fn() },
     $transaction: vi.fn(),
   };
@@ -62,6 +62,7 @@ describe("xendit webhook — plan change swap", () => {
     mockClaim.mockResolvedValue("claimed");
     mockXenditRequest.mockResolvedValue({});
     mockCreateInvoice.mockResolvedValue({});
+    mockPrisma.subscription.findFirst.mockResolvedValue({ id: "sub-new" });
     mockPrisma.subscription.update.mockResolvedValue({ id: "sub-new", organizationId: "org-1" });
     mockPrisma.subscription.updateMany.mockResolvedValue({ count: 1 });
     mockPrisma.organization.update.mockResolvedValue({});
@@ -151,9 +152,10 @@ describe("xendit webhook — plan change swap", () => {
 
     expect(mockPrisma.subscription.update).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { xenditPlanId: "ps-new" },
+        where: { id: "sub-new" },
         data: expect.objectContaining({
           status: "ACTIVE",
+          xenditPlanId: "ps-new",
           maxMembersSnapshot: 10,
         }),
       }),
@@ -166,6 +168,50 @@ describe("xendit webhook — plan change swap", () => {
       expect.objectContaining({
         subscriptionId: "sub-new",
         providerInvoiceId: expect.stringContaining("payment_session.completed"),
+      }),
+    );
+  });
+
+  it("falls back to metadata when the webhook payment id differs from the stored checkout reference", async () => {
+    mockPrisma.subscription.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: "sub-fallback" });
+    mockPrisma.subscription.update.mockResolvedValue({
+      id: "sub-fallback",
+      organizationId: "org-1",
+    });
+
+    await POST(
+      request({
+        event: "payment_session.completed",
+        data: {
+          id: "ps-provider-id",
+          metadata: {
+            checkoutReferenceId: "lit-sub-local",
+            organizationId: "org-1",
+            planId: "plan-rec-1",
+            maxMembers: "10",
+          },
+        },
+      }),
+    );
+
+    expect(mockPrisma.subscription.findFirst).toHaveBeenNthCalledWith(1, {
+      where: { xenditPlanId: "ps-provider-id", status: "PENDING" },
+      orderBy: { createdAt: "desc" },
+    });
+    expect(mockPrisma.subscription.findFirst).toHaveBeenNthCalledWith(2, {
+      where: {
+        organizationId: "org-1",
+        planId: "plan-rec-1",
+        status: "PENDING",
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    expect(mockPrisma.subscription.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "sub-fallback" },
+        data: expect.objectContaining({ xenditPlanId: "ps-provider-id" }),
       }),
     );
   });

@@ -68,7 +68,10 @@ export async function createXenditSubscriptionSession(
     locale: "en",
     description: input.description,
     ...returnUrls,
-    metadata: input.metadata,
+    metadata: {
+      ...input.metadata,
+      checkoutReferenceId: referenceId,
+    },
   });
 
   const paymentSessionId = session.payment_session_id ?? session.id;
@@ -93,8 +96,8 @@ function getRecurringExpiryDate(): string {
 function getHttpsReturnUrls():
   | { success_return_url: string; cancel_return_url: string }
   | Record<string, never> {
-  const successUrl = buildApplicationUrl("/dashboard?subscription=success");
-  const cancelUrl = buildApplicationUrl("/pricing?subscription=failed");
+  const successUrl = buildApplicationUrl("/dashboard/subscription?subscription=success");
+  const cancelUrl = buildApplicationUrl("/dashboard/subscription?subscription=failed");
 
   if (!successUrl.startsWith("https://") || !cancelUrl.startsWith("https://")) {
     return {};
