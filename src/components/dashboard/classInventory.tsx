@@ -5,6 +5,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Archive,
   ClipboardList,
   Plus,
 } from "lucide-react";
@@ -150,6 +151,14 @@ export function ClassInventory({
                 className="text-xs font-medium text-[#5D5DFB] underline underline-offset-2 hover:text-[#4a4ae8] transition-colors"
               >
                 View All
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push("/dashboard/class/archive")}
+                className="inline-flex items-center gap-1 text-xs font-medium text-[#5D5DFB] underline underline-offset-2 transition-colors hover:text-[#4a4ae8]"
+              >
+                <Archive className="h-3 w-3" />
+                Archive
               </button>
             </div>
             <div className="flex items-center gap-2 text-xs text-[#5D5DFB]/70 font-medium">

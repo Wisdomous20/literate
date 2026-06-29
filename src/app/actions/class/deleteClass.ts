@@ -28,7 +28,9 @@ export async function deleteClass(classRoomId: string) {
   const result = await deleteClassService(validationResult.data);
 
   if (result.success) {
-    revalidatePath("/dashboard/classes");
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/class/all");
+    revalidatePath("/dashboard/class/archive");
   }
 
   return result;

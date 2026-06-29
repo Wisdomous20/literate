@@ -23,6 +23,7 @@ vi.mock("@/utils/subscriptionCheck", () => ({
 import { createClassService } from "../createClassService";
 import { getClassByIdService } from "../getClassByIdService";
 import { getAllClassServiceBySchoolYear } from "../getAllClassServiceBySchoolYear";
+import { getArchivedClassServiceBySchoolYear } from "../getArchivedClassServiceBySchoolYear";
 import { updateClassService } from "../updateClassService";
 import { deleteClassService } from "../deleteClassService";
 
@@ -271,6 +272,67 @@ describe("getAllClassServiceBySchoolYear", () => {
 });
 
 // ─── updateClassService ───────────────────────────────────────────────────────
+
+describe("getArchivedClassServiceBySchoolYear", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("returns VALIDATION_ERROR when userId is empty", async () => {
+    const result = await getArchivedClassServiceBySchoolYear("", "2025-2026");
+
+    expect(result.success).toBe(false);
+    expect(result.code).toBe("VALIDATION_ERROR");
+    expect(mockPrisma.classRoom.findMany).not.toHaveBeenCalled();
+  });
+
+  it("returns VALIDATION_ERROR when schoolYear is empty", async () => {
+    const result = await getArchivedClassServiceBySchoolYear("user-1", "");
+
+    expect(result.success).toBe(false);
+    expect(result.code).toBe("VALIDATION_ERROR");
+    expect(mockPrisma.classRoom.findMany).not.toHaveBeenCalled();
+  });
+
+  it("only queries archived classes for the given user and school year", async () => {
+    mockPrisma.classRoom.findMany.mockResolvedValue([]);
+
+    await getArchivedClassServiceBySchoolYear("user-1", "2025-2026");
+
+    const query = mockPrisma.classRoom.findMany.mock.calls[0][0];
+    expect(query.where).toMatchObject({
+      userId: "user-1",
+      schoolYear: "2025-2026",
+      archived: true,
+    });
+  });
+
+  it("maps _count.students into studentCount on each archived result", async () => {
+    mockPrisma.classRoom.findMany.mockResolvedValue([
+      { ...baseClass, archived: true, _count: { students: 5 } },
+      {
+        ...baseClass,
+        id: "class-2",
+        name: "Grade 4",
+        archived: true,
+        _count: { students: 3 },
+      },
+    ]);
+
+    const result = await getArchivedClassServiceBySchoolYear("user-1", "2025-2026");
+
+    expect(result.success).toBe(true);
+    expect(result.classes?.[0].studentCount).toBe(5);
+    expect(result.classes?.[1].studentCount).toBe(3);
+  });
+
+  it("returns INTERNAL_ERROR when prisma throws", async () => {
+    mockPrisma.classRoom.findMany.mockRejectedValue(new Error("DB down"));
+
+    const result = await getArchivedClassServiceBySchoolYear("user-1", "2025-2026");
+
+    expect(result.success).toBe(false);
+    expect(result.code).toBe("INTERNAL_ERROR");
+  });
+});
 
 describe("updateClassService", () => {
   beforeEach(() => vi.clearAllMocks());

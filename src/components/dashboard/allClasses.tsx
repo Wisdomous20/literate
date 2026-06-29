@@ -4,6 +4,7 @@ import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Loader2,
+  Archive,
   ArrowLeft,
   ChevronDown,
   ChevronLeft,
@@ -151,6 +152,18 @@ export default function AllClassesPage({
                   })}
                 </div>
               )}
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full translate-y-1 bg-[#B3A4F1]" />
+              <button
+                type="button"
+                onClick={() => router.push("/dashboard/class/archive")}
+                className="relative flex items-center justify-center gap-1.5 rounded-full border border-[#6666FF]/40 bg-white px-5 py-2 text-xs font-semibold text-[#6666FF] shadow-sm transition-transform hover:bg-[#F0F4FF] hover:-translate-y-0.5 active:translate-y-0"
+              >
+                <Archive className="h-3.5 w-3.5 shrink-0" />
+                Archive
+              </button>
             </div>
 
             {onCreateClass && (

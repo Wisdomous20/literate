@@ -34,7 +34,9 @@ export async function updateClass(
   const result = await updateClassService(validationResult.data);
 
   if (result.success) {
-    revalidatePath("/classes");
+    revalidatePath("/dashboard/class/all");
+    revalidatePath("/dashboard/class/archive");
+    revalidatePath(`/dashboard/class/${classRoomId}`);
   }
 
   return result;
