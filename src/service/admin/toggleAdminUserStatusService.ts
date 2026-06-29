@@ -25,7 +25,7 @@ export async function toggleAdminUserStatusService(
 
   const user = await prisma.user.findUnique({
     where: { id: targetUserId },
-    select: { id: true },
+    select: { id: true, email: true, firstName: true, lastName: true, isDisabled: true },
   });
 
   if (!user) {
@@ -40,5 +40,12 @@ export async function toggleAdminUserStatusService(
   return {
     success: true,
     message: disable ? "User disabled." : "User enabled.",
+    user: {
+      id: user.id,
+      email: user.email,
+      name: [user.firstName, user.lastName].filter(Boolean).join(" ").trim(),
+      wasDisabled: user.isDisabled,
+      isDisabled: disable,
+    },
   };
 }

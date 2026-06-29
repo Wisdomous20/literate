@@ -21,6 +21,7 @@ export async function getActivityLogsAction() {
     entityType: log.entityType,
     entityId: log.entityId,
     entityTitle: log.entityTitle,
+    metadata: log.metadata,
     createdAt: log.createdAt,
   }));
 }

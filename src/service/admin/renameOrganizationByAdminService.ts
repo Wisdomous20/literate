@@ -6,20 +6,26 @@ export async function renameOrganizationByAdminService(
 ) {
   const organization = await prisma.organization.findUnique({
     where: { id: organizationId },
-    select: { id: true },
+    select: { id: true, name: true },
   });
 
   if (!organization) {
     return { success: false, error: "Organization not found." };
   }
 
-  await prisma.organization.update({
+  const updatedOrganization = await prisma.organization.update({
     where: { id: organizationId },
     data: { name: name.trim() },
+    select: { id: true, name: true },
   });
 
   return {
     success: true,
     message: "Organization renamed.",
+    organization: {
+      id: updatedOrganization.id,
+      previousName: organization.name,
+      name: updatedOrganization.name,
+    },
   };
 }

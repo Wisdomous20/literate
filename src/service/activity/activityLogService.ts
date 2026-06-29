@@ -11,7 +11,23 @@ export type ActivityLogAction =
   | "QUIZ_UPDATED"
   | "QUESTION_CREATED"
   | "QUESTION_UPDATED"
-  | "QUESTION_DELETED";
+  | "QUESTION_DELETED"
+  | "USER_ROLE_UPDATED"
+  | "USER_DISABLED"
+  | "USER_ENABLED"
+  | "ORGANIZATION_RENAMED"
+  | "MEMBERSHIP_REMOVED"
+  | "PASSAGE_ADMIN_INVITED"
+  | "SUPER_ADMIN_INVITED";
+
+export type ActivityLogEntityType =
+  | "passage"
+  | "quiz"
+  | "question"
+  | "user"
+  | "organization"
+  | "membership"
+  | "invitation";
 
 export interface ActivityLogActor {
   id: string;
@@ -22,7 +38,7 @@ export interface ActivityLogActor {
 interface RecordActivityLogInput {
   actor: ActivityLogActor;
   action: ActivityLogAction;
-  entityType: "passage" | "quiz" | "question";
+  entityType: ActivityLogEntityType;
   entityId?: string | null;
   entityTitle?: string | null;
   metadata?: Prisma.InputJsonValue;
@@ -48,7 +64,7 @@ type ActivityLogDelegate = {
       actorEmail?: string | null;
       actorRole: userType;
       action: ActivityLogAction;
-      entityType: "passage" | "quiz" | "question";
+      entityType: ActivityLogEntityType;
       entityId?: string | null;
       entityTitle?: string | null;
       metadata?: Prisma.InputJsonValue;

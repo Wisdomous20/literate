@@ -14,6 +14,13 @@ const actionLabels: Record<string, string> = {
   QUESTION_CREATED: "Created question",
   QUESTION_UPDATED: "Updated question",
   QUESTION_DELETED: "Deleted question",
+  USER_ROLE_UPDATED: "Updated user role",
+  USER_DISABLED: "Disabled user",
+  USER_ENABLED: "Enabled user",
+  ORGANIZATION_RENAMED: "Renamed organization",
+  MEMBERSHIP_REMOVED: "Removed membership",
+  PASSAGE_ADMIN_INVITED: "Invited passage admin",
+  SUPER_ADMIN_INVITED: "Invited super admin",
 };
 
 export function ActivityLogView({ showHeader = true }: { showHeader?: boolean }) {
@@ -31,10 +38,10 @@ export function ActivityLogView({ showHeader = true }: { showHeader?: boolean })
             Activity
           </p>
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-[#323743]">
-            Content activity log
+            Activity logs
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[#575E6B]">
-            Review changes made to passages, quizzes, and questions.
+            Review content changes and super admin movement from one audit trail.
           </p>
         </header>
       )}
@@ -58,7 +65,7 @@ export function ActivityLogView({ showHeader = true }: { showHeader?: boolean })
               No activity yet
             </h2>
             <p className="mt-2 text-sm text-[#575E6B]">
-              Passage edits will appear here once content managers start working.
+              Admin and content changes will appear here once movement begins.
             </p>
           </div>
         ) : (
@@ -73,7 +80,9 @@ export function ActivityLogView({ showHeader = true }: { showHeader?: boolean })
                     <span
                       className={cn(
                         "rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em]",
-                        log.action.includes("DELETED")
+                        log.action.includes("DELETED") ||
+                          log.action.includes("REMOVED") ||
+                          log.action.includes("DISABLED")
                           ? "bg-red-50 text-red-700"
                           : "bg-[#F3F0FF] text-[#6C4EEB]",
                       )}
@@ -83,12 +92,16 @@ export function ActivityLogView({ showHeader = true }: { showHeader?: boolean })
                     <span className="text-xs font-medium text-[#8B91A3]">
                       {log.actorEmail ?? "Unknown user"}
                     </span>
+                    <span className="rounded-full bg-[#F7FAFD] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6E85A0]">
+                      {formatRole(log.actorRole)}
+                    </span>
                   </div>
                   <p className="mt-2 truncate font-semibold text-[#323743]">
-                    {log.entityTitle ?? `${log.entityType} ${log.entityId ?? ""}`}
+                    {log.entityTitle ??
+                      `${formatEntity(log.entityType)} ${log.entityId ?? ""}`}
                   </p>
                   <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[#8B91A3]">
-                    {log.entityType}
+                    {formatEntity(log.entityType)}
                   </p>
                 </div>
                 <time className="text-sm font-medium text-[#575E6B] sm:text-right">
@@ -111,4 +124,18 @@ function formatDateTime(value: Date | string) {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+function formatEntity(value: string) {
+  return value
+    .split("_")
+    .join(" ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function formatRole(value: string) {
+  return value
+    .split("_")
+    .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+    .join(" ");
 }

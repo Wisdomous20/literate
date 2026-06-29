@@ -5,7 +5,6 @@ import { useMemo, useState } from "react";
 import type { ComponentType } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Activity,
   Building2,
   FileText,
   KeyRound,
@@ -22,7 +21,6 @@ import { inviteSuperAdminAction } from "@/app/actions/admin/inviteSuperAdmin";
 import { useAdminManagementSnapshot } from "@/lib/hooks/useAdminManagementSnapshot";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ActivityLogView } from "@/components/admin-dash/passages/activityLogView";
 import { cn } from "@/lib/utils";
 import { isSeededSuperAdminEmail } from "@/config/protectedAccounts";
 
@@ -641,26 +639,6 @@ export function AdminControlCenter() {
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-[#D9E5F5] bg-white p-4 shadow-[0_20px_60px_rgba(15,23,42,0.07)] sm:p-6">
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6E85A0]">
-                  Activity Logs
-                </p>
-                <h3 className="mt-2 text-2xl font-semibold text-[#0F2744]">
-                  Passage-admin movement
-                </h3>
-                <p className="mt-2 max-w-3xl text-sm leading-7 text-[#64809F]">
-                  Track content changes across passages, quizzes, and questions.
-                </p>
-              </div>
-              <span className="inline-flex items-center gap-2 rounded-full bg-[#F4F8FD] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-[#33507A]">
-                <Activity className="h-3.5 w-3.5" aria-hidden="true" />
-                Activity
-              </span>
-            </div>
-            <ActivityLogView showHeader={false} />
-          </div>
         </section>
       )}
 

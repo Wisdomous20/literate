@@ -2,6 +2,7 @@
 
 import { adminRenameOrganizationSchema } from "@/lib/validation/admin";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
+import { recordActivityLog } from "@/service/activity/activityLogService";
 import { renameOrganizationByAdminService } from "@/service/admin/renameOrganizationByAdminService";
 import { requireRole } from "@/utils/roleCheck";
 
@@ -9,8 +10,10 @@ export async function renameOrganizationByAdminAction(
   organizationId: string,
   name: string
 ) {
+  let session;
+
   try {
-    await requireRole("SUPER_ADMIN");
+    session = await requireRole("SUPER_ADMIN");
   } catch {
     return { success: false, error: "Forbidden" };
   }
@@ -27,8 +30,28 @@ export async function renameOrganizationByAdminAction(
     };
   }
 
-  return await renameOrganizationByAdminService(
+  const result = await renameOrganizationByAdminService(
     validationResult.data.organizationId,
     validationResult.data.name
   );
+
+  if (result.success && result.organization) {
+    await recordActivityLog({
+      actor: {
+        id: session.user.id,
+        email: session.user.email,
+        role: session.user.role,
+      },
+      action: "ORGANIZATION_RENAMED",
+      entityType: "organization",
+      entityId: result.organization.id,
+      entityTitle: result.organization.name,
+      metadata: {
+        previousName: result.organization.previousName,
+        name: result.organization.name,
+      },
+    });
+  }
+
+  return result;
 }
