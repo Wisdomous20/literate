@@ -1,4 +1,8 @@
 import { prisma } from "@/lib/prisma";
+import {
+  SEEDED_SUPER_ADMIN_PROTECTION_MESSAGE,
+  isSeededSuperAdminUserId,
+} from "@/service/admin/protectedAdminAccount";
 
 export async function toggleAdminUserStatusService(
   targetUserId: string,
@@ -9,6 +13,13 @@ export async function toggleAdminUserStatusService(
     return {
       success: false,
       error: "You cannot change your own enabled status from the admin console.",
+    };
+  }
+
+  if (disable && (await isSeededSuperAdminUserId(targetUserId))) {
+    return {
+      success: false,
+      error: SEEDED_SUPER_ADMIN_PROTECTION_MESSAGE,
     };
   }
 

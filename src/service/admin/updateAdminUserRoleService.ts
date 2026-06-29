@@ -1,5 +1,9 @@
 import { userType } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
+import {
+  SEEDED_SUPER_ADMIN_PROTECTION_MESSAGE,
+  isSeededSuperAdminUserId,
+} from "@/service/admin/protectedAdminAccount";
 
 export async function updateAdminUserRoleService(
   targetUserId: string,
@@ -10,6 +14,13 @@ export async function updateAdminUserRoleService(
     return {
       success: false,
       error: "You cannot change your own role from the admin console.",
+    };
+  }
+
+  if (await isSeededSuperAdminUserId(targetUserId)) {
+    return {
+      success: false,
+      error: SEEDED_SUPER_ADMIN_PROTECTION_MESSAGE,
     };
   }
 

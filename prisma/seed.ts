@@ -39,6 +39,7 @@ async function seedSuperAdmin() {
           firstName: superAdminSeed.firstName,
           lastName: superAdminSeed.lastName,
           isVerified: true,
+          isDisabled: false,
           role: "SUPER_ADMIN",
           ...(hashedPassword ? { password: hashedPassword } : {}),
         },
@@ -54,6 +55,7 @@ async function seedSuperAdmin() {
           email: superAdminSeed.email,
           password: hashedPassword ?? (await bcrypt.hash(superAdminSeed.password, 10)),
           isVerified: true,
+          isDisabled: false,
           role: "SUPER_ADMIN",
         },
         select: {

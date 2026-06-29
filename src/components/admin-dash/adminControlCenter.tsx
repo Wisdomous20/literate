@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ActivityLogView } from "@/components/admin-dash/passages/activityLogView";
 import { cn } from "@/lib/utils";
+import { isSeededSuperAdminEmail } from "@/config/protectedAccounts";
 
 type AdminTab =
   | "users"
@@ -339,94 +340,113 @@ export function AdminControlCenter() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.users.map((user) => (
-                  <tr key={user.id} className="text-sm text-[#16324F]">
-                    <td className="rounded-l-[22px] border-y border-l border-[#E4EBF5] bg-[#FBFCFE] px-4 py-5 align-top shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
-                      <div className="font-semibold text-[#0F2744]">{user.name}</div>
-                      <div className="mt-1 text-xs text-[#6E85A0]">{user.email}</div>
-                      <div className="mt-2 flex gap-2 text-[11px] font-semibold uppercase tracking-[0.08em]">
-                        <span className="rounded-full bg-[#EAF2FF] px-2.5 py-1 text-[#2453A6]">
-                          {user.isVerified ? "Verified" : "Unverified"}
-                        </span>
-                        <span
-                          className={cn(
-                            "rounded-full px-2.5 py-1",
-                            user.isDisabled
-                              ? "bg-red-100 text-red-700"
-                              : "bg-emerald-100 text-emerald-700"
+                {filtered.users.map((user) => {
+                  const isSeededAdmin = isSeededSuperAdminEmail(user.email);
+
+                  return (
+                    <tr key={user.id} className="text-sm text-[#16324F]">
+                      <td className="rounded-l-[22px] border-y border-l border-[#E4EBF5] bg-[#FBFCFE] px-4 py-5 align-top shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
+                        <div className="font-semibold text-[#0F2744]">{user.name}</div>
+                        <div className="mt-1 text-xs text-[#6E85A0]">{user.email}</div>
+                        <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.08em]">
+                          <span className="rounded-full bg-[#EAF2FF] px-2.5 py-1 text-[#2453A6]">
+                            {user.isVerified ? "Verified" : "Unverified"}
+                          </span>
+                          <span
+                            className={cn(
+                              "rounded-full px-2.5 py-1",
+                              user.isDisabled
+                                ? "bg-red-100 text-red-700"
+                                : "bg-emerald-100 text-emerald-700"
+                            )}
+                          >
+                            {user.isDisabled ? "Disabled" : "Active"}
+                          </span>
+                          {isSeededAdmin && (
+                            <span className="rounded-full bg-[#FFF7ED] px-2.5 py-1 text-[#C2410C]">
+                              Protected
+                            </span>
                           )}
+                        </div>
+                      </td>
+                      <td className="border-y border-[#E4EBF5] bg-white px-4 py-5 align-top">
+                        <select
+                          value={user.role}
+                          disabled={busy || isSeededAdmin}
+                          onChange={async (event) => {
+                            try {
+                              await roleMutation.mutateAsync({
+                                userId: user.id,
+                                role: event.target.value,
+                              });
+                            } catch (error) {
+                              alert(
+                                error instanceof Error
+                                  ? error.message
+                                  : "Failed to update role"
+                              );
+                            }
+                          }}
+                          className="h-10 rounded-full border border-[#C9D8EC] bg-white px-3 text-sm font-medium text-[#16324F] outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                          title={
+                            isSeededAdmin
+                              ? "The seeded super admin role is protected."
+                              : undefined
+                          }
                         >
-                          {user.isDisabled ? "Disabled" : "Active"}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="border-y border-[#E4EBF5] bg-white px-4 py-5 align-top">
-                      <select
-                        value={user.role}
-                        disabled={busy}
-                        onChange={async (event) => {
-                          try {
-                            await roleMutation.mutateAsync({
-                              userId: user.id,
-                              role: event.target.value,
-                            });
-                          } catch (error) {
-                            alert(
-                              error instanceof Error
-                                ? error.message
-                                : "Failed to update role"
-                            );
+                          {roleOptions.map((role) => (
+                            <option key={role} value={role}>
+                              {role}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="border-y border-l border-[#EDF2F8] bg-[#F7FAFD] px-4 py-5 align-top text-sm text-[#4D6785]">
+                        <div>{user.membershipCount} memberships</div>
+                        <div className="mt-1 text-xs text-[#7F94AE]">
+                          {user.ownedOrganizationCount} owned organizations
+                        </div>
+                      </td>
+                      <td className="border-y border-l border-[#EDF2F8] bg-white px-4 py-5 align-top text-sm text-[#4D6785]">
+                        {formatDate(user.createdAt)}
+                      </td>
+                      <td className="rounded-r-[22px] border-y border-l border-r border-[#E4EBF5] bg-[#FBFCFE] px-4 py-5 align-top">
+                        <Button
+                          type="button"
+                          variant={user.isDisabled ? "default" : "outline"}
+                          className={cn(
+                            "h-10 rounded-full px-4",
+                            user.isDisabled
+                              ? "bg-[#2453A6] text-white hover:bg-[#1C468D]"
+                              : "border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+                          )}
+                          disabled={busy || (isSeededAdmin && !user.isDisabled)}
+                          title={
+                            isSeededAdmin && !user.isDisabled
+                              ? "The seeded super admin cannot be disabled."
+                              : undefined
                           }
-                        }}
-                        className="h-10 rounded-full border border-[#C9D8EC] bg-white px-3 text-sm font-medium text-[#16324F] outline-none"
-                      >
-                        {roleOptions.map((role) => (
-                          <option key={role} value={role}>
-                            {role}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="border-y border-l border-[#EDF2F8] bg-[#F7FAFD] px-4 py-5 align-top text-sm text-[#4D6785]">
-                      <div>{user.membershipCount} memberships</div>
-                      <div className="mt-1 text-xs text-[#7F94AE]">
-                        {user.ownedOrganizationCount} owned organizations
-                      </div>
-                    </td>
-                    <td className="border-y border-l border-[#EDF2F8] bg-white px-4 py-5 align-top text-sm text-[#4D6785]">
-                      {formatDate(user.createdAt)}
-                    </td>
-                    <td className="rounded-r-[22px] border-y border-l border-r border-[#E4EBF5] bg-[#FBFCFE] px-4 py-5 align-top">
-                      <Button
-                        type="button"
-                        variant={user.isDisabled ? "default" : "outline"}
-                        className={cn(
-                          "h-10 rounded-full px-4",
-                          user.isDisabled
-                            ? "bg-[#2453A6] text-white hover:bg-[#1C468D]"
-                            : "border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
-                        )}
-                        disabled={busy}
-                        onClick={async () => {
-                          try {
-                            await statusMutation.mutateAsync({
-                              userId: user.id,
-                              disable: !user.isDisabled,
-                            });
-                          } catch (error) {
-                            alert(
-                              error instanceof Error
-                                ? error.message
-                                : "Failed to update user status"
-                            );
-                          }
-                        }}
-                      >
-                        {user.isDisabled ? "Enable User" : "Disable User"}
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                          onClick={async () => {
+                            try {
+                              await statusMutation.mutateAsync({
+                                userId: user.id,
+                                disable: !user.isDisabled,
+                              });
+                            } catch (error) {
+                              alert(
+                                error instanceof Error
+                                  ? error.message
+                                  : "Failed to update user status"
+                              );
+                            }
+                          }}
+                        >
+                          {user.isDisabled ? "Enable User" : "Disable User"}
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
             {filtered.users.length === 0 && <EmptyState label="users" />}
@@ -829,88 +849,107 @@ export function AdminControlCenter() {
               </div>
 
               <div className="mt-4 divide-y divide-[#E7EEF7]">
-                {filtered.superAdmins.map((user) => (
-                  <div
-                    key={user.id}
-                    className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-[#323743]">
-                        {user.name}
-                      </p>
-                      <p className="mt-1 truncate text-sm text-[#575E6B]">
-                        {user.email}
-                      </p>
-                      <div className="mt-2 flex gap-2 text-[11px] font-semibold uppercase tracking-[0.08em]">
-                        <span
-                          className={cn(
-                            "rounded-full px-2.5 py-1",
-                            user.isDisabled
-                              ? "bg-red-100 text-red-700"
-                              : "bg-emerald-100 text-emerald-700",
+                {filtered.superAdmins.map((user) => {
+                  const isSeededAdmin = isSeededSuperAdminEmail(user.email);
+
+                  return (
+                    <div
+                      key={user.id}
+                      className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-[#323743]">
+                          {user.name}
+                        </p>
+                        <p className="mt-1 truncate text-sm text-[#575E6B]">
+                          {user.email}
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.08em]">
+                          <span
+                            className={cn(
+                              "rounded-full px-2.5 py-1",
+                              user.isDisabled
+                                ? "bg-red-100 text-red-700"
+                                : "bg-emerald-100 text-emerald-700",
+                            )}
+                          >
+                            {user.isDisabled ? "Disabled" : "Active"}
+                          </span>
+                          <span className="rounded-full bg-[#EAF2FF] px-2.5 py-1 text-[#0C2D57]">
+                            Super Admin
+                          </span>
+                          {isSeededAdmin && (
+                            <span className="rounded-full bg-[#FFF7ED] px-2.5 py-1 text-[#C2410C]">
+                              Protected
+                            </span>
                           )}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-10 rounded-full border-[#C9D8EC] bg-white px-4 text-[#0C2D57]"
+                          disabled={busy || isSeededAdmin}
+                          title={
+                            isSeededAdmin
+                              ? "The seeded super admin role is protected."
+                              : undefined
+                          }
+                          onClick={async () => {
+                            try {
+                              await roleMutation.mutateAsync({
+                                userId: user.id,
+                                role: "TEACHER",
+                              });
+                            } catch (error) {
+                              alert(
+                                error instanceof Error
+                                  ? error.message
+                                  : "Failed to revoke access",
+                              );
+                            }
+                          }}
                         >
-                          {user.isDisabled ? "Disabled" : "Active"}
-                        </span>
-                        <span className="rounded-full bg-[#EAF2FF] px-2.5 py-1 text-[#0C2D57]">
-                          Super Admin
-                        </span>
+                          Revoke Role
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={user.isDisabled ? "default" : "outline"}
+                          className={cn(
+                            "h-10 rounded-full px-4",
+                            user.isDisabled
+                              ? "bg-[#0C2D57] text-white hover:bg-[#163D70]"
+                              : "border-red-200 bg-red-50 text-red-700 hover:bg-red-100",
+                          )}
+                          disabled={busy || (isSeededAdmin && !user.isDisabled)}
+                          title={
+                            isSeededAdmin && !user.isDisabled
+                              ? "The seeded super admin cannot be disabled."
+                              : undefined
+                          }
+                          onClick={async () => {
+                            try {
+                              await statusMutation.mutateAsync({
+                                userId: user.id,
+                                disable: !user.isDisabled,
+                              });
+                            } catch (error) {
+                              alert(
+                                error instanceof Error
+                                  ? error.message
+                                  : "Failed to update user status",
+                              );
+                            }
+                          }}
+                        >
+                          {user.isDisabled ? "Enable" : "Disable"}
+                        </Button>
                       </div>
                     </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-10 rounded-full border-[#C9D8EC] bg-white px-4 text-[#0C2D57]"
-                        disabled={busy}
-                        onClick={async () => {
-                          try {
-                            await roleMutation.mutateAsync({
-                              userId: user.id,
-                              role: "TEACHER",
-                            });
-                          } catch (error) {
-                            alert(
-                              error instanceof Error
-                                ? error.message
-                                : "Failed to revoke access",
-                            );
-                          }
-                        }}
-                      >
-                        Revoke Role
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={user.isDisabled ? "default" : "outline"}
-                        className={cn(
-                          "h-10 rounded-full px-4",
-                          user.isDisabled
-                            ? "bg-[#0C2D57] text-white hover:bg-[#163D70]"
-                            : "border-red-200 bg-red-50 text-red-700 hover:bg-red-100",
-                        )}
-                        disabled={busy}
-                        onClick={async () => {
-                          try {
-                            await statusMutation.mutateAsync({
-                              userId: user.id,
-                              disable: !user.isDisabled,
-                            });
-                          } catch (error) {
-                            alert(
-                              error instanceof Error
-                                ? error.message
-                                : "Failed to update user status",
-                            );
-                          }
-                        }}
-                      >
-                        {user.isDisabled ? "Enable" : "Disable"}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
 
                 {filtered.superAdmins.length === 0 && (
                   <div className="rounded-[18px] border border-dashed border-[#C9D8EC] bg-white px-4 py-8 text-center text-sm text-[#575E6B]">
