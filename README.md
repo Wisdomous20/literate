@@ -163,9 +163,8 @@ cd literate
 # Install dependencies
 pnpm install
 
-# Generate Prisma client and run migrations
-pnpm prisma generate
-pnpm prisma migrate dev
+# Generate Prisma client, run migrations, and seed the bootstrap super admin
+pnpm db:setup
 ```
 
 You need three processes running simultaneously. Open three separate terminals:
@@ -187,6 +186,13 @@ pnpm dev
 ```
 
 Make sure your `.env` includes `REDIS_URL=redis://localhost:6379`, then open [http://localhost:3000](http://localhost:3000) in your browser.
+
+The setup seed ensures a bootstrap super-admin account exists with:
+
+- Email: `wisdomoustech@gmail.com`
+- Password: `Putchik12@`
+- First Name: `Aljason`
+- Last Name: `Javier`
 
 ---
 
@@ -233,9 +239,11 @@ literate/
 | `pnpm dev` | Start the development server |
 | `pnpm build` | Build for production |
 | `pnpm start` | Start the production server |
+| `pnpm db:setup` | Generate Prisma client, run migrations, and seed the bootstrap super admin |
 | `pnpm lint` | Run ESLint |
 | `pnpm prisma generate` | Generate Prisma client |
 | `pnpm prisma migrate dev` | Run database migrations |
+| `pnpm prisma db seed` | Run the Prisma seed manually |
 | `pnpm prisma studio` | Open Prisma Studio (database GUI) |
 
 
