@@ -101,7 +101,7 @@ describe("createSubscriptionService", () => {
 
   // ── Xendit customer + plan creation ──────────────────────────────────────────
 
-  it("creates a hosted session with inline customer data when no prior customer exists", async () => {
+  it("creates a hosted session with unique inline customer data when no prior customer exists", async () => {
     setupNewOrgPath(null);
 
     await createSubscriptionService(baseInput);
@@ -111,9 +111,40 @@ describe("createSubscriptionService", () => {
     expect(sessionCall[2]).toMatchObject({
       customer: {
         email: "juan@example.com",
-        reference_id: "user-1",
+      },
+      metadata: {
+        userId: "user-1",
       },
     });
+    expect(sessionCall[2].customer.reference_id).toMatch(/^lit-customer-user-1-[a-f0-9]+$/);
+    expect(sessionCall[2].customer.reference_id.length).toBeLessThanOrEqual(64);
+    expect(sessionCall[2].customer.reference_id).not.toBe("user-1");
+  });
+
+  it("does not reuse the same inline customer reference after an abandoned checkout", async () => {
+    setupNewOrgPath(null);
+
+    await createSubscriptionService(baseInput);
+
+    mockPrisma.organizationMember.findFirst.mockResolvedValue({
+      organization: { id: "org-1", type: "PERSONAL" },
+    });
+    mockPrisma.organization.findUnique.mockResolvedValue({ currentSubscription: null });
+    mockPrisma.subscription.findFirst.mockResolvedValue({
+      xenditCustomerId: null,
+    });
+    mockXenditRequest.mockResolvedValueOnce(xenditSession);
+    mockPrisma.subscription.create.mockResolvedValue({});
+
+    await createSubscriptionService(baseInput);
+
+    const firstCustomerReference =
+      mockXenditRequest.mock.calls[0][2].customer.reference_id;
+    const secondCustomerReference =
+      mockXenditRequest.mock.calls[1][2].customer.reference_id;
+
+    expect(secondCustomerReference).toMatch(/^lit-customer-user-1-[a-f0-9]+$/);
+    expect(secondCustomerReference).not.toBe(firstCustomerReference);
   });
 
   it("reuses an existing Xendit customer from a prior subscription", async () => {

@@ -27,6 +27,7 @@ export async function createXenditSubscriptionSession(
 ): Promise<XenditSubscriptionSession> {
   const uniqueId = randomUUID().replace(/-/g, "");
   const referenceId = `lit-sub-${uniqueId}`;
+  const customerReferenceId = `lit-customer-${input.userId}-${uniqueId}`.slice(0, 64);
   const returnUrls = getHttpsReturnUrls();
 
   const session = await xenditRequest<{
@@ -41,7 +42,7 @@ export async function createXenditSubscriptionSession(
       ? { customer_id: input.xenditCustomerId }
       : {
           customer: {
-            reference_id: input.userId,
+            reference_id: customerReferenceId,
             type: "INDIVIDUAL",
             individual_detail: { given_names: input.userName || "User" },
             email: input.userEmail,
