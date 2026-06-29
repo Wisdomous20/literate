@@ -12,7 +12,7 @@ const archivedStudent = {
   id: "student-1",
   name: "Ana Reyes",
   level: 3,
-  classRoomId: "class-1",
+  classId: "class-1",
   archived: true,
 };
 
@@ -73,7 +73,7 @@ describe("deleteStudentByIdService", () => {
     await deleteStudentByIdService({ userId: "user-99", studentId: "student-1" });
 
     const query = mockPrisma.student.findFirst.mock.calls[0][0];
-    expect(query.where).toMatchObject({ id: "student-1", classRoom: { userId: "user-99" } });
+    expect(query.where).toMatchObject({ id: "student-1", class: { userId: "user-99" } });
   });
 
   it("returns INTERNAL_ERROR when prisma throws", async () => {

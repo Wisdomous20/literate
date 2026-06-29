@@ -4,7 +4,7 @@ export interface RecentAssessmentItem {
   id: string;
   studentName: string;
   studentId: string;
-  classRoomId: string;
+  classId: string;
   assessmentType: string;
   dateTaken: Date;
   classificationLevel: string;
@@ -25,7 +25,7 @@ export async function getRecentAssessmentsService(
       where: {
         student: {
           archived: false,
-          classRoom: {
+          class: {
             userId,
             schoolYear,
             archived: false,
@@ -34,7 +34,7 @@ export async function getRecentAssessmentsService(
       },
       include: {
         student: {
-          select: { id: true, name: true, level: true, classRoomId: true },
+          select: { id: true, name: true, level: true, classId: true },
         },
         oralFluencyResult: { select: { classificationLevel: true } },
         comprehensionResult: { select: { classificationLevel: true } },
@@ -65,7 +65,7 @@ export async function getRecentAssessmentsService(
           id: a.id,
           studentName: a.student.name,
           studentId: a.student.id,
-          classRoomId: a.student.classRoomId,
+          classId: a.student.classId,
           assessmentType: a.type,
           dateTaken: a.dateTaken,
           classificationLevel: classification,

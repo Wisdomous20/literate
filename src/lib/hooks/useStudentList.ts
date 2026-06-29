@@ -6,7 +6,7 @@ import { getStudentsByClassName } from "@/app/actions/student/getAllStudentByCla
 export interface Student {
   id: string
   name: string
-  classRoomId: string
+  classId: string
   level?: number
 }
 

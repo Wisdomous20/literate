@@ -16,7 +16,7 @@ interface CreateStudentResult {
     id: string;
     name: string;
     level: number;
-    classRoomId: string;
+    classId: string;
   };
   error?: string;
   code?: "VALIDATION_ERROR" | "CLASS_NOT_FOUND" | "INTERNAL_ERROR" | "FREE_LIMIT_REACHED";
@@ -60,7 +60,7 @@ export async function createStudentService(
   }
 
   try {
-    const userClass = await prisma.classRoom.findFirst({
+    const userClass = await prisma.class.findFirst({
       where: { userId, name: className.trim(), schoolYear: schoolYear.trim() },
     });
 
@@ -76,7 +76,7 @@ export async function createStudentService(
     const existingStudent = await prisma.student.findFirst({
       where: {
         name: name.trim(),
-        classRoomId: userClass.id,
+        classId: userClass.id,
       },
       select: { id: true },
     });
@@ -93,7 +93,7 @@ export async function createStudentService(
     const isPaid = await hasActiveSubscription(userId);
     if (!isPaid) {
       const existingStudents = await prisma.student.count({
-        where: { classRoom: { userId } },
+        where: { class: { userId } },
       });
       if (existingStudents >= FREE_TIER_LIMITS.MAX_STUDENTS) {
         return {
@@ -108,13 +108,13 @@ export async function createStudentService(
       data: {
         name: name.trim(),
         level,
-        classRoomId: userClass.id,
+        classId: userClass.id,
       },
       select: {
         id: true,
         name: true,
         level: true,
-        classRoomId: true,
+        classId: true,
       },
     });
 

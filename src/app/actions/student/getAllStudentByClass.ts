@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { getStudentsByClassNameService } from "@/service/students/getAllStudentByClassService";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
-import { getStudentsByClassNameSchema } from "@/lib/validation/classroom";
+import { getStudentsByClassNameSchema } from "@/lib/validation/class";
 
 export async function getStudentsByClassName(className: string) {
   try {

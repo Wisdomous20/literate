@@ -6,6 +6,15 @@ export async function removeMembershipByAdminService(membershipId: string) {
     select: {
       id: true,
       role: true,
+      organization: { select: { id: true, name: true } },
+      user: {
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+        },
+      },
     },
   });
 
@@ -27,5 +36,17 @@ export async function removeMembershipByAdminService(membershipId: string) {
   return {
     success: true,
     message: "Membership removed.",
+    membership: {
+      id: membership.id,
+      role: membership.role,
+      organizationId: membership.organization.id,
+      organizationName: membership.organization.name,
+      userId: membership.user.id,
+      userEmail: membership.user.email,
+      userName: [membership.user.firstName, membership.user.lastName]
+        .filter(Boolean)
+        .join(" ")
+        .trim(),
+    },
   };
 }

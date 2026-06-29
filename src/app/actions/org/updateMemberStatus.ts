@@ -5,11 +5,11 @@ import { authOptions } from "@/lib/authOptions";
 import { updateMemberPasswordService } from "@/service/org/updateMemberPasswordService";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { updateMemberPasswordSchema } from "@/lib/validation/org";
-import { findAdminOrganizationForUser } from "@/service/org/orgAuthorization";
 
 export async function updateMemberPasswordAction(
   memberId: string,
-  newPassword: string
+  newPassword: string,
+  organizationId: string,
 ) {
   const session = await getServerSession(authOptions);
 
@@ -17,16 +17,10 @@ export async function updateMemberPasswordAction(
     return { success: false, error: "Unauthorized" };
   }
 
-  const org = await findAdminOrganizationForUser(session.user.id);
-
-  if (!org) {
-    return { success: false, error: "No organization found" };
-  }
-
   const validationResult = updateMemberPasswordSchema.safeParse({
     memberId,
     newPassword,
-    organizationId: org.id,
+    organizationId,
     requestedByUserId: session.user.id,
   });
 

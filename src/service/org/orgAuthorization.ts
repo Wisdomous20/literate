@@ -37,11 +37,11 @@ export async function getOrgAdminContext(
     return { success: false, error: "No organization found" };
   }
 
+  const members = organization.members ?? [];
   const membership =
-    organization.members.find((member) => member.userId === requestedByUserId) ??
-    null;
+    members.find((member) => member.userId === requestedByUserId) ?? null;
   const ownerMembership =
-    organization.members.find((member) => member.role === "OWNER") ?? null;
+    members.find((member) => member.role === "OWNER") ?? null;
   const isOwner = membership?.role === "OWNER";
   const isAdmin = isOwner || membership?.role === "ADMIN";
 

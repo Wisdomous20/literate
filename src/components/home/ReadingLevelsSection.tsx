@@ -36,7 +36,7 @@ export default function ReadingLevelsSection() {
           </h2>
           <p className="mx-auto max-w-2xl text-base leading-7 text-[#575E6B] sm:text-lg">
             LiteRate instantly categorizes students into Phil-IRI profiles,
-            providing clear paths for classroom intervention.
+            providing clear paths for class intervention.
           </p>
         </div>
       </AnimatedSection>

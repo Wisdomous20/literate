@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
           ? {
               student: {
                 archived: false,
-                classRoom: {
+                class: {
                   userId: currentUser.id,
                   archived: false,
                 },

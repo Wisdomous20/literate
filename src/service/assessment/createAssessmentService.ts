@@ -39,16 +39,16 @@ export async function createAssessmentService(
   }
 
   try {
-    // Look up the student's classroom to find the owning user
+    // Look up the student's class to find the owning user
     const student = userId
       ? await prisma.student.findFirst({
           where: {
             id: studentId,
             archived: false,
-            classRoom: { userId, archived: false },
+            class: { userId, archived: false },
           },
           include: {
-            classRoom: {
+            class: {
               select: { userId: true },
             },
           },
@@ -56,7 +56,7 @@ export async function createAssessmentService(
       : await prisma.student.findUnique({
           where: { id: studentId },
           include: {
-            classRoom: {
+            class: {
               select: { userId: true },
             },
           },
@@ -70,7 +70,7 @@ export async function createAssessmentService(
       };
     }
 
-    const owningUserId = student.classRoom.userId;
+    const owningUserId = student.class.userId;
 
     // Check daily limit for free-tier users
     const limitCheck = await checkDailyLimit(owningUserId, type);

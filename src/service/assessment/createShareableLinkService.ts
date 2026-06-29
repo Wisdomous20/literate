@@ -32,7 +32,7 @@ export async function createShareableLinkService(
     where: {
       id: studentId,
       archived: false,
-      classRoom: {
+      class: {
         userId: teacherId,
         archived: false,
       },

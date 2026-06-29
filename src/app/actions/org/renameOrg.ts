@@ -6,7 +6,7 @@ import { renameOrganizationService } from "@/service/org/renameOrganizationServi
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { renameOrganizationSchema } from "@/lib/validation/org";
 
-export async function renameOrgAction(newName: string) {
+export async function renameOrgAction(newName: string, organizationId: string) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
@@ -15,6 +15,7 @@ export async function renameOrgAction(newName: string) {
 
   const validationResult = renameOrganizationSchema.safeParse({
     newName,
+    organizationId,
     requestedByUserId: session.user.id,
   });
 
@@ -27,6 +28,7 @@ export async function renameOrgAction(newName: string) {
 
   return await renameOrganizationService(
     validationResult.data.newName,
-    validationResult.data.requestedByUserId
+    validationResult.data.organizationId,
+    validationResult.data.requestedByUserId,
   );
 }

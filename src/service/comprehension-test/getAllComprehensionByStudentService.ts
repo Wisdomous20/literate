@@ -11,7 +11,7 @@ export async function getAllComprehensionResultsByStudentIdService(
         ...(userId
           ? {
               student: {
-                classRoom: {
+                class: {
                   userId,
                 },
               },

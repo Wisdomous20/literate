@@ -4,7 +4,7 @@ interface StudentItem {
   id: string;
   name: string;
   level?: number;
-  classRoomId: string;
+  classId: string;
   deletedAt?: Date | null;
 }
 
@@ -26,10 +26,10 @@ interface GetClassByIdResult {
 }
 
 export async function getClassByIdService(
-  classRoomId: string,
+  classId: string,
   userId: string,
 ): Promise<GetClassByIdResult> {
-  if (!classRoomId) {
+  if (!classId) {
     return { success: false, error: "Class ID is required", code: "VALIDATION_ERROR" };
   }
 
@@ -38,8 +38,8 @@ export async function getClassByIdService(
   }
 
   try {
-    const classItem = await prisma.classRoom.findFirst({
-      where: { id: classRoomId, userId },
+    const classItem = await prisma.class.findFirst({
+      where: { id: classId, userId },
       select: {
         id: true,
         name: true,
@@ -53,7 +53,7 @@ export async function getClassByIdService(
             id: true,
             name: true,
             level: true,
-            classRoomId: true,
+            classId: true,
             archived: true,
           },
         },

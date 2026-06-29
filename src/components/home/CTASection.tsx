@@ -30,7 +30,7 @@ export default function CTASection() {
         <AnimatedSection direction="up" delay={0.1}>
           <div className="relative z-10 max-w-2xl text-center">
             <h2 className="mb-5 text-3xl font-extrabold leading-tight text-white sm:mb-8 sm:text-4xl lg:text-5xl">
-              Ready to revolutionize your classroom&apos;s literacy?
+              Ready to revolutionize your class&apos;s literacy?
             </h2>
 
             <p className="mb-8 text-base leading-7 text-white/85 sm:mb-10 sm:text-xl">

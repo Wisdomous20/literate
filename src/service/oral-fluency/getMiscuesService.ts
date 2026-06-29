@@ -9,7 +9,7 @@ export async function getOralFluencyMiscues(sessionId: string, userId?: string) 
             oralFluencyResult: {
               assessment: {
                 student: {
-                  classRoom: {
+                  class: {
                     userId,
                   },
                 },

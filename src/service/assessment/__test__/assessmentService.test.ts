@@ -35,8 +35,8 @@ const baseStudent = {
   id: "student-1",
   name: "Juan dela Cruz",
   level: 3,
-  classRoomId: "class-1",
-  classRoom: { userId: "user-1" },
+  classId: "class-1",
+  class: { userId: "user-1" },
 };
 
 const makeAssessment = (
@@ -47,7 +47,7 @@ const makeAssessment = (
   id,
   type,
   dateTaken: new Date("2024-03-01"),
-  student: { id: "student-1", name: "Juan", classRoomId: "class-1" },
+  student: { id: "student-1", name: "Juan", classId: "class-1" },
   oralReadingResult:
     type === "ORAL_READING" ? { classificationLevel: classification } : null,
   oralFluencyResult:
@@ -125,7 +125,7 @@ describe("createAssessmentService", () => {
     });
   });
 
-  it("passes the student's classroom userId to checkDailyLimit", async () => {
+  it("passes the student's class userId to checkDailyLimit", async () => {
     mockPrisma.student.findUnique.mockResolvedValue(baseStudent);
     mockCheckDailyLimit.mockResolvedValue({ allowed: true });
     mockPrisma.assessment.create.mockResolvedValue(baseAssessment);
@@ -209,7 +209,7 @@ describe("getAssessmentsByStudentService", () => {
 describe("getAssessmentSummariesByClassService", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("returns VALIDATION_ERROR when classRoomId is empty", async () => {
+  it("returns VALIDATION_ERROR when classId is empty", async () => {
     const result = await getAssessmentSummariesByClassService("", "user-1");
 
     expect(result.success).toBe(false);
@@ -234,8 +234,8 @@ describe("getAssessmentSummariesByClassService", () => {
     expect(callArgs.where).toMatchObject({
       student: {
         archived: false,
-        classRoomId: "class-1",
-        classRoom: { userId: "user-1" },
+        classId: "class-1",
+        class: { userId: "user-1" },
       },
     });
     expect(callArgs.select).toMatchObject({

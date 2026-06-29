@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 
 interface DeleteClassInput {
   userId: string;
-  classRoomId: string;
+  classId: string;
 }
 
 interface DeleteClassResult {
@@ -15,19 +15,19 @@ interface DeleteClassResult {
 export async function deleteClassService(
   input: DeleteClassInput,
 ): Promise<DeleteClassResult> {
-  const { userId, classRoomId } = input;
+  const { userId, classId } = input;
 
   if (!userId) {
     return { success: false, error: "User ID is required", code: "VALIDATION_ERROR" };
   }
 
-  if (!classRoomId) {
+  if (!classId) {
     return { success: false, error: "Class ID is required", code: "VALIDATION_ERROR" };
   }
 
   try {
-    const existing = await prisma.classRoom.findFirst({
-      where: { id: classRoomId, userId },
+    const existing = await prisma.class.findFirst({
+      where: { id: classId, userId },
       select: { id: true },
     });
 
@@ -39,8 +39,8 @@ export async function deleteClassService(
       };
     }
 
-    const archived = await prisma.classRoom.update({
-      where: { id: classRoomId },
+    const archived = await prisma.class.update({
+      where: { id: classId },
       data: { archived: true },
       select: { id: true },
     });

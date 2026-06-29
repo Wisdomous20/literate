@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
         id,
         assessment: {
           student: {
-            classRoom: {
+            class: {
               userId: currentUser.id,
             },
           },

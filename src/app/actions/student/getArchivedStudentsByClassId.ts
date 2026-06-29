@@ -3,17 +3,17 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
-import { getClassByIdSchema } from "@/lib/validation/classroom";
+import { getClassByIdSchema } from "@/lib/validation/class";
 import { getArchivedStudentsByClassIdService } from "@/service/students/getArchivedStudentsByClassIdService";
 
-export async function getArchivedStudentsByClassId(classRoomId: string) {
+export async function getArchivedStudentsByClassId(classId: string) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
     return { success: false, error: "Unauthorized" };
   }
 
-  const validationResult = getClassByIdSchema.safeParse({ classRoomId });
+  const validationResult = getClassByIdSchema.safeParse({ classId });
   if (!validationResult.success) {
     return {
       success: false,
@@ -23,6 +23,6 @@ export async function getArchivedStudentsByClassId(classRoomId: string) {
 
   return getArchivedStudentsByClassIdService({
     userId: session.user.id,
-    classRoomId: validationResult.data.classRoomId,
+    classId: validationResult.data.classId,
   });
 }

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockPrisma = vi.hoisted(() => ({
-  classRoom: {
+  class: {
     create: vi.fn(),
     findUnique: vi.fn(),
     findMany: vi.fn(),
@@ -23,6 +23,7 @@ vi.mock("@/utils/subscriptionCheck", () => ({
 import { createClassService } from "../createClassService";
 import { getClassByIdService } from "../getClassByIdService";
 import { getAllClassServiceBySchoolYear } from "../getAllClassServiceBySchoolYear";
+import { getArchivedClassServiceBySchoolYear } from "../getArchivedClassServiceBySchoolYear";
 import { updateClassService } from "../updateClassService";
 import { deleteClassService } from "../deleteClassService";
 
@@ -36,8 +37,8 @@ const baseClass = {
 };
 
 const baseStudents = [
-  { id: "student-1", name: "Ana Reyes", level: 3, classRoomId: "class-1", archived: false },
-  { id: "student-2", name: "Ben Cruz", level: 2, classRoomId: "class-1", archived: false },
+  { id: "student-1", name: "Ana Reyes", level: 3, classId: "class-1", archived: false },
+  { id: "student-2", name: "Ben Cruz", level: 2, classId: "class-1", archived: false },
 ];
 
 // ─── createClassService ───────────────────────────────────────────────────────
@@ -48,7 +49,7 @@ describe("createClassService", () => {
     mockGetSchoolYear.mockReturnValue("2025-2026");
     // Default to a paid user so the free-tier gate is skipped unless overridden.
     mockHasActiveSubscription.mockResolvedValue(true);
-    mockPrisma.classRoom.count.mockResolvedValue(0);
+    mockPrisma.class.count.mockResolvedValue(0);
   });
 
   it("returns VALIDATION_ERROR when name is empty", async () => {
@@ -56,7 +57,7 @@ describe("createClassService", () => {
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("VALIDATION_ERROR");
-    expect(mockPrisma.classRoom.create).not.toHaveBeenCalled();
+    expect(mockPrisma.class.create).not.toHaveBeenCalled();
   });
 
   it("returns VALIDATION_ERROR when name is only whitespace", async () => {
@@ -71,29 +72,29 @@ describe("createClassService", () => {
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("VALIDATION_ERROR");
-    expect(mockPrisma.classRoom.create).not.toHaveBeenCalled();
+    expect(mockPrisma.class.create).not.toHaveBeenCalled();
   });
 
   it("trims the name before storing", async () => {
-    mockPrisma.classRoom.create.mockResolvedValue(baseClass);
+    mockPrisma.class.create.mockResolvedValue(baseClass);
 
     await createClassService({ name: "  Grade 3  ", userId: "user-1" });
 
-    const createCall = mockPrisma.classRoom.create.mock.calls[0][0];
+    const createCall = mockPrisma.class.create.mock.calls[0][0];
     expect(createCall.data.name).toBe("Grade 3");
   });
 
   it("stores the school year from getSchoolYear", async () => {
-    mockPrisma.classRoom.create.mockResolvedValue(baseClass);
+    mockPrisma.class.create.mockResolvedValue(baseClass);
 
     await createClassService({ name: "Grade 3", userId: "user-1" });
 
-    const createCall = mockPrisma.classRoom.create.mock.calls[0][0];
+    const createCall = mockPrisma.class.create.mock.calls[0][0];
     expect(createCall.data.schoolYear).toBe("2025-2026");
   });
 
   it("returns the created class on success", async () => {
-    mockPrisma.classRoom.create.mockResolvedValue(baseClass);
+    mockPrisma.class.create.mockResolvedValue(baseClass);
 
     const result = await createClassService({ name: "Grade 3 - Section A", userId: "user-1" });
 
@@ -102,7 +103,7 @@ describe("createClassService", () => {
   });
 
   it("returns INTERNAL_ERROR when prisma throws", async () => {
-    mockPrisma.classRoom.create.mockRejectedValue(new Error("DB down"));
+    mockPrisma.class.create.mockRejectedValue(new Error("DB down"));
 
     const result = await createClassService({ name: "Grade 3", userId: "user-1" });
 
@@ -112,32 +113,32 @@ describe("createClassService", () => {
 
   it("blocks a free user who already has 1 class", async () => {
     mockHasActiveSubscription.mockResolvedValue(false);
-    mockPrisma.classRoom.count.mockResolvedValue(1);
+    mockPrisma.class.count.mockResolvedValue(1);
 
     const result = await createClassService({ name: "Grade 4", userId: "user-1" });
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("FREE_LIMIT_REACHED");
-    expect(mockPrisma.classRoom.create).not.toHaveBeenCalled();
+    expect(mockPrisma.class.create).not.toHaveBeenCalled();
   });
 
   it("allows a free user's first class (registration bootstrap, 0 → 1)", async () => {
     mockHasActiveSubscription.mockResolvedValue(false);
-    mockPrisma.classRoom.count.mockResolvedValue(0);
-    mockPrisma.classRoom.create.mockResolvedValue(baseClass);
+    mockPrisma.class.count.mockResolvedValue(0);
+    mockPrisma.class.create.mockResolvedValue(baseClass);
 
     const result = await createClassService({ name: "My Class", userId: "user-1" });
 
     expect(result.success).toBe(true);
-    expect(mockPrisma.classRoom.count).toHaveBeenCalledWith({
+    expect(mockPrisma.class.count).toHaveBeenCalledWith({
       where: { userId: "user-1", archived: false },
     });
   });
 
   it("does not gate a paid user regardless of class count", async () => {
     mockHasActiveSubscription.mockResolvedValue(true);
-    mockPrisma.classRoom.count.mockResolvedValue(50);
-    mockPrisma.classRoom.create.mockResolvedValue(baseClass);
+    mockPrisma.class.count.mockResolvedValue(50);
+    mockPrisma.class.create.mockResolvedValue(baseClass);
 
     const result = await createClassService({ name: "Grade 9", userId: "user-1" });
 
@@ -150,12 +151,12 @@ describe("createClassService", () => {
 describe("getClassByIdService", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("returns VALIDATION_ERROR when classRoomId is empty", async () => {
+  it("returns VALIDATION_ERROR when classId is empty", async () => {
     const result = await getClassByIdService("", "user-1");
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("VALIDATION_ERROR");
-    expect(mockPrisma.classRoom.findFirst).not.toHaveBeenCalled();
+    expect(mockPrisma.class.findFirst).not.toHaveBeenCalled();
   });
 
   it("returns VALIDATION_ERROR when userId is empty", async () => {
@@ -163,11 +164,11 @@ describe("getClassByIdService", () => {
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("VALIDATION_ERROR");
-    expect(mockPrisma.classRoom.findFirst).not.toHaveBeenCalled();
+    expect(mockPrisma.class.findFirst).not.toHaveBeenCalled();
   });
 
   it("returns FORBIDDEN when no class matches the id for the requesting user", async () => {
-    mockPrisma.classRoom.findFirst.mockResolvedValue(null);
+    mockPrisma.class.findFirst.mockResolvedValue(null);
 
     const result = await getClassByIdService("nonexistent", "user-1");
 
@@ -176,7 +177,7 @@ describe("getClassByIdService", () => {
   });
 
   it("returns the class with its students on success", async () => {
-    mockPrisma.classRoom.findFirst.mockResolvedValue({
+    mockPrisma.class.findFirst.mockResolvedValue({
       ...baseClass,
       students: baseStudents,
     });
@@ -189,17 +190,17 @@ describe("getClassByIdService", () => {
   });
 
   it("scopes the class query to the requesting user and active students", async () => {
-    mockPrisma.classRoom.findFirst.mockResolvedValue({ ...baseClass, students: [] });
+    mockPrisma.class.findFirst.mockResolvedValue({ ...baseClass, students: [] });
 
     await getClassByIdService("class-1", "user-1");
 
-    const query = mockPrisma.classRoom.findFirst.mock.calls[0][0];
+    const query = mockPrisma.class.findFirst.mock.calls[0][0];
     expect(query.where).toMatchObject({ id: "class-1", userId: "user-1" });
     expect(query.select.students.where).toMatchObject({ archived: false });
   });
 
   it("returns INTERNAL_ERROR when prisma throws", async () => {
-    mockPrisma.classRoom.findFirst.mockRejectedValue(new Error("DB down"));
+    mockPrisma.class.findFirst.mockRejectedValue(new Error("DB down"));
 
     const result = await getClassByIdService("class-1", "user-1");
 
@@ -218,7 +219,7 @@ describe("getAllClassServiceBySchoolYear", () => {
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("VALIDATION_ERROR");
-    expect(mockPrisma.classRoom.findMany).not.toHaveBeenCalled();
+    expect(mockPrisma.class.findMany).not.toHaveBeenCalled();
   });
 
   it("returns VALIDATION_ERROR when schoolYear is empty", async () => {
@@ -226,20 +227,20 @@ describe("getAllClassServiceBySchoolYear", () => {
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("VALIDATION_ERROR");
-    expect(mockPrisma.classRoom.findMany).not.toHaveBeenCalled();
+    expect(mockPrisma.class.findMany).not.toHaveBeenCalled();
   });
 
   it("only queries non-archived classes for the given user and school year", async () => {
-    mockPrisma.classRoom.findMany.mockResolvedValue([]);
+    mockPrisma.class.findMany.mockResolvedValue([]);
 
     await getAllClassServiceBySchoolYear("user-1", "2025-2026");
 
-    const query = mockPrisma.classRoom.findMany.mock.calls[0][0];
+    const query = mockPrisma.class.findMany.mock.calls[0][0];
     expect(query.where).toMatchObject({ userId: "user-1", schoolYear: "2025-2026", archived: false });
   });
 
   it("maps _count.students into studentCount on each result", async () => {
-    mockPrisma.classRoom.findMany.mockResolvedValue([
+    mockPrisma.class.findMany.mockResolvedValue([
       { ...baseClass, _count: { students: 5 } },
       { ...baseClass, id: "class-2", name: "Grade 4", _count: { students: 3 } },
     ]);
@@ -252,7 +253,7 @@ describe("getAllClassServiceBySchoolYear", () => {
   });
 
   it("returns an empty array when no classes exist", async () => {
-    mockPrisma.classRoom.findMany.mockResolvedValue([]);
+    mockPrisma.class.findMany.mockResolvedValue([]);
 
     const result = await getAllClassServiceBySchoolYear("user-1", "2025-2026");
 
@@ -261,7 +262,7 @@ describe("getAllClassServiceBySchoolYear", () => {
   });
 
   it("returns INTERNAL_ERROR when prisma throws", async () => {
-    mockPrisma.classRoom.findMany.mockRejectedValue(new Error("DB down"));
+    mockPrisma.class.findMany.mockRejectedValue(new Error("DB down"));
 
     const result = await getAllClassServiceBySchoolYear("user-1", "2025-2026");
 
@@ -272,79 +273,140 @@ describe("getAllClassServiceBySchoolYear", () => {
 
 // ─── updateClassService ───────────────────────────────────────────────────────
 
+describe("getArchivedClassServiceBySchoolYear", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("returns VALIDATION_ERROR when userId is empty", async () => {
+    const result = await getArchivedClassServiceBySchoolYear("", "2025-2026");
+
+    expect(result.success).toBe(false);
+    expect(result.code).toBe("VALIDATION_ERROR");
+    expect(mockPrisma.class.findMany).not.toHaveBeenCalled();
+  });
+
+  it("returns VALIDATION_ERROR when schoolYear is empty", async () => {
+    const result = await getArchivedClassServiceBySchoolYear("user-1", "");
+
+    expect(result.success).toBe(false);
+    expect(result.code).toBe("VALIDATION_ERROR");
+    expect(mockPrisma.class.findMany).not.toHaveBeenCalled();
+  });
+
+  it("only queries archived classes for the given user and school year", async () => {
+    mockPrisma.class.findMany.mockResolvedValue([]);
+
+    await getArchivedClassServiceBySchoolYear("user-1", "2025-2026");
+
+    const query = mockPrisma.class.findMany.mock.calls[0][0];
+    expect(query.where).toMatchObject({
+      userId: "user-1",
+      schoolYear: "2025-2026",
+      archived: true,
+    });
+  });
+
+  it("maps _count.students into studentCount on each archived result", async () => {
+    mockPrisma.class.findMany.mockResolvedValue([
+      { ...baseClass, archived: true, _count: { students: 5 } },
+      {
+        ...baseClass,
+        id: "class-2",
+        name: "Grade 4",
+        archived: true,
+        _count: { students: 3 },
+      },
+    ]);
+
+    const result = await getArchivedClassServiceBySchoolYear("user-1", "2025-2026");
+
+    expect(result.success).toBe(true);
+    expect(result.classes?.[0].studentCount).toBe(5);
+    expect(result.classes?.[1].studentCount).toBe(3);
+  });
+
+  it("returns INTERNAL_ERROR when prisma throws", async () => {
+    mockPrisma.class.findMany.mockRejectedValue(new Error("DB down"));
+
+    const result = await getArchivedClassServiceBySchoolYear("user-1", "2025-2026");
+
+    expect(result.success).toBe(false);
+    expect(result.code).toBe("INTERNAL_ERROR");
+  });
+});
+
 describe("updateClassService", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("returns VALIDATION_ERROR when userId is empty", async () => {
-    const result = await updateClassService({ userId: "", classRoomId: "class-1", name: "New Name" });
+    const result = await updateClassService({ userId: "", classId: "class-1", name: "New Name" });
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("VALIDATION_ERROR");
   });
 
-  it("returns VALIDATION_ERROR when classRoomId is empty", async () => {
-    const result = await updateClassService({ userId: "user-1", classRoomId: "", name: "New Name" });
+  it("returns VALIDATION_ERROR when classId is empty", async () => {
+    const result = await updateClassService({ userId: "user-1", classId: "", name: "New Name" });
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("VALIDATION_ERROR");
   });
 
   it("returns VALIDATION_ERROR when name is provided but empty", async () => {
-    const result = await updateClassService({ userId: "user-1", classRoomId: "class-1", name: "   " });
+    const result = await updateClassService({ userId: "user-1", classId: "class-1", name: "   " });
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("VALIDATION_ERROR");
   });
 
   it("returns VALIDATION_ERROR when neither name nor archived is provided", async () => {
-    const result = await updateClassService({ userId: "user-1", classRoomId: "class-1" });
+    const result = await updateClassService({ userId: "user-1", classId: "class-1" });
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("VALIDATION_ERROR");
   });
 
   it("returns FORBIDDEN when class does not belong to the user", async () => {
-    mockPrisma.classRoom.findFirst.mockResolvedValue(null);
+    mockPrisma.class.findFirst.mockResolvedValue(null);
 
     const result = await updateClassService({
       userId: "user-1",
-      classRoomId: "class-1",
+      classId: "class-1",
       name: "New Name",
     });
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("FORBIDDEN");
-    expect(mockPrisma.classRoom.update).not.toHaveBeenCalled();
+    expect(mockPrisma.class.update).not.toHaveBeenCalled();
   });
 
   it("trims the name before storing", async () => {
-    mockPrisma.classRoom.findFirst.mockResolvedValue({ id: "class-1" });
-    mockPrisma.classRoom.update.mockResolvedValue({ ...baseClass, name: "New Name" });
+    mockPrisma.class.findFirst.mockResolvedValue({ id: "class-1" });
+    mockPrisma.class.update.mockResolvedValue({ ...baseClass, name: "New Name" });
 
-    await updateClassService({ userId: "user-1", classRoomId: "class-1", name: "  New Name  " });
+    await updateClassService({ userId: "user-1", classId: "class-1", name: "  New Name  " });
 
-    const updateCall = mockPrisma.classRoom.update.mock.calls[0][0];
+    const updateCall = mockPrisma.class.update.mock.calls[0][0];
     expect(updateCall.data.name).toBe("New Name");
   });
 
   it("updates archived flag when provided", async () => {
-    mockPrisma.classRoom.findFirst.mockResolvedValue({ id: "class-1" });
-    mockPrisma.classRoom.update.mockResolvedValue({ ...baseClass, archived: true });
+    mockPrisma.class.findFirst.mockResolvedValue({ id: "class-1" });
+    mockPrisma.class.update.mockResolvedValue({ ...baseClass, archived: true });
 
-    await updateClassService({ userId: "user-1", classRoomId: "class-1", archived: true });
+    await updateClassService({ userId: "user-1", classId: "class-1", archived: true });
 
-    const updateCall = mockPrisma.classRoom.update.mock.calls[0][0];
+    const updateCall = mockPrisma.class.update.mock.calls[0][0];
     expect(updateCall.data.archived).toBe(true);
     expect(updateCall.data.name).toBeUndefined();
   });
 
   it("returns the updated class on success", async () => {
-    mockPrisma.classRoom.findFirst.mockResolvedValue({ id: "class-1" });
-    mockPrisma.classRoom.update.mockResolvedValue({ ...baseClass, name: "Updated Name" });
+    mockPrisma.class.findFirst.mockResolvedValue({ id: "class-1" });
+    mockPrisma.class.update.mockResolvedValue({ ...baseClass, name: "Updated Name" });
 
     const result = await updateClassService({
       userId: "user-1",
-      classRoomId: "class-1",
+      classId: "class-1",
       name: "Updated Name",
     });
 
@@ -353,11 +415,11 @@ describe("updateClassService", () => {
   });
 
   it("returns INTERNAL_ERROR when prisma throws", async () => {
-    mockPrisma.classRoom.findFirst.mockRejectedValue(new Error("DB down"));
+    mockPrisma.class.findFirst.mockRejectedValue(new Error("DB down"));
 
     const result = await updateClassService({
       userId: "user-1",
-      classRoomId: "class-1",
+      classId: "class-1",
       name: "New Name",
     });
 
@@ -372,55 +434,55 @@ describe("deleteClassService", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("returns VALIDATION_ERROR when userId is empty", async () => {
-    const result = await deleteClassService({ userId: "", classRoomId: "class-1" });
+    const result = await deleteClassService({ userId: "", classId: "class-1" });
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("VALIDATION_ERROR");
-    expect(mockPrisma.classRoom.findFirst).not.toHaveBeenCalled();
+    expect(mockPrisma.class.findFirst).not.toHaveBeenCalled();
   });
 
-  it("returns VALIDATION_ERROR when classRoomId is empty", async () => {
-    const result = await deleteClassService({ userId: "user-1", classRoomId: "" });
+  it("returns VALIDATION_ERROR when classId is empty", async () => {
+    const result = await deleteClassService({ userId: "user-1", classId: "" });
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("VALIDATION_ERROR");
-    expect(mockPrisma.classRoom.findFirst).not.toHaveBeenCalled();
+    expect(mockPrisma.class.findFirst).not.toHaveBeenCalled();
   });
 
   it("returns FORBIDDEN when class does not belong to the user", async () => {
-    mockPrisma.classRoom.findFirst.mockResolvedValue(null);
+    mockPrisma.class.findFirst.mockResolvedValue(null);
 
-    const result = await deleteClassService({ userId: "user-1", classRoomId: "class-1" });
+    const result = await deleteClassService({ userId: "user-1", classId: "class-1" });
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("FORBIDDEN");
-    expect(mockPrisma.classRoom.update).not.toHaveBeenCalled();
+    expect(mockPrisma.class.update).not.toHaveBeenCalled();
   });
 
   it("archives the class instead of hard deleting it", async () => {
-    mockPrisma.classRoom.findFirst.mockResolvedValue({ id: "class-1" });
-    mockPrisma.classRoom.update.mockResolvedValue({ id: "class-1" });
+    mockPrisma.class.findFirst.mockResolvedValue({ id: "class-1" });
+    mockPrisma.class.update.mockResolvedValue({ id: "class-1" });
 
-    await deleteClassService({ userId: "user-1", classRoomId: "class-1" });
+    await deleteClassService({ userId: "user-1", classId: "class-1" });
 
-    const updateCall = mockPrisma.classRoom.update.mock.calls[0][0];
+    const updateCall = mockPrisma.class.update.mock.calls[0][0];
     expect(updateCall.data).toMatchObject({ archived: true });
   });
 
   it("returns the archived class id on success", async () => {
-    mockPrisma.classRoom.findFirst.mockResolvedValue({ id: "class-1" });
-    mockPrisma.classRoom.update.mockResolvedValue({ id: "class-1" });
+    mockPrisma.class.findFirst.mockResolvedValue({ id: "class-1" });
+    mockPrisma.class.update.mockResolvedValue({ id: "class-1" });
 
-    const result = await deleteClassService({ userId: "user-1", classRoomId: "class-1" });
+    const result = await deleteClassService({ userId: "user-1", classId: "class-1" });
 
     expect(result.success).toBe(true);
     expect(result.id).toBe("class-1");
   });
 
   it("returns INTERNAL_ERROR when prisma throws", async () => {
-    mockPrisma.classRoom.findFirst.mockRejectedValue(new Error("DB down"));
+    mockPrisma.class.findFirst.mockRejectedValue(new Error("DB down"));
 
-    const result = await deleteClassService({ userId: "user-1", classRoomId: "class-1" });
+    const result = await deleteClassService({ userId: "user-1", classId: "class-1" });
 
     expect(result.success).toBe(false);
     expect(result.code).toBe("INTERNAL_ERROR");

@@ -30,6 +30,7 @@ export const createOrganizationSchema = z.object({
 
 export const renameOrganizationSchema = z.object({
   newName: organizationNameSchema,
+  organizationId: idString("Organization ID"),
   requestedByUserId: idString("User ID"),
 });
 

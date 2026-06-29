@@ -11,7 +11,6 @@ export async function middleware(request: NextRequest) {
 
   const isAdminRoute = pathname.startsWith("/admin");
   const isPassageAdminRoute = pathname.startsWith("/admin/passages");
-  const isPassageActivityRoute = pathname.startsWith("/admin/passages/activity");
   const isDashboardRoute = pathname.startsWith("/dashboard");
   const isOrgRoute = pathname.startsWith("/org");
   const isProtectedRoute =
@@ -38,10 +37,6 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isDashboardRoute && token?.role === "PASSAGE_MANAGER") {
-    return NextResponse.redirect(new URL("/admin/passages", request.url));
-  }
-
-  if (isPassageActivityRoute && token?.role === "PASSAGE_MANAGER") {
     return NextResponse.redirect(new URL("/admin/passages", request.url));
   }
 

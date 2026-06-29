@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { createStudentService } from "@/service/students/createStudentService"; 
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
-import { createStudentSchema } from "@/lib/validation/classroom";
+import { createStudentSchema } from "@/lib/validation/class";
 import { revalidatePath } from "next/cache";
 import { getSchoolYear } from "@/utils/getSchoolYear";
 

@@ -5,24 +5,20 @@ import { authOptions } from "@/lib/authOptions";
 import { generateMemberPasswordService } from "@/service/org/generateMemberPasswordService";
 import { generateMemberPasswordSchema } from "@/lib/validation/org";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
-import { findAdminOrganizationForUser } from "@/service/org/orgAuthorization";
 
-export async function generateMemberPasswordAction(memberId: string) {
+export async function generateMemberPasswordAction(
+  memberId: string,
+  organizationId: string,
+) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
     return { success: false, error: "Unauthorized" };
   }
 
-  const org = await findAdminOrganizationForUser(session.user.id);
-
-  if (!org) {
-    return { success: false, error: "No organization found" };
-  }
-
   const validationResult = generateMemberPasswordSchema.safeParse({
     memberId,
-    organizationId: org.id,
+    organizationId,
     requestedByUserId: session.user.id,
   });
 

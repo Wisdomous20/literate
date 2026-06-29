@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { deleteStudentByIdService } from "@/service/students/deleteStudentByIdService";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
-import { deleteStudentSchema } from "@/lib/validation/classroom";
+import { deleteStudentSchema } from "@/lib/validation/class";
 import { revalidatePath } from "next/cache";
 
 export async function deleteStudent(studentId: string) {

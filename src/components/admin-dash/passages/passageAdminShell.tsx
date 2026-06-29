@@ -13,8 +13,7 @@ const navItems = [
     icon: BookOpenText,
     active: (pathname: string) =>
       pathname === "/admin/passages" ||
-      (pathname.startsWith("/admin/passages/") &&
-        !pathname.startsWith("/admin/passages/activity")),
+      pathname.startsWith("/admin/passages/"),
   },
 ];
 

@@ -1,5 +1,9 @@
 import { userType } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
+import {
+  SEEDED_SUPER_ADMIN_PROTECTION_MESSAGE,
+  isSeededSuperAdminUserId,
+} from "@/service/admin/protectedAdminAccount";
 
 export async function updateAdminUserRoleService(
   targetUserId: string,
@@ -13,9 +17,16 @@ export async function updateAdminUserRoleService(
     };
   }
 
+  if (await isSeededSuperAdminUserId(targetUserId)) {
+    return {
+      success: false,
+      error: SEEDED_SUPER_ADMIN_PROTECTION_MESSAGE,
+    };
+  }
+
   const user = await prisma.user.findUnique({
     where: { id: targetUserId },
-    select: { id: true },
+    select: { id: true, email: true, firstName: true, lastName: true, role: true },
   });
 
   if (!user) {
@@ -30,5 +41,12 @@ export async function updateAdminUserRoleService(
   return {
     success: true,
     message: "User role updated.",
+    user: {
+      id: user.id,
+      email: user.email,
+      name: [user.firstName, user.lastName].filter(Boolean).join(" ").trim(),
+      previousRole: user.role,
+      newRole: role,
+    },
   };
 }

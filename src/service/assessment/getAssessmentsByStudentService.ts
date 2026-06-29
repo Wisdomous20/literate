@@ -24,7 +24,7 @@ export async function getAssessmentsByStudentService(
     if (input.type) where.type = input.type;
     if (input.userId) {
       where.student = {
-        classRoom: {
+        class: {
           userId: input.userId,
         },
       };

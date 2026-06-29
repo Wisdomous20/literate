@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { getAllClassServiceBySchoolYear } from "@/service/class/getAllClassServiceBySchoolYear";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
-import { getClassListSchema } from "@/lib/validation/classroom";
+import { getClassListSchema } from "@/lib/validation/class";
 
 export async function getClassListBySchoolYear(schoolYear: string) {
   const session = await getServerSession(authOptions);

@@ -41,7 +41,7 @@ export async function updateBehaviorsService(
           id: sessionId,
           assessment: {
             student: {
-              classRoom: {
+              class: {
                 userId,
               },
             },

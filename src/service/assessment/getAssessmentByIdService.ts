@@ -43,7 +43,7 @@ export async function getAssessmentByIdService(
           where: {
             id,
             student: {
-              classRoom: {
+              class: {
                 userId,
               },
             },

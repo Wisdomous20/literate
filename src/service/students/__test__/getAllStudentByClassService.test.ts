@@ -9,8 +9,8 @@ vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));
 import { getStudentsByClassNameService } from "../getAllStudentByClassService";
 
 const baseStudents = [
-  { id: "student-1", name: "Ana Reyes", classRoomId: "class-1", level: 3 },
-  { id: "student-2", name: "Ben Cruz", classRoomId: "class-1", level: 2 },
+  { id: "student-1", name: "Ana Reyes", classId: "class-1", level: 3 },
+  { id: "student-2", name: "Ben Cruz", classId: "class-1", level: 2 },
 ];
 
 describe("getStudentsByClassNameService", () => {
@@ -49,7 +49,7 @@ describe("getStudentsByClassNameService", () => {
     await getStudentsByClassNameService("user-99", "Grade 4 - B");
 
     const query = mockPrisma.student.findMany.mock.calls[0][0];
-    expect(query.where.classRoom).toMatchObject({ name: "Grade 4 - B", userId: "user-99" });
+    expect(query.where.class).toMatchObject({ name: "Grade 4 - B", userId: "user-99" });
   });
 
   it("returns INTERNAL_ERROR when prisma throws", async () => {

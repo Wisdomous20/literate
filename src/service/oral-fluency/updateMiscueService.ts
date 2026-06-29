@@ -118,7 +118,7 @@ export async function updateMiscueService(
               oralFluencyResult: {
                 assessment: {
                   student: {
-                    classRoom: {
+                    class: {
                       userId,
                     },
                   },
@@ -148,7 +148,7 @@ export async function updateMiscueService(
         id: sessionId!,
         assessment: {
           student: {
-            classRoom: {
+            class: {
               userId,
             },
           },

@@ -35,7 +35,7 @@ interface StudentData {
   id: string;
   name: string;
   level?: number;
-  classRoomId: string;
+  classId: string;
   archived?: boolean;
 }
 
@@ -67,7 +67,7 @@ function getAssessmentClassification(
 export default function ClassListsPage() {
   const params = useParams();
   const router = useRouter();
-  const classRoomId = params.id as string;
+  const classId = params.id as string;
   const queryClient = useQueryClient();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -87,7 +87,7 @@ export default function ClassListsPage() {
     data: classData,
     isLoading: classLoading,
     error: classError,
-  } = useClassById(classRoomId);
+  } = useClassById(classId);
 
   const students = useMemo(
     () => (classData?.students ?? []) as StudentData[],
@@ -98,7 +98,7 @@ export default function ClassListsPage() {
     data: assessmentSummaries = [],
     isLoading: assessmentsLoading,
     error: assessmentsError,
-  } = useClassAssessmentSummaries(classRoomId);
+  } = useClassAssessmentSummaries(classId);
 
   const studentAssessments = useMemo(() => {
     const grouped: Record<string, AssessmentSummaryData[]> = {};
@@ -132,9 +132,9 @@ export default function ClassListsPage() {
       if (result.success) {
         showToast("Student created successfully!", "success");
         setIsModalOpen(false);
-        queryClient.invalidateQueries({ queryKey: ["class", classRoomId] });
+        queryClient.invalidateQueries({ queryKey: ["class", classId] });
         queryClient.invalidateQueries({
-          queryKey: ["assessment-summaries", classRoomId],
+          queryKey: ["assessment-summaries", classId],
         });
       } else {
         showToast(result.error || "Failed to create student.", "error");
@@ -150,9 +150,9 @@ export default function ClassListsPage() {
       const result = await deleteStudent(studentId);
       if (result.success) {
         showToast("Student deleted successfully!", "success");
-        queryClient.invalidateQueries({ queryKey: ["class", classRoomId] });
+        queryClient.invalidateQueries({ queryKey: ["class", classId] });
         queryClient.invalidateQueries({
-          queryKey: ["assessment-summaries", classRoomId],
+          queryKey: ["assessment-summaries", classId],
         });
       } else {
         showToast("Failed to delete student.", "error");
@@ -173,7 +173,7 @@ export default function ClassListsPage() {
       const result = await updateStudent(studentId, name, level);
       if (result.success) {
         showToast("Student updated successfully!", "success");
-        queryClient.invalidateQueries({ queryKey: ["class", classRoomId] });
+        queryClient.invalidateQueries({ queryKey: ["class", classId] });
       } else {
         showToast("Failed to update student.", "error");
       }
@@ -188,9 +188,9 @@ export default function ClassListsPage() {
       const result = await updateStudent(studentId, undefined, undefined, true);
       if (result.success) {
         showToast("Student archived successfully!", "success");
-        queryClient.invalidateQueries({ queryKey: ["class", classRoomId] });
+        queryClient.invalidateQueries({ queryKey: ["class", classId] });
         queryClient.invalidateQueries({
-          queryKey: ["assessment-summaries", classRoomId],
+          queryKey: ["assessment-summaries", classId],
         });
       } else {
         showToast("Failed to archive student.", "error");
@@ -393,7 +393,7 @@ export default function ClassListsPage() {
                   <button
                     type="button"
                     onClick={() =>
-                      router.push(`/dashboard/class/${classRoomId}/archive`)
+                      router.push(`/dashboard/class/${classId}/archive`)
                     }
                     className="inline-flex items-center rounded-lg border border-[#6666FF]/30 bg-[#F8F9FF] p-2 text-[#6666FF] transition-colors hover:bg-[#EEF0FF]"
                     title="Archived students"

@@ -13,11 +13,11 @@ function deduplicateAssessments(assessments: AssessmentSummaryData[]) {
   });
 }
 
-export function useClassAssessmentSummaries(classRoomId: string) {
+export function useClassAssessmentSummaries(classId: string) {
   return useQuery({
-    queryKey: ["assessment-summaries", classRoomId],
+    queryKey: ["assessment-summaries", classId],
     queryFn: async () => {
-      const result = await getAssessmentSummariesByClass(classRoomId);
+      const result = await getAssessmentSummariesByClass(classId);
       return deduplicateAssessments(
         (result || []).map((assessment) => ({
           ...assessment,
@@ -27,6 +27,6 @@ export function useClassAssessmentSummaries(classRoomId: string) {
     },
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
-    enabled: !!classRoomId,
+    enabled: !!classId,
   });
 }

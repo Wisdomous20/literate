@@ -5,24 +5,21 @@ import { authOptions } from "@/lib/authOptions";
 import { toggleMemberStatusService } from "@/service/org/toggleMemberStatusService";
 import { getFirstZodErrorMessage } from "@/lib/validation/common";
 import { toggleMemberStatusSchema } from "@/lib/validation/org";
-import { findAdminOrganizationForUser } from "@/service/org/orgAuthorization";
 
-export async function toggleMemberAction(memberId: string, disable: boolean) {
+export async function toggleMemberAction(
+  memberId: string,
+  disable: boolean,
+  organizationId: string,
+) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
     return { success: false, error: "Unauthorized" };
   }
 
-  const org = await findAdminOrganizationForUser(session.user.id);
-
-  if (!org) {
-    return { success: false, error: "No organization found" };
-  }
-
   const validationResult = toggleMemberStatusSchema.safeParse({
     memberId,
-    organizationId: org.id,
+    organizationId,
     requestedByUserId: session.user.id,
     disable,
   });

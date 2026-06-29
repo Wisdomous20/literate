@@ -33,7 +33,7 @@ export async function getOralFluencyResultService(
             id: sessionId,
             assessment: {
               student: {
-                classRoom: {
+                class: {
                   userId,
                 },
               },

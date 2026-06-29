@@ -6,7 +6,7 @@ export async function getShareableLinksService(userId: string) {
       where: {
         assessment: {
           student: {
-            classRoom: {
+            class: {
               userId,
             },
           },

@@ -9,6 +9,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "db:setup": "pnpm prisma generate && pnpm prisma migrate dev && pnpm prisma db seed",
     "test": "vitest",
     "test:run": "vitest run",
     "test:ui": "vitest --ui",
@@ -80,5 +81,8 @@
       "react": "19.2.3",
       "react-dom": "19.2.3"
     }
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }

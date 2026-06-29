@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockPrisma = vi.hoisted(() => ({
-  classRoom: { findMany: vi.fn() },
+  class: { findMany: vi.fn() },
   assessment: { groupBy: vi.fn() },
 }));
 
@@ -24,8 +24,8 @@ import {
 describe("getDailyUsage", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("returns zero counts when user has no classrooms", async () => {
-    mockPrisma.classRoom.findMany.mockResolvedValue([]);
+  it("returns zero counts when user has no classes", async () => {
+    mockPrisma.class.findMany.mockResolvedValue([]);
 
     const usage = await getDailyUsage("user-1");
 
@@ -34,7 +34,7 @@ describe("getDailyUsage", () => {
   });
 
   it("returns zero counts when no assessments were taken today", async () => {
-    mockPrisma.classRoom.findMany.mockResolvedValue([{ id: "class-1" }]);
+    mockPrisma.class.findMany.mockResolvedValue([{ id: "class-1" }]);
     mockPrisma.assessment.groupBy.mockResolvedValue([]);
 
     const usage = await getDailyUsage("user-1");
@@ -43,7 +43,7 @@ describe("getDailyUsage", () => {
   });
 
   it("returns correct counts from groupBy results", async () => {
-    mockPrisma.classRoom.findMany.mockResolvedValue([{ id: "class-1" }]);
+    mockPrisma.class.findMany.mockResolvedValue([{ id: "class-1" }]);
     mockPrisma.assessment.groupBy.mockResolvedValue([
       { type: "ORAL_READING", _count: { id: 2 } },
       { type: "COMPREHENSION", _count: { id: 1 } },
@@ -54,8 +54,8 @@ describe("getDailyUsage", () => {
     expect(usage).toEqual({ ORAL_READING: 2, COMPREHENSION: 1, READING_FLUENCY: 0 });
   });
 
-  it("aggregates counts across multiple classrooms", async () => {
-    mockPrisma.classRoom.findMany.mockResolvedValue([
+  it("aggregates counts across multiple classes", async () => {
+    mockPrisma.class.findMany.mockResolvedValue([
       { id: "class-1" },
       { id: "class-2" },
     ]);
@@ -67,7 +67,7 @@ describe("getDailyUsage", () => {
 
     expect(usage.READING_FLUENCY).toBe(3);
     const callArgs = mockPrisma.assessment.groupBy.mock.calls[0][0];
-    expect(callArgs.where.student.classRoomId.in).toEqual(["class-1", "class-2"]);
+    expect(callArgs.where.student.classId.in).toEqual(["class-1", "class-2"]);
   });
 });
 
@@ -78,7 +78,7 @@ describe("checkDailyLimit", () => {
 
   it("always allows paid users regardless of usage", async () => {
     mockHasActiveSubscription.mockResolvedValue(true);
-    mockPrisma.classRoom.findMany.mockResolvedValue([{ id: "class-1" }]);
+    mockPrisma.class.findMany.mockResolvedValue([{ id: "class-1" }]);
     mockPrisma.assessment.groupBy.mockResolvedValue([
       { type: "COMPREHENSION", _count: { id: 99 } },
     ]);
@@ -92,7 +92,7 @@ describe("checkDailyLimit", () => {
 
   it("allows free users who have not yet hit the daily limit", async () => {
     mockHasActiveSubscription.mockResolvedValue(false);
-    mockPrisma.classRoom.findMany.mockResolvedValue([{ id: "class-1" }]);
+    mockPrisma.class.findMany.mockResolvedValue([{ id: "class-1" }]);
     mockPrisma.assessment.groupBy.mockResolvedValue([]);
 
     const result = await checkDailyLimit("user-1", "COMPREHENSION");
@@ -103,7 +103,7 @@ describe("checkDailyLimit", () => {
 
   it("blocks free users who have reached the daily limit", async () => {
     mockHasActiveSubscription.mockResolvedValue(false);
-    mockPrisma.classRoom.findMany.mockResolvedValue([{ id: "class-1" }]);
+    mockPrisma.class.findMany.mockResolvedValue([{ id: "class-1" }]);
     mockPrisma.assessment.groupBy.mockResolvedValue([
       { type: "COMPREHENSION", _count: { id: FREE_TIER_DAILY_LIMITS.COMPREHENSION } },
     ]);
@@ -117,7 +117,7 @@ describe("checkDailyLimit", () => {
 
   it("includes the assessment type in the reason message when blocked", async () => {
     mockHasActiveSubscription.mockResolvedValue(false);
-    mockPrisma.classRoom.findMany.mockResolvedValue([{ id: "class-1" }]);
+    mockPrisma.class.findMany.mockResolvedValue([{ id: "class-1" }]);
     mockPrisma.assessment.groupBy.mockResolvedValue([
       { type: "ORAL_READING", _count: { id: FREE_TIER_DAILY_LIMITS.ORAL_READING } },
     ]);
@@ -130,7 +130,7 @@ describe("checkDailyLimit", () => {
 
   it("enforces limits independently per assessment type", async () => {
     mockHasActiveSubscription.mockResolvedValue(false);
-    mockPrisma.classRoom.findMany.mockResolvedValue([{ id: "class-1" }]);
+    mockPrisma.class.findMany.mockResolvedValue([{ id: "class-1" }]);
     mockPrisma.assessment.groupBy.mockResolvedValue([
       { type: "ORAL_READING", _count: { id: FREE_TIER_DAILY_LIMITS.ORAL_READING } },
     ]);
@@ -150,7 +150,7 @@ describe("getDailyLimitStatus", () => {
 
   it("returns infinite limits and isFreeUser false for paid users", async () => {
     mockHasActiveSubscription.mockResolvedValue(true);
-    mockPrisma.classRoom.findMany.mockResolvedValue([]);
+    mockPrisma.class.findMany.mockResolvedValue([]);
 
     const status = await getDailyLimitStatus("user-1");
 
@@ -162,7 +162,7 @@ describe("getDailyLimitStatus", () => {
 
   it("returns correct remaining counts for free users", async () => {
     mockHasActiveSubscription.mockResolvedValue(false);
-    mockPrisma.classRoom.findMany.mockResolvedValue([{ id: "class-1" }]);
+    mockPrisma.class.findMany.mockResolvedValue([{ id: "class-1" }]);
     mockPrisma.assessment.groupBy.mockResolvedValue([
       { type: "ORAL_READING", _count: { id: 1 } },
     ]);
@@ -177,7 +177,7 @@ describe("getDailyLimitStatus", () => {
 
   it("never returns negative remaining counts when usage exceeds limits", async () => {
     mockHasActiveSubscription.mockResolvedValue(false);
-    mockPrisma.classRoom.findMany.mockResolvedValue([{ id: "class-1" }]);
+    mockPrisma.class.findMany.mockResolvedValue([{ id: "class-1" }]);
     mockPrisma.assessment.groupBy.mockResolvedValue([
       { type: "READING_FLUENCY", _count: { id: 5 } },
     ]);
@@ -189,7 +189,7 @@ describe("getDailyLimitStatus", () => {
 
   it("returns zero remaining for all types when all limits are used up", async () => {
     mockHasActiveSubscription.mockResolvedValue(false);
-    mockPrisma.classRoom.findMany.mockResolvedValue([{ id: "class-1" }]);
+    mockPrisma.class.findMany.mockResolvedValue([{ id: "class-1" }]);
     mockPrisma.assessment.groupBy.mockResolvedValue([
       { type: "ORAL_READING", _count: { id: FREE_TIER_DAILY_LIMITS.ORAL_READING } },
       { type: "COMPREHENSION", _count: { id: FREE_TIER_DAILY_LIMITS.COMPREHENSION } },

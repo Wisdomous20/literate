@@ -16,10 +16,10 @@ interface GetAssessmentSummariesByClassResult {
 }
 
 export async function getAssessmentSummariesByClassService(
-  classRoomId: string,
+  classId: string,
   userId: string,
 ): Promise<GetAssessmentSummariesByClassResult> {
-  if (!classRoomId) {
+  if (!classId) {
     return { success: false, error: "Class ID is required", code: "VALIDATION_ERROR" };
   }
 
@@ -32,8 +32,8 @@ export async function getAssessmentSummariesByClassService(
       where: {
         student: {
           archived: false,
-          classRoomId,
-          classRoom: {
+          classId,
+          class: {
             userId,
           },
         },

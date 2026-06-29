@@ -512,7 +512,7 @@ export async function recheckAllMiscuesService(
             id: sessionId,
             assessment: {
               student: {
-                classRoom: {
+                class: {
                   userId,
                 },
               },
@@ -528,7 +528,7 @@ export async function recheckAllMiscuesService(
                 passage: { select: { content: true, language: true } },
                 student: {
                   select: {
-                    classRoom: { select: { userId: true } },
+                    class: { select: { userId: true } },
                   },
                 },
               },
@@ -547,7 +547,7 @@ export async function recheckAllMiscuesService(
                 passage: { select: { content: true, language: true } },
                 student: {
                   select: {
-                    classRoom: { select: { userId: true } },
+                    class: { select: { userId: true } },
                   },
                 },
               },

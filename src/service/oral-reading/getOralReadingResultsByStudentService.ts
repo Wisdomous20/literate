@@ -13,7 +13,7 @@ export async function getOralReadingResultsByStudentService(
           ...(userId
             ? {
                 student: {
-                  classRoom: {
+                  class: {
                     userId,
                   },
                 },
