@@ -138,6 +138,14 @@ export async function POST(request: NextRequest) {
     }
 
     const quiz = passage.quiz;
+
+    if (quiz.questions.length === 0) {
+      return NextResponse.json(
+        { error: "This passage has no quiz questions. Please add questions first." },
+        { status: 400 },
+      );
+    }
+
     const questionMap = new Map(quiz.questions.map((q) => [q.id, q]));
 
     // 3. Grade answers before returning so the UI receives the final score.

@@ -315,12 +315,12 @@ export default function OralReadingComprehensionPage() {
 
   // Timer — stops when submitted, submitting, or paused
   useEffect(() => {
-    if (isSubmitted || isSubmitting || isPaused) return;
+    if (isSubmitted || isSubmitting || isPaused || questions.length === 0) return;
     const interval = setInterval(() => {
       setElapsedSeconds((prev) => prev + 1);
     }, 1000);
     return () => clearInterval(interval);
-  }, [isSubmitted, isSubmitting, isPaused]);
+  }, [isSubmitted, isSubmitting, isPaused, questions.length]);
 
   // Persist comprehension state to sessionStorage on every change
   useEffect(() => {
